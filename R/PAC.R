@@ -16,11 +16,11 @@ calculate.dist = function(x, dist.method){
   if (dist.method %in% c("euclidean", "maximum", "manhattan", "canberra",
                          "binary", "minkowski")){
     d <- stats::dist(x, method=dist.method)
-  } else if (dist.method == 'correlation'){
+  } else if (dist.method == 'pearson'){
     d <- 1 - stats::cor(x, method='pearson')
   } else {
     stop('Distance measure not recognized. Please choose one of euclidean,
-         maximum, canberra, binary, minkowski and correlation.')
+         maximum, canberra, binary, minkowski and pearson')
   }
 
   return(d)
