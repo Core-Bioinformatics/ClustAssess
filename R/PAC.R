@@ -52,7 +52,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                               calculate.cdf=FALSE, cdf.length = 1e3,
                               calculate.dist.upfront=FALSE){
   n.items = floor(p.item * nrow(x))
-  # threshold for k.max so that we don't accidentally look for too many clusters
+  # threshold for k.max so we don't accidentally look for too many clusters
   if (k.max > n.items){
     k.max = n.items
   }
@@ -65,19 +65,19 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
 
   indicator = matrix(0, nrow = nrow(x), ncol = nrow(x))
   connectivity = list()
-  consensus = list()
+  # consensus = list()
 
   # initialize connectivity and consensus matrices
   for (i in k.min:k.max){
     connectivity[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
-    consensus[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
+    # consensus[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
   }
 
   convergence = NULL
   pac.matrix = matrix(0, nrow=(k.max-k.min+1), ncol=n.reps)
 
   for (i in 1:n.reps){
-    item.indices = sample(x = indices, size = n.items, replace = FALSE)
+    item.indices = sample(x=indices, size=n.items, replace=FALSE)
     indicator[item.indices, item.indices] =
       indicator[item.indices, item.indices] + 1
 
@@ -89,10 +89,10 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
       d <- calculate.dist(x[item.indices,], dist.method)
     }
 
-    tree <- fastcluster::hclust(d, method = linkage)
+    tree <- fastcluster::hclust(d, method=linkage)
 
     for (k in k.min:k.max){
-      res <- stats::cutree(tree, k = k)
+      res <- stats::cutree(tree, k=k)
       #connectivity[[k]] = update.connectivity.sort(connectivity[[k]],
       #                                              item.indices,
       #                                              res)
@@ -101,20 +101,20 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                                                    item.indices,
                                                    res)
 
-      consensus[[k]] = connectivity[[k]] / indicator
-      consensus[[k]][indicator == 0] = 0
-      # consensus.upper = consensus[[k]][upper.tri(consensus[[k]], diag=FALSE)]
-      consensus.upper = consensus[[k]][!diag(nrow(x))]
-      n.elements = length(consensus.upper)
+      #consensus[[k]] = connectivity[[k]] / indicator
+      #consensus[[k]][indicator == 0] = 0
+      #consensus.upper = consensus[[k]][!diag(nrow(x))]
+      #n.elements = length(consensus.upper)
 
       # kinda slow
       # m = mean(lower.lim < consensus.upper & consensus.upper < upper.lim)
 
       # faster
-      lower.mask = (lower.lim < consensus.upper)
-      upper.and.lower.mask = (consensus.upper[lower.mask] < upper.lim)
-      pac.value = sum(upper.and.lower.mask) / n.elements
+      #lower.mask = (lower.lim < consensus.upper)
+      #upper.and.lower.mask = (consensus.upper[lower.mask] < upper.lim)
+      #pac.value = sum(upper.and.lower.mask) / n.elements
 
+      pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim, upper.lim)
       pac.matrix[(k-k.min+1), i] = pac.value
 
       # convergence = rbind(convergence, data.frame(dist.method = dist.method,
@@ -192,10 +192,6 @@ update.connectivity.loop = function(connectivity,
   }
   return(connectivity)
 }
-
-# cppFunction('')
-
-
 
 update.connectivity.ccp = function(connectivity,
                                      sampling.indices,

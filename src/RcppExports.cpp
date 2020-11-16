@@ -5,6 +5,20 @@
 
 using namespace Rcpp;
 
+// calculate_pac_cpp
+double calculate_pac_cpp(IntegerMatrix indicator, NumericMatrix connectivity, double lower_lim, double upper_lim);
+RcppExport SEXP _ClustAssess_calculate_pac_cpp(SEXP indicatorSEXP, SEXP connectivitySEXP, SEXP lower_limSEXP, SEXP upper_limSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type indicator(indicatorSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type connectivity(connectivitySEXP);
+    Rcpp::traits::input_parameter< double >::type lower_lim(lower_limSEXP);
+    Rcpp::traits::input_parameter< double >::type upper_lim(upper_limSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_pac_cpp(indicator, connectivity, lower_lim, upper_lim));
+    return rcpp_result_gen;
+END_RCPP
+}
 // update_connectivity_cpp
 NumericMatrix update_connectivity_cpp(NumericMatrix connectivity, IntegerVector sampling_indices, IntegerVector cluster_assignments);
 RcppExport SEXP _ClustAssess_update_connectivity_cpp(SEXP connectivitySEXP, SEXP sampling_indicesSEXP, SEXP cluster_assignmentsSEXP) {
@@ -20,6 +34,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_update_connectivity_cpp", (DL_FUNC) &_ClustAssess_update_connectivity_cpp, 3},
     {NULL, NULL, 0}
 };
