@@ -1,0 +1,25 @@
+Package: ClustAssess
+Type: Package
+Title: Tools for assessing clustering
+Version: 0.1.0
+Author: Arash Shahsavari, Irina Mohorianu
+Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
+Description: A set of tools for clustering assessment, including 
+    clustering similarity, optimal number of clusters, and cluster boundary 
+    regions.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    ggplot2,
+    dplyr,
+    fastcluster,
+    tidyr,
+    rlang,
+    Matrix,
+    igraph,
+    magrittr,
+    Rcpp
+RoxygenNote: 7.1.1
+LinkingTo: 
+    Rcpp
