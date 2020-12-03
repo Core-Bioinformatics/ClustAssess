@@ -22,7 +22,7 @@ calculate.dist = function(x, dist.method, p=2){
 #' @param k.min
 #' @param k.max
 #' @param n.reps
-#' @param p.item
+#' @param p.sample
 #' @param p.feature
 #' @param dist.method
 #' @param linkage
@@ -35,14 +35,14 @@ calculate.dist = function(x, dist.method, p=2){
 #' @importFrom rlang .data
 #'
 #' @examples
-consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
+consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                               p.feature=1.0, p.minkowski=2,
                               dist.method='euclidean', linkage='complete',
                               upper.lim=0.9, lower.lim=0.1){
-  n.items = floor(p.item * nrow(x))
+  n.samples = floor(p.sample * nrow(x))
   # threshold for k.max so we don't accidentally look for too many clusters
-  if (k.max > n.items){
-    k.max = n.items
+  if (k.max > n.samples){
+    k.max = n.samples
   }
   indices = 1:nrow(x)
 
@@ -58,21 +58,18 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
   pac.matrix = matrix(0, nrow=(k.max-k.min+1), ncol=n.reps)
 
   for (i in 1:n.reps){
-    item.indices = sample(x=indices, size=n.items, replace=FALSE)
-    indicator[item.indices, item.indices] =
-      indicator[item.indices, item.indices] + 1
+    sample.indices = sample(x=indices, size=n.samples, replace=FALSE)
+    indicator[sample.indices, sample.indices] =
+      indicator[sample.indices, sample.indices] + 1
 
-    d <- calculate.dist(x[item.indices,], dist.method, p.minkowski)
+    d <- calculate.dist(x[sample.indices,], dist.method, p.minkowski)
     tree <- fastcluster::hclust(d, method=linkage)
 
     for (k in k.min:k.max){
       res <- stats::cutree(tree, k=k)
-      #connectivity[[k]] = update.connectivity.sort(connectivity[[k]],
-      #                                              item.indices,
-      #                                              res)
 
       connectivity[[k]] = update_connectivity_cpp(connectivity[[k]],
-                                                   item.indices,
+                                                   sample.indices,
                                                    res)
 
       pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim, upper.lim)
@@ -87,7 +84,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                            lower.lim = lower.lim,
                            upper.lim = upper.lim,
                            n.clusters = rep(k.min:k.max, times=n.reps),
-                           p.item = p.item)
+                           p.sample = p.sample)
 
   pac.res = list(convergence=convergence)
   return(pac.res)
