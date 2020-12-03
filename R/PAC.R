@@ -28,6 +28,7 @@ calculate.dist = function(x, dist.method, p=2){
 #' @param linkage
 #' @param upper.lim
 #' @param lower.lim
+#' @param p.minkowski
 #'
 #' @return
 #' @export
@@ -40,11 +41,11 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                               dist.method='euclidean', linkage='complete',
                               upper.lim=0.9, lower.lim=0.1){
   n.samples = floor(p.sample * nrow(x))
+  n.features = floor(p.feature * ncol(x))
   # threshold for k.max so we don't accidentally look for too many clusters
   if (k.max > n.samples){
     k.max = n.samples
   }
-  indices = 1:nrow(x)
 
   indicator = matrix(0, nrow = nrow(x), ncol = nrow(x))
   connectivity = list()
@@ -58,11 +59,13 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
   pac.matrix = matrix(0, nrow=(k.max-k.min+1), ncol=n.reps)
 
   for (i in 1:n.reps){
-    sample.indices = sample(x=indices, size=n.samples, replace=FALSE)
+    sample.indices = sample(x=nrow(x), size=n.samples, replace=FALSE)
     indicator[sample.indices, sample.indices] =
       indicator[sample.indices, sample.indices] + 1
 
-    d <- calculate.dist(x[sample.indices,], dist.method, p.minkowski)
+    feature.indices = sample(x=ncol(x), size=n.features, replace=FALSE)
+    d <- calculate.dist(x[sample.indices, feature.indices], dist.method,
+                        p.minkowski)
     tree <- fastcluster::hclust(d, method=linkage)
 
     for (k in k.min:k.max){
@@ -72,7 +75,8 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                                                    sample.indices,
                                                    res)
 
-      pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim, upper.lim)
+      pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim,
+                                    upper.lim)
       pac.matrix[(k-k.min+1), i] = pac.value
     }
   }
