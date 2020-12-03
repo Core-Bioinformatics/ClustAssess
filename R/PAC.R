@@ -48,9 +48,9 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
   }
 
   indicator = matrix(0, nrow = nrow(x), ncol = nrow(x))
-  connectivity = list()
 
   # initialize connectivity matrices
+  connectivity = list()
   for (i in k.min:k.max){
     connectivity[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
   }
@@ -88,7 +88,8 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                            lower.lim = lower.lim,
                            upper.lim = upper.lim,
                            n.clusters = rep(k.min:k.max, times=n.reps),
-                           p.sample = p.sample)
+                           p.sample = p.sample,
+                           p.feature = p.feature)
 
   return(convergence)
 }
