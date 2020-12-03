@@ -39,7 +39,7 @@ calculate.dist = function(x, dist.method, p=2){
 consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                               p.feature=1.0, p.minkowski=2,
                               dist.method='euclidean', linkage='complete',
-                              upper.lim=0.9, lower.lim=0.1){
+                              lower.lim=0.1, upper.lim=0.9){
   n.samples = floor(p.sample * nrow(x))
   n.features = floor(p.feature * ncol(x))
   # threshold for k.max so we don't accidentally look for too many clusters
@@ -90,8 +90,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
                            n.clusters = rep(k.min:k.max, times=n.reps),
                            p.sample = p.sample)
 
-  pac.res = list(convergence=convergence)
-  return(pac.res)
+  return(convergence)
 }
 
 
@@ -107,7 +106,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
 #'
 #' @examples
 pac.convergence = function(pac.res, k.plot){
-  conv = pac.res$convergence %>% dplyr::filter(.data$n.clusters %in% k.plot)
+  conv = pac.res %>% dplyr::filter(.data$n.clusters %in% k.plot)
 
   ggplot2::ggplot(data=conv,
                   ggplot2::aes(x = .data$iteration, y = .data$pac,
@@ -130,14 +129,14 @@ pac.convergence = function(pac.res, k.plot){
 #' @importFrom rlang .data
 #'
 #' @examples
-pac.landscape = function(pac.res, n.shade = max(pac.res$convergence$iteration)/5){
+pac.landscape = function(pac.res, n.shade = max(pac.res$iteration)/5){
   # threshold n.shade
-  if (n.shade > max(pac.res$convergence$iteration)){
-    n.shade = max(pac.res$convergence$iteration)
+  if (n.shade > max(pac.res$iteration)){
+    n.shade = max(pac.res$iteration)
   }
 
   # create data frame with shaded regions
-  pac.df = pac.res$convergence %>% dplyr::group_by(.data$n.clusters) %>%
+  pac.df = pac.res %>% dplyr::group_by(.data$n.clusters) %>%
     dplyr::top_n(n.shade, wt=.data$iteration) %>%
     dplyr::mutate(pmin = min(.data$pac), pmax=max(.data$pac)) %>%
     dplyr::top_n(1, wt=.data$iteration)
