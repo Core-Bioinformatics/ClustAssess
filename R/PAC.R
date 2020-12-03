@@ -2,16 +2,6 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
-
-consensus.cdf <- function(consensus, cdf.length = 1e3){
-  consensus.order = consensus[order(consensus)]
-  n.elements = length(consensus)
-  consensus.index = seq(0, 1, length = min(n.elements, cdf.length))
-  cdf = stats::ecdf(consensus.order)(consensus.index)
-  cdf[1] = 0
-  return(list(cdf = cdf, consensus.index = consensus.index))
-}
-
 calculate.dist = function(x, dist.method){
   if (dist.method %in% c("euclidean", "maximum", "manhattan", "canberra",
                          "binary", "minkowski")){
@@ -49,7 +39,6 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                               p.feature=1.0,
                               dist.method='euclidean', linkage='complete',
                               upper.lim=0.9, lower.lim=0.1,
-                              calculate.cdf=FALSE, cdf.length = 1e3,
                               calculate.dist.upfront=FALSE){
   n.items = floor(p.item * nrow(x))
   # threshold for k.max so we don't accidentally look for too many clusters
@@ -65,12 +54,10 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
 
   indicator = matrix(0, nrow = nrow(x), ncol = nrow(x))
   connectivity = list()
-  # consensus = list()
 
-  # initialize connectivity and consensus matrices
+  # initialize connectivity matrices
   for (i in k.min:k.max){
     connectivity[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
-    # consensus[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
   }
 
   convergence = NULL
@@ -101,31 +88,8 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                                                    item.indices,
                                                    res)
 
-      #consensus[[k]] = connectivity[[k]] / indicator
-      #consensus[[k]][indicator == 0] = 0
-      #consensus.upper = consensus[[k]][!diag(nrow(x))]
-      #n.elements = length(consensus.upper)
-
-      # kinda slow
-      # m = mean(lower.lim < consensus.upper & consensus.upper < upper.lim)
-
-      # faster
-      #lower.mask = (lower.lim < consensus.upper)
-      #upper.and.lower.mask = (consensus.upper[lower.mask] < upper.lim)
-      #pac.value = sum(upper.and.lower.mask) / n.elements
-
       pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim, upper.lim)
       pac.matrix[(k-k.min+1), i] = pac.value
-
-      # convergence = rbind(convergence, data.frame(dist.method = dist.method,
-      #                                             linkage = linkage,
-      #                                             iteration = i,
-      #                                             pac = pac.value,
-      #                                             lower.lim = lower.lim,
-      #                                             upper.lim = upper.lim,
-      #                                             n.clusters = k,
-      #                                             p.item = p.item))
-
     }
   }
 
@@ -138,27 +102,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
                            n.clusters = rep(k.min:k.max, times=n.reps),
                            p.item = p.item)
 
-  # calculate CDF
-  if (calculate.cdf){
-    cdf.length = min(nrow(x)**2, cdf.length)
-    index.vec = rep(0, (k.max-k.min+1)*cdf.length)
-    cdf.vec = rep(0, (k.max-k.min+1)*cdf.length)
-    for (k in k.min:k.max){
-      res.cdf = consensus.cdf(consensus[[k]], cdf.length)
-      index.vec[((k-k.min)*cdf.length+1):((k-k.min+1)*cdf.length)] = res.cdf$consensus.index
-      cdf.vec[((k-k.min)*cdf.length+1):((k-k.min+1)*cdf.length)] = res.cdf$cdf
-      # cdf = rbind(cdf, data.frame(consensus.index = res.cdf$consensus.index,
-      #                             CDF = res.cdf$cdf,
-      #                             n.clusters = k))
-    }
-    cdf = data.frame(consensus.index = cdf.vec,
-                     CDF = cdf.vec,
-                     n.clusters = rep(k.min:k.max, each=cdf.length))
-  } else{
-    cdf = NULL
-  }
-
-  pac.res = list(convergence=convergence, cdf=cdf)
+  pac.res = list(convergence=convergence)
   return(pac.res)
 }
 
@@ -227,11 +171,6 @@ update.connectivity.sort = function(connectivity,
   return(connectivity)
 }
 
-# .onUnload <- function (libpath) {
-#   library.dynam.unload("ClustAssess", libpath)
-# }
-
-
 #' Title
 #'
 #' @param pac.res
@@ -255,28 +194,6 @@ pac.convergence = function(pac.res, k.plot){
           ggplot2::labs(title='PAC convergence')
 }
 
-#' Title
-#'
-#' @param pac.res
-#' @param k.plot
-#'
-#' @return
-#' @export
-#'
-#' @importFrom rlang .data
-#'
-#' @examples
-pac.cdf = function(pac.res, k.plot){
-  cdf = pac.res$cdf %>% dplyr::filter(.data$n.clusters %in% k.plot)
-
-  ggplot2::ggplot(cdf,
-                  ggplot2::aes(x=.data$consensus.index, y=.data$CDF,
-                               color=.data$n.clusters,
-                               group=.data$n.clusters)) +
-          ggplot2::geom_step() +
-          ggplot2::scale_color_gradient(low = "#cde6fe", high = "#012345") +
-          ggplot2::labs(title='PAC CDF')
-}
 
 #' Title
 #'
