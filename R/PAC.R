@@ -2,10 +2,10 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
-calculate.dist = function(x, dist.method){
+calculate.dist = function(x, dist.method, p=2){
   if (dist.method %in% c("euclidean", "maximum", "manhattan", "canberra",
                          "binary", "minkowski")){
-    d <- stats::dist(x, method=dist.method)
+    d <- stats::dist(x, method=dist.method, p=p)
   } else if (dist.method == 'pearson'){
     d <- 1 - stats::cor(x, method='pearson')
   } else {
@@ -36,7 +36,7 @@ calculate.dist = function(x, dist.method){
 #'
 #' @examples
 consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
-                              p.feature=1.0,
+                              p.feature=1.0, p.minkowski=2,
                               dist.method='euclidean', linkage='complete',
                               upper.lim=0.9, lower.lim=0.1,
                               calculate.dist.upfront=FALSE){
@@ -48,7 +48,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
   indices = 1:nrow(x)
 
   if (calculate.dist.upfront){
-    all.dist <- calculate.dist(x, dist.method)
+    all.dist <- calculate.dist(x, dist.method, p.minkowski)
     all.dist <- as.matrix(all.dist)
   }
 
@@ -73,7 +73,7 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.item=0.8,
       d <- all.dist[item.indices, item.indices]
       d <- stats::as.dist(d)
     } else {
-      d <- calculate.dist(x[item.indices,], dist.method)
+      d <- calculate.dist(x[item.indices,], dist.method, p.minkowski)
     }
 
     tree <- fastcluster::hclust(d, method=linkage)
