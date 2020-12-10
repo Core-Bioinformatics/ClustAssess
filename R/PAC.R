@@ -2,11 +2,11 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
-calculate.dist = function(x, dist.method, p=2){
-  if (dist.method %in% c("euclidean", "maximum", "manhattan", "canberra",
+calculate_dist = function(x, dist_method, p=2){
+  if (dist_method %in% c("euclidean", "maximum", "manhattan", "canberra",
                          "binary", "minkowski")){
-    d <- stats::dist(x, method=dist.method, p=p)
-  } else if (dist.method == 'pearson'){
+    d <- stats::dist(x, method=dist_method, p=p)
+  } else if (dist_method == 'pearson'){
     d <- 1 - stats::cor(x, method='pearson')
   } else {
     stop('Distance measure not recognized. Please choose one of euclidean,
@@ -19,16 +19,16 @@ calculate.dist = function(x, dist.method, p=2){
 #' Title
 #'
 #' @param x
-#' @param k.min
-#' @param k.max
-#' @param n.reps
-#' @param p.sample
-#' @param p.feature
-#' @param dist.method
+#' @param k_min
+#' @param k_max
+#' @param n_reps
+#' @param p_sample
+#' @param p_feature
+#' @param dist_method
 #' @param linkage
-#' @param upper.lim
-#' @param lower.lim
-#' @param p.minkowski
+#' @param upper_lim
+#' @param lower_lim
+#' @param p_minkowski
 #'
 #' @return
 #' @export
@@ -36,60 +36,60 @@ calculate.dist = function(x, dist.method, p=2){
 #' @importFrom rlang .data
 #'
 #' @examples
-consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
-                              p.feature=1.0, p.minkowski=2,
-                              dist.method='euclidean', linkage='complete',
-                              lower.lim=0.1, upper.lim=0.9){
-  n.samples = floor(p.sample * nrow(x))
-  n.features = floor(p.feature * ncol(x))
-  # threshold for k.max so we don't accidentally look for too many clusters
-  if (k.max > n.samples){
-    k.max = n.samples
+consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
+                              p_feature=1.0, p_minkowski=2,
+                              dist_method='euclidean', linkage='complete',
+                              lower_lim=0.1, upper_lim=0.9){
+  n.samples = floor(p_sample * nrow(x))
+  n.features = floor(p_feature * ncol(x))
+  # threshold for k_max so we don't accidentally look for too many clusters
+  if (k_max > n.samples){
+    k_max = n.samples
   }
 
   indicator = matrix(0, nrow = nrow(x), ncol = nrow(x))
 
   # initialize connectivity matrices
   connectivity = list()
-  for (i in k.min:k.max){
+  for (i in k_min:k_max){
     connectivity[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
   }
 
   convergence = NULL
-  pac.matrix = matrix(0, nrow=(k.max-k.min+1), ncol=n.reps)
+  pac.matrix = matrix(0, nrow=(k_max-k_min+1), ncol=n_reps)
 
-  for (i in 1:n.reps){
+  for (i in 1:n_reps){
     sample.indices = sample(x=nrow(x), size=n.samples, replace=FALSE)
     indicator[sample.indices, sample.indices] =
       indicator[sample.indices, sample.indices] + 1
 
     feature.indices = sample(x=ncol(x), size=n.features, replace=FALSE)
-    d <- calculate.dist(x[sample.indices, feature.indices], dist.method,
-                        p.minkowski)
+    d <- calculate_dist(x[sample.indices, feature.indices], dist_method,
+                        p_minkowski)
     tree <- fastcluster::hclust(d, method=linkage)
 
-    for (k in k.min:k.max){
+    for (k in k_min:k_max){
       res <- stats::cutree(tree, k=k)
 
       connectivity[[k]] = update_connectivity_cpp(connectivity[[k]],
                                                    sample.indices,
                                                    res)
 
-      pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower.lim,
-                                    upper.lim)
-      pac.matrix[(k-k.min+1), i] = pac.value
+      pac.value = calculate_pac_cpp(indicator, connectivity[[k]], lower_lim,
+                                    upper_lim)
+      pac.matrix[(k-k_min+1), i] = pac.value
     }
   }
 
-  convergence = data.frame(dist.method = dist.method,
+  convergence = data.frame(dist_method = dist_method,
                            linkage = linkage,
-                           iteration = rep(1:n.reps, each=(k.max-k.min+1)),
+                           iteration = rep(1:n_reps, each=(k_max-k_min+1)),
                            pac = as.vector(pac.matrix),
-                           lower.lim = lower.lim,
-                           upper.lim = upper.lim,
-                           n.clusters = rep(k.min:k.max, times=n.reps),
-                           p.sample = p.sample,
-                           p.feature = p.feature)
+                           lower_lim = lower_lim,
+                           upper_lim = upper_lim,
+                           n.clusters = rep(k_min:k_max, times=n_reps),
+                           p_sample = p_sample,
+                           p_feature = p_feature)
 
   return(convergence)
 }
@@ -97,8 +97,8 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
 
 #' Title
 #'
-#' @param pac.res
-#' @param k.plot
+#' @param pac_res
+#' @param k_plot
 #'
 #' @return
 #' @export
@@ -106,8 +106,8 @@ consensus.cluster <- function(x, k.min=3, k.max=100, n.reps=100, p.sample=0.8,
 #' @importFrom rlang .data
 #'
 #' @examples
-pac.convergence = function(pac.res, k.plot){
-  conv = pac.res %>% dplyr::filter(.data$n.clusters %in% k.plot)
+pac_convergence = function(pac_res, k_plot){
+  conv = pac_res %>% dplyr::filter(.data$n.clusters %in% k_plot)
 
   ggplot2::ggplot(data=conv,
                   ggplot2::aes(x = .data$iteration, y = .data$pac,
@@ -121,8 +121,8 @@ pac.convergence = function(pac.res, k.plot){
 
 #' Title
 #'
-#' @param pac.res
-#' @param n.shade
+#' @param pac_res
+#' @param n_shade
 #'
 #' @return
 #' @export
@@ -130,15 +130,15 @@ pac.convergence = function(pac.res, k.plot){
 #' @importFrom rlang .data
 #'
 #' @examples
-pac.landscape = function(pac.res, n.shade = max(pac.res$iteration)/5){
-  # threshold n.shade
-  if (n.shade > max(pac.res$iteration)){
-    n.shade = max(pac.res$iteration)
+pac_landscape = function(pac_res, n_shade = max(pac_res$iteration)/5){
+  # threshold n_shade
+  if (n_shade > max(pac_res$iteration)){
+    n_shade = max(pac_res$iteration)
   }
 
   # create data frame with shaded regions
-  pac.df = pac.res %>% dplyr::group_by(.data$n.clusters) %>%
-    dplyr::top_n(n.shade, wt=.data$iteration) %>%
+  pac.df = pac_res %>% dplyr::group_by(.data$n.clusters) %>%
+    dplyr::top_n(n_shade, wt=.data$iteration) %>%
     dplyr::mutate(pmin = min(.data$pac), pmax=max(.data$pac)) %>%
     dplyr::top_n(1, wt=.data$iteration)
 
