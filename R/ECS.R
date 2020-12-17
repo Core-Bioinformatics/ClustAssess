@@ -1,83 +1,48 @@
-#' Title
+#' The element-centric clustering similarity.
 #'
-#' @param clustering1
-#' @param clustering2
-#' @param alpha
-#' @param r
-#' @param r2
-#' @param rescale_path_type
-#' @param ppr_implementation
+#' @param clustering1 The first Clustering.
+#' @param clustering2 The second Clustering.
 #'
-#' @return
+#' @return The element-wise similarity between the two Clusterings.
 #' @export
 #'
 #' @examples
-element.sim = function(clustering1, clustering2, alpha=0.9, r=1., r2=NULL,
-                       rescale_path_type='max', ppr_implementation='prpack'){
-  results = element.sim.elscore(clustering1, clustering2, alpha=alpha,
-                                     r=r, r2=r2,
-                                     rescale_path_type=rescale_path_type,
-                                     ppr_implementation=ppr_implementation)
-  elementScores = results$scores
-  return(mean(elementScores))
+element_sim = function(clustering1, clustering2){
+  element.scores = element_sim_elscore(clustering1, clustering2)
+  return(mean(element.scores))
 }
 
-#' Title
+#' The element-centric clustering similarity for each element.
 #'
-#' @param clustering1
-#' @param clustering2
-#' @param alpha
-#' @param r
-#' @param r2
-#' @param rescale_path_type
-#' @param relabeled_elements
-#' @param ppr_implementation
+#' @param clustering1 The first Clustering.
+#' @param clustering2 The second Clustering.
 #'
-#' @return
+#' @return The element-centric similarity between the two clusterings for each
+#' element as a vector.
 #' @export
 #'
 #' @examples
-element.sim.elscore = function(clustering1, clustering2, alpha=0.9, r=1.,
-                               r2=NULL, rescale_path_type='max',
-                               relabeled_elements=NULL,
-                               ppr_implementation='prpack'){
-  # Error handling for comparisons
-  if (length(clustering1) != length(clustering2)){
-    stop('clustering1 and clustering2 do not have the same length')
+element_sim_elscore = function(clustering1, clustering2){
+  # Make sure clusterings are comparable
+  if (clustering1@n_elements != clustering2@n_elements){
+    stop('clustering1 and clustering2 do not have the same length.')
   } else if (any(names(clustering1) != names(clustering2))){
-    stop('Not all elements of clustering1 and clustering2 are the same')
+    stop('Not all elements of clustering1 and clustering2 are the same.')
+  } else if (clustering1@alpha != clustering2@alpha){
+    stop('clustering1 and clustering2 were created using different alpha.')
   }
-  # convert to character strings
-  clustering1 = as.character(clustering1)
-  clustering2 = as.character(clustering2)
-
-  # the rows and columns of the affinity matrix correspond to relabeled elements
-  #if (is.null(relabeled_elements)){
-  #  relabeled_elements = relabel_objects(clustering1)
-  #}
-
-  if (is.null(r2)){
-    r2 = r
-  }
-
-  # make the two affinity matrices
-  clu_affinity_matrix1 = make.affinity.matrix(clustering1, alpha=alpha, r=r,
-                                       rescale_path_type=rescale_path_type,
-                                       relabeled_elements=relabeled_elements,
-                                       ppr_implementation=ppr_implementation)
-  clu_affinity_matrix2 = make.affinity.matrix(clustering2, alpha=alpha, r=r2,
-                                       rescale_path_type=rescale_path_type,
-                                       relabeled_elements=relabeled_elements,
-                                       ppr_implementation=ppr_implementation)
 
   # use the corrected L1 similarity
-  nodeScores = corrected.L1(clu_affinity_matrix1, clu_affinity_matrix2,
-                            alpha=alpha)
+  node.scores = corrected_L1(clustering1@affinity_matrix,
+                             clustering2@affinity_matrix,
+                             clustering1@alpha)
 
-  return(list(scores=nodeScores, elements=relabeled_elements))
+  names(node.scores) = names(clustering1)
+  return(node.scores)
 }
 
-clu2elm_dict = function(clustering){
+# create the cluster -> element dictionary (list) for flat, disjoint clustering
+create_clu2elm_dict = function(clustering){
   clu2elm_dict = list()
   for (clust in unique(clustering)){
     clu2elm_dict[[clust]] = which(clustering==clust)
@@ -85,145 +50,361 @@ clu2elm_dict = function(clustering){
   return(clu2elm_dict)
 }
 
-# needs to be fixed for overlapping clustering functionality probably
-elm2clu_dict = function(clustering){
+# create the cluster -> element dictionary (list) for hierarchical clustering
+create_clu2elm_dict_hierarchical = function(clustering){
+  n.clusters = nrow(clustering$merge)
   clu2elm_dict = list()
-  for (clust in unique(clustering)){
-    clustering.clu2elm_dict[[clust]] = which(clustering==clust)
+
+  # add NA to initialize list
+  clu2elm_dict[[2*n.clusters+1]] = NA
+
+  # add single member clusters for leaf nodes
+  for (i in 1:(n.clusters+1)){
+    clu2elm_dict[[i]] = i
   }
+
+  # traverse hc tree and add nodes to clu2elm_dict
+  for (i in 1:n.clusters){
+    for (j in 1:2){
+      index = clustering$merge[i,j]
+      if (index<0){ # for leaf nodes, just append them
+        clu2elm_dict[[i+n.clusters+1]] = c(clu2elm_dict[[i+n.clusters+1]],
+                                           -index)
+      } else { # for previous clusters, append all leaf nodes in cluster
+        clu2elm_dict[[i+n.clusters+1]] = c(clu2elm_dict[[i+n.clusters+1]],
+                                           clu2elm_dict[[index+n.clusters+1]])
+      }
+    }
+  }
+  # remove the NA that was added in the beginning
+  clu2elm_dict[[2*n.clusters+1]] = clu2elm_dict[[2*n.clusters+1]][-1]
+
   return(clu2elm_dict)
 }
 
-corrected.L1 = function(x, y, alpha){
+# create element -> cluster dictionary (list) for flat, overlapping clustering
+create_elm2clu_dict_overlapping = function(clustering){
+  elm2clu_dict = list()
+  for (i in 1:nrow(clustering)){
+    elm2clu_dict[[i]] = which(clustering[i,]>0)
+  }
+  return(elm2clu_dict)
+}
+
+# create element -> cluster dictionary (list) for hierarchical clustering: only
+# maps elements to leaf node singleton clusters
+create_elm2clu_dict_hierarchical = function(clustering){
+  elm2clu_dict = list()
+  for (i in 1:length(clustering$order)){
+    elm2clu_dict[[i]] = i
+  }
+  return(elm2clu_dict)
+}
+
+# corrected L1 distance
+corrected_L1 = function(x, y, alpha){
   res = 1 - 1/(2 * alpha) * Matrix::rowSums(abs(x - y))
   return(res)
 }
 
-make.affinity.matrix = function(clustering, alpha=0.9, r=1.,
-                                rescale_path_type='max',
-                                relabeled_elements=NULL,
-                                ppr_implementation='prpack'){
-  # check if the clustering is a partition
-  clustering.is_disjoint = TRUE
-  clustering.is_hierarchical = FALSE
-  if (clustering.is_disjoint & !clustering.is_hierarchical){
-    pprscore = ppr.partition(clustering=clustering, alpha=alpha,
-                             relabeled_elements=relabeled_elements)
-  } else {
-    # otherwise we have to create the cielg and numberically solve for the
-    # personalize page-rank distribution
-    cielg = make_cielg(clustering=clustering, r=r,
-                       rescale_path_type=rescale_path_type,
-                       relabeled_elements=relabeled_elements)
-    pprscore = numerical_ppr_scores(cielg, clustering, alpha=alpha,
-                                    relabeled_elements=relabeled_elements,
-                                    ppr_implementation=ppr_implementation)
-  }
-  return(pprscore)
-}
+# PPR calculation for partition
+ppr_partition = function(clustering, alpha=0.9){
+  ppr = Matrix::Matrix(0,
+                       nrow=clustering@n_elements,
+                       ncol=clustering@n_elements,
+                       sparse=TRUE)
 
-# should be finished
-ppr.partition = function(clustering, alpha=0.9, relabeled_elements=NULL){
-  clustering.clu2elm_dict = clu2elm_dict(clustering)
-
-  n.elements = length(clustering)
-  ppr = matrix(0, nrow=n.elements, ncol=n.elements)
-
-  for (i in 1:length(clustering.clu2elm_dict)){
-    clustername=names(clustering.clu2elm_dict)[i]
-    clusterlist = clustering.clu2elm_dict[[i]]
+  for (i in 1:length(clustering@clu2elm_dict)){
+    clustername=names(clustering@clu2elm_dict)[i]
+    clusterlist = clustering@clu2elm_dict[[i]]
     Csize = length(clusterlist)
-    ppr_result = alpha / Csize * matrix(1, nrow=Csize, ncol=Csize) +
-      diag(Csize) * (1.0 - alpha)
+    ppr_result = alpha / Csize * Matrix::Matrix(1, nrow=Csize, ncol=Csize) +
+      Matrix::Diagonal(Csize) * (1.0 - alpha)
     ppr[clusterlist, clusterlist] = ppr_result
   }
 
   return(ppr)
 }
 
-# Create the cluster-induced element graph for a Clustering
-make.cielg = function(clustering, r=1.0, rescale_path_type='max',
-                      relabeled_elements=NULL){
-  # the rows and columns of the affinity matrix correspond to relabeled
-  # elements
-  if (is.null(relabeled_elements)){
-    relabeled_elements = relabel_objects(clustering1)
-  }
-
-  # TODO: fix rest of this function
-  # the hierarchical weight function
-  if (clustering.is_hierarchical){
-    cluster_height = clustering.hier_graph.rescale(
-      rescale_path_type=rescale_path_type)
-
-    weight_function = function(c){
-      return(exp(r * (cluster_height.get(c, 0.0))))
-    }
-    clu2elm_dict = clustering.hier_clusdict()
-  } else {
-      weight_function = function(c){
-        return(1)
+# Create the cluster-induced element graph for overlapping clustering
+make_cielg_overlapping = function(overlapping_clustering){
+  edge_i=c()
+  edge_j=c()
+  edge_weights=c()
+  for (i in 1:nrow(overlapping_clustering)){
+    for (j in 1:ncol(overlapping_clustering)){
+      if (overlapping_clustering[i,j]>0){
+        edge_i = c(edge_i, i)
+        edge_j = c(edge_j, j)
+        edge_weights = c(edge_weights, overlapping_clustering[i,j])
       }
-      clu2elm_dict = clustering.clu2elm_dict
-  }
-
-  relabeled_clusters = relabel_objects(clustering.clusters)
-
-  edge_seq = list()
-  edge_weight_seq = list()
-  for (i in 1:length(clu2elm_dict.items)){
-    c = names(clu2elm_dict.items)[i]
-    element_list = clu2elm_dict.items[[i]]
-
-    cstrength = weight_function(c)
-    for (el in element_list){
-      edge_seq.append(c(relabeled_elements[el], relabeled_clusters[c]))
-      edge_weight_seq.append(cstrength)
     }
   }
+  bipartite_adj = Matrix::sparseMatrix(i=edge_i, j=edge_j, x=edge_weights,
+                                       dims=c(nrow(overlapping_clustering),
+                                              ncol(overlapping_clustering)))
 
-  edge_seq = unlist(edge_seq)
+  # I double-checked the clusim python code, and the code below
+  # should perform equivalent operations, using sparse matrices
+  proj1 = Matrix::Diagonal(x = 1 / Matrix::rowSums(bipartite_adj)) %*%
+    bipartite_adj
+  proj2 = bipartite_adj %*%
+    Matrix::Diagonal(x = 1 / Matrix::colSums(bipartite_adj))
+  projected_adj = proj1 %*% Matrix::t(proj2)
 
-  # use sparseMatrix
-  bipartite_adj = spsparse.coo_matrix(c(edge_weight_seq,
-                                       edge_seq[, 1], edge_seq[, 2]),
-                                      dims=c(clustering.n_elements,
-                                             clustering.n_clusters))
-
-
-  proj1 = spsparse.coo_matrix(bipartite_adj / bipartite_adj.sum(axis=1))
-  proj2 = spsparse.coo_matrix(bipartite_adj / bipartite_adj.sum(axis=0))
-  projected_adj = proj1.dot(proj2.T)$tocoo()
-  cielg = igraph.Graph(list(zip(projected_adj.row.tolist(), projected_adj.col.tolist())),
-                       edge_attrs={'weight': projected_adj.data.tolist()}, directed=TRUE)
+  cielg = igraph::graph_from_adjacency_matrix(projected_adj,
+                                              weighted=TRUE,
+                                              mode='directed')
   return(cielg)
 }
 
-# TODO: finish below
-find_groups_in_cluster = function(clustervs, elementgroupList){
-  vertices = igraph::V(clustervs)
+# create linkage distances vector
+get_linkage_dist = function(hierarchical_clustering, dist_rescaled){
+  n.elements = length(hierarchical_clustering$order)
 
-  if (length(intersect(vertices, x))>0){
-    #?
+  if (dist_rescaled){
+    maxdist = max(hierarchical_clustering$height)
+    # add 1s at beggining to account for leaf node singleton clusters
+    linkage_dist = c(rep(1, n.elements),
+                     1.0 - hierarchical_clustering$height/maxdist)
+  } else {
+    # add 0s at beginning to account for leaf node singleton clusters
+    linkage_dist = c(rep(0, n.elements), hierarchical_clustering$height)
   }
+  return(linkage_dist)
 }
 
-# TODO: finish below
-numerical_ppr_scores = function(cielg, clustering, alpha=0.9,
-                                relabeled_elements=NULL,
-                                ppr_implementation='prpack'){
-  # xx
+# helper function to calculate path distances in graph
+dist_path = function(hierarchical_clustering,
+                     rescale_path_type){
+  n.elements = length(hierarchical_clustering$order)
+  # dist to node from final cluster containing all elements
+  path_to_node = rep(0, 2*n.elements-1)
+  for (i in rev(1:(n.elements-1))){
+    for (j in 1:2){
+      index = hierarchical_clustering$merge[i,j]
+      if (index < 0){
+        index = -index
+      } else {
+        index = index + n.elements
+      }
+      if (rescale_path_type=='min'){
+        if (path_to_node[index] == 0){
+          path_to_node[index] = path_to_node[i + n.elements] + 1
+        } else {
+          path_to_node[index] = min(path_to_node[index],
+                                    path_to_node[i + n.elements] + 1)
+        }
+      } else {
+        path_to_node[index] = max(path_to_node[index],
+                                  path_to_node[i + n.elements] + 1)
+      }
+
+    }
+  }
+
+  # dist to node from leaves
+  path_from_node = rep(0, 2*n.elements-1)
+  for (i in 1:(n.elements-1)){
+    index = hierarchical_clustering$merge[i,]
+    for (j in 1:2){
+      if (index[j] < 0){
+        index[j] = -index[j]
+      } else {
+        index[j] = index[j] + n.elements
+      }
+    }
+    if (rescale_path_type=='min'){
+      path_from_node[i + n.elements] = min(path_from_node[index[1]],
+                                           path_from_node[index[2]]) + 1
+
+    } else {
+      path_from_node[i + n.elements] = max(path_from_node[index[1]],
+                                           path_from_node[index[2]]) + 1
+    }
+  }
+
+  return(list(to=path_to_node, from=path_from_node))
 }
 
-# this function should be finished
+# rescale the hierarchical clustering path
+rescale_path = function(hierarchical_clustering,
+                        rescale_path_type){
+  # get path distances
+  path.dist = dist_path(hierarchical_clustering, rescale_path_type)
+  path_from_node = path.dist$from
+  path_to_node = path.dist$to
+
+  n.elements = length(hierarchical_clustering$order)
+  rescaled_level = rep(0, n.elements)
+  for (i in 1:(2*n.elements-1)){
+    total_path_length = path_from_node[i] + path_to_node[i]
+    if (total_path_length != 0){
+      rescaled_level[i] = path_to_node[i] / total_path_length
+    }
+  }
+  return(rescaled_level)
+}
+
+# Create the cluster-induced element graph for hierarchical clustering
+make_cielg_hierarchical = function(hierarchical_clustering,
+                                   clu2elm_dict,
+                                   r,
+                                   rescale_path_type,
+                                   dist_rescaled=FALSE){
+  n.elements = length(hierarchical_clustering$order)
+
+  # rescale paths
+  if (rescale_path_type == 'linkage'){
+    cluster_height = get_linkage_dist(hierarchical_clustering,
+                                      dist_rescaled)
+  } else if (rescale_path_type %in% c('min', 'max')) {
+    cluster_height = rescale_path(hierarchical_clustering,
+                                  rescale_path_type)
+  } else {
+    stop(paste0("rescale_path_type must be one of linkage, min or max."))
+  }
+
+  # weight function for different heights
+  weight_function = function(clust) return(exp(r * (cluster_height[clust])))
+
+  edge_i=c()
+  edge_j=c()
+  edge_weights=c()
+  for (i in 1:length(clu2elm_dict)){
+    element_list = clu2elm_dict[[i]]
+
+    cstrength = weight_function(i)
+    for (el in element_list){
+      edge_i = c(edge_i, el)
+      edge_j = c(edge_j, i)
+      edge_weights = c(edge_weights, cstrength)
+    }
+  }
+
+  bipartite_adj = Matrix::sparseMatrix(i=edge_i, j=edge_j, x=edge_weights,
+                                       dims=c(n.elements,
+                                              2*n.elements-1))
+
+  proj1 = Matrix::Diagonal(x = 1 / Matrix::rowSums(bipartite_adj)) %*%
+    bipartite_adj
+  proj2 = bipartite_adj %*%
+    Matrix::Diagonal(x = 1 / Matrix::colSums(bipartite_adj))
+  projected_adj = proj1 %*% Matrix::t(proj2)
+
+  cielg = igraph::graph_from_adjacency_matrix(projected_adj,
+                                              weighted=TRUE,
+                                              mode='directed')
+  return(cielg)
+}
+
+
+# utility function to find vertices with the same cluster memberships.
+find_groups_in_cluster = function(clustervs, elementgroupList){
+  clustervertex = unique(clustervs)
+
+  groupings = list()
+  index = 1
+  for (i in 1:length(elementgroupList)){
+    current = elementgroupList[[i]]
+    if (length(intersect(current, clustervertex))>0){
+      groupings[[index]] = current
+      index = index + 1
+    }
+  }
+
+  return(groupings)
+}
+
+# numerical calculation of affinity matrix using PPR
+numerical_ppr_scores = function(cielg, clustering, ppr_implementation='prpack'){
+  if (!(ppr_implementation %in% c('prpack', 'power_iteration'))){
+    stop('ppr_implementation argument must be one of prpack or power_iteration')
+  }
+
+  # keep track of all clusters an element is a member of
+  elementgroupList = list()
+  for (i in 1:length(clustering@elm2clu_dict)){
+    element = names(clustering)[i]
+    # collapse clusters into single string
+    clusters = paste(clustering@elm2clu_dict[[i]], collapse=",")
+    print(clusters)
+
+    elementgroupList[[clusters]] = c(elementgroupList[[clusters]], element)
+  }
+
+  ppr_scores = Matrix::Matrix(0,
+                              nrow=igraph::vcount(cielg),
+                              ncol=igraph::vcount(cielg),
+                              sparse=TRUE)
+
+  # we have to calculate the ppr for each connected component
+  comps = igraph::components(cielg)
+  for (i.comp in 1:comps$no){
+    members = which(comps$membership == i.comp)
+    clustergraph = igraph::induced_subgraph(cielg, members, impl='auto')
+    cc_ppr_scores = Matrix::Matrix(0,
+                                   nrow=igraph::vcount(clustergraph),
+                                   ncol=igraph::vcount(clustergraph),
+                                   sparse=TRUE)
+
+    if (ppr_implementation == 'power_iteration'){
+      W_matrix = get_sparse_transition_matrix(clustergraph)
+    }
+
+    elementgroups = find_groups_in_cluster(members, elementgroupList)
+    for (elementgroup in elementgroups){
+      # we only have to solve for the ppr distribution once per group
+      vertex.index = match(elementgroup[1], members)
+      # vertex = V(clustergraph)[index]
+      # vertex = clustergraph.vs[cluster.index(elementgroup[0])] #????
+      if (ppr_implementation == 'prpack'){
+        pers = rep(0, length=length(members))
+        pers[vertex.index] = 1
+        ppr_res = igraph::page_rank(clustergraph,
+                                    directed=TRUE,
+                                    weights=NULL,
+                                    damping=clustering@alpha,
+                                    personalized=pers,
+                                    algo='prpack')
+        cc_ppr_scores[vertex.index,] = ppr_res$vector
+      } else if (ppr_implementation == 'power_iteration'){
+        cc_ppr_scores[vertex.index,] = calculate_ppr_with_power_iteration(
+          W_matrix,
+          vertex.index,
+          alpha=clustering@alpha,
+          repetition=1000,
+          th=0.0001)
+      }
+
+      # the other vertices in the group are permutations of that solution
+      elgroup.size = length(elementgroup)
+      if (elgroup.size >= 2){
+        for (i2 in 2:elgroup.size){
+          v2 = match(elementgroup[i2], members)
+          cc_ppr_scores[v2,] = cc_ppr_scores[vertex.index,]
+          cc_ppr_scores[v2, vertex.index] = cc_ppr_scores[vertex.index, v2]
+          cc_ppr_scores[v2, v2] = cc_ppr_scores[vertex.index, vertex.index]
+        }
+      }
+    }
+
+    ppr_scores[members, members] = cc_ppr_scores
+  }
+  return(ppr_scores)
+}
+
+# utility function to get a row-normalized sparse transition matrix
 get_sparse_transition_matrix = function(graph){
   transition_matrix = igraph::as_adjacency_matrix(graph, attr='weight',
                                                   sparse=TRUE)
-  transition_matrix = transition_matrix / Matrix::rowSums(transition_matrix)
+  transition_matrix = Matrix::Diagonal(x = 1 /
+                                         Matrix::rowSums(transition_matrix)) %*%
+    transition_matrix
   return(transition_matrix)
 }
 
-# should be finished, tests look OK
+# power iteration calculation of PPR
 calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
                                               repetition=1000, th=1e-4){
   total_length = nrow(W_matrix)
@@ -238,59 +419,273 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
     p = new_p
   }
 
-  return(as.vector(p))
+  return(p)
 }
 
-# TODO: possibly change so sim_matrix is actual matrix, or dataframe
-# otherwise finished I think
-element_sim_matrix = function(clustering_list, alpha=0.9, r=1.,
-                              rescale_path_type='max'){
-  # relabeled_elements = relabel_objects(clustering_list[0].elements)
 
-  affinity_matrix_list = lapply(clustering_list, function(x)
-    make_affinity_matrix(clustering, alpha=alpha, r=r,
-    rescale_path_type=rescale_path_type, relabeled_elements=relabeled_elements))
+#' Title
+#'
+#' @param clustering_list A list of Clustering objects to be compared with
+#' element-centric similarity.
+#' @param output_type A string specifying whether the output should be a
+#' matrix or a data.frame.
+#'
+#' @return a matrix or data.frame containing the pairwise ECS values.
+#' @export
+#'
+#' @examples
+element_sim_matrix = function(clustering_list, output_type='matrix'){
+  if (!(output_type %in% c('data.frame', 'matrix'))){
+    stop('output_type must be data.frame or matrix.')
+  }
+  # make sure all clusterings have same alpha
+  alphas = sapply(clustering_list, function(x) x@alpha)
+  if (length(unique(alphas)) != 1){
+    stop('all clusterings in clustering_list must be created with same alpha')
+  }
 
-  Nclusterings = length(clustering_list)
-  sim_matrix = rep(0, floor(Nclusterings * (Nclusterings - 1) / 2))
-  icompare = 0
-  for (i.clustering in 1:Nclusterings){
-    for (j.clustering in (i+1):Nclusterings){
-      if (j>i){
-        break
-      }
-      sim_matrix[icompare] = mean(cL1(affinity_matrix_list[i.clustering],
-                                      affinity_matrix_list[j.clustering],
-                                      alpha))
-      icompare = icompare + 1
+  n.clusterings = length(clustering_list)
+  sim_matrix = matrix(NA, nrow=n.clusterings, ncol=n.clusterings)
+  for (i in 1:(n.clusterings-1)){
+    i.aff = clustering_list[[i]]@affinity_matrix
+    for (j in (i+1):n.clusterings){
+      j.aff = clustering_list[[j]]@affinity_matrix
+
+      sim_matrix[i, j] = mean(corrected_L1(i.aff, j.aff, alphas[1]))
     }
+  }
+  diag(sim_matrix) = 1
+
+  if (output_type=='data.frame'){
+    sim_matrix = data.frame(i.clustering=rep(1:n.clusterings,
+                                             n.clusterings),
+                            j.clustering=rep(1:n.clusterings,
+                                             each=n.clusterings),
+                            element_sim=c(sim_matrix))
   }
 
   return(sim_matrix)
 }
 
+#' @importClassesFrom Matrix Matrix
+setOldClass("Matrix::Matrix")
+#' Title
+#'
+#' @slot names A character vector of element names; will be 1:n_elements if no
+#' names were available when creating the Clustering object.
+#' @slot n_elements A numeric giving the number of elements.
+#' @slot is_hierarchical A logical indicating whether the clustering is
+#' hierarchical or flat.
+#' @slot is_disjoint A logical indicating whether the clustering is disjoint or
+#' overlapping.
+#' @slot alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
+#' @slot r A numeric hierarchical scaling parameter.
+#' @slot elm2clu_dict A list giving the clusters each element is a member of.
+#' @slot clu2elm_dict A list giving the element members of each cluster.
+#' @slot affinity_matrix A Matrix containing the personalized pagerank
+#' equilibrium distribution.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+setClass("Clustering", representation(names="character",
+                                      n_elements="numeric",
+                                      is_hierarchical="logical",
+                                      is_disjoint="logical",
+                                      alpha="numeric",
+                                      r="numeric",
+                                      elm2clu_dict="list",
+                                      clu2elm_dict="list",
+                                      affinity_matrix="Matrix"))
 
-method.heatmaps = function(df.ecs){
-  ggplot2::ggplot(data = subset(df.ecs, .data$n1==.data$n2),
-                  ggplot2::aes(x=.data$method1, y=.data$method2,
-                               fill=.data$ecs)) +
-    ggplot2::geom_tile() +
-    ggplot2::facet_grid(.~n1) +
-    ggplot2::labs(title='EC similarity across methods') +
-    ggplot2::scale_fill_gradient(low = "#ffffff", high = "#012345",
-                                 limits=c(0,1)) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=45, hjust=1))
+setGeneric("create_clustering", function(clustering_result, ...)
+  standardGeneric("create_clustering") )
+
+#' Title
+#'
+#' @param clustering_result A numeric vector of cluster labels for each element.
+#'
+#' @return A Clustering object.
+#' @export
+#'
+#' @examples
+setMethod("create_clustering", signature(clustering_result="numeric"),
+          function(clustering_result, alpha=0.9) {
+  # convert to character
+  clustering_result = as.character(clustering_result)
+
+  # create Clustering object in separate function
+  return(create_flat_disjoint_clustering(clustering_result, alpha))
+})
+
+setMethod("create_clustering", signature(clustering_result="character"),
+          function(clustering_result, alpha=0.9) {
+  # create Clustering object in separate function
+  return(create_flat_disjoint_clustering(clustering_result, alpha))
+})
+
+setMethod("create_clustering", signature(clustering_result="factor"),
+          function(clustering_result, alpha=0.9) {
+  # convert to character
+  clustering_result = as.character(clustering_result)
+
+  # create Clustering object in separate function
+  return(create_flat_disjoint_clustering(clustering_result, alpha))
+})
+
+create_flat_disjoint_clustering = function(clustering_result, alpha){
+  # disjoint partitions
+  n_elements = length(clustering_result)
+
+  # names of elements
+  if (is.null(names(clustering_result))){
+    element.names = as.character(1:n_elements)
+  } else {
+    element.names = names(clustering_result)
+  }
+
+  # create dictionaries, or lists
+  clu2elm_dict = create_clu2elm_dict(clustering_result)
+  elm2clu_dict = list()
+
+  # create object
+  clustering = methods::new('Clustering',
+                            n_elements=n_elements,
+                            is_hierarchical=FALSE,
+                            is_disjoint=TRUE,
+                            names=element.names,
+                            alpha=alpha,
+                            r=0,
+                            elm2clu_dict=elm2clu_dict,
+                            clu2elm_dict=clu2elm_dict,
+                            affinity_matrix=Matrix::Matrix())
+
+  # calculate affinity matrix
+  clustering@affinity_matrix = ppr_partition(clustering, alpha)
+  return(clustering)
 }
 
-n.genes.heatmaps = function(df.ecs){
-  ggplot2::ggplot(data = subset(df.ecs, .data$method1==.data$method2),
-                  ggplot2::aes(x=.data$n1, y=.data$n2, fill=.data$ecs)) +
-    ggplot2::geom_tile() +
-    ggplot2::facet_grid(.~method1) +
-    ggplot2::labs(title='EC similarity across n.genes') +
-    ggplot2::scale_fill_gradient(low = "#ffffff", high = "#012345",
-                                 limits=c(0,1)) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=45, hjust=1))
-}
+
+setMethod("create_clustering", signature(clustering_result="matrix"),
+          function(clustering_result, alpha=0.9, ppr_implementation='prpack') {
+  # soft clustering
+  n_elements = nrow(clustering_result)
+
+  # check that entries are non-negative
+  if (any(clustering_result<0)){
+    stop('clustering_result should only contain non-negative entries.')
+  }
+  # check that each element belongs to at least one cluster
+  if (any(rowSums(clustering_result)==0)){
+    stop('Every element of clustering_result must be in at least one cluster.')
+  }
+
+  # normalize clustering_result so each row sums to one
+  clustering_result = clustering_result / rowSums(clustering_result)
+
+  # names of elements
+  if (is.null(rownames(clustering_result))){
+    element.names = as.character(1:n_elements)
+  } else {
+    element.names = rownames(clustering_result)
+  }
+
+  # create dictionaries, or lists
+  clu2elm_dict = list()
+  elm2clu_dict = create_elm2clu_dict_overlapping(clustering_result)
+
+  # create object
+  clustering = methods::new('Clustering',
+                            n_elements=n_elements,
+                            is_hierarchical=FALSE,
+                            is_disjoint=FALSE,
+                            names=element.names,
+                            alpha=alpha,
+                            r=0,
+                            elm2clu_dict=elm2clu_dict,
+                            clu2elm_dict=clu2elm_dict,
+                            affinity_matrix=Matrix::Matrix())
+
+  # create affinity matrix
+  cielg = make_cielg_overlapping(clustering_result)
+  clustering@affinity_matrix = numerical_ppr_scores(cielg,
+                                                    clustering,
+                                                    ppr_implementation=
+                                                      ppr_implementation)
+  return(clustering)
+})
+
+setOldClass("stats::hclust")
+setOldClass("hclust")
+setMethod("create_clustering", signature(clustering_result="hclust"),
+          function(clustering_result,
+                   alpha=0.9,
+                   r=1,
+                   rescale_path_type='max',
+                   ppr_implementation='prpack',
+                   dist_rescaled=FALSE) {
+  # hierarchical partitions
+  n_elements = length(clustering_result$order)
+
+  # names of elements
+  if (is.null(clustering_result$labels)){
+    element.names = as.character(1:n_elements)
+  } else {
+    element.names = clustering_result$labels
+  }
+
+  # create dictionaries, or lists
+  clu2elm_dict = create_clu2elm_dict_hierarchical(clustering_result)
+  elm2clu_dict = create_elm2clu_dict_hierarchical(clustering_result)
+
+  # create object
+  clustering = methods::new('Clustering',
+                            n_elements=n_elements,
+                            is_hierarchical=TRUE,
+                            is_disjoint=TRUE,
+                            names=element.names,
+                            alpha=alpha,
+                            r=r,
+                            elm2clu_dict=elm2clu_dict,
+                            clu2elm_dict=clu2elm_dict,
+                            affinity_matrix=Matrix::Matrix())
+
+  # create affinity matrix
+  cielg = make_cielg_hierarchical(clustering_result,
+                                  clu2elm_dict,
+                                  r,
+                                  rescale_path_type,
+                                  dist_rescaled)
+  clustering@affinity_matrix = numerical_ppr_scores(cielg,
+                                                    clustering,
+                                                    ppr_implementation=
+                                                      ppr_implementation)
+  return(clustering)
+})
+
+setGeneric("length")
+setMethod("length", signature(x="Clustering"),
+          function(x) {
+  return(x@n_elements)
+})
+
+# setGeneric("show")
+setMethod("show", signature(object="Clustering"),
+          function(object) {
+  hierarchical = if (object@is_hierarchical) 'hierarchical' else 'flat'
+  overlapping = if (object@is_disjoint) 'disjoint' else 'overlapping'
+  cat(paste0('A ', hierarchical, ', ', overlapping, ' clustering of ',
+             object@n_elements, ' elements.\n'))
+})
+
+setGeneric("print")
+setMethod("print", signature(x="Clustering"),
+          function(x) {
+  hierarchical = if (x@is_hierarchical) 'hierarchical' else 'flat'
+  overlapping = if (x@is_disjoint) 'disjoint' else 'overlapping'
+  print(paste0('A ', hierarchical, ', ', overlapping, ' clustering of ',
+               x@n_elements, ' elements.'))
+})
+

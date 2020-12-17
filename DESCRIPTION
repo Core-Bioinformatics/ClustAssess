@@ -19,7 +19,14 @@ Imports:
     Matrix,
     igraph,
     magrittr,
-    Rcpp
+    Rcpp,
+    methods
 RoxygenNote: 7.1.1
 LinkingTo: 
     Rcpp
+Suggests: 
+    knitr,
+    rmarkdown,
+    e1071,
+    dbscan
+VignetteBuilder: knitr

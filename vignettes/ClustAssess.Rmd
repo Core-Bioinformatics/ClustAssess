@@ -1,0 +1,58 @@
+---
+title: "my-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(ClustAssess)
+library(e1071)
+library(dbscan)
+
+data = as.matrix(iris[,1:4])
+```
+
+
+## PAC
+```{r pac, fig.width=6, fig.height=5}
+# cc.res = consensus_cluster(data, n_reps=50, p_sample=0.8, p_feature=0.8)
+k.plot = c(3,4,5,7)
+#pac_convergence(cc.res, k.plot)
+#pac_landscape(cc.res)
+```
+
+## Clustering
+```{r clustering, fig.width=6, fig.height=5}
+# with soft k-means
+cmeans.res = cmeans(data, centers=6)$membership
+#soft.clustering = create_clustering(cmeans.res)
+
+# with DBscan
+db.res = dbscan(data, eps=1)$cluster
+#disjoint.clustering = create_clustering(db.res)
+
+# with agglomerative hierarchical clustering
+distances = dist(data, method='euclidean')
+hc.res = hclust(distances, method='complete')
+#hierarchical.clustering = create_clustering(hc.res, r=0.8)
+```
+
+
+
+## Session info
+```{r sessinf}
+sessionInfo()
+```
