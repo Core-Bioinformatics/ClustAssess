@@ -55,7 +55,6 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
     connectivity[[i]] = matrix(0, nrow = nrow(x), ncol = nrow(x))
   }
 
-  convergence = NULL
   pac.matrix = matrix(0, nrow=(k_max-k_min+1), ncol=n_reps)
 
   for (i in 1:n_reps){

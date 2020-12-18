@@ -127,25 +127,7 @@ ppr_partition = function(clustering, alpha=0.9){
 }
 
 # Create the cluster-induced element graph for overlapping clustering
-make_cielg_overlapping = function(overlapping_clustering){
-  edge_i=c()
-  edge_j=c()
-  edge_weights=c()
-  for (i in 1:nrow(overlapping_clustering)){
-    for (j in 1:ncol(overlapping_clustering)){
-      if (overlapping_clustering[i,j]>0){
-        edge_i = c(edge_i, i)
-        edge_j = c(edge_j, j)
-        edge_weights = c(edge_weights, overlapping_clustering[i,j])
-      }
-    }
-  }
-  bipartite_adj = Matrix::sparseMatrix(i=edge_i, j=edge_j, x=edge_weights,
-                                       dims=c(nrow(overlapping_clustering),
-                                              ncol(overlapping_clustering)))
-
-  # I double-checked the clusim python code, and the code below
-  # should perform equivalent operations, using sparse matrices
+make_cielg_overlapping = function(bipartite_adj){
   proj1 = Matrix::Diagonal(x = 1 / Matrix::rowSums(bipartite_adj)) %*%
     bipartite_adj
   proj2 = bipartite_adj %*%
@@ -569,7 +551,32 @@ create_flat_disjoint_clustering = function(clustering_result, alpha){
 
 
 setMethod("create_clustering", signature(clustering_result="matrix"),
-          function(clustering_result, alpha=0.9, ppr_implementation='prpack') {
+          function(clustering_result, alpha=0.9, ppr_implementation='prpack',
+                   row_normalize=TRUE) {
+  clustering_result = Matrix::Matrix(clustering_result, sparse=TRUE)
+  return(create_flat_overlapping_clustering(clustering_result,
+                                            alpha,
+                                            ppr_implementation,
+                                            row_normalize))
+})
+
+setMethod("create_clustering", signature(clustering_result="Matrix::Matrix"),
+          function(clustering_result, alpha=0.9, ppr_implementation='prpack',
+                   row_normalize=TRUE) {
+  # convert clustering_result to sparse if it is not already
+  if (!methods::is(clustering_result, 'sparseMatrix')){
+    clustering_result = Matrix::Matrix(clustering_result, sparse=TRUE)
+  }
+  return(create_flat_overlapping_clustering(clustering_result,
+                                            alpha,
+                                            ppr_implementation,
+                                            row_normalize))
+})
+
+create_flat_overlapping_clustering = function(clustering_result,
+                                              alpha,
+                                              ppr_implementation,
+                                              row_normalize){
   # soft clustering
   n_elements = nrow(clustering_result)
 
@@ -578,12 +585,14 @@ setMethod("create_clustering", signature(clustering_result="matrix"),
     stop('clustering_result should only contain non-negative entries.')
   }
   # check that each element belongs to at least one cluster
-  if (any(rowSums(clustering_result)==0)){
+  if (any(Matrix::rowSums(clustering_result)==0)){
     stop('Every element of clustering_result must be in at least one cluster.')
   }
 
-  # normalize clustering_result so each row sums to one
-  clustering_result = clustering_result / rowSums(clustering_result)
+  if (row_normalize){
+    # normalize clustering_result so each row sums to one
+    clustering_result = clustering_result / Matrix::rowSums(clustering_result)
+  }
 
   # names of elements
   if (is.null(rownames(clustering_result))){
@@ -615,7 +624,7 @@ setMethod("create_clustering", signature(clustering_result="matrix"),
                                                     ppr_implementation=
                                                       ppr_implementation)
   return(clustering)
-})
+}
 
 setOldClass("stats::hclust")
 setOldClass("hclust")
