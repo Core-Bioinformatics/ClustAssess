@@ -118,7 +118,7 @@ ppr_partition = function(clustering, alpha=0.9){
     clustername=names(clustering@clu2elm_dict)[i]
     clusterlist = clustering@clu2elm_dict[[i]]
     Csize = length(clusterlist)
-    ppr_result = alpha / Csize * Matrix::Matrix(1, nrow=Csize, ncol=Csize) +
+    ppr_result = alpha / Matrix::Matrix(Csize, nrow=Csize, ncol=Csize) +
       Matrix::Diagonal(Csize) * (1.0 - alpha)
     ppr[clusterlist, clusterlist] = ppr_result
   }
@@ -448,6 +448,69 @@ element_sim_matrix = function(clustering_list, output_type='matrix'){
 
   return(sim_matrix)
 }
+
+
+#' Title
+#'
+#' @param clustering_list A list of Clustering objects used to calculate
+#' the element-wise frustration.
+#'
+#' @return a vector containing the element-wise frustration.
+#' @export
+#'
+#' @examples
+element_frustration = function(clustering_list){
+  # make sure all clusterings have same alpha
+  alphas = sapply(clustering_list, function(x) x@alpha)
+  if (length(unique(alphas)) != 1){
+    stop('all clusterings in clustering_list must be created with same alpha')
+  }
+
+  n.clusterings = length(clustering_list)
+  frustration = rep(0, n.clusterings)
+  for (i in 1:(n.clusterings-1)){
+    i.aff = clustering_list[[i]]@affinity_matrix
+    for (j in (i+1):n.clusterings){
+      j.aff = clustering_list[[j]]@affinity_matrix
+
+      frustration = frustration + corrected_L1(i.aff, j.aff, alphas[1])
+    }
+  }
+  frustration = frustration / (n.clusterings * (n.clusterings-1) / 2)
+  return(frustration)
+}
+
+#' Element-Wise Average Agreement
+#'
+#' @param reference_clustering A Clustering objects for the reference clustering
+#' that each clustering in clustering_list is compared to.
+#' @param clustering_list A list of Clustering objects used to calculate
+#' the element-wise average agreement
+#'
+#' @return a vector containing the element-wise average agreement.
+#' @export
+#'
+#' @examples
+element_agreement = function(reference_clustering, clustering_list){
+  # make sure all clusterings have same alpha
+  alphas = sapply(clustering_list, function(x) x@alpha)
+  if ((reference_clustering@alpha != alphas[1]) |
+      (length(unique(alphas)) != 1)){
+    stop('reference_clustering and all clusterings in clustering_list must be
+         created with same alpha')
+  }
+
+  n.clusterings = length(clustering_list)
+  avg_agreement = rep(0, n.clusterings)
+  ref.aff = reference_clustering@affinity_matrix
+  for (i in 1:(n.clusterings-1)){
+    i.aff = clustering_list[[i]]@affinity_matrix
+    avg_agreement = avg_agreement + corrected_L1(ref.aff, i.aff, alphas[1])
+  }
+  avg_agreement = avg_agreement / n.clusterings
+  return(avg_agreement)
+}
+
 
 #' @importClassesFrom Matrix Matrix
 setOldClass("Matrix::Matrix")

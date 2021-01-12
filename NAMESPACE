@@ -2,6 +2,8 @@
 
 export("%>%")
 export(consensus_cluster)
+export(element_agreement)
+export(element_frustration)
 export(element_sim)
 export(element_sim_elscore)
 export(element_sim_matrix)
