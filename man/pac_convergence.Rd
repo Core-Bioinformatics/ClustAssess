@@ -2,7 +2,7 @@
 % Please edit documentation in R/PAC.R
 \name{pac_convergence}
 \alias{pac_convergence}
-\title{Title}
+\title{PAC Convergence Plot}
 \usage{
 pac_convergence(pac_res, k_plot)
 }
@@ -13,5 +13,5 @@ pac_convergence(pac_res, k_plot)
 
 }
 \description{
-Title
+Plot PAC across iterations for a set of k to assess convergence.
 }

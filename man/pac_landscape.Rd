@@ -2,7 +2,7 @@
 % Please edit documentation in R/PAC.R
 \name{pac_landscape}
 \alias{pac_landscape}
-\title{Title}
+\title{PAC Landscape Plot}
 \usage{
 pac_landscape(pac_res, n_shade = max(pac_res$iteration)/5)
 }
@@ -13,5 +13,6 @@ pac_landscape(pac_res, n_shade = max(pac_res$iteration)/5)
 
 }
 \description{
-Title
+Plot final PAC values across range of k to find optimal number
+of clusters.
 }

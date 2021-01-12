@@ -2,7 +2,7 @@
 % Please edit documentation in R/PAC.R
 \name{consensus_cluster}
 \alias{consensus_cluster}
-\title{Title}
+\title{Consensus Clustering and Proportion of Ambiguously Clustered Pairs}
 \usage{
 consensus_cluster(
   x,
@@ -25,5 +25,6 @@ consensus_cluster(
 
 }
 \description{
-Title
+Calculate consensus clustering and proportion of ambiguously
+clustered pairs (PAC)
 }

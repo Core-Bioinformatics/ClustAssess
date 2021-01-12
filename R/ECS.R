@@ -558,6 +558,8 @@ element_agreement = function(reference_clustering, clustering_list){
 #' @importClassesFrom Matrix Matrix
 setOldClass("Matrix::Matrix")
 #' The Clustering Class
+#' @description A class containing relevant data for comparing clusterings,
+#' including the affinity matrix for the Clustering.
 #'
 #' @slot names A character vector of element names; will be 1:n_elements if no
 #' names were available when creating the Clustering object.
@@ -578,7 +580,13 @@ setOldClass("Matrix::Matrix")
 #' @export
 #'
 #' @examples
-setClass("Clustering", representation(names="character",
+#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.clustering = create_clustering(hc.res)
+#' element_sim(km.clustering, hc.clustering)
+Clustering <- setClass("Clustering",
+                       representation(names="character",
                                       n_elements="numeric",
                                       is_hierarchical="logical",
                                       is_disjoint="logical",
@@ -588,42 +596,81 @@ setClass("Clustering", representation(names="character",
                                       clu2elm_dict="list",
                                       affinity_matrix="Matrix"))
 
-setGeneric("create_clustering", function(clustering_result, ...)
-  standardGeneric("create_clustering") )
-
-#' Title
+#' Create Clustering Object
+#' @description Creates a Clustering object from the output of a clustering
+#' method.
 #'
-#' @param clustering_result A numeric vector of cluster labels for each element.
+#' @param clustering_result The clustering result, either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation Choose a implementation for personalized
+#' page-rank calcuation:
+#' * 'prpack': use PPR alogrithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize xx
+#' @param r A numeric hierarchical scaling parameter.
+#' @param rescale_path_type A string; rescale the hierarchical height by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
+#' rescaled to be in-between 0 and 1.
 #'
 #' @return A Clustering object.
 #' @export
 #'
+#' @md
 #' @examples
-setMethod("create_clustering", signature(clustering_result="numeric"),
-          function(clustering_result, alpha=0.9) {
+#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.clustering = create_clustering(hc.res)
+#' element_sim(km.clustering, hc.clustering)
+setGeneric("create_clustering",
+           function(clustering_result, ...)
+             standardGeneric("create_clustering") )
+
+#' @describeIn create_clustering Create Clustering Object from Numeric Vector
+setMethod("create_clustering",
+          signature(clustering_result="numeric"),
+          function(clustering_result,
+                   alpha=0.9) {
   # convert to character
   clustering_result = as.character(clustering_result)
 
   # create Clustering object in separate function
-  return(create_flat_disjoint_clustering(clustering_result, alpha))
+  return(create_flat_disjoint_clustering(clustering_result,
+                                         alpha))
 })
 
-setMethod("create_clustering", signature(clustering_result="character"),
-          function(clustering_result, alpha=0.9) {
+#' @describeIn create_clustering Create Clustering Object from Character Vector
+setMethod("create_clustering",
+          signature(clustering_result="character"),
+          function(clustering_result,
+                   alpha=0.9) {
   # create Clustering object in separate function
-  return(create_flat_disjoint_clustering(clustering_result, alpha))
+  return(create_flat_disjoint_clustering(clustering_result,
+                                         alpha))
 })
 
-setMethod("create_clustering", signature(clustering_result="factor"),
-          function(clustering_result, alpha=0.9) {
+#' @describeIn create_clustering Create Clustering Object from Factor Vector
+setMethod("create_clustering",
+          signature(clustering_result="factor"),
+          function(clustering_result,
+                   alpha=0.9) {
   # convert to character
   clustering_result = as.character(clustering_result)
 
   # create Clustering object in separate function
-  return(create_flat_disjoint_clustering(clustering_result, alpha))
+  return(create_flat_disjoint_clustering(clustering_result,
+                                         alpha))
 })
 
-create_flat_disjoint_clustering = function(clustering_result, alpha){
+create_flat_disjoint_clustering = function(clustering_result,
+                                           alpha){
   # disjoint partitions
   n_elements = length(clustering_result)
 
@@ -651,27 +698,38 @@ create_flat_disjoint_clustering = function(clustering_result, alpha){
                             affinity_matrix=Matrix::Matrix())
 
   # calculate affinity matrix
-  clustering@affinity_matrix = ppr_partition(clustering, alpha)
+  clustering@affinity_matrix = ppr_partition(clustering,
+                                             alpha)
   return(clustering)
 }
 
-
-setMethod("create_clustering", signature(clustering_result="matrix"),
-          function(clustering_result, alpha=0.9, ppr_implementation='prpack',
+#' @describeIn create_clustering Create Clustering Object from base matrix
+setMethod("create_clustering",
+          signature(clustering_result="matrix"),
+          function(clustering_result,
+                   alpha=0.9,
+                   ppr_implementation='prpack',
                    row_normalize=TRUE) {
-  clustering_result = Matrix::Matrix(clustering_result, sparse=TRUE)
+  clustering_result = Matrix::Matrix(clustering_result,
+                                     sparse=TRUE)
   return(create_flat_overlapping_clustering(clustering_result,
                                             alpha,
                                             ppr_implementation,
                                             row_normalize))
 })
 
-setMethod("create_clustering", signature(clustering_result="Matrix::Matrix"),
-          function(clustering_result, alpha=0.9, ppr_implementation='prpack',
+#' @describeIn create_clustering Create Clustering Object from Matrix::Matrix
+setMethod("create_clustering",
+          signature(clustering_result="Matrix::Matrix"),
+          function(clustering_result,
+                   alpha=0.9,
+                   ppr_implementation='prpack',
                    row_normalize=TRUE) {
   # convert clustering_result to sparse if it is not already
-  if (!methods::is(clustering_result, 'sparseMatrix')){
-    clustering_result = Matrix::Matrix(clustering_result, sparse=TRUE)
+  if (!methods::is(clustering_result,
+                   'sparseMatrix')){
+    clustering_result = Matrix::Matrix(clustering_result,
+                                       sparse=TRUE)
   }
   return(create_flat_overlapping_clustering(clustering_result,
                                             alpha,
@@ -733,8 +791,10 @@ create_flat_overlapping_clustering = function(clustering_result,
 }
 
 setOldClass("stats::hclust")
-setOldClass("hclust")
-setMethod("create_clustering", signature(clustering_result="hclust"),
+# setOldClass("hclust")
+#' @describeIn create_clustering Create Clustering Object from hclust
+setMethod("create_clustering",
+          signature(clustering_result="stats::hclust"),
           function(clustering_result,
                    alpha=0.9,
                    r=1,
@@ -781,13 +841,15 @@ setMethod("create_clustering", signature(clustering_result="hclust"),
 })
 
 setGeneric("length")
-setMethod("length", signature(x="Clustering"),
+setMethod("length",
+          signature(x="Clustering"),
           function(x) {
   return(x@n_elements)
 })
 
 # setGeneric("show")
-setMethod("show", signature(object="Clustering"),
+setMethod("show",
+          signature(object="Clustering"),
           function(object) {
   hierarchical = if (object@is_hierarchical) 'hierarchical' else 'flat'
   overlapping = if (object@is_disjoint) 'disjoint' else 'overlapping'
@@ -796,7 +858,8 @@ setMethod("show", signature(object="Clustering"),
 })
 
 setGeneric("print")
-setMethod("print", signature(x="Clustering"),
+setMethod("print",
+          signature(x="Clustering"),
           function(x) {
   hierarchical = if (x@is_hierarchical) 'hierarchical' else 'flat'
   overlapping = if (x@is_disjoint) 'disjoint' else 'overlapping'

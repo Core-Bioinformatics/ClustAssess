@@ -2,7 +2,7 @@
 % Please edit documentation in R/ECS.R
 \name{element_frustration}
 \alias{element_frustration}
-\title{Title}
+\title{Element-Wise Frustration Between a Set of Clusterings}
 \usage{
 element_frustration(clustering_list)
 }
@@ -14,5 +14,14 @@ the element-wise frustration.}
 a vector containing the element-wise frustration.
 }
 \description{
-Title
+Inspect the consistency of a set of clusterings by calculating
+their element-wise clustering frustration.
+}
+\examples{
+clustering.list = list()
+for (i in 1:20){
+  km.res = kmeans(iris[,1:4], 3)$cluster
+  clustering.list[[i]] = create_clustering(km.res)
+}
+element_frustration(clustering.list)
 }

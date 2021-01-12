@@ -2,7 +2,7 @@
 % Please edit documentation in R/ECS.R
 \name{element_agreement}
 \alias{element_agreement}
-\title{Element-Wise Average Agreement}
+\title{Element-Wise Average Agreement Between a Set of Clusterings}
 \usage{
 element_agreement(reference_clustering, clustering_list)
 }
@@ -14,8 +14,18 @@ that each clustering in clustering_list is compared to.}
 the element-wise average agreement}
 }
 \value{
-a vector containing the element-wise average agreement.
+A vector containing the element-wise average agreement.
 }
 \description{
-Element-Wise Average Agreement
+Inspect how consistently of a set of clusterings agree with
+a reference clustering by calculating their element-wise average agreement.
+}
+\examples{
+reference.clustering = create_clustering(iris$Species)
+clustering.list = list()
+for (i in 1:20){
+  km.res = kmeans(iris[,1:4], 3)$cluster
+  clustering.list[[i]] = create_clustering(km.res)
+}
+element_agreement(reference.clustering, clustering.list)
 }

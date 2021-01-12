@@ -2,7 +2,7 @@
 % Please edit documentation in R/ECS.R
 \name{element_sim}
 \alias{element_sim}
-\title{The element-centric clustering similarity.}
+\title{The Element-Centric Clustering Similarity}
 \usage{
 element_sim(clustering1, clustering2)
 }
@@ -12,8 +12,16 @@ element_sim(clustering1, clustering2)
 \item{clustering2}{The second Clustering.}
 }
 \value{
-The element-wise similarity between the two Clusterings.
+The average element-wise similarity between the two Clusterings.
 }
 \description{
-The element-centric clustering similarity.
+Calculates the average element-centric similarity between two
+Clustering objects.
+}
+\examples{
+km.res = kmeans(iris[,1:4], 3)$cluster
+km.clustering = create_clustering(km.res)
+hc.res = hclust(dist(iris[,1:4]))
+hc.clustering = create_clustering(hc.res)
+element_sim(km.clustering, hc.clustering)
 }

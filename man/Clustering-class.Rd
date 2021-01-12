@@ -3,12 +3,14 @@
 \docType{class}
 \name{Clustering-class}
 \alias{Clustering-class}
-\title{Title}
+\alias{Clustering}
+\title{The Clustering Class}
 \value{
 
 }
 \description{
-Title
+A class containing relevant data for comparing clusterings,
+including the affinity matrix for the Clustering.
 }
 \section{Slots}{
 
@@ -37,3 +39,10 @@ overlapping.}
 equilibrium distribution.}
 }}
 
+\examples{
+km.res = kmeans(iris[,1:4], 3)$cluster
+km.clustering = create_clustering(km.res)
+hc.res = hclust(dist(iris[,1:4]))
+hc.clustering = create_clustering(hc.res)
+element_sim(km.clustering, hc.clustering)
+}

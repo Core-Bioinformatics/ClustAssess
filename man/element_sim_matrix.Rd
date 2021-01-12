@@ -2,7 +2,7 @@
 % Please edit documentation in R/ECS.R
 \name{element_sim_matrix}
 \alias{element_sim_matrix}
-\title{Title}
+\title{Pairwise Comparison of Clusterings}
 \usage{
 element_sim_matrix(clustering_list, output_type = "matrix")
 }
@@ -14,8 +14,17 @@ element-centric similarity.}
 matrix or a data.frame.}
 }
 \value{
-a matrix or data.frame containing the pairwise ECS values.
+A matrix or data.frame containing the pairwise ECS values.
 }
 \description{
-Title
+Compare a set of clusterings by calculating their pairwise
+average element-centric clustering similarities.
+}
+\examples{
+clustering.list = list()
+for (i in 1:20){
+  km.res = kmeans(iris[,1:4], 3)$cluster
+  clustering.list[[i]] = create_clustering(km.res)
+}
+element_sim_matrix(clustering.list, output_type='matrix')
 }
