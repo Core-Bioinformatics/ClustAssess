@@ -1,27 +1,45 @@
-#' The element-centric clustering similarity.
+#' The Element-Centric Clustering Similarity
+#'
+#' @description Calculates the average element-centric similarity between two
+#' Clustering objects.
 #'
 #' @param clustering1 The first Clustering.
 #' @param clustering2 The second Clustering.
 #'
-#' @return The element-wise similarity between the two Clusterings.
+#' @return The average element-wise similarity between the two Clusterings.
 #' @export
 #'
 #' @examples
-element_sim = function(clustering1, clustering2){
-  element.scores = element_sim_elscore(clustering1, clustering2)
+#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.clustering = create_clustering(hc.res)
+#' element_sim(km.clustering, hc.clustering)
+element_sim = function(clustering1,
+                       clustering2){
+  element.scores = element_sim_elscore(clustering1,
+                                       clustering2)
   return(mean(element.scores))
 }
 
-#' The element-centric clustering similarity for each element.
+#' The Element-Centric Clustering Similarity for each Element
+#'
+#' @description Calculates the element-wise element-centric similarity between
+#' two Clustering objects.
 #'
 #' @param clustering1 The first Clustering.
 #' @param clustering2 The second Clustering.
 #'
-#' @return The element-centric similarity between the two clusterings for each
-#' element as a vector.
+#' @return Vector of element-centric similarity between the two clusterings for
+#'  each element.
 #' @export
 #'
 #' @examples
+#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.clustering = create_clustering(hc.res)
+#' element_sim_elscore(km.clustering, hc.clustering)
 element_sim_elscore = function(clustering1, clustering2){
   # Make sure clusterings are comparable
   if (clustering1@n_elements != clustering2@n_elements){
@@ -405,17 +423,25 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 }
 
 
-#' Title
+#' Pairwise Comparison of Clusterings
+#' @description Compare a set of clusterings by calculating their pairwise
+#' average element-centric clustering similarities.
 #'
 #' @param clustering_list A list of Clustering objects to be compared with
 #' element-centric similarity.
 #' @param output_type A string specifying whether the output should be a
 #' matrix or a data.frame.
 #'
-#' @return a matrix or data.frame containing the pairwise ECS values.
+#' @return A matrix or data.frame containing the pairwise ECS values.
 #' @export
 #'
 #' @examples
+#' clustering.list = list()
+#' for (i in 1:20){
+#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   clustering.list[[i]] = create_clustering(km.res)
+#' }
+#' element_sim_matrix(clustering.list, output_type='matrix')
 element_sim_matrix = function(clustering_list, output_type='matrix'){
   if (!(output_type %in% c('data.frame', 'matrix'))){
     stop('output_type must be data.frame or matrix.')
@@ -450,7 +476,9 @@ element_sim_matrix = function(clustering_list, output_type='matrix'){
 }
 
 
-#' Title
+#' Element-Wise Frustration Between a Set of Clusterings
+#' @description Inspect the consistency of a set of clusterings by calculating
+#' their element-wise clustering frustration.
 #'
 #' @param clustering_list A list of Clustering objects used to calculate
 #' the element-wise frustration.
@@ -459,6 +487,12 @@ element_sim_matrix = function(clustering_list, output_type='matrix'){
 #' @export
 #'
 #' @examples
+#' clustering.list = list()
+#' for (i in 1:20){
+#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   clustering.list[[i]] = create_clustering(km.res)
+#' }
+#' element_frustration(clustering.list)
 element_frustration = function(clustering_list){
   # make sure all clusterings have same alpha
   alphas = sapply(clustering_list, function(x) x@alpha)
@@ -480,17 +514,26 @@ element_frustration = function(clustering_list){
   return(frustration)
 }
 
-#' Element-Wise Average Agreement
+#' Element-Wise Average Agreement Between a Set of Clusterings
+#' @description Inspect how consistently of a set of clusterings agree with
+#' a reference clustering by calculating their element-wise average agreement.
 #'
 #' @param reference_clustering A Clustering objects for the reference clustering
 #' that each clustering in clustering_list is compared to.
 #' @param clustering_list A list of Clustering objects used to calculate
 #' the element-wise average agreement
 #'
-#' @return a vector containing the element-wise average agreement.
+#' @return A vector containing the element-wise average agreement.
 #' @export
 #'
 #' @examples
+#' reference.clustering = create_clustering(iris$Species)
+#' clustering.list = list()
+#' for (i in 1:20){
+#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   clustering.list[[i]] = create_clustering(km.res)
+#' }
+#' element_agreement(reference.clustering, clustering.list)
 element_agreement = function(reference_clustering, clustering_list){
   # make sure all clusterings have same alpha
   alphas = sapply(clustering_list, function(x) x@alpha)
@@ -514,7 +557,7 @@ element_agreement = function(reference_clustering, clustering_list){
 
 #' @importClassesFrom Matrix Matrix
 setOldClass("Matrix::Matrix")
-#' Title
+#' The Clustering Class
 #'
 #' @slot names A character vector of element names; will be 1:n_elements if no
 #' names were available when creating the Clustering object.
