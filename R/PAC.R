@@ -16,7 +16,9 @@ calculate_dist = function(x, dist_method, p=2){
   return(d)
 }
 
-#' Title
+#' Consensus Clustering and Proportion of Ambiguously Clustered Pairs
+#' @description Calculate consensus clustering and proportion of ambiguously
+#' clustered pairs (PAC)
 #'
 #' @param x
 #' @param k_min
@@ -94,7 +96,8 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
 }
 
 
-#' Title
+#' PAC Convergence Plot
+#' @description Plot PAC across iterations for a set of k to assess convergence.
 #'
 #' @param pac_res
 #' @param k_plot
@@ -118,7 +121,9 @@ pac_convergence = function(pac_res, k_plot){
 }
 
 
-#' Title
+#' PAC Landscape Plot
+#' @description Plot final PAC values across range of k to find optimal number
+#' of clusters.
 #'
 #' @param pac_res
 #' @param n_shade
