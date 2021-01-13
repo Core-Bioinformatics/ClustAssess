@@ -328,7 +328,6 @@ numerical_ppr_scores = function(cielg, clustering, ppr_implementation='prpack'){
     element = names(clustering)[i]
     # collapse clusters into single string
     clusters = paste(clustering@elm2clu_dict[[i]], collapse=",")
-    print(clusters)
 
     elementgroupList[[clusters]] = c(elementgroupList[[clusters]], element)
   }
@@ -720,7 +719,7 @@ setMethod("create_clustering",
 
 #' @describeIn create_clustering Create Clustering Object from Matrix::Matrix
 setMethod("create_clustering",
-          signature(clustering_result="Matrix::Matrix"),
+          signature(clustering_result="Matrix"),
           function(clustering_result,
                    alpha=0.9,
                    ppr_implementation='prpack',
@@ -791,10 +790,9 @@ create_flat_overlapping_clustering = function(clustering_result,
 }
 
 setOldClass("stats::hclust")
-# setOldClass("hclust")
 #' @describeIn create_clustering Create Clustering Object from hclust
 setMethod("create_clustering",
-          signature(clustering_result="stats::hclust"),
+          signature(clustering_result="hclust"),
           function(clustering_result,
                    alpha=0.9,
                    r=1,

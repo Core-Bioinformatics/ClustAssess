@@ -6,8 +6,8 @@
 \alias{create_clustering,character-method}
 \alias{create_clustering,factor-method}
 \alias{create_clustering,matrix-method}
-\alias{create_clustering,Matrix::Matrix-method}
-\alias{create_clustering,stats::hclust-method}
+\alias{create_clustering,Matrix-method}
+\alias{create_clustering,hclust-method}
 \title{Create Clustering Object}
 \usage{
 create_clustering(clustering_result, ...)
@@ -25,14 +25,14 @@ create_clustering(clustering_result, ...)
   row_normalize = TRUE
 )
 
-\S4method{create_clustering}{`Matrix::Matrix`}(
+\S4method{create_clustering}{Matrix}(
   clustering_result,
   alpha = 0.9,
   ppr_implementation = "prpack",
   row_normalize = TRUE
 )
 
-\S4method{create_clustering}{`stats::hclust`}(
+\S4method{create_clustering}{hclust}(
   clustering_result,
   alpha = 0.9,
   r = 1,
@@ -90,9 +90,9 @@ method.
 
 \item \code{matrix}: Create Clustering Object from base matrix
 
-\item \code{Matrix::Matrix}: Create Clustering Object from Matrix::Matrix
+\item \code{Matrix}: Create Clustering Object from Matrix::Matrix
 
-\item \code{stats::hclust}: Create Clustering Object from hclust
+\item \code{hclust}: Create Clustering Object from hclust
 }}
 
 \examples{
