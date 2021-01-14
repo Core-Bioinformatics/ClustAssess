@@ -5,9 +5,6 @@
 \alias{Clustering-class}
 \alias{Clustering}
 \title{The Clustering Class}
-\value{
-
-}
 \description{
 A class containing relevant data for comparing clusterings,
 including the affinity matrix for the Clustering.

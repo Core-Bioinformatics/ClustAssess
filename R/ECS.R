@@ -575,7 +575,6 @@ setOldClass("Matrix::Matrix")
 #' @slot affinity_matrix A Matrix containing the personalized pagerank
 #' equilibrium distribution.
 #'
-#' @return
 #' @export
 #'
 #' @examples
@@ -617,6 +616,7 @@ Clustering <- setClass("Clustering",
 #' * 'linkage' : use the linkage distances in the clustering.
 #' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
 #' rescaled to be in-between 0 and 1.
+#' @param ... This argument is not used.
 #'
 #' @return A Clustering object.
 #' @export
@@ -846,13 +846,24 @@ setMethod("create_clustering",
 })
 
 setGeneric("length")
+#' Length of an Object
+#' @description Get the number of elements in the Clustering.
+#'
+#' @param x The Clustering object.
+#'
+#' @return The number of elements.
+#' @export
+#'
+#' @examples
+#' km.res = kmeans(mtcars, 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' length(km.clustering)
 setMethod("length",
           signature(x="Clustering"),
           function(x) {
   return(x@n_elements)
 })
 
-# setGeneric("show")
 setMethod("show",
           signature(object="Clustering"),
           function(object) {
@@ -863,6 +874,18 @@ setMethod("show",
 })
 
 setGeneric("print")
+#' Print an Object
+#' @description Prints out information about the Clustering, including
+#' number of elements.
+#'
+#' @param x The Clustering object.
+#'
+#' @export
+#'
+#' @examples
+#' km.res = kmeans(mtcars, 3)$cluster
+#' km.clustering = create_clustering(km.res)
+#' print(km.clustering)
 setMethod("print",
           signature(x="Clustering"),
           function(x) {

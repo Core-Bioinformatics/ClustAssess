@@ -49,6 +49,8 @@ create_clustering(clustering_result, ...)
 \item An hclust object.
 }}
 
+\item{...}{This argument is not used.}
+
 \item{alpha}{A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.}
 
