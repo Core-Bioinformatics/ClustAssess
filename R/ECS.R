@@ -795,7 +795,7 @@ create_flat_overlapping_clustering = function(clustering_result,
   return(clustering)
 }
 
-setOldClass("stats::hclust")
+setOldClass("hclust")
 #' @describeIn create_clustering Create Clustering Object from hclust
 #' @importFrom methods new
 setMethod("create_clustering",
