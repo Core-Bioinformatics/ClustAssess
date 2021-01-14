@@ -672,6 +672,7 @@ setMethod("create_clustering",
                                          alpha))
 })
 
+#' @importFrom methods new
 create_flat_disjoint_clustering = function(clustering_result,
                                            alpha){
   # disjoint partitions
@@ -740,6 +741,7 @@ setMethod("create_clustering",
                                             row_normalize))
 })
 
+#' @importFrom methods new
 create_flat_overlapping_clustering = function(clustering_result,
                                               alpha,
                                               ppr_implementation,
@@ -795,6 +797,7 @@ create_flat_overlapping_clustering = function(clustering_result,
 
 setOldClass("stats::hclust")
 #' @describeIn create_clustering Create Clustering Object from hclust
+#' @importFrom methods new
 setMethod("create_clustering",
           signature(clustering_result="hclust"),
           function(clustering_result,
