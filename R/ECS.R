@@ -10,9 +10,9 @@
 #' @export
 #'
 #' @examples
-#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.res = kmeans(mtcars, 3)$cluster
 #' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.res = hclust(dist(mtcars))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim(km.clustering, hc.clustering)
 element_sim = function(clustering1,
@@ -35,9 +35,9 @@ element_sim = function(clustering1,
 #' @export
 #'
 #' @examples
-#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.res = kmeans(mtcars, 3)$cluster
 #' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.res = hclust(dist(mtcars))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim_elscore(km.clustering, hc.clustering)
 element_sim_elscore = function(clustering1, clustering2){
@@ -437,7 +437,7 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   km.res = kmeans(mtcars, 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
 #' element_sim_matrix(clustering.list, output_type='matrix')
@@ -488,7 +488,7 @@ element_sim_matrix = function(clustering_list, output_type='matrix'){
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   km.res = kmeans(mtcars, 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
 #' element_frustration(clustering.list)
@@ -529,7 +529,7 @@ element_frustration = function(clustering_list){
 #' reference.clustering = create_clustering(iris$Species)
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(iris[,1:4], 3)$cluster
+#'   km.res = kmeans(mtcars, 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
 #' element_agreement(reference.clustering, clustering.list)
@@ -579,9 +579,9 @@ setOldClass("Matrix::Matrix")
 #' @export
 #'
 #' @examples
-#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.res = kmeans(mtcars, 3)$cluster
 #' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.res = hclust(dist(mtcars))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim(km.clustering, hc.clustering)
 Clustering <- setClass("Clustering",
@@ -623,9 +623,9 @@ Clustering <- setClass("Clustering",
 #'
 #' @md
 #' @examples
-#' km.res = kmeans(iris[,1:4], 3)$cluster
+#' km.res = kmeans(mtcars, 3)$cluster
 #' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(iris[,1:4]))
+#' hc.res = hclust(dist(mtcars))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim(km.clustering, hc.clustering)
 setGeneric("create_clustering",
@@ -638,7 +638,9 @@ setMethod("create_clustering",
           function(clustering_result,
                    alpha=0.9) {
   # convert to character
+  element.names = names(clustering_result)
   clustering_result = as.character(clustering_result)
+  names(clustering_result) = element.names
 
   # create Clustering object in separate function
   return(create_flat_disjoint_clustering(clustering_result,
@@ -661,7 +663,9 @@ setMethod("create_clustering",
           function(clustering_result,
                    alpha=0.9) {
   # convert to character
+  element.names = names(clustering_result)
   clustering_result = as.character(clustering_result)
+  names(clustering_result) = element.names
 
   # create Clustering object in separate function
   return(create_flat_disjoint_clustering(clustering_result,
