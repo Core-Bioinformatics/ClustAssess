@@ -529,7 +529,7 @@ element_frustration = function(clustering_list){
 #' reference.clustering = create_clustering(iris$Species)
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(mtcars, 3)$cluster
+#'   km.res = kmeans(iris[,1:4], 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
 #' element_agreement(reference.clustering, clustering.list)
