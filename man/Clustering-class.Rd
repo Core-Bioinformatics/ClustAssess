@@ -40,9 +40,9 @@ equilibrium distribution.}
 }}
 
 \examples{
-km.res = kmeans(iris[,1:4], 3)$cluster
+km.res = kmeans(mtcars, 3)$cluster
 km.clustering = create_clustering(km.res)
-hc.res = hclust(dist(iris[,1:4]))
+hc.res = hclust(dist(mtcars))
 hc.clustering = create_clustering(hc.res)
 element_sim(km.clustering, hc.clustering)
 }

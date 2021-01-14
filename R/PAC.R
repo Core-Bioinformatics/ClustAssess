@@ -18,26 +18,38 @@ calculate_dist = function(x, dist_method, p=2){
 
 #' Consensus Clustering and Proportion of Ambiguously Clustered Pairs
 #' @description Calculate consensus clustering and proportion of ambiguously
-#' clustered pairs (PAC)
+#' clustered pairs (PAC) with hierarchical clustering.
 #'
-#' @param x
-#' @param k_min
-#' @param k_max
-#' @param n_reps
-#' @param p_sample
-#' @param p_feature
-#' @param dist_method
-#' @param linkage
-#' @param upper_lim
-#' @param lower_lim
-#' @param p_minkowski
+#' @param x A samples x features normalized data matrix.
+#' @param k_min The minimum number of clusters calculated.
+#' @param k_max The maximum number of clusters calculated.
+#' @param n_reps The total number of subsamplings and reclusterings of the data;
+#' this value needs to be high enough to ensure PAC converges; convergence can
+#' be assessed with pac_convergence.
+#' @param p_sample The proportion of samples included in each subsample.
+#' @param p_feature The proportion of features included in each subsample.
+#' @param dist_method The distance measure for the distance matrix used in
+#' hclust; must be one of "euclidean", "maximum", "manhattan", "canberra",
+#' "binary" or "minkowski".
+#' @param linkage The linkage method used in hclust; must be one of "ward.D",
+#' "ward.D2", "single", "complete", "average", "mcquitty", "median" or
+#' "centroid"
+#' @param upper_lim The upper limit for determining whether a pair is
+#' clustered ambiguously; the higher this value, the higher the PAC.
+#' @param lower_lim The lower limit for determining whether a pair is
+#' clustered ambiguously; the lower this value, the higher the PAC.
+#' @param p_minkowski The power of the Minkowski distance.
 #'
-#' @return
+#' @return A data.frame with PAC values across iterations, as well as parameter
+#' values used when calling the method.
 #' @export
 #'
 #' @importFrom rlang .data
 #'
+#' @md
 #' @examples
+#' pac.res = consensus_cluster(iris[,1:4], k_max=20)
+#' pac_convergence(pac.res, k_plot=c(3,5,7,9))
 consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
                               p_feature=1.0, p_minkowski=2,
                               dist_method='euclidean', linkage='complete',
@@ -99,24 +111,25 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
 #' PAC Convergence Plot
 #' @description Plot PAC across iterations for a set of k to assess convergence.
 #'
-#' @param pac_res
-#' @param k_plot
+#' @param pac_res The data.frame output by consensus_cluster.
+#' @param k_plot A vector with values of k to plot.
 #'
-#' @return
+#' @return A ggplot2 object with the convergence plot.
 #' @export
 #'
 #' @importFrom rlang .data
 #'
 #' @examples
+#' pac.res = consensus_cluster(iris[,1:4], k_max=20)
+#' pac_convergence(pac.res, k_plot=c(3,5,7,9))
 pac_convergence = function(pac_res, k_plot){
   conv = pac_res %>% dplyr::filter(.data$n.clusters %in% k_plot)
 
   ggplot2::ggplot(data=conv,
                   ggplot2::aes(x = .data$iteration, y = .data$pac,
-                               color = .data$n.clusters,
+                               color = as.factor(.data$n.clusters),
                                group=.data$n.clusters)) +
           ggplot2::geom_line() +
-          ggplot2::scale_color_gradient(low = "#cde6fe", high = "#012345") +
           ggplot2::labs(title='PAC convergence')
 }
 
@@ -125,15 +138,18 @@ pac_convergence = function(pac_res, k_plot){
 #' @description Plot final PAC values across range of k to find optimal number
 #' of clusters.
 #'
-#' @param pac_res
-#' @param n_shade
+#' @param pac_res The data.frame output by consensus_cluster.
+#' @param n_shade The number of iterations to shade to show the
+#' variability of PAC across the last n_shade iterations.
 #'
-#' @return
+#' @return A ggplot2 object with the final PAC vs k plot.
 #' @export
 #'
 #' @importFrom rlang .data
 #'
 #' @examples
+#' pac.res = consensus_cluster(iris[,1:4], k_max=20)
+#' pac_landscape(pac.res)
 pac_landscape = function(pac_res, n_shade = max(pac_res$iteration)/5){
   # threshold n_shade
   if (n_shade > max(pac_res$iteration)){

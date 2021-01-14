@@ -20,7 +20,8 @@ Imports:
     igraph,
     magrittr,
     Rcpp,
-    methods
+    methods,
+    stats
 RoxygenNote: 7.1.1
 LinkingTo: 
     Rcpp

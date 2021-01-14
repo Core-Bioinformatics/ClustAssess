@@ -23,7 +23,7 @@ average element-centric clustering similarities.
 \examples{
 clustering.list = list()
 for (i in 1:20){
-  km.res = kmeans(iris[,1:4], 3)$cluster
+  km.res = kmeans(mtcars, 3)$cluster
   clustering.list[[i]] = create_clustering(km.res)
 }
 element_sim_matrix(clustering.list, output_type='matrix')

@@ -7,12 +7,19 @@
 pac_landscape(pac_res, n_shade = max(pac_res$iteration)/5)
 }
 \arguments{
-\item{n_shade}{}
+\item{pac_res}{The data.frame output by consensus_cluster.}
+
+\item{n_shade}{The number of iterations to shade to show the
+variability of PAC across the last n_shade iterations.}
 }
 \value{
-
+A ggplot2 object with the final PAC vs k plot.
 }
 \description{
 Plot final PAC values across range of k to find optimal number
 of clusters.
+}
+\examples{
+pac.res = consensus_cluster(iris[,1:4], k_max=20)
+pac_landscape(pac.res)
 }

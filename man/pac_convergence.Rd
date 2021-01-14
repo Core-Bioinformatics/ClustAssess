@@ -7,11 +7,17 @@
 pac_convergence(pac_res, k_plot)
 }
 \arguments{
-\item{k_plot}{}
+\item{pac_res}{The data.frame output by consensus_cluster.}
+
+\item{k_plot}{A vector with values of k to plot.}
 }
 \value{
-
+A ggplot2 object with the convergence plot.
 }
 \description{
 Plot PAC across iterations for a set of k to assess convergence.
+}
+\examples{
+pac.res = consensus_cluster(iris[,1:4], k_max=20)
+pac_convergence(pac.res, k_plot=c(3,5,7,9))
 }

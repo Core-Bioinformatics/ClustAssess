@@ -19,12 +19,45 @@ consensus_cluster(
 )
 }
 \arguments{
-\item{p_minkowski}{}
+\item{x}{A samples x features normalized data matrix.}
+
+\item{k_min}{The minimum number of clusters calculated.}
+
+\item{k_max}{The maximum number of clusters calculated.}
+
+\item{n_reps}{The total number of subsamplings and reclusterings of the data;
+this value needs to be high enough to ensure PAC converges; convergence can
+be assessed with pac_convergence.}
+
+\item{p_sample}{The proportion of samples included in each subsample.}
+
+\item{p_feature}{The proportion of features included in each subsample.}
+
+\item{p_minkowski}{The power of the Minkowski distance.}
+
+\item{dist_method}{The distance measure for the distance matrix used in
+hclust; must be one of "euclidean", "maximum", "manhattan", "canberra",
+"binary" or "minkowski".}
+
+\item{linkage}{The linkage method used in hclust; must be one of "ward.D",
+"ward.D2", "single", "complete", "average", "mcquitty", "median" or
+"centroid"}
+
+\item{lower_lim}{The lower limit for determining whether a pair is
+clustered ambiguously; the lower this value, the higher the PAC.}
+
+\item{upper_lim}{The upper limit for determining whether a pair is
+clustered ambiguously; the higher this value, the higher the PAC.}
 }
 \value{
-
+A data.frame with PAC values across iterations, as well as parameter
+values used when calling the method.
 }
 \description{
 Calculate consensus clustering and proportion of ambiguously
-clustered pairs (PAC)
+clustered pairs (PAC) with hierarchical clustering.
+}
+\examples{
+pac.res = consensus_cluster(iris[,1:4], k_max=20)
+pac_convergence(pac.res, k_plot=c(3,5,7,9))
 }
