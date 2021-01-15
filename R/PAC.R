@@ -46,7 +46,6 @@ calculate_dist = function(x, dist_method, p=2){
 #'
 #' @importFrom rlang .data
 #'
-#' @md
 #' @examples
 #' pac.res = consensus_cluster(iris[,1:4], k_max=20)
 #' pac_convergence(pac.res, k_plot=c(3,5,7,9))
