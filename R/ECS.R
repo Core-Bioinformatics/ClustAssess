@@ -62,8 +62,9 @@ element_sim_elscore = function(clustering1, clustering2){
 # create the cluster -> element dictionary (list) for flat, disjoint clustering
 create_clu2elm_dict = function(clustering){
   clu2elm_dict = list()
-  for (clust in unique(clustering)){
-    clu2elm_dict[[clust]] = which(clustering==clust)
+  for (i in 1:length(clustering)){
+    clust = clustering[i]
+    clu2elm_dict[[clust]] = c(clu2elm_dict[[clust]], i)
   }
   return(clu2elm_dict)
 }
@@ -127,20 +128,17 @@ corrected_L1 = function(x, y, alpha){
 
 # PPR calculation for partition
 ppr_partition = function(clustering, alpha=0.9){
-  ppr = Matrix::Matrix(0,
-                       nrow=clustering@n_elements,
-                       ncol=clustering@n_elements,
-                       sparse=TRUE)
+  ppr = matrix(0, nrow=clustering@n_elements, ncol=clustering@n_elements)
 
   for (i in 1:length(clustering@clu2elm_dict)){
-    clustername=names(clustering@clu2elm_dict)[i]
     clusterlist = clustering@clu2elm_dict[[i]]
     Csize = length(clusterlist)
-    ppr_result = alpha / Matrix::Matrix(Csize, nrow=Csize, ncol=Csize) +
-      Matrix::Diagonal(Csize) * (1.0 - alpha)
-    ppr[clusterlist, clusterlist] = ppr_result
+    ppr[clusterlist, clusterlist] = alpha/Csize
+    diag(ppr[clusterlist, clusterlist]) = 1.0 - alpha + alpha/Csize
   }
 
+  ppr = Matrix::Matrix(ppr,
+                       sparse=TRUE)
   return(ppr)
 }
 
@@ -355,8 +353,6 @@ numerical_ppr_scores = function(cielg, clustering, ppr_implementation='prpack'){
     for (elementgroup in elementgroups){
       # we only have to solve for the ppr distribution once per group
       vertex.index = match(elementgroup[1], members)
-      # vertex = V(clustergraph)[index]
-      # vertex = clustergraph.vs[cluster.index(elementgroup[0])] #????
       if (ppr_implementation == 'prpack'){
         pers = rep(0, length=length(members))
         pers[vertex.index] = 1
