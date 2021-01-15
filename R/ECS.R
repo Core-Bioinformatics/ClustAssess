@@ -133,8 +133,9 @@ ppr_partition = function(clustering, alpha=0.9){
   for (i in 1:length(clustering@clu2elm_dict)){
     clusterlist = clustering@clu2elm_dict[[i]]
     Csize = length(clusterlist)
-    ppr[clusterlist, clusterlist] = alpha/Csize
-    diag(ppr[clusterlist, clusterlist]) = 1.0 - alpha + alpha/Csize
+    ppr_res = matrix(alpha/Csize, nrow=Csize, ncol=Csize)
+    diag(ppr_res) = 1.0 - alpha + alpha/Csize
+    ppr[clusterlist, clusterlist] = ppr_res
   }
 
   ppr = Matrix::Matrix(ppr,
