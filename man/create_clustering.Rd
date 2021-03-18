@@ -61,7 +61,9 @@ page-rank calcuation:
 \item 'power_iteration': use power_iteration method.
 }}
 
-\item{row_normalize}{xx}
+\item{row_normalize}{Whether to normalize all rows in clustering_result
+so they sum to one before calculating ECS. It is recommended to set this to
+TRUE, which will lead to slightly different ECS values compared to clusim.}
 
 \item{r}{A numeric hierarchical scaling parameter.}
 

@@ -1,0 +1,65 @@
+---
+title: "Comparing soft and hierarchical clusterings with element-centric similarity"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparing soft and hierarchical clusterings with element-centric similarity}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ClustAssess)
+library(e1071)
+library(dbscan)
+
+data = as.matrix(iris[,1:4])
+pca.iris = prcomp(data)$x
+plot(pca.iris[,1], pca.iris[,2], col=iris$Species)
+```
+
+
+## Clustering
+```{r clustering, fig.width=6, fig.height=5}
+# with soft k-means
+cmeans.res = cmeans(data, centers=6)$membership
+soft.clustering = create_clustering(cmeans.res)
+
+# with DBscan
+db.res = dbscan(data, eps=1)$cluster
+disjoint.clustering = create_clustering(db.res)
+
+# with agglomerative hierarchical clustering
+distances = dist(data, method='euclidean')
+hc.res = hclust(distances, method='complete')
+hierarchical.clustering = create_clustering(hc.res, r=0.8)
+
+# how similar are they?
+# first compare flat disjoint and flat soft clusterings
+dbscan.cmeans.ecs = element_sim_elscore(disjoint.clustering, soft.clustering)
+plot(pca.iris[,1], pca.iris[,2], col=dbscan.cmeans.ecs)
+mean(dbscan.cmeans.ecs)
+
+# next compare flat disjoint and hierarchical disjoint clusterings
+dbscan.hc.ecs = element_sim_elscore(disjoint.clustering, hierarchical.clustering)
+plot(pca.iris[,1], pca.iris[,2], col=dbscan.hc.ecs)
+mean(dbscan.hc.ecs)
+
+# finally compare flat soft and hierarchical disjoint clusterings
+cmeans.hc.ecs = element_sim_elscore(soft.clustering, hierarchical.clustering)
+plot(pca.iris[,1], pca.iris[,2], col=cmeans.hc.ecs)
+mean(cmeans.hc.ecs)
+```
+
+
+
+## Session info
+```{r sessinf}
+sessionInfo()
+```

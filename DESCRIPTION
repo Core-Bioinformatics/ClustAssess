@@ -4,9 +4,8 @@ Title: Tools for assessing clustering
 Version: 0.1.0
 Author: Arash Shahsavari, Irina Mohorianu
 Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
-Description: A set of tools for clustering assessment, including 
-    clustering similarity, optimal number of clusters, and cluster boundary 
-    regions.
+Description: A set of tools for clustering robustness assessment, both for a 
+  method in isolation and between methods.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -29,5 +28,6 @@ Suggests:
     knitr,
     rmarkdown,
     e1071,
-    dbscan
+    dbscan,
+    Seurat
 VignetteBuilder: knitr

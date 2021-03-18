@@ -1,8 +1,8 @@
 ---
-title: "my-vignette"
+title: "Evaluating clustering with ClustAssess"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{my-vignette}
+  %\VignetteIndexEntry{Evaluating clustering with ClustAssess}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,45 +12,88 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+set.seed(1234)
 ```
 
 ```{r setup}
-library(tidyr)
-library(dplyr)
-library(ggplot2)
+library(Seurat)
 library(ClustAssess)
-library(e1071)
-library(dbscan)
 
-data = as.matrix(iris[,1:4])
+DimPlot(pbmc_small)
 ```
 
 
-## PAC
+## Proportion of ambiguously clustered pairs
 ```{r pac, fig.width=6, fig.height=5}
-# cc.res = consensus_cluster(data, n_reps=50, p_sample=0.8, p_feature=0.8)
-k.plot = c(3,4,5,7)
-#pac_convergence(cc.res, k.plot)
-#pac_landscape(cc.res)
+# retrieve scaled data for PAC calculation
+pbmc.data = GetAssayData(pbmc_small, assay='RNA', slot='scale.data')
+
+# perform consensus clustering
+cc.res = consensus_cluster(t(pbmc.data), k_max=30, n_reps=50, p_sample=0.8, p_feature=0.8)
+
+# assess the PAC convergence for a few values of k - the curves should have evened out
+k.plot = c(4,6,8,10)
+pac_convergence(cc.res, k.plot)
+
+# visualize the final PAC across k - there seems to be a local minimum at k=6, indicating that 6 clusters leads to a more stable clustering of the data than nearby values of k
+pac_landscape(cc.res)
 ```
 
-## Clustering
-```{r clustering, fig.width=6, fig.height=5}
-# with soft k-means
-cmeans.res = cmeans(data, centers=6)$membership
-#soft.clustering = create_clustering(cmeans.res)
+## Element-centric clustering comparison
+```{r ecs, fig.width=6, fig.height=5}
+# cluster with Louvain algorithm
+pbmc_small = FindClusters(pbmc_small, resolution=1.2, verbose=FALSE)
+louvain.clustering = create_clustering(pbmc_small@meta.data$seurat_clusters)
 
-# with DBscan
-db.res = dbscan(data, eps=1)$cluster
-#disjoint.clustering = create_clustering(db.res)
+# also cluster with PCA+k-means
+pbmc_pca = Embeddings(pbmc_small, 'pca')
+pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc_pca, centers=6, nstart=10, iter.max=1e3)$cluster
+kmeans.clustering = create_clustering(pbmc_small@meta.data$kmeans_clusters)
 
-# with agglomerative hierarchical clustering
-distances = dist(data, method='euclidean')
-hc.res = hclust(distances, method='complete')
-#hierarchical.clustering = create_clustering(hc.res, r=0.8)
+# where are the clustering more similar?
+pbmc_small@meta.data$ecs = element_sim_elscore(louvain.clustering, kmeans.clustering)
+FeaturePlot(pbmc_small, 'ecs')
+mean(pbmc_small@meta.data$ecs)
+```
+
+## Jaccard similarity of cluster markers
+```{r jsi, fig.width=6, fig.height=5}
+# first, we calculate the markers on the Louvain clustering
+Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters
+louvain.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, min.pct=0.0, test.use='roc', verbose=FALSE)
+
+# then we get the markers on the k-means clustering
+Idents(pbmc_small) = pbmc_small@meta.data$kmeans_clusters
+kmeans.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, min.pct=0.0, test.use='roc', verbose=FALSE)
+
+# next, compare the top 10 markers per cell
+pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, kmeans.markers, pbmc_small@meta.data$seurat_clusters, pbmc_small@meta.data$kmeans_clusters, n=10, rank_by='power')
+
+# which cells have the same markers, regardless of clustering?
+FeaturePlot(pbmc_small, 'jsi')
+mean(pbmc_small@meta.data$jsi)
 ```
 
 
+## Element-wise frustration
+```{r frust, fig.width=6, fig.height=5}
+# how consistently are cells clustered by Louvain algorithm?
+# we rerun Louvain clustering 20 times across random seeds to investigate
+clustering.list = list()
+n.reps = 20
+for (i in 1:n.reps){
+  pbmc_small = FindNeighbors(pbmc_small, reduction='pca', dims=1:10, k.param=20, verbose=FALSE, force.recalc=TRUE)
+  pbmc_small = FindClusters(pbmc_small, verbose=FALSE, random.seed=i+1000)
+  clustering.list[[i]] = create_clustering(pbmc_small@meta.data$seurat_clusters)
+}
+
+# now, we calculate the element-wise frustration (ie consistency)
+pbmc_small@meta.data$frustration = element_frustration(clustering.list)
+
+# which cells are clustered more consistently?
+FeaturePlot(pbmc_small, 'frustration')
+mean(pbmc_small@meta.data$frustration)
+```
 
 ## Session info
 ```{r sessinf}
