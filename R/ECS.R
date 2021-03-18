@@ -605,7 +605,9 @@ Clustering <- setClass("Clustering",
 #' page-rank calcuation:
 #' * 'prpack': use PPR alogrithms in igraph.
 #' * 'power_iteration': use power_iteration method.
-#' @param row_normalize xx
+#' @param row_normalize Whether to normalize all rows in clustering_result
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
 #' @param r A numeric hierarchical scaling parameter.
 #' @param rescale_path_type A string; rescale the hierarchical height by:
 #' * 'max' : the maximum path from the root.
