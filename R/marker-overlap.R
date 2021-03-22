@@ -1,6 +1,6 @@
 # JSI calculation
 # we define JSI of 2 empty sets as 0
-jaccard.index = function(a,
+jaccard_index = function(a,
                          b){
   if ((length(a)==0) & (length(b)==0)){
     return(0)
@@ -68,11 +68,13 @@ marker_overlap = function(markers1,
   overlap.vals = rep(0, length(clustering1))
   names(overlap.vals) = names(clustering1)
 
+  # extract top n markers
   markers1=markers1 %>% dplyr::group_by(.data$cluster) %>%
     dplyr::slice_max(n=n, order_by=eval(parse(text=rank_by)))
   markers2=markers2 %>% dplyr::group_by(.data$cluster) %>%
     dplyr::slice_max(n=n, order_by=eval(parse(text=rank_by)))
 
+  # compare every cluster in clustering1 with every cluster in clustering2
   for (c1 in unique(clustering1)){
     cells.in.c1 = (clustering1==c1)
     discr1 = markers1 %>% dplyr::filter(.data$cluster==c1) %>%
@@ -82,9 +84,9 @@ marker_overlap = function(markers1,
       discr2 = markers2 %>% dplyr::filter(.data$cluster==c2) %>%
         dplyr::pull(.data$gene)
       cells.in.both = cells.in.c1 & cells.in.c2
-      if (sum(cells.in.both)>0){
+      if (any(cells.in.both)){
         if (overlap_type=='jsi'){
-          overlap.vals[cells.in.both] = jaccard.index(discr1, discr2)
+          overlap.vals[cells.in.both] = jaccard_index(discr1, discr2)
         } else if (overlap_type=='intersect'){
           overlap.vals[cells.in.both] = length(intersect(discr1, discr2))
         }
