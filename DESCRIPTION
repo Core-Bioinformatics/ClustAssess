@@ -30,5 +30,6 @@ Suggests:
     rmarkdown,
     e1071,
     dbscan,
+    dendextend,
     Seurat
 VignetteBuilder: knitr

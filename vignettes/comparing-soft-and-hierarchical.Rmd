@@ -12,17 +12,19 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+set.seed(1001)
 ```
 
 
 In this vignette we will illustrate how element-centric similarity can be used
 to compare different kinds of clustering results: flat disjoint clusterings, 
 flat overlapping clusterings, and hierarchical clusterings.
-```{r setup}
+```{r setup, fig.width=7, fig.height=4.5}
 library(ClustAssess)
 library(e1071)
 library(dbscan)
 library(ggplot2)
+suppressPackageStartupMessages(library(dendextend))
 
 # we will use the Iris dataset for this vignette
 data = as.matrix(iris[,1:4])
@@ -34,7 +36,7 @@ ggplot(df.iris, aes(x=PC1, y=PC2, color=species)) +
 ```
 
 
-```{r clustering, fig.width=6, fig.height=5}
+```{r clustering, fig.width=7, fig.height=4.5}
 # a flat, disjoint clustering with DBscan
 db.res = dbscan(data, eps=1)$cluster
 df.iris$db.cluster = as.factor(db.res)
@@ -49,16 +51,30 @@ cmeans.res = cmeans(data, centers=6)$membership
 df.iris$cmeans.cluster = as.factor(apply(cmeans.res, 1, which.max))
 ggplot(df.iris, aes(x=PC1, y=PC2, color=cmeans.cluster)) + 
   geom_point() + 
-  labs(title='DBScan clustering')
+  labs(title='c-means clustering')
 # but we will still use the soft cluster assignments to calculate ECS
 soft.clustering = create_clustering(cmeans.res)
 
 # a hierarchical clustering
 distances = dist(data, method='euclidean')
 hc.res = hclust(distances, method='complete')
-plot(hc.res)
+# plot the resulting dendrogram
+node.colors = c('blue', 'red', 'green')
+hc.res %>% as.dendrogram() %>% 
+  set("leaves_pch", 19) %>% 
+  set("leaves_cex", 0.5) %>% 
+  set("leaves_col", node.colors[df.iris$species]) %>% 
+  plot(main='Complete linkage hierarchical clustering', leaflab='none')
 hierarchical.clustering = create_clustering(hc.res, r=0.8)
+```
 
+Now, we will compare the clustering results using element-centric similarity.
+ECS allows us to compare different kinds of clustering results, including
+the overlapping clustering and the hierarchical clustering we just 
+calculated. The results tell us how similarly each observation was clustered
+by the two methods; the higher the ECS, the more similar the clustering
+of that observation.
+```{r ecs, fig.width=7, fig.height=4.5}
 # which observations are clustered more similarly?
 # first compare flat disjoint and flat soft clusterings
 df.iris$dbscan.cmeans.ecs = element_sim_elscore(disjoint.clustering, 
