@@ -1,8 +1,10 @@
 Package: ClustAssess
 Type: Package
-Title: Tools for assessing clustering
+Title: Tools for Assessing Clustering
 Version: 0.1.0
-Author: Arash Shahsavari, Irina Mohorianu
+Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
+                  role = c("aut", "cre")), person("Irina", "Mohorianu",
+                  email="iim22@cam.ac.uk", role="aut"))
 Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
 Description: A set of tools for assessing clustering robustness, in particular
   method stability and similarity across methods.
@@ -13,7 +15,6 @@ Imports:
     ggplot2,
     dplyr,
     fastcluster,
-    tidyr,
     rlang,
     Matrix,
     igraph,
