@@ -34,6 +34,10 @@ element_sim = function(clustering1,
 #'  each element.
 #' @export
 #'
+#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
+#' Element-centric clustering comparison unifies overlaps and hierarchy.
+#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
+#'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
 #' km.clustering = create_clustering(km.res)
@@ -431,6 +435,10 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' @return A matrix or data.frame containing the pairwise ECS values.
 #' @export
 #'
+#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
+#' Element-centric clustering comparison unifies overlaps and hierarchy.
+#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
+#'
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
@@ -482,6 +490,10 @@ element_sim_matrix = function(clustering_list, output_type='matrix'){
 #' @return a vector containing the element-wise frustration.
 #' @export
 #'
+#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
+#' Element-centric clustering comparison unifies overlaps and hierarchy.
+#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
+#'
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
@@ -521,6 +533,10 @@ element_frustration = function(clustering_list){
 #'
 #' @return A vector containing the element-wise average agreement.
 #' @export
+#'
+#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
+#' Element-centric clustering comparison unifies overlaps and hierarchy.
+#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #'
 #' @examples
 #' reference.clustering = create_clustering(iris$Species)

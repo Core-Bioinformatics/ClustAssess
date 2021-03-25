@@ -42,6 +42,15 @@ calculate_dist = function(x, dist_method, p=2){
 #'
 #' @return A data.frame with PAC values across iterations, as well as parameter
 #' values used when calling the method.
+#'
+#' @references Monti, S., Tamayo, P., Mesirov, J., & Golub, T. (2003).
+#' Consensus clustering: a resampling-based method for class discovery and
+#' visualization of gene expression microarray data. Machine learning, 52(1),
+#' 91-118. https://doi.org/10.1023/A:1023949509487
+#' @references Șenbabaoğlu, Y., Michailidis, G., & Li, J. Z. (2014).
+#' Critical limitations of consensus clustering in class discovery.
+#' Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207
+#'
 #' @export
 #'
 #' @importFrom rlang .data

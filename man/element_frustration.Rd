@@ -25,3 +25,8 @@ for (i in 1:20){
 }
 element_frustration(clustering.list)
 }
+\references{
+Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
+Element-centric clustering comparison unifies overlaps and hierarchy.
+Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
+}

@@ -61,3 +61,13 @@ clustered pairs (PAC) with hierarchical clustering.
 pac.res = consensus_cluster(iris[,1:4], k_max=20)
 pac_convergence(pac.res, k_plot=c(3,5,7,9))
 }
+\references{
+Monti, S., Tamayo, P., Mesirov, J., & Golub, T. (2003).
+Consensus clustering: a resampling-based method for class discovery and
+visualization of gene expression microarray data. Machine learning, 52(1),
+91-118. https://doi.org/10.1023/A:1023949509487
+
+Șenbabaoğlu, Y., Michailidis, G., & Li, J. Z. (2014).
+Critical limitations of consensus clustering in class discovery.
+Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207
+}
