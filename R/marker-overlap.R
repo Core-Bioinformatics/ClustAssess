@@ -37,6 +37,7 @@ jaccard_index = function(a,
 #' @export
 #'
 #' @examples
+#' suppressWarnings({
 #' library(Seurat)
 #'
 #' # cluster with Louvain algorithm
@@ -58,6 +59,7 @@ jaccard_index = function(a,
 #'
 #' # which cells have the same markers, regardless of clustering?
 #' FeaturePlot(pbmc_small, 'jsi')
+#' })
 marker_overlap = function(markers1,
                           markers2,
                           clustering1,

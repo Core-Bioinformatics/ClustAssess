@@ -45,6 +45,7 @@ Calculates the per-cell overlap of previously calculated
 marker genes.
 }
 \examples{
+suppressWarnings({
 library(Seurat)
 
 # cluster with Louvain algorithm
@@ -66,4 +67,5 @@ pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, kmeans.markers,
 
 # which cells have the same markers, regardless of clustering?
 FeaturePlot(pbmc_small, 'jsi')
+})
 }

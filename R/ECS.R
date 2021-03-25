@@ -39,9 +39,9 @@ element_sim = function(clustering1,
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #'
 #' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
+#' km.res = kmeans(iris[,1:4], centers=8)$cluster
 #' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(mtcars))
+#' hc.res = hclust(dist(iris[,1:4]))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim_elscore(km.clustering, hc.clustering)
 element_sim_elscore = function(clustering1, clustering2){
@@ -509,7 +509,7 @@ element_frustration = function(clustering_list){
   }
 
   n.clusterings = length(clustering_list)
-  frustration = rep(0, n.clusterings)
+  frustration = rep(0, length(clustering_list[[1]]))
   for (i in 1:(n.clusterings-1)){
     i.aff = clustering_list[[i]]@affinity_matrix
     for (j in (i+1):n.clusterings){
@@ -556,11 +556,11 @@ element_agreement = function(reference_clustering, clustering_list){
   }
 
   n.clusterings = length(clustering_list)
-  avg_agreement = rep(0, n.clusterings)
-  ref.aff = reference_clustering@affinity_matrix
+  avg_agreement = rep(0, length(clustering_list[[1]]))
+  ref_aff = reference_clustering@affinity_matrix
   for (i in 1:(n.clusterings-1)){
     i.aff = clustering_list[[i]]@affinity_matrix
-    avg_agreement = avg_agreement + corrected_L1(ref.aff, i.aff, alphas[1])
+    avg_agreement = avg_agreement + corrected_L1(ref_aff, i.aff, alphas[1])
   }
   avg_agreement = avg_agreement / n.clusterings
   return(avg_agreement)
