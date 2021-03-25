@@ -1,8 +1,8 @@
 ---
-title: "Evaluating clustering with ClustAssess"
+title: "Evaluating single-cell clustering with ClustAssess"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Evaluating clustering with ClustAssess}
+  %\VignetteIndexEntry{Evaluating single-cell clustering with ClustAssess}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,59 +15,105 @@ knitr::opts_chunk$set(
 set.seed(1234)
 ```
 
+
+In this vignette we will illustrate several of the tools available in 
+ClustAssess on a small single-cell RNA-seq dataset.
 ```{r setup}
 library(Seurat)
 library(ClustAssess)
 
+# we will use the pbmc_small single-cell RNA-seq dataset available via Seurat
 DimPlot(pbmc_small)
 ```
 
 
 ## Proportion of ambiguously clustered pairs
+The proportion of ambiguously clustered pairs (PAC) uses consensus clustering
+to infer the optimal number of clusters for the data, by observing how
+variably pairs of elements cluster together. The lower the PAC, the more stable
+the clustering. PAC was originally presented in 
+https://doi.org/10.1038/srep06207.
 ```{r pac, fig.width=6, fig.height=5}
 # retrieve scaled data for PAC calculation
 pbmc.data = GetAssayData(pbmc_small, assay='RNA', slot='scale.data')
 
 # perform consensus clustering
-cc.res = consensus_cluster(t(pbmc.data), k_max=30, n_reps=50, p_sample=0.8, p_feature=0.8)
+cc.res = consensus_cluster(t(pbmc.data), 
+                           k_max=30, 
+                           n_reps=50,
+                           p_sample=0.8, 
+                           p_feature=0.8)
 
-# assess the PAC convergence for a few values of k - the curves should have evened out
+# assess the PAC convergence for a few values of k - each curve should 
+# have converged to some value
 k.plot = c(4,6,8,10)
 pac_convergence(cc.res, k.plot)
 
-# visualize the final PAC across k - there seems to be a local minimum at k=6, indicating that 6 clusters leads to a more stable clustering of the data than nearby values of k
+# visualize the final PAC across k - there seems to be a local minimum at k=6, 
+# indicating that 6 clusters leads to a more stable clustering of the data than 
+# nearby values of k
 pac_landscape(cc.res)
 ```
 
 ## Element-centric clustering comparison
+We compare the similarity of clustering results between methods (in this case,
+between Louvain community detection and k-means) using element-centric 
+similarity, which quantifies the clustering similarity per cell. Higher ECS
+indicates that an observation is clustered similarly across methods. ECS was 
+introduced in https://doi.org/10.1038/s41598-019-44892-y.
 ```{r ecs, fig.width=6, fig.height=5}
-# cluster with Louvain algorithm
+# first, cluster with Louvain algorithm
 pbmc_small = FindClusters(pbmc_small, resolution=1.2, verbose=FALSE)
 louvain.clustering = create_clustering(pbmc_small@meta.data$seurat_clusters)
 
 # also cluster with PCA+k-means
 pbmc_pca = Embeddings(pbmc_small, 'pca')
-pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc_pca, centers=6, nstart=10, iter.max=1e3)$cluster
+pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc_pca, 
+                                              centers=6, 
+                                              nstart=10, 
+                                              iter.max=1e3)$cluster
 kmeans.clustering = create_clustering(pbmc_small@meta.data$kmeans_clusters)
 
-# where are the clustering more similar?
-pbmc_small@meta.data$ecs = element_sim_elscore(louvain.clustering, kmeans.clustering)
+# where are the clustering results more similar?
+pbmc_small@meta.data$ecs = element_sim_elscore(louvain.clustering, 
+                                               kmeans.clustering)
 FeaturePlot(pbmc_small, 'ecs')
 mean(pbmc_small@meta.data$ecs)
 ```
 
 ## Jaccard similarity of cluster markers
+As a common step in computational single-cell RNA-seq analyses, discriminative
+marker genes are identified for each cluster. These markers are then used to 
+infer the cell type of the respective cluster. Here, we compare the markers
+obtained for each clustering method to ask: how similarly would each cell be 
+interpreted across clustering methods? We compare the markers per cell using
+the Jaccard similarity (defined as the size of the intersect divided by the 
+size of the overlap) of the marker gene lists. The higher the JSI, the more
+similar are the marker genes for that cell.
 ```{r jsi, fig.width=6, fig.height=5}
 # first, we calculate the markers on the Louvain clustering
 Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters
-louvain.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, min.pct=0.0, test.use='roc', verbose=FALSE)
+louvain.markers = FindAllMarkers(pbmc_small, 
+                                 logfc.threshold=1, 
+                                 min.pct=0.0, 
+                                 test.use='roc', 
+                                 verbose=FALSE)
 
 # then we get the markers on the k-means clustering
 Idents(pbmc_small) = pbmc_small@meta.data$kmeans_clusters
-kmeans.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, min.pct=0.0, test.use='roc', verbose=FALSE)
+kmeans.markers = FindAllMarkers(pbmc_small, 
+                                logfc.threshold=1, 
+                                min.pct=0.0, 
+                                test.use='roc', 
+                                verbose=FALSE)
 
 # next, compare the top 10 markers per cell
-pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, kmeans.markers, pbmc_small@meta.data$seurat_clusters, pbmc_small@meta.data$kmeans_clusters, n=10, rank_by='power')
+pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, 
+                                          kmeans.markers, 
+                                          pbmc_small@meta.data$seurat_clusters, 
+                                          pbmc_small@meta.data$kmeans_clusters, 
+                                          n=10, 
+                                          rank_by='power')
 
 # which cells have the same markers, regardless of clustering?
 FeaturePlot(pbmc_small, 'jsi')
@@ -76,18 +122,27 @@ mean(pbmc_small@meta.data$jsi)
 
 
 ## Element-wise frustration
+How consistently are cells clustered by Louvain algorithm? We will rerun Louvain 
+clustering 20 times across random seeds to investigate.
 ```{r frust, fig.width=6, fig.height=5}
-# how consistently are cells clustered by Louvain algorithm?
-# we rerun Louvain clustering 20 times across random seeds to investigate
 clustering.list = list()
 n.reps = 20
 for (i in 1:n.reps){
-  pbmc_small = FindNeighbors(pbmc_small, reduction='pca', dims=1:10, k.param=20, verbose=FALSE, force.recalc=TRUE)
+  pbmc_small = FindNeighbors(pbmc_small, 
+                             reduction='pca', 
+                             dims=1:10, 
+                             k.param=20, 
+                             verbose=FALSE, 
+                             force.recalc=TRUE)
   pbmc_small = FindClusters(pbmc_small, verbose=FALSE, random.seed=i+1000)
   clustering.list[[i]] = create_clustering(pbmc_small@meta.data$seurat_clusters)
 }
 
-# now, we calculate the element-wise frustration (ie consistency)
+# now, we calculate the element-wise frustration (ie consistency), which
+# performs pair-wise comparisons between all 20 clusterings; the 
+# frustration is the average per-cell ECS across all comparisons. The higher
+# the frustration, the more consistently is that cell clustered across
+# random seeds.
 pbmc_small@meta.data$frustration = element_frustration(clustering.list)
 
 # which cells are clustered more consistently?
