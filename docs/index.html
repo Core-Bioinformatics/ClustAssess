@@ -83,8 +83,8 @@
 <ul>
 <li><a href="#the-tools">The Tools</a></li>
 <li><a href="#proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)</a></li>
-<li><a href="##element-centric-clustering-similarity-(ecs)">Element Centric Clustering Similarity (ECS)</a></li>
-<li><a href="##marker-gene-overlap">Marker gene overlap</a></li>
+<li><a href="#element-centric-clustering-similarity-ecs">Element Centric Clustering Similarity (ECS)</a></li>
+<li><a href="#marker-gene-overlap">Marker gene overlap</a></li>
 <li><a href="#installation">Installation</a></li>
 <li><a href="#references">References</a></li>
 </ul>
@@ -94,17 +94,16 @@
 <a href="#the-tools" class="anchor"></a>The Tools</h1>
 <div id="proportion-of-ambiguously-clustered-pairs-pac" class="section level2">
 <h2 class="hasAnchor">
-<a href="#proportion-of-ambiguously-clustered-pairs-pac" class="anchor"></a>Proportion of Ambiguously Clustered Pairs (PAC) <a name="pac"></a>
-</h2>
+<a href="#proportion-of-ambiguously-clustered-pairs-pac" class="anchor"></a>Proportion of Ambiguously Clustered Pairs (PAC)</h2>
 <p>To assess clustering robustness, the proportion of ambiguously clustered pairs (PAC) [1] uses a consensus clustering. The rate of element co-clustering is recorded across various numbers of clusters, <em>k</em>. The lower the PAC, the stabler the clustering for that <em>k</em>.</p>
 <p>ClustAssess uses a heirarchical clustering as base for the consensus clustering, and an optimized Rcpp [2] implementation to calculate the PAC values. To calculate PAC, we write:</p>
-<p><code>cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8, )</code></p>
+<p><code>cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)</code></p>
 <p>It is important that the PAC has converged before using it to assess your data; the <code>pac_convergence</code> function can be used to visualize the PAC curves across iterations:</p>
-<p><img src="docs/articles/ClustAssess_files/figure-html/pac-1.png" alt="PAC convergence"></p>
+<p><img src="https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/ClustAssess_files/figure-html/pac-1.png" width="80%/"></p>
 <p>As the curves have evened out, we surmize that PAC has converged in this case. If the PAC has not converged, increase the <code>n_reps</code> value.</p>
 <p>If the dataset contains &gt;1000 elements, we recommend calculating a geometric sketch [3] of your data of size &lt;1000, and running PAC on that sketch.</p>
 <p>A local minimum in the PAC landscape, as visualized below using the <code>pac_landscape</code> function, can be interpreted as an optimal <em>k</em> for the dataset:</p>
-<p><img src="docs/reference/pac_landscape-1.png" alt="PAC landscape"></p>
+<p><img src="https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/reference/pac_landscape-1.png" width="80%/"></p>
 </div>
 <div id="element-centric-clustering-similarity-ecs" class="section level2">
 <h2 class="hasAnchor">
@@ -115,15 +114,16 @@
 <p><code>clustering_object1 = create_clustering(clustering_result1, alpha=0.9)</code></p>
 <p>where <code>1-alpha</code> is the restart probability of the random walk. To compare two clusterings, we use the <code>element_sim_elscore</code> function:</p>
 <p><code>ecs = element_sim_elscore(clustering_object1, clustering_object2)</code></p>
-<p><img src="docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" alt="ECS PCA"></p>
+<p>and we can subsequently visualize the ECS on a PCA of the data:</p>
+<p><img src="https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="80%/"></p>
 <p>In addition to flat disjoint clusterings (like the result of k-means for example), ClustAssess can also compare overlapping clusterings and hierarchical clusterings; refer to the <code>create_clustering</code> documentation for more detail.</p>
 <p>Besides comparing two clusterings with <code>element_sim_elscore</code>, ClustAssess also enables computing the per-element consistency (aka frustration) between a set of clusterings with the <code>element_frustration</code> function, and comparing a set of clusterings with a ground truth partitioning of elements with the <code>element_agreement</code> function.</p>
 </div>
 <div id="marker-gene-overlap" class="section level2">
 <h2 class="hasAnchor">
-<a href="#marker-gene-overlap" class="anchor"></a>Marker gene overlap</h2>
-<p>In the analysis of single-cell RNA-seq data, cluster marker genes are typically used to infer the cell type of clusters. However, two different clustering results may lead to two different sets of markers for the cells. The <code>z</code></p>
-<p><img src="docs/articles/ClustAssess_files/figure-html/jsi-1.png" alt="JSI tSNE"></p>
+<a href="#marker-gene-overlap" class="anchor"></a>Marker Gene Overlap</h2>
+<p>In the analysis of single-cell RNA-seq data, cluster marker genes are typically used to infer the cell type of clusters. However, two different clustering results may lead to two different sets of markers for the cells. The <code>marker_overlap</code> function allows the comparison of two sets of markers. The output can be either as the number of common marker genes per cell, or as Jaccard similarity (size of intersect divided by size of union) per cell.</p>
+<p><img src="https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
 </div>
 </div>
 <div id="installation" class="section level1">
@@ -131,24 +131,24 @@
 <a href="#installation" class="anchor"></a>Installation</h1>
 <p>The following packages are required for ClustAssess:</p>
 <ul>
-<li>ggplot2,</li>
-<li>dplyr,</li>
-<li>fastcluster,</li>
-<li>rlang,</li>
-<li>Matrix,</li>
-<li>igraph,</li>
-<li>magrittr,</li>
-<li>Rcpp,</li>
-<li>methods,</li>
+<li>ggplot2</li>
+<li>dplyr</li>
+<li>fastcluster</li>
+<li>rlang</li>
+<li>Matrix</li>
+<li>igraph</li>
+<li>magrittr</li>
+<li>Rcpp</li>
+<li>methods</li>
 <li>stats</li>
 </ul>
 <p>To run all examples and vignettes, the following packages are also needed:</p>
 <ul>
-<li>knitr,</li>
-<li>rmarkdown,</li>
-<li>e1071,</li>
-<li>dbscan,</li>
-<li>dendextend,</li>
+<li>knitr</li>
+<li>rmarkdown</li>
+<li>e1071</li>
+<li>dbscan</li>
+<li>dendextend</li>
 <li>Seurat</li>
 </ul>
 </div>
