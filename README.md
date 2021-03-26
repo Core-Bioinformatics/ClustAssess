@@ -27,7 +27,7 @@ It is important that the PAC has converged before using it to assess your data;
 the `pac_convergence` function can be used to visualize the PAC curves across
 iterations:
 
-<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
 
 As the curves have evened out, we surmize that PAC has converged in this case.
 If the PAC has not converged, increase the `n_reps` value.
@@ -38,7 +38,7 @@ sketch [3] of your data of size <1000, and running PAC on that sketch.
 A local minimum in the PAC landscape, as visualized below using the
 `pac_landscape` function, can be interpreted as an optimal *k* for the dataset:
 
-<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/reference/pac_landscape-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/reference/pac_landscape-1.png width=80%/>
 
 
 ## Element Centric Clustering Similarity (ECS)
@@ -63,7 +63,7 @@ clusterings, we use the `element_sim_elscore` function:
 
 and we can subsequently visualize the ECS on a PCA of the data:
 
-<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
 
 In addition to flat disjoint clusterings (like the result of k-means for
 example), ClustAssess can also compare overlapping clusterings and hierarchical
@@ -84,7 +84,7 @@ results may lead to two different sets of markers for the cells. The
 output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
-<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
 
 # Installation
 The following packages are required for ClustAssess:
