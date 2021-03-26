@@ -47,7 +47,7 @@ calculate_dist = function(x, dist_method, p=2){
 #' Consensus clustering: a resampling-based method for class discovery and
 #' visualization of gene expression microarray data. Machine learning, 52(1),
 #' 91-118. https://doi.org/10.1023/A:1023949509487
-#' @references Șenbabaoğlu, Y., Michailidis, G., & Li, J. Z. (2014).
+#' @references Senbabaoglu, Y., Michailidis, G., & Li, J. Z. (2014).
 #' Critical limitations of consensus clustering in class discovery.
 #' Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207
 #'
