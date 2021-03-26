@@ -85,8 +85,7 @@ output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
 ![JSI tSNE](docs/articles/ClustAssess_files/figure-html/jsi-1.png)
-<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/master/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=50%/>
-
+<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=50%/>
 
 # Installation
 The following packages are required for ClustAssess:
