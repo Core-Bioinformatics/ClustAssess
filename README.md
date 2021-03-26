@@ -61,6 +61,8 @@ clusterings, we use the `element_sim_elscore` function:
 
 `ecs = element_sim_elscore(clustering_object1, clustering_object2)`
 
+and we can subsequently visualize the ECS on a PCA of the data:
+
 ![ECS PCA](docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png)
 
 In addition to flat disjoint clusterings (like the result of k-means for
@@ -74,7 +76,7 @@ of clusterings with a ground truth partitioning of elements with the
 `element_agreement` function.
 
 
-## Marker gene overlap
+## Marker Gene Overlap
 In the analysis of single-cell RNA-seq data, cluster marker genes are typically
 used to infer the cell type of clusters. However, two different clustering
 results may lead to two different sets of markers for the cells. The
@@ -83,27 +85,28 @@ output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
 ![JSI tSNE](docs/articles/ClustAssess_files/figure-html/jsi-1.png)
+<img src=https://github.com/Core-Bioinformatics/ClustAssess/blob/master/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=50%/>
 
 
 # Installation
 The following packages are required for ClustAssess:
-* ggplot2,
-* dplyr,
-* fastcluster,
-* rlang,
-* Matrix,
-* igraph,
-* magrittr,
-* Rcpp,
-* methods,
+* ggplot2
+* dplyr
+* fastcluster
+* rlang
+* Matrix
+* igraph
+* magrittr
+* Rcpp
+* methods
 * stats
 
 To run all examples and vignettes, the following packages are also needed:
-* knitr,
-* rmarkdown,
-* e1071,
-* dbscan,
-* dendextend,
+* knitr
+* rmarkdown
+* e1071
+* dbscan
+* dendextend
 * Seurat
 
 
