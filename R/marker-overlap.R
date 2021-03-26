@@ -38,6 +38,7 @@ jaccard_index = function(a,
 #'
 #' @examples
 #' suppressWarnings({
+#' set.seed(1234)
 #' library(Seurat)
 #'
 #' # cluster with Louvain algorithm
