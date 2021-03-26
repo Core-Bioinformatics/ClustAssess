@@ -194,7 +194,7 @@ test), no sign is needed.</p></td>
 
 <span class='co'># cluster with k-means</span>
 <span class='va'>pbmc.pca</span> <span class='op'>=</span> <span class='fu'><a href='http://www.satijalab.org/seurat/reference/Embeddings.html'>Embeddings</a></span><span class='op'>(</span><span class='va'>pbmc_small</span>, <span class='st'>'pca'</span><span class='op'>)</span>
-<span class='va'>pbmc_small</span><span class='op'>@</span><span class='va'>meta.data</span><span class='op'>$</span><span class='va'>kmeans_clusters</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/kmeans.html'>kmeans</a></span><span class='op'>(</span><span class='va'>pbmc.pca</span>, centers<span class='op'>=</span><span class='fl'>3</span><span class='op'>)</span><span class='op'>$</span><span class='va'>cluster</span>
+<span class='va'>pbmc_small</span><span class='op'>@</span><span class='va'>meta.data</span><span class='op'>$</span><span class='va'>kmeans_clusters</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/kmeans.html'>kmeans</a></span><span class='op'>(</span><span class='va'>pbmc.pca</span>, centers<span class='op'>=</span><span class='fl'>2</span><span class='op'>)</span><span class='op'>$</span><span class='va'>cluster</span>
 
 <span class='co'># compare the markers</span>
 <span class='fu'><a href='http://www.satijalab.org/seurat/reference/Idents.html'>Idents</a></span><span class='op'>(</span><span class='va'>pbmc_small</span><span class='op'>)</span> <span class='op'>=</span> <span class='va'>pbmc_small</span><span class='op'>@</span><span class='va'>meta.data</span><span class='op'>$</span><span class='va'>seurat_clusters</span>
