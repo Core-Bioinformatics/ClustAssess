@@ -54,7 +54,7 @@ pbmc_small = FindClusters(pbmc_small, resolution=0.8, verbose=FALSE)
 
 # cluster with k-means
 pbmc.pca = Embeddings(pbmc_small, 'pca')
-pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=3)$cluster
+pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=2)$cluster
 
 # compare the markers
 Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters

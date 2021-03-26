@@ -46,7 +46,7 @@ jaccard_index = function(a,
 #'
 #' # cluster with k-means
 #' pbmc.pca = Embeddings(pbmc_small, 'pca')
-#' pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=3)$cluster
+#' pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=2)$cluster
 #'
 #' # compare the markers
 #' Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters
