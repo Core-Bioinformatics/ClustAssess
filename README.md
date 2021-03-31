@@ -98,7 +98,7 @@ ClustAssess can be installed from [CRAN](https://cran.r-project.org/index.html):
 
 or using remotes:
 
-`remotes::install_github('Core-Bioinformatics/ClustAssess')`
+`remotes::install_github("Core-Bioinformatics/ClustAssess")`
 
 The following packages are required for ClustAssess:
 * ggplot2
