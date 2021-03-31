@@ -37,4 +37,5 @@ Suggests:
     dendextend,
     Seurat
 URL: https://github.com/Core-Bioinformatics/ClustAssess
+BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
