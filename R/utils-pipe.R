@@ -5,6 +5,7 @@
 #' @name %>%
 #' @rdname pipe
 #' @keywords internal
+#' @return return value of rhs function
 #' @export
 #' @importFrom magrittr %>%
 #' @usage lhs \%>\% rhs

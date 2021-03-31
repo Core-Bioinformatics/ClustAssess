@@ -895,6 +895,7 @@ setGeneric("print")
 #'
 #' @param x The Clustering object.
 #'
+#' @return The printed character string.
 #' @export
 #'
 #' @examples

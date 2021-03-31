@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{The Clustering object.}
 }
+\value{
+The printed character string.
+}
 \description{
 Prints out information about the Clustering, including
 number of elements.
