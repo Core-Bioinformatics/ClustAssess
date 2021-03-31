@@ -1,4 +1,8 @@
 # ClustAssess: a Set of Tools for Assessing Clustering
+
+[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/ClustAssess)](https://github.com/r-hub/cranlogs.app)
+[![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
+
 This repo contains the ClustAssess R package, which provides a set of tools
 for assessing clustering robustness.
 
@@ -18,7 +22,7 @@ recorded across various numbers of clusters, *k*. The lower the PAC, the stabler
 the clustering for that *k*.
 
 ClustAssess uses a heirarchical clustering as base for the consensus clustering,
-and an optimized Rcpp [2] implementation to calculate the PAC values. To
+and an optimized Rcpp [2] implementation to compute the PAC values. To
 calculate PAC, we write:
 
 `cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)`
@@ -86,7 +90,12 @@ Jaccard similarity (size of intersect divided by size of union) per cell.
 
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
 
+
 # Installation
+ClustAssess can be installed from [CRAN](https://cran.r-project.org/index.html):
+
+`install.packages("ClustAssess")`
+
 The following packages are required for ClustAssess:
 * ggplot2
 * dplyr
