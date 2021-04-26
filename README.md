@@ -1,4 +1,4 @@
-# ClustAssess: a Set of Tools for Assessing Clustering
+# ClustAssess: Tools for Assessing Clustering
 
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/ClustAssess)](https://github.com/r-hub/cranlogs.app)
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
@@ -96,7 +96,7 @@ ClustAssess can be installed from [CRAN](https://cran.r-project.org/index.html):
 
 `install.packages("ClustAssess")`
 
-or using remotes:
+or from github using remotes:
 
 `remotes::install_github("Core-Bioinformatics/ClustAssess")`
 
