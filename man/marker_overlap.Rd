@@ -11,7 +11,8 @@ marker_overlap(
   clustering2,
   n = 25,
   overlap_type = "jsi",
-  rank_by = "-p_val"
+  rank_by = "-p_val",
+  use_sign = TRUE
 )
 }
 \arguments{
@@ -36,6 +37,11 @@ marker genes by. Note the sign here: to rank by lowest p-value, preface
 the column name with a minus sign; to rank by highest value, where higher
 value indicates more discriminative genes (for example power in the ROC
 test), no sign is needed.}
+
+\item{use_sign}{A logical: should the sign of markers match for overlap
+calculations? So a gene must be a positive or a negative marker in both
+clusters being compared. If TRUE, markers1 and markers2 must have a
+'avg_logFC' column, from which the sign of the DE will be extracted.}
 }
 \value{
 A vector of the marker gene overlap per cell.

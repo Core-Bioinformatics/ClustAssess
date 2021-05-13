@@ -31,6 +31,10 @@ jaccard_index = function(a,
 #' the column name with a minus sign; to rank by highest value, where higher
 #' value indicates more discriminative genes (for example power in the ROC
 #' test), no sign is needed.
+#' @param use_sign A logical: should the sign of markers match for overlap
+#' calculations? So a gene must be a positive or a negative marker in both
+#' clusters being compared. If TRUE, markers1 and markers2 must have a
+#' 'avg_logFC' column, from which the sign of the DE will be extracted.
 #'
 #'
 #' @return A vector of the marker gene overlap per cell.
@@ -67,7 +71,8 @@ marker_overlap = function(markers1,
                           clustering2,
                           n=25,
                           overlap_type='jsi',
-                          rank_by='-p_val'){
+                          rank_by='-p_val',
+                          use_sign=TRUE){
   overlap.vals = rep(0, length(clustering1))
   names(overlap.vals) = names(clustering1)
 
@@ -76,6 +81,14 @@ marker_overlap = function(markers1,
     dplyr::slice_max(n=n, order_by=eval(parse(text=rank_by)))
   markers2=markers2 %>% dplyr::group_by(.data$cluster) %>%
     dplyr::slice_max(n=n, order_by=eval(parse(text=rank_by)))
+
+  # if use_sign is TRUE, we append the sign to the gene name, so it will be used
+  # during overlap calculations
+  if (use_sign){
+    append_sign = function(x) if (x>0) '+' else if (x<0) '-' else '0'
+    markers1$gene = paste0(markers1$gene, sapply(markers1$gene, append_sign))
+    markers2$gene = paste0(markers2$gene, sapply(markers2$gene, append_sign))
+  }
 
   # compare every cluster in clustering1 with every cluster in clustering2
   for (c1 in unique(clustering1)){
