@@ -52,7 +52,7 @@ marker genes.
 }
 \examples{
 suppressWarnings({
-set.seed(12345)
+set.seed(1234)
 library(Seurat)
 
 # cluster with Louvain algorithm
@@ -60,14 +60,20 @@ pbmc_small = FindClusters(pbmc_small, resolution=0.8, verbose=FALSE)
 
 # cluster with k-means
 pbmc.pca = Embeddings(pbmc_small, 'pca')
-pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=2)$cluster
+pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=3)$cluster
 
 # compare the markers
 Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters
-louvain.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, verbose=FALSE)
+louvain.markers = FindAllMarkers(pbmc_small,
+                                 logfc.threshold=1,
+                                 test.use='t',
+                                 verbose=FALSE)
 
 Idents(pbmc_small) = pbmc_small@meta.data$kmeans_clusters
-kmeans.markers = FindAllMarkers(pbmc_small, logfc.threshold=1, verbose=FALSE)
+kmeans.markers = FindAllMarkers(pbmc_small,
+                                logfc.threshold=1,
+                                test.use='t',
+                                verbose=FALSE)
 
 pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, kmeans.markers,
   pbmc_small@meta.data$seurat_clusters, pbmc_small@meta.data$kmeans_clusters)
