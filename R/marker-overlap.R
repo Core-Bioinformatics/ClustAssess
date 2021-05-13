@@ -86,8 +86,10 @@ marker_overlap = function(markers1,
   # during overlap calculations
   if (use_sign){
     append_sign = function(x) if (x>0) '+' else if (x<0) '-' else '0'
-    markers1$gene = paste0(markers1$gene, sapply(markers1$gene, append_sign))
-    markers2$gene = paste0(markers2$gene, sapply(markers2$gene, append_sign))
+    markers1$gene = paste0(markers1$gene,
+                           sapply(markers1$avg_logFC, append_sign))
+    markers2$gene = paste0(markers2$gene,
+                           sapply(markers2$avg_logFC, append_sign))
   }
 
   # compare every cluster in clustering1 with every cluster in clustering2
