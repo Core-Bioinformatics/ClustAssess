@@ -73,7 +73,7 @@ marker genes." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
       </span>
     </div>
 
@@ -141,7 +141,8 @@ marker genes.</p>
   <span class='va'>clustering2</span>,
   n <span class='op'>=</span> <span class='fl'>25</span>,
   overlap_type <span class='op'>=</span> <span class='st'>"jsi"</span>,
-  rank_by <span class='op'>=</span> <span class='st'>"-p_val"</span>
+  rank_by <span class='op'>=</span> <span class='st'>"-p_val"</span>,
+  use_sign <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -182,6 +183,13 @@ marker genes by. Note the sign here: to rank by lowest p-value, preface
 the column name with a minus sign; to rank by highest value, where higher
 value indicates more discriminative genes (for example power in the ROC
 test), no sign is needed.</p></td>
+    </tr>
+    <tr>
+      <th>use_sign</th>
+      <td><p>A logical: should the sign of markers match for overlap
+calculations? So a gene must be a positive or a negative marker in both
+clusters being compared. If TRUE, markers1 and markers2 must have a
+'avg_logFC' column, from which the sign of the DE will be extracted.</p></td>
     </tr>
     </table>
 
