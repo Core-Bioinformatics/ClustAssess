@@ -10,6 +10,7 @@ for assessing clustering robustness.
   * [Proportion of Ambiguously Clustered Pairs (PAC)](#proportion-of-ambiguously-clustered-pairs-pac)
   * [Element Centric Clustering Similarity (ECS)](#element-centric-clustering-similarity-ecs)
   * [Marker gene overlap](#marker-gene-overlap)
+- [Handling Large Datasets](#handling-large-datasets)
 - [Installation](#installation)
 - [References](#references)
 
@@ -89,6 +90,23 @@ output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
+
+
+# Handling Large Datasets
+If your dataset is large, the runtime for the tools described above may be 
+prohibitive. In these cases, we recommend subsampling your data using geometric 
+sketching [3]. If you are using R, the subsampling can be done via reticulate:
+
+`geosketch <- reticulate::import('geosketch')`
+
+assuming data.embed contains a dimensionality reduction of your data, you can 
+then call:
+
+`sketch.indices <- geosketch$gs(data.embed, sketch.size, one_indexed = TRUE)`
+
+and use those indices for your subsample. For PAC, subsampling to <1000 cells 
+should help, and for ECS and data assessment functions, <5000 cells may be 
+appropriate (and parallelization can further help reduce the runtime).
 
 
 # Installation
