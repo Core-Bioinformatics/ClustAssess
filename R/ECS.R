@@ -593,7 +593,7 @@ element_sim_matrix_new = function(clustering_list,
     any(class(x) %in% c("numeric", "integer", "factor", "character"))
   })
 
-  # if the condition is met, perform element frustration using only the membership vector
+  # if the condition is met, perform element consistency using only the membership vector
   if(all(are_all_flat_disjoint == TRUE)) {
     element_sim_matrix_flat_disjoint(mb_list = clustering_list,
                                      ncores = ncores,
@@ -895,14 +895,14 @@ merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
 }
 
 
-#' Element-Wise Frustration Between a Set of Clusterings
+#' Element-Wise Consistency Between a Set of Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
-#' their element-wise clustering frustration.
+#' their element-wise clustering consistency (also known as element-wise frustration).
 #'
 #' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise frustration.
+#' the element-wise consistency.
 #'
-#' @return a vector containing the element-wise frustration.
+#' @return a vector containing the element-wise consistency.
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -915,8 +915,8 @@ merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
 #'   km.res = kmeans(mtcars, 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
-#' element_frustration(clustering.list)
-element_frustration = function(clustering_list){
+#' element_consistency(clustering.list)
+element_consistency = function(clustering_list){
   # make sure all clusterings have same alpha
   alphas = sapply(clustering_list, function(x) x@alpha)
   if (length(unique(alphas)) != 1){
@@ -924,20 +924,20 @@ element_frustration = function(clustering_list){
   }
 
   n.clusterings = length(clustering_list)
-  frustration = rep(0, length(clustering_list[[1]]))
+  consistency = rep(0, length(clustering_list[[1]]))
   for (i in 1:(n.clusterings-1)){
     i.aff = clustering_list[[i]]@affinity_matrix
     for (j in (i+1):n.clusterings){
       j.aff = clustering_list[[j]]@affinity_matrix
 
-      frustration = frustration + corrected_L1(i.aff, j.aff, alphas[1])
+      consistency = consistency + corrected_L1(i.aff, j.aff, alphas[1])
     }
   }
-  frustration = frustration / (n.clusterings * (n.clusterings-1) / 2)
-  return(frustration)
+  consistency = consistency / (n.clusterings * (n.clusterings-1) / 2)
+  return(consistency)
 }
 
-element_frustration_new = function(clustering_list,
+element_consistency_new = function(clustering_list,
                                    alpha = 0.9,
                                    r = 1,
                                    rescale_path_type = "max",
@@ -952,16 +952,16 @@ element_frustration_new = function(clustering_list,
     any(class(x) %in% c("numeric", "integer", "factor", "character"))
   })
 
-  # if the condition is met, perform element frustration using only the membership vector
+  # if the condition is met, perform element consistency using only the membership vector
   if(all(are_all_flat_disjoint == TRUE)) {
     if(is.null(ecs_thresh)) {
-      return(weighted_element_frustration_new(clustering_list = clustering_list,
+      return(weighted_element_consistency_new(clustering_list = clustering_list,
                                               ncores = ncores))
     } else {
       final_clustering_list = merge_partitions(partition_list = clustering_list,
                                                ecs_thresh = ecs_thresh,
                                                ncores = ncores)
-      return(weighted_element_frustration_new(clustering_list = lapply(final_clustering_list, function(x) { x$mb }),
+      return(weighted_element_consistency_new(clustering_list = lapply(final_clustering_list, function(x) { x$mb }),
                                               weights = sapply(final_clustering_list, function(x) { x$freq }),
                                               ncores = ncores))
     }
@@ -1015,37 +1015,37 @@ element_frustration_new = function(clustering_list,
 
   parallel::stopCluster(cl = my_cluster)
 
-  # calculate the frustration between the ClustAssess objects
+  # calculate the consistency between the ClustAssess objects
 
   n.clusterings = length(clustering_object_list)
-  frustration = rep(0, length(clustering_object_list[[1]]))
+  consistency = rep(0, length(clustering_object_list[[1]]))
   for (i in 1:(n.clusterings-1)){
     i.aff = clustering_object_list[[i]]@affinity_matrix
     for (j in (i+1):n.clusterings){
       j.aff = clustering_object_list[[j]]@affinity_matrix
 
-      frustration = frustration + corrected_L1(i.aff, j.aff, alpha)
+      consistency = consistency + corrected_L1(i.aff, j.aff, alpha)
     }
   }
-  frustration = frustration / (n.clusterings * (n.clusterings-1) / 2)
-  return(frustration)
+  consistency = consistency / (n.clusterings * (n.clusterings-1) / 2)
+  return(consistency)
 }
 
-#' Element-Wise Frustration Between a Weighted Set of disjoint Clusterings
+#' Element-Wise Consistency Between a Weighted Set of Disjoint Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
-#' their element-wise clustering frustration.
+#' their element-wise clustering consistency (also known as element-wise frustration).
 #'
 #' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise frustration.
+#' the element-wise consistency.
 #'
-#' @return a vector containing the element-wise frustration.
+#' @return a vector containing the element-wise consistency.
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 
-element_frustration_disjoint = function(clustering_list) {
+element_consistency_disjoint = function(clustering_list) {
 
   n.clusterings = length(clustering_list)
 
@@ -1065,7 +1065,7 @@ element_frustration_disjoint = function(clustering_list) {
   # final_clustering_list = order_list(final_clustering_list, ordered_indices)
 
 
-  weighted_element_frustration(lapply(final_clustering_list, function(x) { create_clustering(x$mb) }),
+  weighted_element_consistency(lapply(final_clustering_list, function(x) { create_clustering(x$mb) }),
                                sapply(final_clustering_list, function(x) { x$freq }))
 
 }
@@ -1073,16 +1073,16 @@ element_frustration_disjoint = function(clustering_list) {
 
 
 
-#' Element-Wise Frustration Between a Weighted Set of Clusterings
+#' Element-Wise Consistency Between a Weighted Set of Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
-#' their element-wise clustering frustration.
+#' their element-wise clustering consistency (also known as element-wise frustration).
 #'
 #' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise frustration.
+#' the element-wise consistency.
 #' @param weights A list of weights representing the frequency of each clustering
 #' object
 #'
-#' @return a vector containing the element-wise frustration.
+#' @return a vector containing the element-wise consistency.
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -1095,10 +1095,10 @@ element_frustration_disjoint = function(clustering_list) {
 #'   km.res = kmeans(mtcars, 3)$cluster
 #'   clustering.list[[i]] = create_clustering(km.res)
 #' }
-#' weighted_element_frustration(clustering.list, rep(1,20))
+#' weighted_element_consistency(clustering.list, rep(1,20))
 #'
 
-weighted_element_frustration = function(clustering_list, weights = NULL){
+weighted_element_consistency = function(clustering_list, weights = NULL){
   # make sure all clusterings have same alpha
   alphas = sapply(clustering_list, function(x) x@alpha)
   if (length(unique(alphas)) != 1){
@@ -1111,7 +1111,7 @@ weighted_element_frustration = function(clustering_list, weights = NULL){
     return(rep(1, length(clustering_list[[1]])))
   }
 
-  frustration = rep(0, length(clustering_list[[1]]))
+  consistency = rep(0, length(clustering_list[[1]]))
 
   if(is.null(weights)) {
     weights = rep(1, n.clusterings)
@@ -1123,10 +1123,10 @@ weighted_element_frustration = function(clustering_list, weights = NULL){
     for (j in (i+1):n.clusterings){
       j.aff = clustering_list[[j]]@affinity_matrix
 
-      # compute the frustration between the two different partitions i and j
-      # the frustration is multiplied by the weights (or frequencies) of the two partitions
+      # compute the consistency between the two different partitions i and j
+      # the consistency is multiplied by the weights (or frequencies) of the two partitions
       # in order to cover all pairwise combinations
-      frustration = frustration + corrected_L1(i.aff, j.aff, alphas[1]) * weights[i] * weights[j]
+      consistency = consistency + corrected_L1(i.aff, j.aff, alphas[1]) * weights[i] * weights[j]
     }
 
     # if a partition has a weight greater than 1, it means, in the unweighted case,
@@ -1140,16 +1140,16 @@ weighted_element_frustration = function(clustering_list, weights = NULL){
 
   # at the end, add the results of comparing a partition to itself (resulting in a vector
   # of ones)
-  frustration = frustration + rep(1, length(frustration)) * no_identical_comparisons
+  consistency = consistency + rep(1, length(consistency)) * no_identical_comparisons
 
 
   # divide over the number of all possible combinations to normalize the results
   # between 0 and 1
-  frustration = frustration / (sum(weights) * (sum(weights)-1) / 2)
-  return(frustration)
+  consistency = consistency / (sum(weights) * (sum(weights)-1) / 2)
+  return(consistency)
 }
 
-weighted_element_frustration_new = function(clustering_list,
+weighted_element_consistency_new = function(clustering_list,
                                             weights = NULL,
                                             ncores = 2) {
   n_clusterings = length(clustering_list)
@@ -1181,7 +1181,7 @@ weighted_element_frustration_new = function(clustering_list,
 
   all_vars = ls()
 
-  frustration = foreach(i = 1:n_combinations, .noexport = all_vars[!(all_vars %in% needed_vars)], .export = c("corrected_l1_mb", "create_clu2elm_dict"), .combine = "+") %dopar% {
+  consistency = foreach(i = 1:n_combinations, .noexport = all_vars[!(all_vars %in% needed_vars)], .export = c("corrected_l1_mb", "create_clu2elm_dict"), .combine = "+") %dopar% {
     corrected_l1_mb(clustering_list[[first_index[i]]],
                     clustering_list[[second_index[i]]]) * weights[first_index[i]] * weights[second_index[i]]
   }
@@ -1191,11 +1191,11 @@ weighted_element_frustration_new = function(clustering_list,
 
   no_identical_comparisons = sum(sapply(weights, function(w) { w*(w-1) / 2}))
 
-  frustration = frustration + rep(1, length(frustration)) * no_identical_comparisons
+  consistency = consistency + rep(1, length(consistency)) * no_identical_comparisons
 
-  frustration = frustration / (sum(weights) * (sum(weights)-1) / 2)
+  consistency = consistency / (sum(weights) * (sum(weights)-1) / 2)
 
-  return(frustration)
+  return(consistency)
 }
 
 

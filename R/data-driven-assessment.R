@@ -223,7 +223,7 @@ get_feature_stability_object_parallel = function(expression_matrix,
 
 
     # compute the EC-consistency of the partition list
-    ec_consistency = weighted_element_frustration_new(lapply(partitions_list[[as.character(step)]], function(x) {
+    ec_consistency = weighted_element_consistency_new(lapply(partitions_list[[as.character(step)]], function(x) {
       x$mb
     }),
     sapply(partitions_list[[as.character(step)]], function(x) {
@@ -971,7 +971,7 @@ get_nn_importance_parallel = function(object,
 
   nn_ecs_object = lapply(partitions_list, function(config) {
     lapply(config, function(n_neigh) {
-      weighted_element_frustration_new(lapply(n_neigh, function(x) {
+      weighted_element_consistency_new(lapply(n_neigh, function(x) {
         x$mb
       }),
       sapply(n_neigh, function(x) {
@@ -1210,7 +1210,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
         }))
       }))))[1]
 
-      list(ecs_frustr = weighted_element_frustration_new(lapply(res[[corresp_k]], function(x) {
+      list(ecs_consistency = weighted_element_consistency_new(lapply(res[[corresp_k]], function(x) {
         x$mb
       }),
       sapply(res[[corresp_k]], function(x) {
@@ -1230,7 +1230,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
         partition_list = c(partition_list, res[[k]])
       }
 
-      weighted_element_frustration_new(lapply(partition_list, function(x) {
+      weighted_element_consistency_new(lapply(partition_list, function(x) {
         x$mb
       }),
       sapply(partition_list, function(x) {
@@ -1282,7 +1282,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 
   melted_obj = reshape2::melt(lapply(clustering_difference_object$filtered, function(config_object) {
     lapply(config_object, function(res) {
-      res$ecs_frustr
+      res$ecs_consistency
     })
   }))
 
