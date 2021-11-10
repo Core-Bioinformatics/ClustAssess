@@ -5,6 +5,8 @@
 #'
 #' @param clustering1 The first Clustering.
 #' @param clustering2 The second Clustering.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
 #'
 #' @return The average element-wise similarity between the two Clusterings.
 #' @export
@@ -16,9 +18,11 @@
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim(km.clustering, hc.clustering)
 element_sim = function(clustering1,
-                       clustering2){
+                       clustering2,
+                       alpha = 0.9){
   element.scores = element_sim_elscore(clustering1,
-                                       clustering2)
+                                       clustering2,
+                                       alpha)
   return(mean(element.scores))
 }
 
@@ -29,6 +33,8 @@ element_sim = function(clustering1,
 #'
 #' @param clustering1 The first Clustering.
 #' @param clustering2 The second Clustering.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
 #'
 #' @return Vector of element-centric similarity between the two clusterings for
 #'  each element.
@@ -59,8 +65,7 @@ element_sim_elscore = function(clustering1, clustering2, alpha = 0.9){
     }
 
     node.scores = corrected_l1_mb(clustering1,
-                                  clustering2,
-                                  alpha = 0.9)
+                                  clustering2)
 
     names(node.scores) = names(clustering1)
     return(node.scores)
@@ -80,8 +85,6 @@ element_sim_elscore = function(clustering1, clustering2, alpha = 0.9){
     stop('clustering1 and clustering2 do not have the same length.')
   } else if (any(names(clustering1) != names(clustering2))){
     stop('Not all elements of clustering1 and clustering2 are the same.')
-  } else if (clustering1@alpha != clustering2@alpha){
-    stop('clustering1 and clustering2 were created using different alpha.')
   }
 
   # use the corrected L1 similarity
