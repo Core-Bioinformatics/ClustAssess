@@ -1,3 +1,6 @@
+#' @importFrom foreach %dopar%
+NULL
+
 #' The Element-Centric Clustering Similarity
 #'
 #' @description Calculates the average element-centric similarity between two
@@ -613,7 +616,7 @@ element_sim_matrix_new = function(clustering_list,
 
   doParallel::registerDoParallel(cl = my_cluster)
 
-  clustering_object_list = foreach(obj = clustering_list,
+  clustering_object_list = foreach::foreach(obj = clustering_list,
                                    .noexport = all_vars[!(all_vars %in% needed_vars)],
                                    .packages = "ClustAssess") %dopar% {
                                      if(class(obj) == "Clustering") {
@@ -684,7 +687,7 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 2, alpha = 0.9, ou
   )
   doParallel::registerDoParallel(cl = my_cluster)
 
-  ecs_values = foreach(i = 1:n_combinations, .export = c("corrected_l1_mb", "create_clu2elm_dict"), .noexport = c("my_cluster"), .combine = "c") %dopar% {
+  ecs_values = foreach::foreach(i = 1:n_combinations, .export = c("corrected_l1_mb", "create_clu2elm_dict"), .noexport = c("my_cluster"), .combine = "c") %dopar% {
     mean(corrected_l1_mb(mb_list[[first_index[i]]],
                          mb_list[[second_index[i]]],
                          alpha))
@@ -988,7 +991,7 @@ element_consistency_new = function(clustering_list,
   #                      "ppr_partition", "create_elm2clu_dict_overlapping",
   #                      "make_cielg_overlapping", "numerical_ppr_scores")
 
-  clustering_object_list = foreach(obj = clustering_list,
+  clustering_object_list = foreach::foreach(obj = clustering_list,
                                    .noexport = all_vars[!(all_vars %in% needed_vars)],
                                    .packages = "ClustAssess") %dopar% {
                                      # if the object is already a ClustAssess one, we will just return it
@@ -1184,7 +1187,7 @@ weighted_element_consistency_new = function(clustering_list,
 
   all_vars = ls()
 
-  consistency = foreach(i = 1:n_combinations, .noexport = all_vars[!(all_vars %in% needed_vars)], .export = c("corrected_l1_mb", "create_clu2elm_dict"), .combine = "+") %dopar% {
+  consistency = foreach::foreach(i = 1:n_combinations, .noexport = all_vars[!(all_vars %in% needed_vars)], .export = c("corrected_l1_mb", "create_clu2elm_dict"), .combine = "+") %dopar% {
     corrected_l1_mb(clustering_list[[first_index[i]]],
                     clustering_list[[second_index[i]]]) * weights[first_index[i]] * weights[second_index[i]]
   }

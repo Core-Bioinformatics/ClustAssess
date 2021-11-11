@@ -1,4 +1,5 @@
-
+#' @importFrom foreach %dopar%
+NULL
 
 seurat_clustering = function(object, resolution, seed, algorithm = 4, ...) {
   cluster.result = Seurat::FindClusters(
@@ -148,7 +149,7 @@ get_feature_stability_object_parallel = function(expression_matrix,
 
 
     # send the name of the umap arguments
-    partitions_list[[as.character(step)]] = foreach(seed = seed_sequence,
+    partitions_list[[as.character(step)]] = foreach::foreach(seed = seed_sequence,
                                                     .noexport = all_vars[!(all_vars %in% needed_vars)],
                                                     .export = names(suppl_args)) %dopar% { #
                                                       umap_args = list()
@@ -677,7 +678,7 @@ get_nn_conn_comps = function(object,
 
 
   # send the name of the dim reduction arguments
-  nn_conn_comps_list_temp = foreach(seed = seed_sequence,
+  nn_conn_comps_list_temp = foreach::foreach(seed = seed_sequence,
                                     .noexport = all_vars[!(all_vars %in% needed_vars)],
                                     .export = names(suppl_args)) %dopar% { #
                                       dim_red_args = list()
@@ -877,7 +878,7 @@ get_nn_importance_parallel = function(object,
 
 
     # send the name of the umap arguments
-    partitions_list_temp = foreach(seed = seed_sequence,
+    partitions_list_temp = foreach::foreach(seed = seed_sequence,
                                    .noexport = all_vars[!(all_vars %in% needed_vars)],
                                    .export = names(suppl_args)) %dopar% { #
                                      dim_red_args = list()
@@ -1433,7 +1434,7 @@ get_resolution_partitions = function(clustered_object,
 
 
   # send the name of the umap arguments
-  different_partitions_temp = foreach(seed = seed_sequence,
+  different_partitions_temp = foreach::foreach(seed = seed_sequence,
                                       .noexport = all_vars[!(all_vars %in% needed_vars)],
                                       .export = names(suppl_args)) %dopar% { #
                                         clust_args = list()
@@ -1836,7 +1837,7 @@ merge_resolutions = function(res_obj,
 
   all_vars = ls()
 
-  clusters_obj = foreach(i = 1:length(clusters_obj),
+  clusters_obj = foreach::foreach(i = 1:length(clusters_obj),
                          .noexport = all_vars[!(all_vars %in% needed_vars)],
                          .export = c("merge_identical_partitions", "are_identical_memberships", "order_list")) %dopar% {
                            merge_identical_partitions(clusters_obj[[i]])
