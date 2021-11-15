@@ -110,6 +110,7 @@ get_feature_stability_object_parallel = function(expression_matrix,
     n_repetitions = length(seed_sequence)
   }
 
+  ncores = min(ncores, length(seed_sequence))
 
   # convert the negative steps to the size of the feature
   steps[steps <= 0 |
@@ -137,12 +138,16 @@ get_feature_stability_object_parallel = function(expression_matrix,
 
 
 
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
+    if(ncores > 1) {
+      my_cluster <- parallel::makeCluster(
+        ncores,
+        type = "PSOCK"
+      )
 
-    doParallel::registerDoParallel(cl = my_cluster)
+      doParallel::registerDoParallel(cl = my_cluster)
+    } else {
+      foreach::registerDoSEQ()
+    }
 
 
     all_vars = ls()
@@ -150,57 +155,58 @@ get_feature_stability_object_parallel = function(expression_matrix,
 
     # send the name of the umap arguments
     partitions_list[[as.character(step)]] = foreach::foreach(seed = seed_sequence,
-                                                    .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                                    .export = names(suppl_args)) %dopar% { #
-                                                      umap_args = list()
+                                                             .noexport = all_vars[!(all_vars %in% needed_vars)],
+                                                             .export = names(suppl_args)) %dopar% { #
+                                                               umap_args = list()
 
-                                                      for(umap_arg_name in umap_arg_names) {
-                                                        umap_args[[umap_arg_name]] = get(umap_arg_name)
-                                                      }
+                                                               for(umap_arg_name in umap_arg_names) {
+                                                                 umap_args[[umap_arg_name]] = get(umap_arg_name)
+                                                               }
 
-                                                      #print(all_variables)
+                                                               #print(all_variables)
 
-                                                      #reticulate::use_python("/usr/bin/python3", required = T)
+                                                               #reticulate::use_python("/usr/bin/python3", required = T)
 
-                                                      set.seed(seed)
-                                                      pca_embedding = irlba::irlba(A = trimmed_matrix, nv = npcs)
-                                                      pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-                                                      colnames(pca_embedding) = paste0("PC_", 1:ncol(pca_embedding))
-                                                      rownames(pca_embedding) = rownames(trimmed_matrix)
-
-
-                                                      if (graph_reduction_type == "UMAP") {
-                                                        set.seed(seed)
-                                                        umap_embedding = do.call(uwot::umap, c(list(X = pca_embedding), umap_args))
-                                                        colnames(umap_embedding) = paste0("UMAP_", 1:ncol(umap_embedding))
-                                                        rownames(umap_embedding) = rownames(trimmed_matrix)
-                                                      }
-
-                                                      # build the nn and snn graphs
-                                                      neigh_matrix = Seurat::FindNeighbors(
-                                                        if (graph_reduction_type == "PCA")
-                                                          pca_embedding
-                                                        else
-                                                          umap_embedding,
-                                                        nn.method = "rann",
-                                                        verbose = FALSE
-                                                      )$snn
-                                                      # apply Leiden Clustering to the generated graph
-                                                      cluster_results = Seurat::FindClusters(
-                                                        neigh_matrix,
-                                                        random.seed = seed,
-                                                        algorithm = 4,
-                                                        verbose = FALSE
-                                                      )
-                                                      cluster_results = cluster_results[, names(cluster_results)[1]]
-                                                      list(mb = cluster_results,
-                                                           freq = 1,
-                                                           seed = seed)
-
-                                                    }
+                                                               set.seed(seed)
+                                                               pca_embedding = irlba::irlba(A = trimmed_matrix, nv = npcs)
+                                                               pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+                                                               colnames(pca_embedding) = paste0("PC_", 1:ncol(pca_embedding))
+                                                               rownames(pca_embedding) = rownames(trimmed_matrix)
 
 
-    parallel::stopCluster(cl = my_cluster)
+                                                               if (graph_reduction_type == "UMAP") {
+                                                                 set.seed(seed)
+                                                                 umap_embedding = do.call(uwot::umap, c(list(X = pca_embedding), umap_args))
+                                                                 colnames(umap_embedding) = paste0("UMAP_", 1:ncol(umap_embedding))
+                                                                 rownames(umap_embedding) = rownames(trimmed_matrix)
+                                                               }
+
+                                                               # build the nn and snn graphs
+                                                               neigh_matrix = Seurat::FindNeighbors(
+                                                                 if (graph_reduction_type == "PCA")
+                                                                   pca_embedding
+                                                                 else
+                                                                   umap_embedding,
+                                                                 nn.method = "rann",
+                                                                 verbose = FALSE
+                                                               )$snn
+                                                               # apply Leiden Clustering to the generated graph
+                                                               cluster_results = Seurat::FindClusters(
+                                                                 neigh_matrix,
+                                                                 random.seed = seed,
+                                                                 algorithm = 4,
+                                                                 verbose = FALSE
+                                                               )
+                                                               cluster_results = cluster_results[, names(cluster_results)[1]]
+                                                               list(mb = cluster_results,
+                                                                    freq = 1,
+                                                                    seed = seed)
+
+                                                             }
+
+
+    if(ncores > 1)
+      parallel::stopCluster(cl = my_cluster)
 
 
     set.seed(seed_sequence[1])
@@ -656,6 +662,8 @@ get_nn_conn_comps = function(object,
                         length.out = n_repetitions)
   }
 
+  ncores = min(ncores, length(seed_sequence))
+
   suppl_args = list(...)
   for(i in 1:length(suppl_args)) {
     assign(names(suppl_args)[i], suppl_args[[i]])
@@ -664,12 +672,16 @@ get_nn_conn_comps = function(object,
 
   nn_conn_comps_list = list()
 
-  my.cluster <- parallel::makeCluster(
-    ncores,
-    type = "PSOCK"
-  )
+  if(ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+      ncores,
+      type = "PSOCK"
+    )
 
-  doParallel::registerDoParallel(cl = my.cluster)
+    doParallel::registerDoParallel(cl = my_cluster)
+  } else {
+    foreach::registerDoSEQ()
+  }
 
 
   all_vars = ls()
@@ -679,44 +691,45 @@ get_nn_conn_comps = function(object,
 
   # send the name of the dim reduction arguments
   nn_conn_comps_list_temp = foreach::foreach(seed = seed_sequence,
-                                    .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                    .export = names(suppl_args)) %dopar% { #
-                                      dim_red_args = list()
+                                             .noexport = all_vars[!(all_vars %in% needed_vars)],
+                                             .export = names(suppl_args)) %dopar% { #
+                                               dim_red_args = list()
 
-                                      for(suppl_arg_name in suppl_arg_names) {
-                                        dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                      }
+                                               for(suppl_arg_name in suppl_arg_names) {
+                                                 dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
+                                               }
 
 
-                                      #reticulate::use_python("/usr/bin/python3", required = T)
+                                               #reticulate::use_python("/usr/bin/python3", required = T)
 
-                                      set.seed(seed)
-                                      if (graph_reduction_type == "UMAP") {
-                                        embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
-                                        colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
-                                      } else {
-                                        irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
-                                        embedding = irlba_object$u %*% diag(irlba_object$d)
-                                        colnames(embedding) = paste0("PC_", 1:ncol(embedding))
-                                      }
-                                      rownames(embedding) = rownames(object)
+                                               set.seed(seed)
+                                               if (graph_reduction_type == "UMAP") {
+                                                 embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
+                                                 colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
+                                               } else {
+                                                 irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
+                                                 embedding = irlba_object$u %*% diag(irlba_object$d)
+                                                 colnames(embedding) = paste0("PC_", 1:ncol(embedding))
+                                               }
+                                               rownames(embedding) = rownames(object)
 
-                                      sapply(n_neigh_sequence, function(n_neigh) {
-                                        g = igraph::graph_from_adjacency_matrix(
-                                          Seurat::FindNeighbors(
-                                            embedding,
-                                            k.param = n_neigh,
-                                            nn.method = "rann",
-                                            compute.SNN = F,
-                                            verbose = F
-                                          )$nn
-                                        )
+                                               sapply(n_neigh_sequence, function(n_neigh) {
+                                                 g = igraph::graph_from_adjacency_matrix(
+                                                   Seurat::FindNeighbors(
+                                                     embedding,
+                                                     k.param = n_neigh,
+                                                     nn.method = "rann",
+                                                     compute.SNN = F,
+                                                     verbose = F
+                                                   )$nn
+                                                 )
 
-                                        length(unique(igraph::clusters(g)$membership))
-                                      })
-                                    }
+                                                 length(unique(igraph::clusters(g)$membership))
+                                               })
+                                             }
 
-  parallel::stopCluster(cl = my.cluster)
+  if(ncores > 1)
+    parallel::stopCluster(cl = my_cluster)
 
   for (i in 1:length(n_neigh_sequence)) {
     n_neigh = n_neigh_sequence[i]
@@ -856,6 +869,8 @@ get_nn_importance_parallel = function(object,
                         length.out = n_repetitions)
   }
 
+  ncores = min(ncores, length(seed_sequence))
+
   suppl_args = list(...)
   for(i in 1:length(suppl_args)) {
     assign(names(suppl_args)[i], suppl_args[[i]])
@@ -865,12 +880,16 @@ get_nn_importance_parallel = function(object,
   for (n_neigh in n_neigh_sequence) {
     partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] = list()
 
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
+    if(ncores > 1) {
+      my_cluster <- parallel::makeCluster(
+        ncores,
+        type = "PSOCK"
+      )
 
-    doParallel::registerDoParallel(cl = my_cluster)
+      doParallel::registerDoParallel(cl = my_cluster)
+    } else {
+      foreach::registerDoSEQ()
+    }
 
 
     needed_vars = c("object", "n_neigh", "graph_reduction_type", "suppl_arg_names")
@@ -879,64 +898,65 @@ get_nn_importance_parallel = function(object,
 
     # send the name of the umap arguments
     partitions_list_temp = foreach::foreach(seed = seed_sequence,
-                                   .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                   .export = names(suppl_args)) %dopar% { #
-                                     dim_red_args = list()
+                                            .noexport = all_vars[!(all_vars %in% needed_vars)],
+                                            .export = names(suppl_args)) %dopar% { #
+                                              dim_red_args = list()
 
-                                     for(suppl_arg_name in suppl_arg_names) {
-                                       dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                     }
+                                              for(suppl_arg_name in suppl_arg_names) {
+                                                dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
+                                              }
 
-                                     #print(all_variables)
+                                              #print(all_variables)
 
-                                     #reticulate::use_python("/usr/bin/python3", required = T)
+                                              #reticulate::use_python("/usr/bin/python3", required = T)
 
-                                     set.seed(seed)
-                                     if (graph_reduction_type == "UMAP") {
-                                       embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
-                                       colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
-                                     } else {
-                                       irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
-                                       embedding = irlba_object$u %*% diag(irlba_object$d)
-                                       colnames(embedding) = paste0("PC_", 1:ncol(embedding))
-                                     }
-                                     rownames(embedding) = rownames(object)
+                                              set.seed(seed)
+                                              if (graph_reduction_type == "UMAP") {
+                                                embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
+                                                colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
+                                              } else {
+                                                irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
+                                                embedding = irlba_object$u %*% diag(irlba_object$d)
+                                                colnames(embedding) = paste0("PC_", 1:ncol(embedding))
+                                              }
+                                              rownames(embedding) = rownames(object)
 
-                                     # build the nn and snn graphs
-                                     neigh_matrix = Seurat::FindNeighbors(
-                                       embedding,
-                                       k.param = n_neigh,
-                                       nn.method = "rann",
-                                       verbose = F
-                                     )
+                                              # build the nn and snn graphs
+                                              neigh_matrix = Seurat::FindNeighbors(
+                                                embedding,
+                                                k.param = n_neigh,
+                                                nn.method = "rann",
+                                                verbose = F
+                                              )
 
-                                     cluster_results_nn = Seurat::FindClusters(
-                                       neigh_matrix$nn,
-                                       random.seed = seed,
-                                       algorithm = 4,
-                                       verbose = F
-                                     )
-                                     cluster_results_nn = cluster_results_nn[, names(cluster_results_nn)[1]]
+                                              cluster_results_nn = Seurat::FindClusters(
+                                                neigh_matrix$nn,
+                                                random.seed = seed,
+                                                algorithm = 4,
+                                                verbose = F
+                                              )
+                                              cluster_results_nn = cluster_results_nn[, names(cluster_results_nn)[1]]
 
-                                     cluster_results_snn = Seurat::FindClusters(
-                                       neigh_matrix$snn,
-                                       random.seed = seed,
-                                       algorithm = 4,
-                                       verbose = F
-                                     )
-                                     cluster_results_snn = cluster_results_snn[, names(cluster_results_snn)[1]]
+                                              cluster_results_snn = Seurat::FindClusters(
+                                                neigh_matrix$snn,
+                                                random.seed = seed,
+                                                algorithm = 4,
+                                                verbose = F
+                                              )
+                                              cluster_results_snn = cluster_results_snn[, names(cluster_results_snn)[1]]
 
-                                     list(
-                                       list(mb = cluster_results_nn,
-                                            freq = 1,
-                                            seed = seed),
-                                       list(mb = cluster_results_snn,
-                                            freq = 1,
-                                            seed = seed)
-                                     )
-                                   }
+                                              list(
+                                                list(mb = cluster_results_nn,
+                                                     freq = 1,
+                                                     seed = seed),
+                                                list(mb = cluster_results_snn,
+                                                     freq = 1,
+                                                     seed = seed)
+                                              )
+                                            }
 
-    parallel::stopCluster(cl = my_cluster)
+    if(ncores > 1)
+      parallel::stopCluster(cl = my_cluster)
 
     partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] =
       merge_partitions(lapply(partitions_list_temp, function(x) { x[[2]]}),
@@ -1421,12 +1441,16 @@ get_resolution_partitions = function(clustered_object,
   }
   suppl_arg_names = names(suppl_args)
 
-  my_cluster <- parallel::makeCluster(
-    ncores,
-    type = "PSOCK"
-  )
+  if(ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+      ncores,
+      type = "PSOCK"
+    )
 
-  doParallel::registerDoParallel(cl = my_cluster)
+    doParallel::registerDoParallel(cl = my_cluster)
+  } else {
+    foreach::registerDoSEQ()
+  }
 
 
   needed_vars = c("resolution", "clustering_function", "clustered_object", "suppl_arg_names")
@@ -1435,22 +1459,23 @@ get_resolution_partitions = function(clustered_object,
 
   # send the name of the umap arguments
   different_partitions_temp = foreach::foreach(seed = seed_sequence,
-                                      .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                      .export = names(suppl_args)) %dopar% { #
-                                        clust_args = list()
+                                               .noexport = all_vars[!(all_vars %in% needed_vars)],
+                                               .export = names(suppl_args)) %dopar% { #
+                                                 clust_args = list()
 
-                                        for(suppl_arg_name in suppl_arg_names) {
-                                          clust_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                        }
+                                                 for(suppl_arg_name in suppl_arg_names) {
+                                                   clust_args[[suppl_arg_name]] = get(suppl_arg_name)
+                                                 }
 
-                                        do.call(clustering_function, c(list(object = clustered_object,
-                                                                            resolution = resolution,
-                                                                            seed = seed),
-                                                                       clust_args))
+                                                 do.call(clustering_function, c(list(object = clustered_object,
+                                                                                     resolution = resolution,
+                                                                                     seed = seed),
+                                                                                clust_args))
 
-                                      }
+                                               }
 
-  parallel::stopCluster(cl = my_cluster)
+  if(ncores > 1)
+    parallel::stopCluster(cl = my_cluster)
 
 
   for(i in 1:length(seed_sequence)) {
@@ -1827,26 +1852,30 @@ merge_resolutions = function(res_obj,
 
   needed_vars = c("clusters_obj")
 
-  my_cluster <- parallel::makeCluster(
-    ncores,
-    type = "PSOCK"
-  )
+  if(ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+      ncores,
+      type = "PSOCK"
+    )
 
-  doParallel::registerDoParallel(cl = my_cluster)
+    doParallel::registerDoParallel(cl = my_cluster)
+  } else {
+    foreach::registerDoSEQ()
+  }
 
 
   all_vars = ls()
 
   clusters_obj = foreach::foreach(i = 1:length(clusters_obj),
-                         .noexport = all_vars[!(all_vars %in% needed_vars)],
-                         .export = c("merge_identical_partitions", "are_identical_memberships", "order_list")) %dopar% {
-                           merge_identical_partitions(clusters_obj[[i]])
-                         }
+                                  .noexport = all_vars[!(all_vars %in% needed_vars)],
+                                  .export = c("merge_identical_partitions", "are_identical_memberships", "order_list")) %dopar% {
+                                    merge_identical_partitions(clusters_obj[[i]])
+                                  }
 
   names(clusters_obj) = k_vals
 
-
-  parallel::stopCluster(cl = my_cluster)
+  if(ncores > 1)
+    parallel::stopCluster(cl = my_cluster)
 
   clusters_obj
 }
