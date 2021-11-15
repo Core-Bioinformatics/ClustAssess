@@ -705,22 +705,6 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
   return(sim_matrix)
 }
 
-
-
-
-get_membership = function(clust_obj) {
-  membership = rep(0,  clust_obj@n_elements)
-  no_clusters = length(clust_obj@clu2elm_dict)
-  
-  for(i in 1:no_clusters) {
-    membership[clust_obj@clu2elm_dict[[i]] ] = i
-  }
-  
-  membership
-}
-
-
-
 # determine whether two flat membership vectors are identical
 are_identical_memberships = function(mb1, mb2) {
   contingency_table = (table(mb1, mb2) != 0)
@@ -999,48 +983,6 @@ element_consistency_new = function(clustering_list,
   return(consistency)
 }
 
-#' Element-Wise Consistency Between a Weighted Set of Disjoint Clusterings
-#' @description Inspect the consistency of a set of clusterings by calculating
-#' their element-wise clustering consistency (also known as element-wise frustration).
-#'
-#' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise consistency.
-#'
-#' @return a vector containing the element-wise consistency.
-#' @export
-#'
-#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
-#' Element-centric clustering comparison unifies overlaps and hierarchy.
-#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
-
-element_consistency_disjoint = function(clustering_list) {
-  
-  n.clusterings = length(clustering_list)
-  
-  # if(class(clustering_list[[1]]) != "list" && all(c("mb", "freq") %in% names(clustering_list[[1]]))) {
-  #   clustering_list = lapply(1:n.clusterings, function(index) {
-  #     list(mb = clustering_list[[index]],
-  #          freq = 1)
-  #   })
-  # }
-  
-  # merge the same memberships into the same object
-  final_clustering_list = merge_identical_partitions(clustering_list)
-  
-  
-  # order the objects decreasing based on their frequency
-  # ordered_indices = order(sapply(final_clustering_list, function(x) { x$freq }), decreasing = T)
-  # final_clustering_list = order_list(final_clustering_list, ordered_indices)
-  
-  
-  weighted_element_consistency(lapply(final_clustering_list, function(x) { create_clustering(x$mb) }),
-                               sapply(final_clustering_list, function(x) { x$freq }))
-  
-}
-
-
-
-
 #' Element-Wise Consistency Between a Weighted Set of Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
 #' their element-wise clustering consistency (also known as element-wise frustration).
@@ -1065,58 +1007,6 @@ element_consistency_disjoint = function(clustering_list) {
 #' }
 #' weighted_element_consistency(clustering.list, rep(1,20))
 #'
-
-weighted_element_consistency = function(clustering_list, weights = NULL){
-  # make sure all clusterings have same alpha
-  alphas = sapply(clustering_list, function(x) x@alpha)
-  if (length(unique(alphas)) != 1){
-    stop('all clusterings in clustering_list must be created with same alpha')
-  }
-  
-  n.clusterings = length(clustering_list)
-  
-  if(n.clusterings == 1) {
-    return(rep(1, length(clustering_list[[1]])))
-  }
-  
-  consistency = rep(0, length(clustering_list[[1]]))
-  
-  if(is.null(weights)) {
-    weights = rep(1, n.clusterings)
-  }
-  
-  no_identical_comparisons = 0
-  for (i in 1:(n.clusterings-1)){
-    i.aff = clustering_list[[i]]@affinity_matrix
-    for (j in (i+1):n.clusterings){
-      j.aff = clustering_list[[j]]@affinity_matrix
-      
-      # compute the consistency between the two different partitions i and j
-      # the consistency is multiplied by the weights (or frequencies) of the two partitions
-      # in order to cover all pairwise combinations
-      consistency = consistency + corrected_L1(i.aff, j.aff, alphas[1]) * weights[i] * weights[j]
-    }
-    
-    # if a partition has a weight greater than 1, it means, in the unweighted case,
-    # having to calculate the ECS between `weight` identical partitions
-    # weights[i] * (weights[i]-1) / 2 denotes the number of all possible combinations
-    # of pairing those identical memberships
-    no_identical_comparisons = no_identical_comparisons + weights[i] * (weights[i]-1) / 2
-  }
-  
-  no_identical_comparisons = no_identical_comparisons + weights[n.clusterings] * (weights[n.clusterings]-1) / 2
-  
-  # at the end, add the results of comparing a partition to itself (resulting in a vector
-  # of ones)
-  consistency = consistency + rep(1, length(consistency)) * no_identical_comparisons
-  
-  
-  # divide over the number of all possible combinations to normalize the results
-  # between 0 and 1
-  consistency = consistency / (sum(weights) * (sum(weights)-1) / 2)
-  return(consistency)
-}
-
 weighted_element_consistency_new = function(clustering_list,
                                             weights = NULL,
                                             ncores = 2) {
