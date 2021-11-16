@@ -52,9 +52,9 @@ generate_breaks = function(min.range, max.range) {
 #' @description Creates an object that summaries the consistency of the partitions obtained
 #' across different runs for varying subsets of a given feature set.
 #'
-#' @param expression_matrix an expression matrix having the genes on the columns and the cells on the rows
-#' @param feature_set a set of gene names that can be found in the expression matrix
-#' @param steps vector containing the sizes of the subsets; negative values will be interpreted as using all genes
+#' @param data_matrix a data matrix having the features on the columns and the observations on the rows
+#' @param feature_set a set of feature names that can be found in the data matrix
+#' @param steps vector containing the sizes of the subsets; negative values will be interpreted as using all features
 #' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user
 #' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100
 #' @param feature_type a name associated to the feature_set
@@ -72,19 +72,19 @@ generate_breaks = function(min.range, max.range) {
 #' @md
 #'
 #' @note The algorithm assumes that the feature_set is already when performing the subsetting. For example,
-#' if the user wants to analyze highly variable genes set, he should provide them sorted by their variability.
+#' if the user wants to analyze highly variable feature set, they should provide them sorted by their variability.
 #'
 #'
 #' @export
 #'
 #' @examples
-#' get_feature_stability_object(expression_matrix = as.matrix(mtcars),
+#' get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    steps = -1,
 #'    npcs = 5,
 #'    n_repetitions = 1,
 #'    verbose = FALSE)
-get_feature_stability_object_parallel = function(expression_matrix,
+get_feature_stability_object_parallel = function(data_matrix,
                                                  feature_set,
                                                  steps,
                                                  n_repetitions = 30,
@@ -123,12 +123,12 @@ get_feature_stability_object_parallel = function(expression_matrix,
   umap_arg_names = names(suppl_args)
 
   for (step in steps) {
-    used_genes = feature_set[1:step]
+    used_features = feature_set[1:step]
 
     partitions_list[[as.character(step)]] = list()
     return_list[[object_name]][[as.character(step)]] = list()
 
-    trimmed_matrix = expression_matrix[, used_genes]
+    trimmed_matrix = data_matrix[, used_features]
 
 
 
@@ -219,7 +219,7 @@ get_feature_stability_object_parallel = function(expression_matrix,
     set.seed(seed_sequence[1])
     umap_embedding = uwot::umap(X = pca_embedding,  ...)
     colnames(umap_embedding) = paste0("UMAP_", 1:ncol(umap_embedding))
-    rownames(umap_embedding) = rownames(expression_matrix)
+    rownames(umap_embedding) = rownames(data_matrix)
 
 
     # merge the identical partitions into the same object
@@ -269,7 +269,7 @@ get_feature_stability_object_parallel = function(expression_matrix,
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(expression_matrix = as.matrix(mtcars),
+#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    steps = -1,
 #'    npcs = 5,
@@ -338,7 +338,7 @@ plot_feature_stability_boxplot = function(feature_object_list) {
     ) +
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
-    ggplot2::xlab("# genes") +
+    ggplot2::xlab("# features") +
     ggplot2::ylab("EC consistency")
 }
 
@@ -358,7 +358,7 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(expression_matrix = as.matrix(mtcars),
+#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    steps = c(7, 9),
 #'    npcs = 4,
@@ -439,7 +439,7 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(expression_matrix = as.matrix(mtcars),
+#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    steps = c(7, 9),
 #'    npcs = 4,
@@ -511,7 +511,7 @@ plot_feature_stability_ecs_facet = function(feature_object_list, text_size = 5) 
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(expression_matrix = as.matrix(mtcars),
+#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    steps = c(7, 9),
 #'    npcs = 4,
@@ -603,7 +603,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
     ) +
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
-    ggplot2::xlab("# genes") +
+    ggplot2::xlab("# features") +
     ggplot2::ylab("EC similiarity")
 }
 
@@ -622,7 +622,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
 #' lower bound for the number of clusters. The calculations are performed multiple
 #' times by changing the seed at each repetition.
 #'
-#' @param object if the graph reduction type is PCA, the object should be an expression matrix; in
+#' @param object if the graph reduction type is PCA, the object should be a data matrix; in
 #' the case of UMAP, the user could also provide a PCA embedding
 #' @param n_neigh_sequence a sequence of the number of nearest neighbors
 #' @param config_name user specified string that uniquely describes the embedding characteristics
@@ -817,7 +817,7 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #'
 #' @description Creates an object that
 #'
-#' @param object if the graph reduction type is PCA, the object should be an expression matrix; in
+#' @param object if the graph reduction type is PCA, the object should be a data matrix; in
 #' the case of UMAP, the user could also provide a PCA embedding
 #' @param n_neigh_sequence a sequence of the number of nearest neighbors
 #' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user
@@ -1376,7 +1376,7 @@ plot_clustering_difference_facet = function(clustering_difference_object,
                                             grid = T) {
   npoints = nrow(embedding)
   if (length(clustering_difference_object$all[[1]][[1]]) != npoints) {
-    stop("The provided embedding and the consistency arrays must have the same number of cells!")
+    stop("The provided embedding and the consistency arrays must have the same number of elements!")
   }
 
   if (ncol(embedding) < 2) {
