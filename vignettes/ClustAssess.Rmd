@@ -123,7 +123,7 @@ mean(pbmc_small@meta.data$marker.gene.jsi)
 ```
 
 
-## Element-wise frustration
+## Element-wise consistency
 How consistently are cells clustered by k-means? We will rerun k-means 
 clustering 20 times to investigate.
 ```{r frust, fig.width=7, fig.height=4.5}
@@ -137,16 +137,16 @@ for (i in 1:n.reps){
   clustering.list[[i]] = create_clustering(km.res)
 }
 
-# now, we calculate the element-wise frustration (ie consistency), which
+# now, we calculate the element-wise consistency (aka frustration), which
 # performs pair-wise comparisons between all 20 clusterings; the 
-# frustration is the average per-cell ECS across all comparisons. The higher
-# the frustration, the more consistently is that cell clustered across
+# consistency is the average per-cell ECS across all comparisons. The higher
+# the consistency, the more consistently is that cell clustered across
 # random seeds.
-pbmc_small@meta.data$frustration = element_frustration(clustering.list)
+pbmc_small@meta.data$consistency = element_consistency(clustering.list)
 
 # which cells are clustered more consistently?
-FeaturePlot(pbmc_small, 'frustration')
-mean(pbmc_small@meta.data$frustration)
+FeaturePlot(pbmc_small, 'consistency')
+mean(pbmc_small@meta.data$consistency)
 ```
 
 ## Session info
