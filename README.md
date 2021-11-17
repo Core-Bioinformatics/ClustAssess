@@ -9,7 +9,7 @@ for assessing clustering robustness.
 - [The Tools](#the-tools)
   * [Proportion of Ambiguously Clustered Pairs (PAC)](#proportion-of-ambiguously-clustered-pairs-pac)
   * [Element Centric Clustering Similarity (ECS)](#element-centric-clustering-similarity-ecs)
-  * [Marker gene overlap](#marker-gene-overlap)
+  * [Marker Gene Overlap](#marker-gene-overlap)
 - [Handling Large Datasets](#handling-large-datasets)
 - [Installation](#installation)
 - [References](#references)
@@ -129,6 +129,7 @@ The following packages are required for ClustAssess:
 * Rcpp
 * methods
 * stats
+* foreach
 
 To run all examples and vignettes, the following packages are also needed:
 * knitr
