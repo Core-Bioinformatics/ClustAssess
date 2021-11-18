@@ -95,7 +95,7 @@ Jaccard similarity (size of intersect divided by size of union) per cell.
 # Handling Large Datasets
 If your dataset is large, the runtime for the tools described above may be 
 prohibitive. In these cases, we recommend subsampling your data using geometric 
-sketching [3]. If you are using R, the subsampling can be done via reticulate:
+sketching [3]. In R, the subsampling can be done via reticulate:
 
 `geosketch <- reticulate::import('geosketch')`
 
@@ -104,7 +104,7 @@ then call:
 
 `sketch.indices <- geosketch$gs(data.embed, sketch.size, one_indexed = TRUE)`
 
-and use those indices for your subsample. For PAC, subsampling to <1000 cells 
+and use the resulting indices for your subsample. For PAC, subsampling to <1000 cells 
 should help, and for ECS and data assessment functions, <5000 cells may be 
 appropriate (and parallelization can further help reduce the runtime).
 
