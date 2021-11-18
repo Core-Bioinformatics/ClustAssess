@@ -79,10 +79,8 @@ element_sim = function(clustering1,
 #'
 #' @examples
 #' km.res = kmeans(iris[,1:4], centers=8)$cluster
-#' km.clustering = create_clustering(km.res)
 #' hc.res = hclust(dist(iris[,1:4]))
-#' hc.clustering = create_clustering(hc.res)
-#' element_sim_elscore(km.clustering, hc.clustering)
+#' element_sim_elscore(km.res, hc.res)
 element_sim_elscore = function(clustering1,
                                clustering2,
                                alpha = 0.9,
@@ -99,8 +97,8 @@ element_sim_elscore = function(clustering1,
 
   # if both clusterings are membership vectors, calculate the ecs without
   # creating a ClustAssess object
-  if(any(class(clustering1) %in% c("numeric", "factor", "character")) &&
-     any(class(clustering2) %in% c("numeric", "factor", "character"))) {
+  if(any(class(clustering1) %in% c("numeric", "integer", "factor", "character")) &&
+     any(class(clustering2) %in% c("numeric", "integer", "factor", "character"))) {
 
     if (length(clustering1) != length(clustering2)){
       stop('clustering1 and clustering2 do not have the same length.')
@@ -654,7 +652,7 @@ element_sim_matrix = function(clustering_list,
 
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint = sapply(clustering_list, function(x) {
-    any(class(x) %in% c("numeric", "factor", "character"))
+    any(class(x) %in% c("numeric", "integer", "factor", "character"))
   })
 
   are_all_clustassess_objects = sapply(clustering_list, function(x) {
@@ -668,7 +666,7 @@ element_sim_matrix = function(clustering_list,
   if(any(are_all_flat_disjoint == FALSE) &&
      any(are_all_viable_objects == FALSE) &&
      any(are_all_clustassess_objects == FALSE)) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust or Clustering.")
+    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
 
@@ -995,7 +993,7 @@ element_consistency = function(clustering_list,
 
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint = sapply(clustering_list, function(x) {
-    any(class(x) %in% c("numeric", "factor", "character"))
+    any(class(x) %in% c("numeric", "integer", "factor", "character"))
   })
 
   are_all_clustassess_objects = sapply(clustering_list, function(x) {
@@ -1009,7 +1007,7 @@ element_consistency = function(clustering_list,
   if(any(are_all_flat_disjoint == FALSE) &&
      any(are_all_viable_objects == FALSE) &&
      any(are_all_clustassess_objects == FALSE)) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust or Clustering.")
+    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
 
@@ -1161,7 +1159,7 @@ element_agreement = function(reference_clustering,
                              ncores = 1){
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint = sapply(clustering_list, function(x) {
-    any(class(x) %in% c("numeric", "factor", "character"))
+    any(class(x) %in% c("numeric", "integer", "factor", "character"))
   })
 
   are_all_clustassess_objects = sapply(clustering_list, function(x) {
@@ -1174,7 +1172,7 @@ element_agreement = function(reference_clustering,
 
   # if the condition is met, perform element frustration using only the membership vector
   if(all(are_all_flat_disjoint == TRUE) &&
-     any(class(reference_clustering) %in% c("numeric", "factor", "character"))) {
+     any(class(reference_clustering) %in% c("numeric", "integer", "factor", "character"))) {
     return(element_agreement_flat_disjoint(reference_clustering = reference_clustering,
                                            clustering_list = clustering_list,
                                            alpha = alpha,
@@ -1184,8 +1182,8 @@ element_agreement = function(reference_clustering,
   if(any(are_all_flat_disjoint == FALSE &&
          are_all_viable_objects == FALSE &&
          are_all_clustassess_objects == FALSE) ||
-     !(any(class(reference_clustering) %in% c("numeric", "factor", "character", "matrix", "Matrix", "hclust", "Clustering") ))) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust or Clustering.")
+     !(any(class(reference_clustering) %in% c("numeric", "integer", "factor", "character", "matrix", "Matrix", "hclust", "Clustering") ))) {
+    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
 
@@ -1407,6 +1405,21 @@ setGeneric("create_clustering",
 #' @describeIn create_clustering Create Clustering Object from Numeric Vector
 setMethod("create_clustering",
           signature(clustering_result="numeric"),
+          function(clustering_result,
+                   alpha=0.9) {
+            # convert to character
+            element.names = names(clustering_result)
+            clustering_result = as.character(clustering_result)
+            names(clustering_result) = element.names
+
+            # create Clustering object in separate function
+            return(create_flat_disjoint_clustering(clustering_result,
+                                                   alpha))
+          })
+
+#' @describeIn create_clustering Create Clustering Object from Integer Vector
+setMethod("create_clustering",
+          signature(clustering_result="integer"),
           function(clustering_result,
                    alpha=0.9) {
             # convert to character
