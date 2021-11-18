@@ -38,6 +38,36 @@ element_sim = function(clustering1,
 #' @param clustering2 The second Clustering.
 #' @param alpha A numeric giving the personalized PageRank damping factor;
 #' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation_cl1 Choose a implementation for personalized
+#' page-rank calculation for the first clustering:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize_cl1 Whether to normalize all rows in the first clustering
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r_cl1 A numeric hierarchical scaling parameter for the first clustering.
+#' @param rescale_path_type_cl1 A string; rescale the hierarchical height of
+#' the first clustering by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled_cl1 A logical: if TRUE, the linkage distances of the first
+#' clustering are linearly rescaled to be in-between 0 and 1.
+#' @param ppr_implementation_cl2 Choose a implementation for personalized
+#' page-rank calculation for the second clustering:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize_cl2 Whether to normalize all rows in the second clustering
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r_cl2 A numeric hierarchical scaling parameter for the second clustering.
+#' @param rescale_path_type_cl2 A string; rescale the hierarchical height of
+#' the second clustering by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled_cl2 A logical: if TRUE, the linkage distances of the second
+#' clustering are linearly rescaled to be in-between 0 and 1.
 #'
 #' @return Vector of element-centric similarity between the two clusterings for
 #'  each element.
@@ -53,7 +83,19 @@ element_sim = function(clustering1,
 #' hc.res = hclust(dist(iris[,1:4]))
 #' hc.clustering = create_clustering(hc.res)
 #' element_sim_elscore(km.clustering, hc.clustering)
-element_sim_elscore = function(clustering1, clustering2, alpha = 0.9){
+element_sim_elscore = function(clustering1,
+                               clustering2,
+                               alpha = 0.9,
+                               r_cl1 = 1,
+                               rescale_path_type_cl1 = "max",
+                               ppr_implementation_cl1 = "prpack",
+                               dist_rescaled_cl1 = FALSE,
+                               row_normalize_cl1 = TRUE,
+                               r_cl2 = 1,
+                               rescale_path_type_cl2 = "max",
+                               ppr_implementation_cl2 = "prpack",
+                               dist_rescaled_cl2 = FALSE,
+                               row_normalize_cl2 = TRUE) {
 
   # if both clusterings are membership vectors, calculate the ecs without
   # creating a ClustAssess object
@@ -77,11 +119,39 @@ element_sim_elscore = function(clustering1, clustering2, alpha = 0.9){
 
 
   if(class(clustering1) != "Clustering") {
-    clustering1 = create_clustering(clustering1, alpha = alpha)
+    if(any(class(clustering1) == "hclust")) {
+      clustering1 = create_clustering(clustering_result = clustering1,
+                                      alpha = alpha,
+                                      r = r_cl1,
+                                      rescale_path_type = rescale_path_type_cl1,
+                                      ppr_implementation = ppr_implementation_cl1,
+                                      dist_rescaled = dist_rescaled_cl1)
+    } else if(any(class(clustering1) %in% c("matrix", "Matrix"))) {
+      clustering1 = create_clustering(clustering_result = clustering1,
+                                      alpha = alpha,
+                                      ppr_implementation = ppr_implementation_cl1,
+                                      row_normalize = row_normalize_cl1)
+    } else
+      clustering1 = create_clustering(clustering1,
+                                      alpha = alpha)
   }
 
   if(class(clustering2) != "Clustering") {
-    clustering2 = create_clustering(clustering2, alpha = alpha)
+    if(any(class(clustering2) == "hclust")) {
+      clustering2 = create_clustering(clustering_result = clustering2,
+                                      alpha = alpha,
+                                      r = r_cl2,
+                                      rescale_path_type = rescale_path_type_cl2,
+                                      ppr_implementation = ppr_implementation_cl2,
+                                      dist_rescaled = dist_rescaled_cl2)
+    } else if(any(class(clustering2) %in% c("matrix", "Matrix"))) {
+      clustering2 = create_clustering(clustering_result = clustering2,
+                                      alpha = alpha,
+                                      ppr_implementation = ppr_implementation_cl2,
+                                      row_normalize = row_normalize_cl2)
+    } else
+      clustering2 = create_clustering(clustering2,
+                                      alpha = alpha)
   }
 
   # Make sure clusterings are comparable
@@ -103,10 +173,10 @@ element_sim_elscore = function(clustering1, clustering2, alpha = 0.9){
 # create the cluster -> element dictionary (list) for flat, disjoint clustering
 create_clu2elm_dict = function(clustering){
   clu2elm_dict = list()
-  for (i in 1:length(clustering)){
-    clust = clustering[i]
-    clu2elm_dict[[clust]] = c(clu2elm_dict[[clust]], i)
+  for (i in unique(clustering)){
+    clu2elm_dict[[i]] = which(clustering == i)
   }
+
   return(clu2elm_dict)
 }
 
@@ -530,10 +600,30 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' @description Compare a set of clusterings by calculating their pairwise
 #' average element-centric clustering similarities.
 #'
-#' @param clustering_list A list of Clustering objects to be compared with
-#' element-centric similarity.
+#' @param clustering_list The clustering result, either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
 #' @param output_type A string specifying whether the output should be a
 #' matrix or a data.frame.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation Choose a implementation for personalized
+#' page-rank calculation:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize Whether to normalize all rows in clustering_result
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r A numeric hierarchical scaling parameter.
+#' @param rescale_path_type A string; rescale the hierarchical height by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
+#' rescaled to be in-between 0 and 1.
+#' @param ncores the number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
 #' @export
@@ -546,51 +636,18 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' clustering.list = list()
 #' for (i in 1:20){
 #'   km.res = kmeans(mtcars, 3)$cluster
-#'   clustering.list[[i]] = create_clustering(km.res)
+#'   clustering.list[[i]] = as.numeric(km.res)
 #' }
 #' element_sim_matrix(clustering.list, output_type='matrix')
-element_sim_matrix = function(clustering_list, output_type='matrix'){
-  if (!(output_type %in% c('data.frame', 'matrix'))){
-    stop('output_type must be data.frame or matrix.')
-  }
-  # make sure all clusterings have same alpha
-  alphas = sapply(clustering_list, function(x) x@alpha)
-  if (length(unique(alphas)) != 1){
-    stop('all clusterings in clustering_list must be created with same alpha')
-  }
-
-  n.clusterings = length(clustering_list)
-  sim_matrix = matrix(NA, nrow=n.clusterings, ncol=n.clusterings)
-  for (i in 1:(n.clusterings-1)){
-    i.aff = clustering_list[[i]]@affinity_matrix
-    for (j in (i+1):n.clusterings){
-      j.aff = clustering_list[[j]]@affinity_matrix
-
-      sim_matrix[i, j] = mean(corrected_L1(i.aff, j.aff, alphas[1]))
-    }
-  }
-  diag(sim_matrix) = 1
-
-  if (output_type=='data.frame'){
-    sim_matrix = data.frame(i.clustering=rep(1:n.clusterings,
-                                             n.clusterings),
-                            j.clustering=rep(1:n.clusterings,
-                                             each=n.clusterings),
-                            element_sim=c(sim_matrix))
-  }
-
-  return(sim_matrix)
-}
-
-element_sim_matrix_new = function(clustering_list,
-                                  output_type='matrix',
-                                  alpha = 0.9,
-                                  r = 1,
-                                  rescale_path_type = "max",
-                                  ppr_implementation = "prpack",
-                                  dist_rescaled = FALSE,
-                                  row_normalize = TRUE,
-                                  ncores = 1) {
+element_sim_matrix = function(clustering_list,
+                              output_type='matrix',
+                              alpha = 0.9,
+                              r = 1,
+                              rescale_path_type = "max",
+                              ppr_implementation = "prpack",
+                              dist_rescaled = FALSE,
+                              row_normalize = TRUE,
+                              ncores = 1) {
   if (!(output_type %in% c('data.frame', 'matrix'))){
     stop('output_type must be data.frame or matrix.')
   }
@@ -608,7 +665,9 @@ element_sim_matrix_new = function(clustering_list,
     any(class(x) %in% c("matrix", "Matrix", "hclust"))
   })
 
-  if(any(are_all_flat_disjoint == FALSE && are_all_viable_objects == FALSE && are_all_clustassess_objects == FALSE)) {
+  if(any(are_all_flat_disjoint == FALSE) &&
+     any(are_all_viable_objects == FALSE) &&
+     any(are_all_clustassess_objects == FALSE)) {
     stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust or Clustering.")
   }
 
@@ -729,7 +788,8 @@ are_identical_memberships = function(mb1, mb2) {
 # merge partitions that are identical (meaning the ecs threshold is 1)
 # the order parameter is indicating whether to sort the merged objects
 # based on their frequency
-merge_identical_partitions = function(clustering_list, order = T) {
+merge_identical_partitions = function(clustering_list,
+                                      order = TRUE) {
   # merge the same memberships into the same object
   merged_partitions = list(clustering_list[[1]])
   no_partitions = length(clustering_list)
@@ -760,7 +820,7 @@ merge_identical_partitions = function(clustering_list, order = T) {
 
   if(order) {
     ordered_indices = order(sapply(merged_partitions, function(x) { x$freq }), decreasing = T)
-    merged_partitions = order_list(merged_partitions, ordered_indices)
+    merged_partitions = merged_partitions[ordered_indices]
   }
 
 
@@ -769,8 +829,10 @@ merge_identical_partitions = function(clustering_list, order = T) {
 
 
 # merge the partitions when the ecs threshold is not 1
-merge_partitions_ecs = function(partition_list, ecs_thresh = 0.99, ncores = 2, order = T) {
-
+merge_partitions_ecs = function(partition_list,
+                                ecs_thresh = 0.99,
+                                ncores = 1,
+                                order = TRUE) {
   partition_groups = list()
   nparts = length(partition_list)
 
@@ -834,8 +896,8 @@ merge_partitions_ecs = function(partition_list, ecs_thresh = 0.99, ncores = 2, o
   }
 
   if(order) {
-    ordered.indices = order(sapply(merged_partitions, function(x) { x$freq }), decreasing = T)
-    merged_partitions = order_list(merged_partitions, ordered.indices)
+    ordered_indices = order(sapply(merged_partitions, function(x) { x$freq }), decreasing = T)
+    merged_partitions = merged_partitions[ordered_indices]
   }
 
   merged_partitions
@@ -847,15 +909,18 @@ merge_partitions_ecs = function(partition_list, ecs_thresh = 0.99, ncores = 2, o
 #'
 #' @param partition_list A list of flat Clustering objects
 #' @param ecs_thresh the ecs threshold object
-#'
+#' @param ncores the number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
+#' @param order A logical: if TRUE, order the partitions based on their frequencies.
 #' @return a list of the merged partitions
 #' @export
 #' @examples
 #' initial_list = list(c(1,1,2), c(2,2,2))
 #' merge_partitions(initial_list, 0.99)
-#'
-
-merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
+merge_partitions = function(partition_list,
+                            ecs_thresh = 0.99,
+                            ncores = 1,
+                            order = TRUE) {
   # check the type of object that is provided in the list
   if(class(partition_list[[1]]) != "list") {
     partition_list = lapply(partition_list, function(x) {
@@ -865,16 +930,16 @@ merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
   } else {
     if(!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
       return(lapply(partition_list, function(sublist) {
-        merge_partitions(sublist, ecs_thresh)
+        merge_partitions(sublist, ecs_thresh, ncores, order)
       }))
     }
   }
 
   if(ecs_thresh == 1) {
-    return(merge_identical_partitions(partition_list))
+    return(merge_identical_partitions(partition_list, order))
   }
 
-  merge_partitions_ecs(partition_list, ecs_thresh, ncores = ncores)
+  merge_partitions_ecs(partition_list, ecs_thresh, ncores = ncores, order = order)
 }
 
 
@@ -882,8 +947,28 @@ merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
 #' @description Inspect the consistency of a set of clusterings by calculating
 #' their element-wise clustering consistency (also known as element-wise frustration).
 #'
-#' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise consistency.
+#' @param clustering_list The clustering result, either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation Choose a implementation for personalized
+#' page-rank calculation:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize Whether to normalize all rows in clustering_result
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r A numeric hierarchical scaling parameter.
+#' @param rescale_path_type A string; rescale the hierarchical height by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
+#' rescaled to be in-between 0 and 1.
+#' @param ncores the number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
 #'
 #' @return a vector containing the element-wise consistency.
 #' @export
@@ -891,43 +976,22 @@ merge_partitions = function(partition_list, ecs_thresh = 0.99, ncores = 2) {
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
-#'
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
 #'   km.res = kmeans(mtcars, 3)$cluster
-#'   clustering.list[[i]] = create_clustering(km.res)
+#'   clustering.list[[i]] = as.numeric(km.res)
 #' }
 #' element_consistency(clustering.list)
-element_consistency = function(clustering_list){
-  # make sure all clusterings have same alpha
-  alphas = sapply(clustering_list, function(x) x@alpha)
-  if (length(unique(alphas)) != 1){
-    stop('all clusterings in clustering_list must be created with same alpha')
-  }
 
-  n.clusterings = length(clustering_list)
-  consistency = rep(0, length(clustering_list[[1]]))
-  for (i in 1:(n.clusterings-1)){
-    i.aff = clustering_list[[i]]@affinity_matrix
-    for (j in (i+1):n.clusterings){
-      j.aff = clustering_list[[j]]@affinity_matrix
-
-      consistency = consistency + corrected_L1(i.aff, j.aff, alphas[1])
-    }
-  }
-  consistency = consistency / (n.clusterings * (n.clusterings-1) / 2)
-  return(consistency)
-}
-
-element_consistency_new = function(clustering_list,
-                                   alpha = 0.9,
-                                   r = 1,
-                                   rescale_path_type = "max",
-                                   ppr_implementation = "prpack",
-                                   dist_rescaled = FALSE,
-                                   row_normalize = TRUE,
-                                   ncores = 1) {
+element_consistency = function(clustering_list,
+                               alpha = 0.9,
+                               r = 1,
+                               rescale_path_type = "max",
+                               ppr_implementation = "prpack",
+                               dist_rescaled = FALSE,
+                               row_normalize = TRUE,
+                               ncores = 1) {
 
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint = sapply(clustering_list, function(x) {
@@ -942,7 +1006,9 @@ element_consistency_new = function(clustering_list,
     any(class(x) %in% c("matrix", "Matrix", "hclust"))
   })
 
-  if(any(are_all_flat_disjoint == FALSE && are_all_viable_objects == FALSE && are_all_clustassess_objects == FALSE)) {
+  if(any(are_all_flat_disjoint == FALSE) &&
+     any(are_all_viable_objects == FALSE) &&
+     any(are_all_clustassess_objects == FALSE)) {
     stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust or Clustering.")
   }
 
@@ -953,10 +1019,11 @@ element_consistency_new = function(clustering_list,
     final_clustering_list = merge_partitions(partition_list = clustering_list,
                                              ecs_thresh = 1,
                                              ncores = ncores)
-    return(weighted_element_consistency_new(clustering_list = lapply(final_clustering_list, function(x) { x$mb }),
+    return(weighted_element_consistency(clustering_list = lapply(final_clustering_list, function(x) { x$mb }),
                                             weights = sapply(final_clustering_list, function(x) { x$freq }),
                                             ncores = ncores))
   }
+
   if(!all(are_all_clustassess_objects)) {
     clustering_list = create_clustering_list(object_list = clustering_list,
                                              ncores = ncores,
@@ -967,8 +1034,8 @@ element_consistency_new = function(clustering_list,
                                              dist_rescaled = dist_rescaled,
                                              row_normalize = row_normalize)
   }
-  # calculate the consistency between the ClustAssess objects
 
+  # calculate the consistency between the ClustAssess objects
   n.clusterings = length(clustering_list)
   consistency = rep(0, length(clustering_list[[1]]))
   for (i in 1:(n.clusterings-1)){
@@ -983,40 +1050,15 @@ element_consistency_new = function(clustering_list,
   return(consistency)
 }
 
-#' Element-Wise Consistency Between a Weighted Set of Clusterings
-#' @description Inspect the consistency of a set of clusterings by calculating
-#' their element-wise clustering consistency (also known as element-wise frustration).
-#'
-#' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise consistency.
-#' @param weights A list of weights representing the frequency of each clustering
-#' object
-#'
-#' @return a vector containing the element-wise consistency.
-#' @export
-#'
-#' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
-#' Element-centric clustering comparison unifies overlaps and hierarchy.
-#' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
-#'
-#' @examples
-#' clustering.list = list()
-#' for (i in 1:20){
-#'   km.res = kmeans(mtcars, 3)$cluster
-#'   clustering.list[[i]] = create_clustering(km.res)
-#' }
-#' weighted_element_consistency(clustering.list, rep(1,20))
-#'
-weighted_element_consistency_new = function(clustering_list,
+# calculate the element consistency of a list of clusterings where each object has a weight
+weighted_element_consistency = function(clustering_list,
                                             weights = NULL,
-                                            ncores = 2) {
+                                            ncores = 1) {
   n_clusterings = length(clustering_list)
 
   if(n_clusterings == 1) {
     return(rep(1, length(clustering_list[[1]])))
   }
-
-
 
   if(is.null(weights)) {
     weights = rep(1, n_clusterings)
@@ -1065,10 +1107,33 @@ weighted_element_consistency_new = function(clustering_list,
 #' @description Inspect how consistently of a set of clusterings agree with
 #' a reference clustering by calculating their element-wise average agreement.
 #'
-#' @param reference_clustering A Clustering objects for the reference clustering
-#' that each clustering in clustering_list is compared to.
-#' @param clustering_list A list of Clustering objects used to calculate
-#' the element-wise average agreement
+#' @param reference_clustering The reference clustering, that each clustering in
+#' clustering_list is compared to. It can be either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param clustering_list The clustering list, either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param alpha A numeric giving the personalized PageRank damping factor;
+#' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation Choose a implementation for personalized
+#' page-rank calculation:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize Whether to normalize all rows in clustering_result
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r A numeric hierarchical scaling parameter.
+#' @param rescale_path_type A string; rescale the hierarchical height by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
+#' rescaled to be in-between 0 and 1.
+#' @param ncores the number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
 #'
 #' @return A vector containing the element-wise average agreement.
 #' @export
@@ -1078,79 +1143,22 @@ weighted_element_consistency_new = function(clustering_list,
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #'
 #' @examples
-#' reference.clustering = create_clustering(iris$Species)
+#' reference.clustering = iris$Species
 #' clustering.list = list()
 #' for (i in 1:20){
 #'   km.res = kmeans(iris[,1:4], 3)$cluster
-#'   clustering.list[[i]] = create_clustering(km.res)
+#'   clustering.list[[i]] = as.numeric(km.res)
 #' }
 #' element_agreement(reference.clustering, clustering.list)
-element_agreement = function(reference_clustering, clustering_list){
-  # make sure all clusterings have same alpha
-  alphas = sapply(clustering_list, function(x) x@alpha)
-  if ((reference_clustering@alpha != alphas[1]) |
-      (length(unique(alphas)) != 1)){
-    stop('reference_clustering and all clusterings in clustering_list must be
-         created with same alpha')
-  }
-
-  n.clusterings = length(clustering_list)
-  avg_agreement = rep(0, length(clustering_list[[1]]))
-  ref_aff = reference_clustering@affinity_matrix
-  for (i in 1:(n.clusterings-1)){
-    i.aff = clustering_list[[i]]@affinity_matrix
-    avg_agreement = avg_agreement + corrected_L1(ref_aff, i.aff, alphas[1])
-  }
-  avg_agreement = avg_agreement / n.clusterings
-  return(avg_agreement)
-}
-
-
-element_agreement_flat_disjoint = function(reference_clustering,
-                                           clustering_list,
-                                           alpha = 0.9,
-                                           ncores = 1) {
-
-  n_points = length(reference_clustering)
-  for(mb_vector in clustering_list) {
-    if(length(mb_vector) != n_points) {
-      stop("The partitions do not have the same length")
-    }
-  }
-
-  ncores = min(ncores, length(clustering_list))
-  if(ncores > 1) {
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
-
-    doParallel::registerDoParallel(cl = my_cluster)
-  } else {
-    foreach::registerDoSEQ()
-  }
-
-  avg_agreement = foreach::foreach(obj = clustering_list,
-                                   .export = c("corrected_l1_mb", "create_clu2elm_dict"),
-                                   .combine = '+') %dopar% {
-    corrected_l1_mb(reference_clustering, obj, alpha)
-  }
-
-  if(ncores > 1)
-    parallel::stopCluster(cl = my_cluster)
-
-  return(avg_agreement / length(clustering_list))
-}
-
-element_agreement_new = function(reference_clustering,
-                                 clustering_list,
-                                 alpha = 0.9,
-                                 r = 1,
-                                 rescale_path_type = "max",
-                                 ppr_implementation = "prpack",
-                                 dist_rescaled = FALSE,
-                                 row_normalize = TRUE,
-                                 ncores = 1){
+element_agreement = function(reference_clustering,
+                             clustering_list,
+                             alpha = 0.9,
+                             r = 1,
+                             rescale_path_type = "max",
+                             ppr_implementation = "prpack",
+                             dist_rescaled = FALSE,
+                             row_normalize = TRUE,
+                             ncores = 1){
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint = sapply(clustering_list, function(x) {
     any(class(x) %in% c("numeric", "factor", "character"))
@@ -1195,23 +1203,19 @@ element_agreement_new = function(reference_clustering,
   }
 
   # create ClustAssess object for the reference clustering
-  if(class(reference_clustering) == "hclust") {
+  if(any(class(reference_clustering) == "hclust")) {
     reference_clustering = create_clustering(clustering_result = reference_clustering,
                                              alpha = alpha,
                                              r = r,
                                              rescale_path_type = rescale_path_type,
                                              ppr_implementation = ppr_implementation,
                                              dist_rescaled = dist_rescaled)
-  }
-
-  if(any(class(reference_clustering) %in% c("matrix", "Matrix"))) {
+  } else if(any(class(reference_clustering) %in% c("matrix", "Matrix"))) {
     reference_clustering = create_clustering(clustering_result = reference_clustering,
                                              alpha = alpha,
                                              ppr_implementation = ppr_implementation,
                                              row_normalize = row_normalize)
-  }
-
-  if(class(reference_clustering) != "Clustering") {
+  } else if(any(class(reference_clustering) != "Clustering")) {
     reference_clustering = create_clustering(clustering_result = reference_clustering,
                                              alpha = alpha)
   }
@@ -1227,6 +1231,42 @@ element_agreement_new = function(reference_clustering,
   }
   avg_agreement = avg_agreement / n.clusterings
   return(avg_agreement)
+}
+
+element_agreement_flat_disjoint = function(reference_clustering,
+                                           clustering_list,
+                                           alpha = 0.9,
+                                           ncores = 1) {
+
+  n_points = length(reference_clustering)
+  for(mb_vector in clustering_list) {
+    if(length(mb_vector) != n_points) {
+      stop("The partitions do not have the same length")
+    }
+  }
+
+  ncores = min(ncores, length(clustering_list))
+  if(ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+      ncores,
+      type = "PSOCK"
+    )
+
+    doParallel::registerDoParallel(cl = my_cluster)
+  } else {
+    foreach::registerDoSEQ()
+  }
+
+  avg_agreement = foreach::foreach(obj = clustering_list,
+                                   .export = c("corrected_l1_mb", "create_clu2elm_dict"),
+                                   .combine = '+') %dopar% {
+                                     corrected_l1_mb(reference_clustering, obj, alpha)
+                                   }
+
+  if(ncores > 1)
+    parallel::stopCluster(cl = my_cluster)
+
+  return(avg_agreement / length(clustering_list))
 }
 
 create_clustering_list = function(object_list,
@@ -1252,32 +1292,31 @@ create_clustering_list = function(object_list,
   }
 
   clustering_list = foreach::foreach(obj = object_list,
-                                     .noexport = all_vars[!(all_vars %in% needed_vars)],
                                      .packages = "ClustAssess") %dopar% {
-    # if the object is already a ClustAssess one, we will just return it
-    if(class(obj) == "Clustering") {
-      return(obj)
-    }
+                                       # if the object is already a ClustAssess one, we will just return it
+                                       if(any(class(obj) == "Clustering")) {
+                                         return(obj)
+                                       }
 
-    if(class(obj) == "hclust") {
-      return(create_clustering(clustering_result = obj,
-                               alpha = alpha,
-                               r = r,
-                               rescale_path_type = rescale_path_type,
-                               ppr_implementation = ppr_implementation,
-                               dist_rescaled = dist_rescaled))
-    }
+                                       if(any(class(obj) == "hclust")) {
+                                         return(create_clustering(clustering_result = obj,
+                                                                  alpha = alpha,
+                                                                  r = r,
+                                                                  rescale_path_type = rescale_path_type,
+                                                                  ppr_implementation = ppr_implementation,
+                                                                  dist_rescaled = dist_rescaled))
+                                       }
 
-    if(any(class(obj) %in% c("matrix", "Matrix"))) {
-      return(create_clustering(clustering_result = obj,
-                               alpha = alpha,
-                               ppr_implementation = ppr_implementation,
-                               row_normalize = row_normalize))
-    }
+                                       if(any(class(obj) %in% c("matrix", "Matrix"))) {
+                                         return(create_clustering(clustering_result = obj,
+                                                                  alpha = alpha,
+                                                                  ppr_implementation = ppr_implementation,
+                                                                  row_normalize = row_normalize))
+                                       }
 
-    create_clustering(clustering_result = obj,
-                      alpha = alpha)
-  }
+                                       create_clustering(clustering_result = obj,
+                                                         alpha = alpha)
+                                     }
 
   if(ncores > 1)
     parallel::stopCluster(cl = my_cluster)
@@ -1336,8 +1375,8 @@ Clustering <- setClass("Clustering",
 #' @param alpha A numeric giving the personalized PageRank damping factor;
 #' 1 - alpha is the restart probability for the PPR random walk.
 #' @param ppr_implementation Choose a implementation for personalized
-#' page-rank calcuation:
-#' * 'prpack': use PPR alogrithms in igraph.
+#' page-rank calculation:
+#' * 'prpack': use PPR algorithms in igraph.
 #' * 'power_iteration': use power_iteration method.
 #' @param row_normalize Whether to normalize all rows in clustering_result
 #' so they sum to one before calculating ECS. It is recommended to set this to
