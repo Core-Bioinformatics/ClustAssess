@@ -10,23 +10,71 @@ NULL
 #' @param clustering2 The second Clustering.
 #' @param alpha A numeric giving the personalized PageRank damping factor;
 #' 1 - alpha is the restart probability for the PPR random walk.
+#' @param ppr_implementation_cl1 Choose a implementation for personalized
+#' page-rank calculation for the first clustering:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize_cl1 Whether to normalize all rows in the first clustering
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r_cl1 A numeric hierarchical scaling parameter for the first clustering.
+#' @param rescale_path_type_cl1 A string; rescale the hierarchical height of
+#' the first clustering by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled_cl1 A logical: if TRUE, the linkage distances of the first
+#' clustering are linearly rescaled to be in-between 0 and 1.
+#' @param ppr_implementation_cl2 Choose a implementation for personalized
+#' page-rank calculation for the second clustering:
+#' * 'prpack': use PPR algorithms in igraph.
+#' * 'power_iteration': use power_iteration method.
+#' @param row_normalize_cl2 Whether to normalize all rows in the second clustering
+#' so they sum to one before calculating ECS. It is recommended to set this to
+#' TRUE, which will lead to slightly different ECS values compared to clusim.
+#' @param r_cl2 A numeric hierarchical scaling parameter for the second clustering.
+#' @param rescale_path_type_cl2 A string; rescale the hierarchical height of
+#' the second clustering by:
+#' * 'max' : the maximum path from the root.
+#' * 'min' : the minimum path form the root.
+#' * 'linkage' : use the linkage distances in the clustering.
+#' @param dist_rescaled_cl2 A logical: if TRUE, the linkage distances of the second
+#' clustering are linearly rescaled to be in-between 0 and 1.
 #'
 #' @return The average element-wise similarity between the two Clusterings.
 #' @export
 #'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
-#' km.clustering = create_clustering(km.res)
 #' hc.res = hclust(dist(mtcars))
-#' hc.clustering = create_clustering(hc.res)
-#' element_sim(km.clustering, hc.clustering)
+#' element_sim(km.res, hc.res)
 element_sim = function(clustering1,
                        clustering2,
-                       alpha = 0.9){
-  element.scores = element_sim_elscore(clustering1,
+                       alpha = 0.9,
+                       r_cl1 = 1,
+                       rescale_path_type_cl1 = "max",
+                       ppr_implementation_cl1 = "prpack",
+                       dist_rescaled_cl1 = FALSE,
+                       row_normalize_cl1 = TRUE,
+                       r_cl2 = 1,
+                       rescale_path_type_cl2 = "max",
+                       ppr_implementation_cl2 = "prpack",
+                       dist_rescaled_cl2 = FALSE,
+                       row_normalize_cl2 = TRUE) {
+  element_scores = element_sim_elscore(clustering1,
                                        clustering2,
-                                       alpha)
-  return(mean(element.scores))
+                                       alpha,
+                                       r_cl1,
+                                       rescale_path_type_cl1,
+                                       ppr_implementation_cl1,
+                                       dist_rescaled_cl1,
+                                       row_normalize_cl1,
+                                       r_cl2,
+                                       rescale_path_type_cl2,
+                                       ppr_implementation_cl2,
+                                       dist_rescaled_cl2,
+                                       row_normalize_cl2)
+    return(mean(element_scores))
 }
 
 #' The Element-Centric Clustering Similarity for each Element
@@ -633,8 +681,7 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(mtcars, 3)$cluster
-#'   clustering.list[[i]] = as.numeric(km.res)
+#'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
 #' }
 #' element_sim_matrix(clustering.list, output_type='matrix')
 element_sim_matrix = function(clustering_list,
@@ -977,8 +1024,7 @@ merge_partitions = function(partition_list,
 #' @examples
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(mtcars, 3)$cluster
-#'   clustering.list[[i]] = as.numeric(km.res)
+#'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
 #' }
 #' element_consistency(clustering.list)
 
@@ -1144,8 +1190,7 @@ weighted_element_consistency = function(clustering_list,
 #' reference.clustering = iris$Species
 #' clustering.list = list()
 #' for (i in 1:20){
-#'   km.res = kmeans(iris[,1:4], 3)$cluster
-#'   clustering.list[[i]] = as.numeric(km.res)
+#'   clustering.list[[i]] = kmeans(iris[,1:4], 3)$cluster
 #' }
 #' element_agreement(reference.clustering, clustering.list)
 element_agreement = function(reference_clustering,
