@@ -74,7 +74,7 @@ element_sim = function(clustering1,
                                        ppr_implementation_cl2,
                                        dist_rescaled_cl2,
                                        row_normalize_cl2)
-    return(mean(element_scores))
+  return(mean(element_scores))
 }
 
 #' The Element-Centric Clustering Similarity for each Element
@@ -162,7 +162,6 @@ element_sim_elscore = function(clustering1,
     names(node.scores) = names(clustering1)
     return(node.scores)
   }
-
 
   if(class(clustering1) != "Clustering") {
     if(any(class(clustering1) == "hclust")) {
@@ -309,7 +308,6 @@ corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
   ppr1 = rep(0, n)
   ppr2 = rep(0, n)
 
-
   # iterate through each point of the membership vector
   for(i in 1:n) {
     # check if the similarity between of this pair of clusters was already calculated
@@ -327,7 +325,6 @@ corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
       # get the values from the affinity matrix of the second partition
       ppr2[clusterlist2] = alpha / Csize2
       ppr2[i] = 1.0 - alpha + alpha / Csize2
-
 
       # calculate the sum of the difference between the affinity matrices
       ecs[i] = sum(abs(ppr1-ppr2)) # could be optimized?
@@ -363,8 +360,6 @@ ppr_partition = function(clustering, alpha=0.9){
                        sparse=TRUE)
   return(ppr)
 }
-
-
 
 # Create the cluster-induced element graph for overlapping clustering
 make_cielg_overlapping = function(bipartite_adj){
@@ -520,7 +515,6 @@ make_cielg_hierarchical = function(hierarchical_clustering,
   return(cielg)
 }
 
-
 # utility function to find vertices with the same cluster memberships.
 find_groups_in_cluster = function(clustervs, elementgroupList){
   clustervertex = unique(clustervs)
@@ -641,7 +635,6 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
   return(p)
 }
 
-
 #' Pairwise Comparison of Clusterings
 #' @description Compare a set of clusterings by calculating their pairwise
 #' average element-centric clustering similarities.
@@ -680,7 +673,7 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #'
 #' @examples
 #' clustering.list = list()
-#' for (i in 1:20){
+#' for (i in 1:20) {
 #'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
 #' }
 #' element_sim_matrix(clustering.list, output_type='matrix')
@@ -715,7 +708,6 @@ element_sim_matrix = function(clustering_list,
      any(are_all_clustassess_objects == FALSE)) {
     stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
-
 
   # if the condition is met, perform element frustration using only the membership vector
   if(all(are_all_flat_disjoint == TRUE)) {
@@ -760,29 +752,33 @@ element_sim_matrix = function(clustering_list,
   return(sim_matrix)
 }
 
-
+# calculate the similarity matrix when all the objects are flat disjoint memberships
 element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, output_type='matrix') {
   if (!(output_type %in% c('data.frame', 'matrix'))){
     stop('output_type must be data.frame or matrix.')
   }
 
-
   n_clusterings = length(mb_list)
   first_index = unlist(sapply(1:(n_clusterings-1), function(i) { rep(i, n_clusterings-i)}))
   second_index = unlist(sapply(1:(n_clusterings-1), function(i) { (i+1):n_clusterings}))
   n_combinations = n_clusterings * (n_clusterings-1) / 2
-  ncores = min(ncores, n_combinations)
+  ncores = min(ncores, n_combinations, parallel::detectCores())
 
   if(ncores > 1) {
+    # create a parallel backend
     my_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
     )
     doParallel::registerDoParallel(cl = my_cluster)
   } else {
+    # create a sequential backend
     foreach::registerDoSEQ()
   }
 
+  i = 1
+
+  # calculate the ecs between every pair of partitions
   ecs_values = foreach::foreach(i = 1:n_combinations, .export = c("corrected_l1_mb", "create_clu2elm_dict"), .noexport = c("my_cluster"), .combine = "c") %dopar% {
     mean(corrected_l1_mb(mb_list[[first_index[i]]],
                          mb_list[[second_index[i]]],
@@ -790,6 +786,7 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
   }
 
   if(ncores > 1)
+    # terminate the processes if a parallel backend was created
     parallel::stopCluster(cl = my_cluster)
 
   sim_matrix = matrix(NA, nrow=n_clusterings, ncol=n_clusterings)
@@ -797,8 +794,7 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
   sim_matrix = t(sim_matrix)
   diag(sim_matrix) = 1
 
-
-  if (output_type=='data.frame'){
+  if (output_type=='data.frame') {
     sim_matrix = data.frame(i.clustering=rep(1:n_clusterings,
                                              n_clusterings),
                             j.clustering=rep(1:n_clusterings,
@@ -809,8 +805,9 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
   return(sim_matrix)
 }
 
-# determine whether two flat membership vectors are identical
+# determine whether two flat disjoint membership vectors are identical
 are_identical_memberships = function(mb1, mb2) {
+  # calculate the contingency table between the two partitions
   contingency_table = (table(mb1, mb2) != 0)
 
   if(nrow(contingency_table) != ncol(contingency_table)) {
@@ -819,16 +816,18 @@ are_identical_memberships = function(mb1, mb2) {
 
   no_different_elements = colSums(contingency_table)
 
+  # if a column has two or more nonzero entries, it means the cluster is split
+  # thus the two partitions are not identical
   if(any(no_different_elements != 1)) {
     return(FALSE)
   }
 
   no_different_elements = rowSums(contingency_table)
 
+  # if a row has two or more nonzero entries, it means the cluster is split
+  # thus the two partitions are not identical
   return(all(no_different_elements == 1))
 }
-
-
 
 # merge partitions that are identical (meaning the ecs threshold is 1)
 # the order parameter is indicating whether to sort the merged objects
@@ -837,18 +836,19 @@ merge_identical_partitions = function(clustering_list,
                                       order = TRUE) {
   # merge the same memberships into the same object
   merged_partitions = list(clustering_list[[1]])
-  no_partitions = length(clustering_list)
+  n_partitions = length(clustering_list)
 
-  if(no_partitions == 1) {
+  if(n_partitions == 1) {
     return(clustering_list)
   }
 
-  for(i in 2:no_partitions) {
-    no_partitions = length(merged_partitions)
+  for(i in 2:n_partitions) {
+    n_merged_partitions = length(merged_partitions)
 
     assigned_partition = -1
 
-    for(j in 1:no_partitions) {
+    # for each partition, look into the merged list and see if there is a perfect match
+    for(j in 1:n_merged_partitions) {
       are_identical = are_identical_memberships(merged_partitions[[j]]$mb, clustering_list[[i]]$mb)
       if(are_identical) {
         assigned_partition = j
@@ -857,21 +857,22 @@ merge_identical_partitions = function(clustering_list,
     }
 
     if(assigned_partition != -1) {
+      # if a match was found, update the frequency of the partition
       merged_partitions[[assigned_partition]]$freq = merged_partitions[[assigned_partition]]$freq + clustering_list[[i]]$freq
     } else {
-      merged_partitions[[no_partitions+1]] = clustering_list[[i]]
+      # if not, add the partition to the list of merged partitions
+      merged_partitions[[n_merged_partitions+1]] = clustering_list[[i]]
     }
   }
 
+  # order the newly merged partitions based on their frequencies
   if(order) {
     ordered_indices = order(sapply(merged_partitions, function(x) { x$freq }), decreasing = T)
     merged_partitions = merged_partitions[ordered_indices]
   }
 
-
   merged_partitions
 }
-
 
 # merge the partitions when the ecs threshold is not 1
 merge_partitions_ecs = function(partition_list,
@@ -885,21 +886,24 @@ merge_partitions_ecs = function(partition_list,
     return(partition_list)
   }
 
-  sim_matrix = element_sim_matrix_flat_disjoint(lapply(partition_list, function(x) { x$mb }), ncores = ncores) # use `create_clustering` for the original version
-
+  # calculate the pairwise ecs between the partitions
+  sim_matrix = element_sim_matrix_flat_disjoint(lapply(partition_list, function(x) { x$mb }),
+                                                ncores = ncores)
 
   for(i in 1:nparts) {
     sim_matrix[i,i] = NA
     partition_groups[[as.character(i)]] = i
   }
 
-  for(no_changes in 1:(nparts-1)) {
+
+  for(n_changes in 1:(nparts-1)) {
+    # if the similarity between any pair of partitions is below the threshold
+    # we do not perform any merging
     if(max(sim_matrix, na.rm = T) < ecs_thresh) {
       break
     }
 
-
-
+    # find the pair of partitions that are the most similar wrt ECS
     index = which.max(sim_matrix)[1]
     first_cluster = index %% nparts
 
@@ -909,10 +913,12 @@ merge_partitions_ecs = function(partition_list,
       second_cluster = second_cluster - 1
     }
 
-
+    # remove the partition group of the second partition that will be merged
     partition_groups[[as.character(second_cluster)]] = NULL
+    # update the partition group of the first partition, where we add the second one
     partition_groups[[as.character(first_cluster)]] = c(partition_groups[[as.character(first_cluster)]], second_cluster)
 
+    # update the similarities in a single-linkeage fashion
     for(i in 1:nparts) {
       if(first_cluster < i) {
         if(!is.na(sim_matrix[first_cluster, i])) {
@@ -923,7 +929,6 @@ merge_partitions_ecs = function(partition_list,
           sim_matrix[i, first_cluster] = min(sim_matrix[i, first_cluster], sim_matrix[second_cluster, i], sim_matrix[i, second_cluster], na.rm = T)
         }
       }
-
     }
 
     sim_matrix[second_cluster, ] = NA
@@ -933,6 +938,7 @@ merge_partitions_ecs = function(partition_list,
   merged_index = 1
   merged_partitions = list()
 
+  # update the frequencies of the partition groups
   for(kept_partition in names(partition_groups)) {
     merged_partitions[[merged_index]] = partition_list[[as.numeric(kept_partition)]]
     merged_partitions[[merged_index]]$freq = sum(sapply(partition_groups[[kept_partition]], function(x) { partition_list[[as.numeric(x)]]$freq }))
@@ -940,6 +946,7 @@ merge_partitions_ecs = function(partition_list,
     merged_index = merged_index +1
   }
 
+  # order the newly merged partitions based on their frequencies
   if(order) {
     ordered_indices = order(sapply(merged_partitions, function(x) { x$freq }), decreasing = T)
     merged_partitions = merged_partitions[ordered_indices]
@@ -966,6 +973,18 @@ merge_partitions = function(partition_list,
                             ecs_thresh = 0.99,
                             ncores = 1,
                             order = TRUE) {
+  # check the parameters
+  if(!is.numeric(ecs_thresh) || length(ecs_thresh) > 1)
+    stop("ecs_thresh parameter should be numeric")
+
+  if(!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should be numeric")
+  # convert ncores to an integer
+  ncores = as.integer(ncores)
+
+  if(!is.logical(order))
+    stop("order parameter should be logical")
+
   # check the type of object that is provided in the list
   if(class(partition_list[[1]]) != "list") {
     partition_list = lapply(partition_list, function(x) {
@@ -980,13 +999,14 @@ merge_partitions = function(partition_list,
     }
   }
 
+  # if the threshold is 1, apply the identical merging
   if(ecs_thresh == 1) {
     return(merge_identical_partitions(partition_list, order))
   }
 
+  # otherwise merge the partitions using the `merge_partitions_ecs` function
   merge_partitions_ecs(partition_list, ecs_thresh, ncores = ncores, order = order)
 }
-
 
 #' Element-Wise Consistency Between a Set of Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
@@ -1027,7 +1047,6 @@ merge_partitions = function(partition_list,
 #'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
 #' }
 #' element_consistency(clustering.list)
-
 element_consistency = function(clustering_list,
                                alpha = 0.9,
                                r = 1,
@@ -1056,7 +1075,6 @@ element_consistency = function(clustering_list,
     stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
-
   # if the condition is met, perform element consistency using only the membership vector
   if(all(are_all_flat_disjoint == TRUE)) {
     # merge the identical partitions into the same object
@@ -1064,8 +1082,8 @@ element_consistency = function(clustering_list,
                                              ecs_thresh = 1,
                                              ncores = ncores)
     return(weighted_element_consistency(clustering_list = lapply(final_clustering_list, function(x) { x$mb }),
-                                            weights = sapply(final_clustering_list, function(x) { x$freq }),
-                                            ncores = ncores))
+                                        weights = sapply(final_clustering_list, function(x) { x$freq }),
+                                        ncores = ncores))
   }
 
   if(!all(are_all_clustassess_objects)) {
@@ -1096,8 +1114,8 @@ element_consistency = function(clustering_list,
 
 # calculate the element consistency of a list of clusterings where each object has a weight
 weighted_element_consistency = function(clustering_list,
-                                            weights = NULL,
-                                            ncores = 1) {
+                                        weights = NULL,
+                                        ncores = 1) {
   n_clusterings = length(clustering_list)
 
   if(n_clusterings == 1) {
@@ -1113,9 +1131,10 @@ weighted_element_consistency = function(clustering_list,
   n_combinations = n_clusterings * (n_clusterings-1) / 2
   needed_vars = c("first_index", "second_index", "clustering_list", "weights")
 
-  ncores = min(ncores, n_combinations)
+  ncores = min(ncores, n_combinations, parallel::detectCores())
 
   if(ncores > 1) {
+    # create a parallel backend
     my_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
@@ -1123,29 +1142,37 @@ weighted_element_consistency = function(clustering_list,
 
     doParallel::registerDoParallel(cl = my_cluster)
   } else {
+    # create a sequential backend
     foreach::registerDoSEQ()
   }
 
-
   all_vars = ls()
+  i = 1
 
+  # calculate the ecs between each pair of distinct partitions and multiply the
+  # results by their weights
   consistency = foreach::foreach(i = 1:n_combinations, .noexport = all_vars[!(all_vars %in% needed_vars)], .export = c("corrected_l1_mb", "create_clu2elm_dict"), .combine = "+") %dopar% {
     corrected_l1_mb(clustering_list[[first_index[i]]],
                     clustering_list[[second_index[i]]]) * weights[first_index[i]] * weights[second_index[i]]
   }
 
   if(ncores > 1)
+    # delete the parallel processes if the backend was created
     parallel::stopCluster(cl = my_cluster)
 
+  # if the weight of a partition is bigger than one, that means we would have
+  # comparison between a partition and itself
+  # we calculate the number of this identical comparison
   no_identical_comparisons = sum(sapply(weights, function(w) { w*(w-1) / 2}))
 
+  # update the consistency
   consistency = consistency + rep(1, length(consistency)) * no_identical_comparisons
 
+  # normalization between 0 and 1
   consistency = consistency / (sum(weights) * (sum(weights)-1) / 2)
 
   return(consistency)
 }
-
 
 #' Element-Wise Average Agreement Between a Set of Clusterings
 #' @description Inspect how consistently of a set of clusterings agree with
@@ -1231,7 +1258,6 @@ element_agreement = function(reference_clustering,
     stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
-
   # create ClustAssess objects for the clustering list
   if(!all(are_all_clustassess_objects)) {
     # should an identical merging be apllied beforehand?
@@ -1263,7 +1289,6 @@ element_agreement = function(reference_clustering,
                                              alpha = alpha)
   }
 
-
   # calculate the average element agreement between the clustering list and the reference
   n.clusterings = length(clustering_list)
   avg_agreement = rep(0, length(clustering_list[[1]]))
@@ -1276,11 +1301,12 @@ element_agreement = function(reference_clustering,
   return(avg_agreement)
 }
 
+# calculate the element agreement when the clustering list and the reference
+# are flat disjoint membership vectors
 element_agreement_flat_disjoint = function(reference_clustering,
                                            clustering_list,
                                            alpha = 0.9,
                                            ncores = 1) {
-
   n_points = length(reference_clustering)
   for(mb_vector in clustering_list) {
     if(length(mb_vector) != n_points) {
@@ -1288,8 +1314,9 @@ element_agreement_flat_disjoint = function(reference_clustering,
     }
   }
 
-  ncores = min(ncores, length(clustering_list))
+  ncores = min(ncores, length(clustering_list), parallel::detectCores())
   if(ncores > 1) {
+    # create a parallel backend
     my_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
@@ -1297,9 +1324,14 @@ element_agreement_flat_disjoint = function(reference_clustering,
 
     doParallel::registerDoParallel(cl = my_cluster)
   } else {
+    # create a sequential backend
     foreach::registerDoSEQ()
   }
 
+  obj = NULL
+
+  # calculate the average of the ecs between one member of the clustering list
+  # and the reference clustering
   avg_agreement = foreach::foreach(obj = clustering_list,
                                    .export = c("corrected_l1_mb", "create_clu2elm_dict"),
                                    .combine = '+') %dopar% {
@@ -1307,11 +1339,13 @@ element_agreement_flat_disjoint = function(reference_clustering,
                                    }
 
   if(ncores > 1)
+    # terminate the processes if a parallel backend was created
     parallel::stopCluster(cl = my_cluster)
 
   return(avg_agreement / length(clustering_list))
 }
 
+# create a list of ClustAssess objects
 create_clustering_list = function(object_list,
                                   ncores = 1,
                                   alpha = 0.9,
@@ -1321,9 +1355,10 @@ create_clustering_list = function(object_list,
                                   dist_rescaled = FALSE,
                                   row_normalize = TRUE) {
 
-  ncores = min(ncores, length(object_list))
+  ncores = min(ncores, length(object_list), parallel::detectCores())
 
   if(ncores > 1) {
+    # create a parallel backend
     my_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
@@ -1331,8 +1366,11 @@ create_clustering_list = function(object_list,
 
     doParallel::registerDoParallel(cl = my_cluster)
   } else {
+    # create a sequential backend
     foreach::registerDoSEQ()
   }
+
+  obj = NULL
 
   clustering_list = foreach::foreach(obj = object_list,
                                      .packages = "ClustAssess") %dopar% {
@@ -1362,6 +1400,7 @@ create_clustering_list = function(object_list,
                                      }
 
   if(ncores > 1)
+    # terminate the processes if a parallel backend was created
     parallel::stopCluster(cl = my_cluster)
 
   return(clustering_list)
