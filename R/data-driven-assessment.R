@@ -2,7 +2,7 @@
 NULL
 
 # set these variables as global to solve the foreach warnings
-utils::globalVariables(c("i", "seed", "obj"))
+# utils::globalVariables(c("i", "seed", "obj"))
 
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
@@ -12,24 +12,11 @@ seurat_clustering = function(object, resolution, seed, algorithm = 4, ...) {
     resolution = resolution,
     random.seed = seed,
     algorithm = algorithm,
+    verbose = FALSE,
     ...
   )
   cluster.result[[colnames(cluster.result)[1]]]
 }
-
-
-# order_list = function(list_obj, order_vec) {
-#   new_list = list()
-#   index = 1
-#
-#   for (i in order_vec) {
-#     new_list[[index]] = list_obj[[i]]
-#     index = index + 1
-#   }
-#
-#   new_list
-# }
-
 
 # generate values from an interval that simulates the loghartimic scale
 generate_breaks = function(min.range, max.range) {
@@ -52,7 +39,6 @@ generate_breaks = function(min.range, max.range) {
   c(min.range, unlist(breaks.list), max.range)
 }
 
-
 #### PCA ####
 
 #' Feature Stability Object Generator
@@ -60,28 +46,36 @@ generate_breaks = function(min.range, max.range) {
 #' @description Creates an object that summaries the consistency of the partitions obtained
 #' across different runs for varying subsets of a given feature set.
 #'
-#' @param data_matrix a data matrix having the features on the columns and the observations on the rows.
+#' @param data_matrix a data matrix having the features on the columns
+#' and the observations on the rows.
 #' @param feature_set a set of feature names that can be found in the data matrix.
-#' @param steps vector containing the sizes of the subsets; negative values will be interpreted as using all features.
-#' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
+#' @param steps vector containing the sizes of the subsets; negative values will
+#' be interpreted as using all features.
+#' @param n_repetitions the number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence a custom seed sequence; if the value is NULL, the
+#' sequence will be built starting from 1 with a step of 100.
 #' @param feature_type a name associated to the feature_set.
-#' @param graph_reduction_type the graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
+#' @param graph_reduction_type the graph reduction type, denoting if the graph
+#' should be built on either the PCA or the UMAP embedding.
 #' @param npcs the number of principal components.
 #' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
+#' @param ncores the number of parallel R instances that will run the code. If
+#' the value is set to 1, the code will be run sequentially.
 #' @param ... additional arguments passed to the umap method.
 #'
 #'
-#' @return A list having one field associated with a step value. Each step contains a list with three fields:
+#' @return A list having one field associated with a step value. Each step
+#' contains a list with three fields:
 #'
 #' * ecs - the EC-Consistency of the partitions obtained on all repetitions
 #' * embedding - one UMAP embedding generated on the feature subset
 #' * most_frequent_partition - the most common partition obtained across repetitions
 #' @md
 #'
-#' @note The algorithm assumes that the feature_set is already when performing the subsetting. For example,
-#' if the user wants to analyze highly variable feature set, they should provide them sorted by their variability.
+#' @note The algorithm assumes that the feature_set is already when performing
+#' the subsetting. For example, if the user wants to analyze highly variable feature set,
+#' they should provide them sorted by their variability.
 #'
 #'
 #' @export
@@ -89,20 +83,60 @@ generate_breaks = function(min.range, max.range) {
 #' @examples
 #' get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
+#'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 5,
 #'    n_repetitions = 1)
 get_feature_stability_object = function(data_matrix,
-                                                 feature_set,
-                                                 steps,
-                                                 n_repetitions = 30,
-                                                 seed_sequence = NULL,
-                                                 feature_type = "",
-                                                 graph_reduction_type = "PCA",
-                                                 npcs = 30,
-                                                 ecs_thresh = 1,
-                                                 ncores = 1,
-                                                 ...) {
+                                        feature_set,
+                                        steps,
+                                        feature_type,
+                                        n_repetitions = 30,
+                                        seed_sequence = NULL,
+                                        graph_reduction_type = "PCA",
+                                        npcs = 30,
+                                        ecs_thresh = 1,
+                                        ncores = 1,
+                                        ...) {
+  # check parameters
+  if (!is.matrix(data_matrix))
+    stop("object parameter should be a matrix")
+
+  if(!is.character(feature_set))
+    stop("feature_set parameter should be a string")
+
+  if(!all(feature_set %in% colnames(data_matrix)))
+    stop("all genes from the feature_set should be found in the data_matrix")
+
+  if(!is.numeric(steps))
+    stop("steps parameter should be numeric")
+  # convert steps to integers
+  steps = as.integer(steps)
+
+  if(!is.character(feature_type))
+    stop("feature_type parameter should be a string")
+
+  if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
+    stop("n_repetitions parameter should take numeric value")
+  # convert n_repetitions to integers
+  n_repetitions = as.integer(n_repetitions)
+
+  if(!(graph_reduction_type %in% c("PCA", "UMAP")))
+    stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
+
+  if(!is.numeric(npcs) || length(npcs) > 1)
+    stop("npcs parameter should be numeric")
+  # convert npcs to integers
+  npcs = as.integer(npcs)
+
+  if (!is.numeric(ecs_thresh))
+    stop("ecs_thresh parameter should be numeric")
+
+  if(!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should take numeric value")
+  # convert number of cores to integers
+  ncores = as.integer(ncores)
+
   partitions_list = list()
 
   object_name = paste(feature_type, graph_reduction_type, ecs_thresh, sep = "_")
@@ -118,7 +152,7 @@ get_feature_stability_object = function(data_matrix,
     n_repetitions = length(seed_sequence)
   }
 
-  ncores = min(ncores, length(seed_sequence))
+  ncores = min(ncores, length(seed_sequence), parallel::detectCores())
 
   # convert the negative steps to the size of the feature
   steps[steps <= 0 |
@@ -159,6 +193,7 @@ get_feature_stability_object = function(data_matrix,
     }
 
     all_vars = ls()
+    seed = 0
 
     # send the name of the umap arguments
     partitions_list[[as.character(step)]] = foreach::foreach(seed = seed_sequence,
@@ -176,7 +211,6 @@ get_feature_stability_object = function(data_matrix,
                                                                pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
                                                                colnames(pca_embedding) = paste0("PC_", 1:ncol(pca_embedding))
                                                                rownames(pca_embedding) = rownames(trimmed_matrix)
-
 
                                                                if (graph_reduction_type == "UMAP") {
                                                                  # calculate the umap embedding
@@ -255,7 +289,6 @@ get_feature_stability_object = function(data_matrix,
   return_list
 }
 
-
 #' Feature Stability Boxplot
 #'
 #' @description Display, for each feature set and for each step, the distribution
@@ -272,6 +305,7 @@ get_feature_stability_object = function(data_matrix,
 #' @examples
 #' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
+#'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 5,
 #'    n_repetitions = 1)
@@ -292,7 +326,6 @@ plot_feature_stability_boxplot = function(feature_object_list) {
     temp_steps_df$feature_set = rep(config_name, nrow(temp_steps_df))
 
     levels(melt_object$L1) = 1:nlevels(melt_object$L1)
-
 
     if (min_index == -1) {
       final_steps_df = temp_steps_df
@@ -343,7 +376,6 @@ plot_feature_stability_boxplot = function(feature_object_list) {
     ggplot2::ylab("EC consistency")
 }
 
-
 #' Feature Stability - Cluster Membership facet
 #'
 #' @description Display a facet of plots where each graph is associated with a step of
@@ -361,12 +393,15 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' @examples
 #' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
+#'    feature_type = "feature_name",
 #'    steps = c(7, 9),
 #'    npcs = 4,
 #'    n_repetitions = 1)
 #' plot_feature_stability_mb_facet(feature_stability_obj)
-
 plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
+  if(!is.numeric(text_size) || length(text_size) > 1)
+    stop("text_size parameter should be numeric")
+
   first_temp = T
 
   for (config_name in names(feature_object_list)) {
@@ -386,16 +421,15 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
       } else {
         final_df = rbind(final_df, temp_df)
       }
-
-
     }
   }
 
   final_df$steps = factor(final_df$steps, levels = stringr::str_sort(unique(final_df$steps), numeric = T))
   final_df$mb = factor(final_df$mb)
-  text.labs = final_df %>% dplyr::group_by(.data$config_name, .data$steps, .data$mb) %>% dplyr::summarise(mean_x = stats::median(.data$x),
-                                                                                                          mean_y = stats::median(.data$y))
-
+  text.labs = final_df %>%
+    dplyr::group_by(.data$config_name, .data$steps, .data$mb) %>%
+    dplyr::summarise(mean_x = stats::median(.data$x),
+                     mean_y = stats::median(.data$y))
 
   ggplot2::ggplot(final_df,
                   ggplot2::aes(
@@ -441,11 +475,11 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' @examples
 #' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
+#'    feature_type = "feature_name",
 #'    steps = c(7, 9),
 #'    npcs = 4,
 #'    n_repetitions = 1)
 #' plot_feature_stability_ecs_facet(feature_stability_obj)
-
 plot_feature_stability_ecs_facet = function(feature_object_list) {
   first_temp = T
 
@@ -466,13 +500,10 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
       } else {
         final_df = rbind(final_df, temp_df)
       }
-
-
     }
   }
 
   final_df$steps = factor(final_df$steps, levels = stringr::str_sort(unique(final_df$steps), numeric = T))
-
 
   ggplot2::ggplot(final_df,
                   ggplot2::aes(
@@ -493,7 +524,6 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
     ggplot2::facet_wrap(~ config_name + steps)
 }
 
-
 #' Feature Stability Incremental Boxplot
 #'
 #' @description Perform an incremental ECS between two consecutive steps. The
@@ -512,27 +542,28 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #' @examples
 #' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
+#'    feature_type = "feature_name",
 #'    steps = c(7, 9),
 #'    npcs = 4,
 #'    n_repetitions = 1)
 #' plot_feature_stability_ecs_incremental(feature_stability_obj, 0.7)
+plot_feature_stability_ecs_incremental = function(feature_object_list,
+                                                  dodge_width = 0.7) {
+  if(!is.numeric(dodge_width) || length(dodge_width) > 1)
+    stop("dodge_width parameter should be numeric")
 
-plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_width = 0.7) {
   min_index = -1
-
   first_df = T
 
   for (config_name in names(feature_object_list)) {
     nsteps = length(feature_object_list[[config_name]]) - 1
 
     # treat the case with only one step
-
     for (i in 1:nsteps) {
       temp_df = data.frame(
         ecs = element_sim_elscore(
           feature_object_list[[config_name]][[i]]$most_frequent_partition$mb,
-          feature_object_list[[config_name]][[i +
-                                                1]]$most_frequent_partition$mb
+          feature_object_list[[config_name]][[i+1]]$most_frequent_partition$mb
         ),
         index = i,
         feature_set = config_name
@@ -544,8 +575,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
         steps_df = data.frame(
           step = paste(
             names(feature_object_list[[config_name]])[i],
-            names(feature_object_list[[config_name]])[i +
-                                                        1],
+            names(feature_object_list[[config_name]])[i+1],
             sep = "-"
           ),
           index = i,
@@ -558,14 +588,12 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
 
         steps_df = rbind(steps_df, c(paste(
           names(feature_object_list[[config_name]])[i],
-          names(feature_object_list[[config_name]])[i +
-                                                      1],
+          names(feature_object_list[[config_name]])[i+1],
           sep = "-"
         ),
         i,
         config_name))
       }
-
     }
 
     if (min_index == -1 || nsteps < min_index) {
@@ -583,7 +611,6 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
 
   text_position <-
     stats::aggregate(ecs ~ index + feature_set , ecs_df, max)
-
 
   ggplot2::ggplot(ecs_df,
                   ggplot2::aes(
@@ -604,7 +631,6 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
     ggplot2::xlab("# features") +
     ggplot2::ylab("EC similiarity")
 }
-
 
 ######################## Graph construction ######################################
 
@@ -647,7 +673,6 @@ plot_feature_stability_ecs_incremental = function(feature_object_list, dodge_wid
 #'     min_dist = 0.3,
 #'     n_neighbors = 30,
 #'     metric = "cosine")
-
 get_nn_conn_comps = function(object,
                              n_neigh_sequence,
                              config_name = "",
@@ -656,14 +681,44 @@ get_nn_conn_comps = function(object,
                              graph_reduction_type = "UMAP",
                              ncores = 1,
                              ...) {
+  # check parameters
+  if(!is.numeric(n_neigh_sequence))
+    stop("n_neigh_sequence parameter should take numeric value")
+  # convert number of neighbors to integers
+  n_neigh_sequence = as.integer(n_neigh_sequence)
+
+  if(!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should take numeric value")
+  # convert number of cores to integers
+  ncores = as.integer(ncores)
+
+  if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
+    stop("n_repetitions parameter should take numeric value")
+  # convert n_repetitions to integers
+  n_repetitions = as.integer(n_repetitions)
+
+  if (!is.matrix(object))
+    stop("object parameter should be a matrix")
+
+  if(!(graph_reduction_type %in% c("PCA", "UMAP")))
+    stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
+
+  if(!is.character(config_name))
+    stop("config_name parameter should be a string")
+
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
     seed_sequence = seq(from = 1,
                         by = 100,
                         length.out = n_repetitions)
+  } else {
+    if (!is.numeric(seed_sequence))
+      stop("seed_sequence parameter should be numeric")
+
+    seed_sequence = as.integer(seed_sequence)
   }
 
-  ncores = min(ncores, length(seed_sequence))
+  ncores = min(ncores, length(seed_sequence), parallel::detectCores())
 
   # store the additional arguments used by umap or irlba in a list
   suppl_args = list(...)
@@ -690,6 +745,8 @@ get_nn_conn_comps = function(object,
   all_vars = ls()
   # the variables needed in each PSOCK process
   needed_vars = c("object", "n_neigh_sequence", "graph_reduction_type", "suppl_arg_names")
+
+  seed = 0
 
   # send the name of the dim reduction arguments
   nn_conn_comps_list_temp = foreach::foreach(seed = seed_sequence,
@@ -766,12 +823,9 @@ get_nn_conn_comps = function(object,
 #'     n_neigh_sequence = c(2,5,15),
 #'     config_name = "mt_cars",
 #'     n_repetitions = 1,
-#'     graph_reduction_type = "UMAP",
-#'     min_dist = 0.3,
-#'     n_neighbors = 30,
-#'     metric = "cosine")
+#'     graph_reduction_type = "PCA",
+#'     npcs = 4)
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
-
 plot_connected_comps_evolution = function(nn_conn_comps_object) {
   final_comps_df = reshape2::melt(nn_conn_comps_object)
   colnames(final_comps_df) = c("n_comps", "n_neigh", "config_name")
@@ -785,10 +839,8 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
   min_y = min(final_comps_df$n_comps)
   min_y = min_y - min_y %% 5
 
-
+  # generate additional y ticks that would simulate the exponential tendency
   chosen_breaks = generate_breaks(min_y, max_y)
-
-
 
   ggplot2::ggplot(
     final_comps_df,
@@ -858,7 +910,6 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #'     min_dist = 0.3,
 #'     n_neighbors = 30,
 #'     metric = "cosine")
-
 get_nn_importance = function(object,
                              n_neigh_sequence,
                              n_repetitions = 30,
@@ -869,6 +920,49 @@ get_nn_importance = function(object,
                              transpose = (graph_reduction_type == "PCA"),
                              graph_type = 2,
                              ...) {
+  # check parameters
+  if(!is.logical(transpose))
+    stop("tranpose parameter should take a logical value")
+
+  if(!is.numeric(n_neigh_sequence))
+    stop("n_neigh_sequence parameter should take numeric value")
+  # convert number of neighbors to integers
+  n_neigh_sequence = as.integer(n_neigh_sequence)
+
+  if(!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should take numeric value")
+  # convert number of cores to integers
+  ncores = as.integer(ncores)
+
+  if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
+    stop("n_repetitions parameter should take numeric value")
+  # convert n_repetitions to integers
+  n_repetitions = as.integer(n_repetitions)
+
+  if(!is.numeric(ecs_thresh) || length(ecs_thresh) > 1)
+    stop("ecs_thresh parameter should take numeric value")
+
+  if (!is.numeric(graph_type) || !(graph_type %in% 0:2))
+    stop("graph_type should be a number between 0 and 2")
+
+  if (!is.matrix(object))
+    stop("object parameter should be a matrix")
+
+  if(!(graph_reduction_type %in% c("PCA", "UMAP")))
+    stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
+
+  # create a seed sequence if it's not provided
+  if (is.null(seed_sequence)) {
+    seed_sequence = seq(from = 1,
+                        by = 100,
+                        length.out = n_repetitions)
+  } else {
+    if (!is.numeric(seed_sequence))
+      stop("seed_sequence parameter should be numeric")
+
+    seed_sequence = as.integer(seed_sequence)
+  }
+
   partitions_list = list()
 
   if(graph_type != 1)
@@ -881,14 +975,7 @@ get_nn_importance = function(object,
   if(transpose)
     object = t(object)
 
-  # create a seed sequence if it's not provided
-  if (is.null(seed_sequence)) {
-    seed_sequence = seq(from = 1,
-                        by = 100,
-                        length.out = n_repetitions)
-  }
-
-  ncores = min(ncores, length(seed_sequence))
+  ncores = min(ncores, length(seed_sequence), parallel::detectCores())
 
   # additional arguments that will be used by umap or irlba
   suppl_args = list(...)
@@ -916,6 +1003,8 @@ get_nn_importance = function(object,
     # the variables needed in the PSOCK processes
     needed_vars = c("object", "n_neigh", "graph_reduction_type", "suppl_arg_names", "graph_type")
     all_vars = ls()
+
+    seed = 0
 
     partitions_list_temp = foreach::foreach(seed = seed_sequence,
                                             .noexport = all_vars[!(all_vars %in% needed_vars)],
@@ -1026,9 +1115,7 @@ get_nn_importance = function(object,
   )
 }
 
-
 # 2. neighbors <-> number of clusters association
-
 
 #' Graphical representation of the link between NN and number of clusters
 #'
@@ -1049,19 +1136,14 @@ get_nn_importance = function(object,
 #' nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
 #'     n_neigh_sequence = c(2,5,15),
 #'     n_repetitions = 1,
-#'     graph_reduction_type = "UMAP",
-#'     min_dist = 0.3,
-#'     n_neighbors = 30,
-#'     metric = "cosine")
+#'     graph_reduction_type = "PCA",
+#'     npcs = 30)
 #' plot_n_neigh_k_correspondence(nn_importance_obj)
-
 plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
   melted_obj = reshape2::melt(nn_object_n_clusters$n_neigh_k_corresp)
   colnames(melted_obj) = c("k", "n_neigh", "config_name")
 
-
   melted_obj$n_neigh = factor(melted_obj$n_neigh)
-
   melted_obj$n_neigh = factor(melted_obj$n_neigh, levels(melted_obj$n_neigh)[stringr::str_order(levels(melted_obj$n_neigh), numeric = T)])
 
   max_y = max(melted_obj$k)
@@ -1069,7 +1151,7 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
   min_y = min(melted_obj$k)
   min_y = min_y - min_y %% 5
 
-
+  # generate additional y ticks that would simulate the exponential tendency
   chosen_breaks = generate_breaks(min_y, max_y)
 
   ggplot2::ggplot(melted_obj,
@@ -1109,19 +1191,14 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #' nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
 #'     n_neigh_sequence = c(2,5,15),
 #'     n_repetitions = 1,
-#'     graph_reduction_type = "UMAP",
-#'     min_dist = 0.3,
-#'     n_neighbors = 30,
-#'     metric = "cosine")
+#'     graph_reduction_type = "PCA",
+#'     npcs = 30)
 #' plot_n_neigh_ecs(nn_importance_obj)
-
 plot_n_neigh_ecs = function(nn_ecs_object) {
   melted_obj = reshape2::melt(nn_ecs_object$n_neigh_ec_consistency)
   colnames(melted_obj) = c("ECS", "n_neigh", "config_name")
 
-
   melted_obj$n_neigh = factor(melted_obj$n_neigh)
-
   melted_obj$n_neigh = factor(melted_obj$n_neigh, levels(melted_obj$n_neigh)[stringr::str_order(levels(melted_obj$n_neigh), numeric = T)])
 
   ggplot2::ggplot(melted_obj,
@@ -1137,7 +1214,6 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
                   fill = "configuration") +
     ggplot2::ggtitle("Distribution of ECS across different seeds for different # neighbors")
 }
-
 
 ############################## Clustering ########################################
 
@@ -1179,11 +1255,9 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
-#'     resolution = 0.5,
+#'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     verbose = FALSE)
-
-
 get_clustering_difference_object = function(graph_adjacency_matrix,
                                             resolution,
                                             n_repetitions = 30,
@@ -1191,12 +1265,36 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
                                             ecs_thresh = 1,
                                             ncores = 1,
                                             verbose = TRUE) {
+  # check the parameters
+  if (!is.numeric(resolution))
+    stop("resolution parameter should be numeric")
+
+  if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1)
+    stop("ecs_thresh parameter should be numeric")
+
+  if (!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should be numeric")
+  # convert ncores to an integer
+  ncores = as.integer(ncores)
+
+  if (!is.numeric(n_repetitions) || length(n_repetitions) > 1)
+    stop("n_repetitions parameter should be numeric")
+  # convert n_repetitions to an integer
+  n_repetitions = as.integer(n_repetitions)
+
+  if (!is.logical(verbose))
+    stop("verbose parameter should take a logical value")
+
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
     seed_sequence = seq(from = 1,
                         by = 100,
                         length.out = n_repetitions)
+  } else {
+    if (!is.numeric(seed_sequence))
+      stop("seed_sequence parameter should be numeric")
 
+    seed_sequence = as.integer(seed_sequence)
   }
 
   algorithm_names = c("Louvain", "Louvain.refined", "SLM", "Leiden")
@@ -1214,12 +1312,13 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
       )
 
       pb$tick(0)
-
     }
 
     # calculate the partitions for each resolution value
     result_object[[algorithm_names[i]]] = sapply(resolution, function(res) {
-      if(verbose) { pb$tick(tokens = list(what = res)) }
+      if(verbose) {
+        pb$tick(tokens = list(what = res))
+      }
       res_list = list()
       res_list[[as.character(res)]] = get_resolution_partitions(
         graph_adjacency_matrix,
@@ -1233,7 +1332,6 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
 
       res_list
     })
-
   }
 
   # for each resolution value, determine the number of clusters that appears most frequently
@@ -1280,7 +1378,6 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
        all = all_result)
 }
 
-
 #' Graphical representation of the clustering method importance
 #'
 #' @description Display, for each clustering method and each resolution value,
@@ -1303,12 +1400,12 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
-#'     resolution = c(0.5, 0.8, 1),
+#'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
-
 plot_clustering_difference_boxplot = function(clustering_difference_object) {
+  # get the labels representing the number of clusters
   k_labels = reshape2::melt(lapply(clustering_difference_object$filtered, function(config_object) {
     lapply(config_object, function(res) {
       res$k
@@ -1323,7 +1420,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 
   colnames(melted_obj) = c("EC_consistency", "resolution", "clustering_method")
 
-
+  # calculate the coordinates where the k labels will be displayed
   text_position <-
     stats::aggregate(EC_consistency ~ resolution + clustering_method ,
                      melted_obj,
@@ -1349,7 +1446,6 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
       size = 3
     )
 }
-
 
 #' Graphical representation of the clustering method importance
 #'
@@ -1378,26 +1474,31 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
-#'     resolution = c(0.5, 0.8, 1),
+#'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     verbose = FALSE)
 #' plot_clustering_difference_facet(clust_diff_obj, as.matrix(mtcars[,1:2]))
-
 plot_clustering_difference_facet = function(clustering_difference_object,
                                             embedding,
                                             low_limit = 0,
                                             high_limit = 1,
-                                            grid = T) {
+                                            grid = TRUE) {
+  # check parameters
+  if (!is.logical(grid))
+    stop("grid parameter should be logical")
+
+  if(!is.numeric(low_limit))
+    stop("low_limit parameter should be numeric")
+
+  if(!is.numeric(high_limit))
+    stop("high_limit parameter should be numeric")
+
   npoints = nrow(embedding)
-  if (length(clustering_difference_object$all[[1]][[1]]) != npoints) {
+  if (length(clustering_difference_object$all[[1]][[1]]) != npoints)
     stop("The provided embedding and the consistency arrays must have the same number of elements!")
-  }
 
-  if (ncol(embedding) < 2) {
+  if (ncol(embedding) < 2)
     stop("The embedding should have at least two dimensions!")
-  }
-
-
 
   melt_obj = reshape2::melt(clustering_difference_object$all)
 
@@ -1406,11 +1507,8 @@ plot_clustering_difference_facet = function(clustering_difference_object,
   melt_obj["x"] = rep(embedding[, 1], n_embeeding_repetitions)
   melt_obj["y"] = rep(embedding[, 2], n_embeeding_repetitions)
 
-
   melt_obj["value"][melt_obj["value"] < low_limit] = low_limit
   melt_obj["value"][melt_obj["value"] > high_limit] = high_limit
-
-
 
   return_plot = ggplot2::ggplot(melt_obj,
                                 ggplot2::aes(
@@ -1446,7 +1544,7 @@ get_resolution_partitions = function(clustered_object,
                                      ecs_thresh = 0.99,
                                      ...) {
   different_partitions = list()
-  ncores = min(ncores, length(seed_sequence))
+  ncores = min(ncores, length(seed_sequence), parallel::detectCores())
 
   # additional arguments used by the clustering method
   suppl_args = list(...)
@@ -1475,9 +1573,10 @@ get_resolution_partitions = function(clustered_object,
   needed_vars = c("resolution", "clustering_function", "clustered_object", "suppl_arg_names")
   all_vars = ls()
 
+  seed = 0
+
   different_partitions_temp = foreach::foreach(seed = seed_sequence,
-                                               .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                               .export = names(suppl_args)) %dopar% { #
+                                               .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
                                                  clust_args = list()
 
                                                  seed = get("seed")
@@ -1533,17 +1632,21 @@ get_resolution_partitions = function(clustered_object,
 #' @param embedding the base embedding for the graph construction.
 #' @param resolution a sequence of resolution values.
 #' @param n_neigh a value or a sequence of number of neighbors used for graph construction.
-#' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
+#' @param n_repetitions the number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence
+#' will be built starting from 1 with a step of 100.
 #' @param clustering_method the graph clustering method that should be applied;
 #' the user should provide an integer between 1 and 4, where encodings are the
 #' same as specified in the Seurat's `FindClusters` method. The arguments allows
 #' selecting multiple algorithms.
 #' @param graph_type argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
-#' @param object_name user specified string that uniquely describes the embedding characteristics.
+#' @param object_name user specified string that uniquely describes the
+#' embedding characteristics.
 #' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
+#' @param ncores the number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
 #'
 #'
 #'
@@ -1563,13 +1666,12 @@ get_resolution_partitions = function(clustered_object,
 #'
 #' @examples
 #' wrapper_gridsearch(embedding = as.matrix(mtcars),
-#'    resolution = 0.8,
-#'    n_neigh = 25,
+#'    resolution = c(0.8,1),
+#'    n_neigh = c(25,30),
 #'    n_repetitions = 1,
-#'    clustering_method = 4,
+#'    clustering_method = 1,
 #'    graph_type = 0,
 #'    object_name = "mt_cars")
-
 wrapper_gridsearch = function(embedding,
                               resolution,
                               n_neigh,
@@ -1584,28 +1686,50 @@ wrapper_gridsearch = function(embedding,
   # prune ? for FindNeighbors, SNN case
   # num_iter for FindClusters
 
-
   different_partitions = list()
 
-  if (class(resolution) != "numeric") {
-    stop("resolution parameter should take a numeric value")
+  # check the parameters
+  if (all(class(resolution) != "numeric")) {
+    stop("resolution parameter should take numeric value")
   }
 
-  if (!(class(n_neigh) %in% c("numeric", "integer"))) {
-    stop("n_neigh parameter should take a numeric value")
+  if (!(all(class(n_neigh) %in% c("numeric", "integer")))) {
+    stop("n_neigh parameter should take numeric value")
   }
+  # convert number of neighbors to integers
+  n_neigh = sapply(n_neigh, as.integer)
 
-  if (!(class(clustering_method) %in% c("numeric", "integer")) ||
+  if (!(all(class(clustering_method) %in% c("numeric", "integer"))) ||
       sum(clustering_method %in% 1:4) != length(clustering_method)) {
     stop("clustering_method should be a number between 1 and 4")
   }
 
-
-  if (class(graph_type) != "numeric" || !(graph_type %in% 0:2)) {
+  if (!all(class(graph_type) %in% c("numeric", "integer")) || !(graph_type %in% 0:2)) {
     stop("graph_type should be a number between 0 and 2")
   }
 
+  if (!(all(class(ecs_thresh) %in% c("numeric", "integer")))) {
+    stop("ecs_thresh parameter should take numeric value")
+  }
+
+  if (!(all(class(ncores) %in% c("numeric", "integer")))) {
+    stop("ncores parameter should take numeric value")
+  }
+  # convert ncores to an integer
+  ncores = as.integer(ncores)
+
+  if (!(all(class(n_repetitions) %in% c("numeric", "integer")))) {
+    stop("n_repetitions parameter should take numeric value")
+  }
+  # convert n_repetitions to an integer
+  n_repetitions = as.integer(n_repetitions)
+
+  if(!is.null(object_name) && all(class(object_name) != "character")) {
+    stop("object_name parameter should be a string")
+  }
+
   if (length(clustering_method) > 1) {
+    # generate a list of partitions for each clustering method chosen by the user
     for (i in 1:length(clustering_method)) {
       different_partitions = c(
         different_partitions,
@@ -1622,13 +1746,13 @@ wrapper_gridsearch = function(embedding,
           ecs_thresh = ecs_thresh
         )
       )
-
     }
 
     return(different_partitions)
   }
 
   if (length(n_neigh) > 1) {
+    # generate a list of partitions for each number of neighbours chosen by the user
     for (i in 1:length(n_neigh)) {
       different_partitions = c(
         different_partitions,
@@ -1652,6 +1776,7 @@ wrapper_gridsearch = function(embedding,
   }
 
   if (graph_type == 2) {
+    # generate a list of partitions for both types of graphs: nn and snn
     different_partitions = c(
       wrapper_gridsearch(
         embedding = embedding,
@@ -1692,6 +1817,7 @@ wrapper_gridsearch = function(embedding,
   details = paste(n_neigh, graph_type_name, algorithm_name, sep = "_")
 
   if (length(resolution) > 1) {
+    # generate a list of partitions for each resolution value
     for (i in 1:length(resolution)) {
       res = resolution[i]
 
@@ -1738,17 +1864,15 @@ wrapper_gridsearch = function(embedding,
     object_name = paste(object_name, details, sep = "_")
   }
 
-
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
     seed_sequence = seq(from = 1,
                         by = 100,
                         length.out = n_repetitions)
-
   }
 
-
-
+  # calculate the adjacency matrix of the nn or snn graph, depending on the
+  # graph type
   adj_matrix = Seurat::FindNeighbors(
     embedding,
     k.param = n_neigh,
@@ -1757,6 +1881,7 @@ wrapper_gridsearch = function(embedding,
     verbose = F
   )[[ifelse(graph_type == 0, "nn", "snn")]]
 
+  # generate the list of partitions
   different_partitions = get_resolution_partitions(
     adj_matrix,
     resolution = resolution,
@@ -1767,15 +1892,12 @@ wrapper_gridsearch = function(embedding,
     ecs_thresh = ecs_thresh
   )
 
-
   ret_object = list()
   ret_object[[object_name]] = list()
   ret_object[[object_name]][[as.character(round(resolution, digits = 3))]] = different_partitions
 
-
   ret_object
 }
-
 
 #' Merge resolutions
 #'
@@ -1816,31 +1938,33 @@ wrapper_gridsearch = function(embedding,
 #'    )
 #'  )
 #'))
-
-
 merge_resolutions = function(res_obj,
                              ncores = 1) {
+  if (!(all(class(ncores) %in% c("numeric", "integer"))))
+    stop("ncores parameter should take numeric value")
+
+  # convert ncores to an integer
+  ncores = as.integer(ncores)
+
   clusters_obj = list()
   indices = list()
 
+  # concatenate all partitions having the same number of clusters into a list
   for (res.val in names(res_obj)) {
     for (k in names(res_obj[[res.val]])) {
       if (!(k %in% names(clusters_obj))) {
         clusters_obj[[k]] = res_obj[[res.val]][[k]]
-        #indices[[k]] = length(clusters_obj[[k]])
-
       } else {
         clusters_obj[[k]] = c(clusters_obj[[k]], res_obj[[res.val]][[k]])
       }
     }
   }
 
-  ncores = min(ncores, length(clusters_obj))
+  ncores = min(ncores, length(clusters_obj), parallel::detectCores())
   k_vals = names(clusters_obj)
 
-  needed_vars = c("clusters_obj")
-
   if(ncores > 1) {
+    # create a parallel backend
     my_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
@@ -1848,12 +1972,16 @@ merge_resolutions = function(res_obj,
 
     doParallel::registerDoParallel(cl = my_cluster)
   } else {
+    # create a sequential backend
     foreach::registerDoSEQ()
   }
 
-
   all_vars = ls()
+  needed_vars = c("clusters_obj")
 
+  i = 1
+
+  # merge identical partitions from each list associated with a number of clusters
   clusters_obj = foreach::foreach(i = 1:length(clusters_obj),
                                   .noexport = all_vars[!(all_vars %in% needed_vars)],
                                   .export = c("merge_identical_partitions", "are_identical_memberships")) %dopar% {
@@ -1862,12 +1990,12 @@ merge_resolutions = function(res_obj,
 
   names(clusters_obj) = k_vals
 
+  # if a parallel backend was created, terminate the processes
   if(ncores > 1)
     parallel::stopCluster(cl = my_cluster)
 
   clusters_obj
 }
-
 
 #' Correspondence between the resolution parameter and the number of clusters
 #'
@@ -1893,24 +2021,24 @@ merge_resolutions = function(res_obj,
 #'
 #' @examples
 #' gridsearch_result = wrapper_gridsearch(embedding = as.matrix(mtcars),
-#'    resolution = 0.8,
-#'    n_neigh = 25,
+#'    resolution = c(0.8, 1),
+#'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
-#'    clustering_method = 4,
-#'    graph_type = 0,
+#'    clustering_method = 1,
+#'    graph_type = 2,
 #'    object_name = "mt_cars")
-
 #' plot_k_resolution_corresp(gridsearch_result)
-
 plot_k_resolution_corresp = function(res_object_list,
                                      res_object_names = NULL,
                                      given_height = 0.7) {
-  if (is.null(res_object_names)) {
+  # use the names of the fields from the list
+  if (is.null(res_object_names))
     res_object_names = names(res_object_list)
-  }
 
   object_number = length(res_object_list)
 
+  # create a dataframe that contains the number of cases when, for a given resolution,
+  # a number of clusters was obtained
   for (i in 1:object_number) {
     res_object = res_object_list[[i]]
 
@@ -1928,9 +2056,7 @@ plot_k_resolution_corresp = function(res_object_list,
     temp.df.appereances = reshape2::melt(list.appereances)
     colnames(temp.df.appereances) = c("freq", "number_clusters", "resolution_value")
 
-
     temp.df.appereances[["configuration"]] = rep(res_object_names[i], nrow(temp.df.appereances))
-    # temp.df.appereances$res.value = format(as.double(temp.df.appereances$res.value), digits = digits)
     temp.df.appereances$freq = temp.df.appereances$freq / n.runs
 
     if (i == 1) {
@@ -1942,7 +2068,6 @@ plot_k_resolution_corresp = function(res_object_list,
 
   final.df[["configuration"]] = factor(final.df[["configuration"]])
   final.df[["number_clusters"]] = factor(as.numeric(final.df[["number_clusters"]]))
-
 
   ggplot2::ggplot(
     final.df,
@@ -1967,7 +2092,6 @@ plot_k_resolution_corresp = function(res_object_list,
     ggplot2::geom_point(position = ggplot2::position_dodge(width = given_height),  #ggstance::position_dodgev(height = given.height),
                         size = 2.5) + #position_jitterdodge(jitter.width=0.85))
     ggplot2::theme_classic() +
-    #ggplot2::theme(axis.title.y = ggtext::element_markdown()) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::labs(x = "resolution",
                   y = "k",
@@ -1977,9 +2101,7 @@ plot_k_resolution_corresp = function(res_object_list,
       vjust = 0.5,
       hjust = 1
     ))
-
 }
-
 
 #' Reproducibility display of the number of clusters
 #'
@@ -2001,25 +2123,25 @@ plot_k_resolution_corresp = function(res_object_list,
 #'
 #' @examples
 #' gridsearch_result = wrapper_gridsearch(embedding = as.matrix(mtcars),
-#'    resolution = 0.8,
-#'    n_neigh = 25,
+#'    resolution = c(0.8, 1),
+#'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
-#'    clustering_method = 4,
-#'    graph_type = 0,
+#'    clustering_method = 1,
+#'    graph_type = 2,
 #'    object_name = "mt_cars")
-
-#' merged_resolutions = merge_resolutions(gridsearch_result[[1]])
-#' plot_k_n_partitions(list(merged_resolutions), "mt_cars_merged")
-
+#' merged_resolutions = lapply(gridsearch_result, merge_resolutions)
+#' plot_k_n_partitions(merged_resolutions)
 plot_k_n_partitions = function(partition_obj_list, object_names = NULL) {
-  if (is.null(object_names)) {
+  # use the names of the fields from the list
+  if (is.null(object_names))
     object_names = names(partition_obj_list)
-  }
 
   n.objects = length(partition_obj_list)
 
   max_n_part = 0
 
+  # creates a dataframe that contains, for each configuration
+  # the number of different partitions with a given number of clusters that are obtained
   for (i in 1:n.objects) {
     partition_object = partition_obj_list[[i]]
 
@@ -2058,7 +2180,6 @@ plot_k_n_partitions = function(partition_obj_list, object_names = NULL) {
                                                  levels = stringr::str_sort(unique(
                                                    unique.partitions.final.df$n.clusters
                                                  ), numeric = T))
-
 
   ggplot2::ggplot(
     unique.partitions.final.df,
