@@ -61,7 +61,8 @@ calculate_dist = function(x, dist_method, p=2){
 consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
                               p_feature=1.0, p_minkowski=2,
                               dist_method='euclidean', linkage='complete',
-                              lower_lim=0.1, upper_lim=0.9){
+                              lower_lim=0.1, upper_lim=0.9,
+                              verbose=TRUE){
   n.samples = floor(p_sample * nrow(x))
   n.features = floor(p_feature * ncol(x))
   # threshold for k_max so we don't accidentally look for too many clusters
@@ -79,7 +80,22 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
 
   pac.matrix = matrix(0, nrow=(k_max-k_min+1), ncol=n_reps)
 
+  if(verbose) {
+    message("Calculating consensus clustering")
+    pb <- progress::progress_bar$new(
+      format = "[:bar] :current/:total eta: :eta  total elapsed:  :elapsed",
+      total = n_reps,
+      clear = FALSE,
+      width = 80
+    )
+
+    pb$tick(0)
+  }
+
   for (i in 1:n_reps){
+    if(verbose)
+      pb$tick()
+
     sample.indices = sample(x=nrow(x), size=n.samples, replace=FALSE)
     indicator[sample.indices, sample.indices] =
       indicator[sample.indices, sample.indices] + 1
