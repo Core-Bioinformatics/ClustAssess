@@ -1432,7 +1432,6 @@ setOldClass("Matrix::Matrix")
 #' @slot affinity_matrix A Matrix containing the personalized pagerank
 #' equilibrium distribution.
 #'
-#' @export
 #'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
@@ -1478,7 +1477,6 @@ Clustering <- setClass("Clustering",
 #' @param ... This argument is not used.
 #'
 #' @return A Clustering object.
-#' @export
 #'
 #' @md
 #' @examples
@@ -1726,7 +1724,6 @@ setGeneric("length")
 #' @param x The Clustering object.
 #'
 #' @return The number of elements.
-#' @export
 #'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
@@ -1755,7 +1752,6 @@ setGeneric("print")
 #' @param x The Clustering object.
 #'
 #' @return The printed character string.
-#' @export
 #'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
