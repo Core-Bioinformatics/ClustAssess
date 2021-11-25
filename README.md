@@ -4,7 +4,7 @@
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
 
 This repo contains the ClustAssess R package, which provides a set of tools
-for assessing clustering robustness.
+for evaluating clustering robustness.
 
 - [The Tools](#the-tools)
   * [Proportion of Ambiguously Clustered Pairs (PAC)](#proportion-of-ambiguously-clustered-pairs-pac)
@@ -57,26 +57,23 @@ In addition to providing per-element information on clustering agreement, ECS
 avoids several pitfalls associated with other measures of clustering
 similarity (refer to [4] for more detail).
 
-To calculate ECS, the user first needs to create a `Clustering` object:
+To compare two clusterings with ECS, we use the `element_sim_elscore` function:
 
-`clustering_object1 = create_clustering(clustering_result1, alpha=0.9)`
+`ecs = element_sim_elscore(clustering_result1, clustering_result2, alpha=0.9)`
 
-where `1-alpha` is the restart probability of the random walk. To compare two
-clusterings, we use the `element_sim_elscore` function:
-
-`ecs = element_sim_elscore(clustering_object1, clustering_object2)`
-
-and we can subsequently visualize the ECS on a PCA of the data:
+where `1-alpha` is the restart probability of the random walk. We can 
+subsequently visualize the ECS on a PCA of the data:
 
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
 
 In addition to flat disjoint clusterings (like the result of k-means for
 example), ClustAssess can also compare overlapping clusterings and hierarchical
-clusterings; refer to the `create_clustering` documentation for more detail.
+clusterings; refer to the `comparing-soft-and-hierarchical` vignette for more 
+detail.
 
 Besides comparing two clusterings with `element_sim_elscore`, ClustAssess
 also enables computing the per-element consistency (aka frustration) between a
-set of clusterings with the `element_frustration` function, and comparing a set
+set of clusterings with the `element_consistency` function, and comparing a set
 of clusterings with a ground truth partitioning of elements with the
 `element_agreement` function.
 
@@ -130,6 +127,11 @@ The following packages are required for ClustAssess:
 * methods
 * stats
 * foreach
+* doParallel
+* irlba
+* progress
+* reshape2
+* stringr
 
 To run all examples and vignettes, the following packages are also needed:
 * knitr
