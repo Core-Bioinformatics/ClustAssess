@@ -46,22 +46,25 @@ generate_breaks = function(min.range, max.range) {
 #' @description Creates an object that summaries the consistency of the partitions obtained
 #' across different runs for varying subsets of a given feature set.
 #'
-#' @param data_matrix a data matrix having the features on the columns
+#' @param data_matrix A data matrix having the features on the columns
 #' and the observations on the rows.
-#' @param feature_set a set of feature names that can be found in the data matrix.
-#' @param steps vector containing the sizes of the subsets; negative values will
+#' @param feature_set A set of feature names that can be found in the data matrix.
+#' @param steps Vector containing the sizes of the subsets; negative values will
 #' be interpreted as using all features.
-#' @param n_repetitions the number of repetitions of applying the pipeline with
+#' @param n_repetitions The number of repetitions of applying the pipeline with
 #' different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the
 #' sequence will be built starting from 1 with a step of 100.
-#' @param feature_type a name associated to the feature_set.
-#' @param graph_reduction_type the graph reduction type, denoting if the graph
+#' @param feature_type A name associated to the feature_set.
+#' @param graph_reduction_type The graph reduction type, denoting if the graph
 #' should be built on either the PCA or the UMAP embedding.
-#' @param npcs the number of principal components.
-#' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code. If
+#' @param npcs The number of principal components.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
+#' @param ncores The number of parallel R instances that will run the code. If
 #' the value is set to 1, the code will be run sequentially.
+#' @param algorithm An index indicating which community detection algorithm will
+#' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
+#' can be found in the Seurat's `FindClusters` function.
 #' @param ... additional arguments passed to the umap method.
 #'
 #'
@@ -81,12 +84,18 @@ generate_breaks = function(min.range, max.range) {
 #' @export
 #'
 #' @examples
-#' get_feature_stability_object(data_matrix = as.matrix(mtcars),
+#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
-#'    npcs = 5,
-#'    n_repetitions = 1)
+#'    npcs = 2,
+#'    n_repetitions = 1,
+#'    algorithm = 1,
+#'    n_neighbors = 3,
+#'    approx_pow = TRUE,
+#'    n_epochs = 0,
+#'    init = "random",
+#'    min_dist = 0.3)
 get_feature_stability_object = function(data_matrix,
                                         feature_set,
                                         steps,
@@ -97,6 +106,7 @@ get_feature_stability_object = function(data_matrix,
                                         npcs = 30,
                                         ecs_thresh = 1,
                                         ncores = 1,
+                                        algorithm = 4,
                                         ...) {
   # check parameters
   if (!is.matrix(data_matrix))
@@ -132,6 +142,9 @@ get_feature_stability_object = function(data_matrix,
   if (!is.numeric(ecs_thresh))
     stop("ecs_thresh parameter should be numeric")
 
+  if (!is.numeric(algorithm) || length(algorithm) > 1 || !(algorithm %in% 1:4))
+    stop("algorithm should be a number between 1 and 4")
+
   if(!is.numeric(ncores) || length(ncores) > 1)
     stop("ncores parameter should take numeric value")
   # convert number of cores to integers
@@ -165,6 +178,11 @@ get_feature_stability_object = function(data_matrix,
     assign(names(suppl_args)[i], suppl_args[[i]])
     i = i + 1
   }
+
+  if(graph_reduction_type == "UMAP") {
+    suppl_args[["n_threads"]] = 1
+    suppl_args[["n_sgd_threads"]] = 1
+  }
   umap_arg_names = names(suppl_args)
 
   for (step in steps) {
@@ -177,7 +195,7 @@ get_feature_stability_object = function(data_matrix,
     trimmed_matrix = data_matrix[, used_features]
 
     # the variables needed in each PSOCK process
-    needed_vars = c("trimmed_matrix", "graph_reduction_type", "npcs", "umap_arg_names")
+    needed_vars = c("trimmed_matrix", "graph_reduction_type", "npcs", "suppl_args", "algorithm")
 
     if(ncores > 1) {
       # create a parallel backend
@@ -197,13 +215,12 @@ get_feature_stability_object = function(data_matrix,
 
     # send the name of the umap arguments
     partitions_list[[as.character(step)]] = foreach::foreach(seed = seed_sequence,
-                                                             .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                                             .export = names(suppl_args)) %dopar% { #
-                                                               umap_args = list()
-
-                                                               for(umap_arg_name in umap_arg_names) {
-                                                                 umap_args[[umap_arg_name]] = get(umap_arg_name)
-                                                               }
+                                                             .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
+                                                               # umap_args = list()
+                                                               #
+                                                               # for(umap_arg_name in umap_arg_names) {
+                                                               #   umap_args[[umap_arg_name]] = get(umap_arg_name)
+                                                               # }
 
                                                                # calculate the PCA embedding
                                                                set.seed(seed)
@@ -215,7 +232,7 @@ get_feature_stability_object = function(data_matrix,
                                                                if (graph_reduction_type == "UMAP") {
                                                                  # calculate the umap embedding
                                                                  set.seed(seed)
-                                                                 umap_embedding = do.call(uwot::umap, c(list(X = pca_embedding), umap_args))
+                                                                 umap_embedding = do.call(uwot::umap, c(list(X = pca_embedding), suppl_args))
                                                                  colnames(umap_embedding) = paste0("UMAP_", 1:ncol(umap_embedding))
                                                                  rownames(umap_embedding) = rownames(trimmed_matrix)
                                                                }
@@ -230,11 +247,11 @@ get_feature_stability_object = function(data_matrix,
                                                                  verbose = FALSE
                                                                )$snn
 
-                                                               # apply Leiden Clustering to the generated graph
+                                                               # apply graph clustering to the snn graph
                                                                cluster_results = Seurat::FindClusters(
                                                                  neigh_matrix,
                                                                  random.seed = seed,
-                                                                 algorithm = 4,
+                                                                 algorithm = algorithm,
                                                                  verbose = FALSE
                                                                )
                                                                cluster_results = cluster_results[, names(cluster_results)[1]]
@@ -257,10 +274,11 @@ get_feature_stability_object = function(data_matrix,
     rownames(pca_embedding) = rownames(trimmed_matrix)
 
     set.seed(seed_sequence[1])
-    umap_embedding = uwot::umap(X = pca_embedding,  ...)
+    umap_embedding = uwot::umap(X = pca_embedding, n_threads = 1, n_sgd_threads = 1, ...)
     colnames(umap_embedding) = paste0("UMAP_", 1:ncol(umap_embedding))
     rownames(umap_embedding) = rownames(data_matrix)
 
+    #copy_p = partitions_list[[as.character(step)]]
     # merge the identical partitions into the same object
     partitions_list[[as.character(step)]] = merge_partitions(partitions_list[[as.character(step)]],
                                                              ecs_thresh = ecs_thresh,
@@ -282,6 +300,8 @@ get_feature_stability_object = function(data_matrix,
       ecc = ec_consistency,
       embedding = umap_embedding,
       most_frequent_partition = partitions_list[[as.character(step)]][[1]],
+      #part_list = partitions_list[[as.character(step)]],
+      #orig_pat_list = copy_p,
       n_different_partitions = length(partitions_list[[as.character(step)]])
     )
   }
@@ -295,7 +315,7 @@ get_feature_stability_object = function(data_matrix,
 #' of the ECC as a boxplot. Above each boxplot there will a number representing
 #' the step (or the size of the subset)
 #'
-#' @param feature_object_list an object or a concatenation of objects returned by the
+#' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
 #'
 #'
@@ -303,13 +323,19 @@ get_feature_stability_object = function(data_matrix,
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
+#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
-#'    npcs = 5,
-#'    n_repetitions = 1)
-#' plot_feature_stability_boxplot(feature_stability_obj)
+#'    npcs = 2,
+#'    n_repetitions = 1,
+#'    algorithm = 1,
+#'    n_neighbors = 3,
+#'    approx_pow = TRUE,
+#'    n_epochs = 0,
+#'    init = "random",
+#'    min_dist = 0.3)
+#' plot_feature_stability_boxplot(feature_stability_result)
 plot_feature_stability_boxplot = function(feature_object_list) {
   min_index = -1 # indicates the number of steps that will be displayed on the plot
 
@@ -382,22 +408,28 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' a feature set and illustrates the distribution of the most frequent partition over the UMAP
 #' embedding.
 #'
-#' @param feature_object_list an object or a concatenation of objects returned by the
+#' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
-#' @param text_size the size of the cluster label
+#' @param text_size The size of the cluster label
 #'
 #'
 #' @return A ggplot facet object
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
+#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
-#'    steps = c(7, 9),
-#'    npcs = 4,
-#'    n_repetitions = 1)
-#' plot_feature_stability_mb_facet(feature_stability_obj)
+#'    steps = -1,
+#'    npcs = 2,
+#'    n_repetitions = 1,
+#'    algorithm = 1,
+#'    n_neighbors = 3,
+#'    approx_pow = TRUE,
+#'    n_epochs = 0,
+#'    init = "random",
+#'    min_dist = 0.3)
+#' plot_feature_stability_mb_facet(feature_stability_result)
 plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
   if(!is.numeric(text_size) || length(text_size) > 1)
     stop("text_size parameter should be numeric")
@@ -465,7 +497,7 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' a feature set and illustrates the distribution of the ECC score over the UMAP
 #' embedding.
 #'
-#' @param feature_object_list an object or a concatenation of objects returned by the
+#' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
 #'
 #'
@@ -473,13 +505,19 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
+#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
-#'    steps = c(7, 9),
-#'    npcs = 4,
-#'    n_repetitions = 1)
-#' plot_feature_stability_ecs_facet(feature_stability_obj)
+#'    steps = -1,
+#'    npcs = 2,
+#'    n_repetitions = 1,
+#'    algorithm = 1,
+#'    n_neighbors = 3,
+#'    approx_pow = TRUE,
+#'    n_epochs = 0,
+#'    init = "random",
+#'    min_dist = 0.3)
+#' plot_feature_stability_ecs_facet(feature_stability_result)
 plot_feature_stability_ecs_facet = function(feature_object_list) {
   first_temp = T
 
@@ -530,23 +568,29 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #' ECS distribution will be displayed as a boxplot. Above each boxplot there will be
 #' a pair of numbers representing the two steps that are compared.
 #'
-#' @param feature_object_list an object or a concatenation of objects returned by the
-#' `get_feature_stability_object` method
-#' @param dodge_width used for adjusting the horizontal position of the boxplot; the value
-#' will be passed in the `width` argument of the `ggplot2::position_dodge` method
+#' @param feature_object_list An object or a concatenation of objects returned by the
+#' `get_feature_stability_object` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
+#' will be passed in the `width` argument of the `ggplot2::position_dodge` method.
 #'
 #'
 #' @return A ggplot object
 #' @export
 #'
 #' @examples
-#' feature_stability_obj = get_feature_stability_object(data_matrix = as.matrix(mtcars),
+#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
 #'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
-#'    steps = c(7, 9),
-#'    npcs = 4,
-#'    n_repetitions = 1)
-#' plot_feature_stability_ecs_incremental(feature_stability_obj, 0.7)
+#'    steps = c(6,7),
+#'    npcs = 2,
+#'    n_repetitions = 1,
+#'    algorithm = 1,
+#'    n_neighbors = 3,
+#'    approx_pow = TRUE,
+#'    n_epochs = 0,
+#'    init = "random",
+#'    min_dist = 0.3)
+#' plot_feature_stability_ecs_incremental(feature_stability_result, 0.7)
 plot_feature_stability_ecs_incremental = function(feature_object_list,
                                                   dodge_width = 0.7) {
   if(!is.numeric(dodge_width) || length(dodge_width) > 1)
@@ -561,7 +605,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
     # treat the case with only one step
     for (i in 1:nsteps) {
       temp_df = data.frame(
-        ecs = element_sim_elscore(
+        ecs = corrected_l1_mb(
           feature_object_list[[config_name]][[i]]$most_frequent_partition$mb,
           feature_object_list[[config_name]][[i+1]]$most_frequent_partition$mb
         ),
@@ -646,15 +690,16 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #' lower bound for the number of clusters. The calculations are performed multiple
 #' times by changing the seed at each repetition.
 #'
-#' @param object if the graph reduction type is PCA, the object should be a data matrix; in
-#' the case of UMAP, the user could also provide a PCA embedding.
-#' @param n_neigh_sequence a sequence of the number of nearest neighbors.
-#' @param config_name user specified string that uniquely describes the embedding characteristics.
-#' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
-#' @param graph_reduction_type the graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
-#' @param ... additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
+#' @param object A matrix object. If the graph reduction type is PCA, the object
+#' should be an expression matrix; in the case of UMAP, the user could also provide
+#' a matrix associated to a PCA embedding.
+#' @param n_neigh_sequence A sequence of the number of nearest neighbors.
+#' @param config_name User specified string that uniquely describes the embedding characteristics.
+#' @param n_repetitions The number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
+#' @param graph_reduction_type The graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
+#' @param ncores The number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
+#' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
 #'
 #'
 #'
@@ -671,7 +716,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "UMAP",
 #'     min_dist = 0.3,
-#'     n_neighbors = 30,
+#'     n_neighbors = 5,
 #'     metric = "cosine")
 get_nn_conn_comps = function(object,
                              n_neigh_sequence,
@@ -725,6 +770,11 @@ get_nn_conn_comps = function(object,
   for(i in 1:length(suppl_args)) {
     assign(names(suppl_args)[i], suppl_args[[i]])
   }
+
+  if(graph_reduction_type == "UMAP") {
+    suppl_args[["n_threads"]] = 1
+    suppl_args[["n_sgd_threads"]] = 1
+  }
   suppl_arg_names = names(suppl_args)
 
   nn_conn_comps_list = list()
@@ -744,27 +794,26 @@ get_nn_conn_comps = function(object,
 
   all_vars = ls()
   # the variables needed in each PSOCK process
-  needed_vars = c("object", "n_neigh_sequence", "graph_reduction_type", "suppl_arg_names")
+  needed_vars = c("object", "n_neigh_sequence", "graph_reduction_type", "suppl_args")
 
-  seed = 0
+  seed = NA
 
   # send the name of the dim reduction arguments
   nn_conn_comps_list_temp = foreach::foreach(seed = seed_sequence,
-                                             .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                             .export = names(suppl_args)) %dopar% { #
-                                               dim_red_args = list()
-
-                                               for(suppl_arg_name in suppl_arg_names) {
-                                                 dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                               }
+                                             .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
+                                               # dim_red_args = list()
+                                               #
+                                               # for(suppl_arg_name in suppl_arg_names) {
+                                               #   dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
+                                               # }
 
                                                # perform the UMAP / PCA dimensionality reduction
                                                set.seed(seed)
                                                if (graph_reduction_type == "UMAP") {
-                                                 embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
+                                                 embedding = do.call(uwot::umap, c(list(X=object), suppl_args))
                                                  colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
                                                } else {
-                                                 irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
+                                                 irlba_object = do.call(irlba::irlba, c(list(A=object), suppl_args))
                                                  embedding = irlba_object$u %*% diag(irlba_object$d)
                                                  colnames(embedding) = paste0("PC_", 1:ncol(embedding))
                                                }
@@ -809,8 +858,8 @@ get_nn_conn_comps = function(object,
 #' number connected components obtained at different seeds. The distribution is
 #' displayed as a boxplot.
 #'
-#' @param nn_conn_comps_object an object or a concatenation of objects returned by the
-#' `get_nn_conn_comps` method
+#' @param nn_conn_comps_object An object or a concatenation of objects returned by the
+#' `get_nn_conn_comps` method.
 #'
 #'
 #' @return A ggplot object
@@ -824,7 +873,7 @@ get_nn_conn_comps = function(object,
 #'     config_name = "mt_cars",
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
-#'     npcs = 4)
+#'     nv = 4)
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution = function(nn_conn_comps_object) {
   final_comps_df = reshape2::melt(nn_conn_comps_object)
@@ -875,18 +924,26 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' when changing the values of different parameters involved in the Graph Building step,
 #' namely the base embedding, the graph type and the number of neighbours.
 #'
-#' @param object if the graph reduction type is PCA, the object should be a normalized data matrix; in
-#' the case of UMAP, the user could also provide a matrix representing the PCA embedding.
-#' @param n_neigh_sequence a sequence of the number of nearest neighbours.
-#' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
-#' @param graph_reduction_type the graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
-#' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
-#' @param transpose decides whether the input object will be transposed or not
-#' @param graph_type argument indicating whether the graph should be
+#' @param object A matrix object. If the graph reduction type is PCA, the object
+#' should be an expression matrix; in the case of UMAP, the user could also provide
+#' a matrix associated to a PCA embedding.
+#' @param n_neigh_sequence A sequence of the number of nearest neighbours.
+#' @param n_repetitions The number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence A custom seed sequence; if the value is NULL,
+#' the sequence will be built starting from 1 with a step of 100.
+#' @param graph_reduction_type The graph reduction type, denoting if the graph
+#' should be built on either the PCA or the UMAP embedding.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
+#' @param ncores The number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
+#' @param transpose Decides whether the input object will be transposed or not
+#' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
-#' @param ... additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
+#' @param algorithm An index indicating which community detection algorithm will
+#' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
+#' can be found in the Seurat's `FindClusters` function.
+#' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
 #'
 #'
 #'
@@ -904,21 +961,23 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #'
 #' @examples
 #' get_nn_importance(object = as.matrix(mtcars),
-#'     n_neigh_sequence = c(2,5,15),
+#'     n_neigh_sequence = c(5,15),
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "UMAP",
+#'     algorithm = 1,
 #'     min_dist = 0.3,
-#'     n_neighbors = 30,
+#'     n_neighbors = 5,
 #'     metric = "cosine")
 get_nn_importance = function(object,
                              n_neigh_sequence,
                              n_repetitions = 30,
                              seed_sequence = NULL,
                              graph_reduction_type = "PCA",
-                             ecs_thresh = 0.99,
+                             ecs_thresh = 1,
                              ncores = 1,
                              transpose = (graph_reduction_type == "PCA"),
                              graph_type = 2,
+                             algorithm = 4,
                              ...) {
   # check parameters
   if(!is.logical(transpose))
@@ -947,6 +1006,9 @@ get_nn_importance = function(object,
 
   if (!is.matrix(object))
     stop("object parameter should be a matrix")
+
+  if (!is.numeric(algorithm) || length(algorithm) > 1 || !(algorithm %in% 1:4))
+    stop("algorithm should be a number between 1 and 4")
 
   if(!(graph_reduction_type %in% c("PCA", "UMAP")))
     stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
@@ -979,9 +1041,17 @@ get_nn_importance = function(object,
 
   # additional arguments that will be used by umap or irlba
   suppl_args = list(...)
-  for(i in 1:length(suppl_args)) {
+  i = 1
+  while(i < length(suppl_args)) {
     assign(names(suppl_args)[i], suppl_args[[i]])
+    i = i + 1
   }
+
+  if(graph_reduction_type == "UMAP") {
+    suppl_args[["n_threads"]] = 1
+    suppl_args[["n_sgd_threads"]] = 1
+  }
+
   suppl_arg_names = names(suppl_args)
 
   for (n_neigh in n_neigh_sequence) {
@@ -1001,27 +1071,19 @@ get_nn_importance = function(object,
     }
 
     # the variables needed in the PSOCK processes
-    needed_vars = c("object", "n_neigh", "graph_reduction_type", "suppl_arg_names", "graph_type")
+    needed_vars = c("object", "n_neigh", "graph_reduction_type", "graph_type", "algorithm", "suppl_args")
     all_vars = ls()
-
-    seed = 0
+    seed = NA
 
     partitions_list_temp = foreach::foreach(seed = seed_sequence,
-                                            .noexport = all_vars[!(all_vars %in% needed_vars)],
-                                            .export = names(suppl_args)) %dopar% { #
-                                              dim_red_args = list()
-
-                                              for(suppl_arg_name in suppl_arg_names) {
-                                                dim_red_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                              }
-
+                                            .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% {
                                               # perform the dimensionality reduction
                                               set.seed(seed)
                                               if (graph_reduction_type == "UMAP") {
-                                                embedding = do.call(uwot::umap, c(list(X=object), dim_red_args))
+                                                embedding = do.call(uwot::umap, c(list(X=object), suppl_args))
                                                 colnames(embedding) = paste0("UMAP_", 1:ncol(embedding))
                                               } else {
-                                                irlba_object = do.call(irlba::irlba, c(list(A=object), dim_red_args))
+                                                irlba_object = do.call(irlba::irlba, c(list(A=object), suppl_args))
                                                 embedding = irlba_object$u %*% diag(irlba_object$d)
                                                 colnames(embedding) = paste0("PC_", 1:ncol(embedding))
                                               }
@@ -1040,7 +1102,7 @@ get_nn_importance = function(object,
                                                 cluster_results_nn = Seurat::FindClusters(
                                                   neigh_matrix$nn,
                                                   random.seed = seed,
-                                                  algorithm = 4,
+                                                  algorithm = algorithm,
                                                   verbose = F
                                                 )
                                                 cluster_results_nn = list(mb = cluster_results_nn[, names(cluster_results_nn)[1]],
@@ -1054,7 +1116,7 @@ get_nn_importance = function(object,
                                               cluster_results_snn = Seurat::FindClusters(
                                                 neigh_matrix$snn,
                                                 random.seed = seed,
-                                                algorithm = 4,
+                                                algorithm = algorithm,
                                                 verbose = F
                                               )
                                               cluster_results_snn = list(mb = cluster_results_snn[, names(cluster_results_snn)[1]],
@@ -1110,8 +1172,7 @@ get_nn_importance = function(object,
     n_neigh_ec_consistency = nn_ecs_object,
     n_different_partitions = lapply(partitions_list, function(config) {
       sapply(config, function(n_neigh) { length(n_neigh)})
-    }),
-    graph_reduction_type = graph_reduction_type
+    })
   )
 }
 
@@ -1123,8 +1184,8 @@ get_nn_importance = function(object,
 #' number of clusters obtained at different seeds. The distribution is
 #' displayed as a boxplot.
 #'
-#' @param nn_object_n_clusters an object or a concatenation of objects returned by the
-#' `get_nn_importance` method
+#' @param nn_object_n_clusters An object or a concatenation of objects returned by the
+#' `get_nn_importance` method.
 #'
 #'
 #' @return A ggplot object
@@ -1137,7 +1198,8 @@ get_nn_importance = function(object,
 #'     n_neigh_sequence = c(2,5,15),
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
-#'     npcs = 30)
+#'     algorithm = 1,
+#'     nv = 2)
 #' plot_n_neigh_k_correspondence(nn_importance_obj)
 plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
   melted_obj = reshape2::melt(nn_object_n_clusters$n_neigh_k_corresp)
@@ -1179,8 +1241,8 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #' of neighbors, graph types and base embeddings, the EC Consistency of the partitions
 #' obtained over multiple runs on an UMAP embedding.
 #'
-#' @param nn_ecs_object an object or a concatenation of objects returned by the
-#' `get_nn_importance` method
+#' @param nn_ecs_object An object or a concatenation of objects returned by the
+#' `get_nn_importance` method.
 #'
 #'
 #' @return A ggplot facet object
@@ -1192,7 +1254,8 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #'     n_neigh_sequence = c(2,5,15),
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
-#'     npcs = 30)
+#'     algorithm = 1,
+#'     nv = 2)
 #' plot_n_neigh_ecs(nn_importance_obj)
 plot_n_neigh_ecs = function(nn_ecs_object) {
   melted_obj = reshape2::melt(nn_ecs_object$n_neigh_ec_consistency)
@@ -1226,15 +1289,20 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #' the resolution parameter and compare, using the EC Consistency score, the
 #' partitions obtained at different seeds.
 #'
-#' @param graph_adjacency_matrix a square adjacency matrix based on which an igraph
+#' @param graph_adjacency_matrix A square adjacency matrix based on which an igraph
 #' object will be built.
-#' @param resolution a sequence of resolution values.
-#' @param n_repetitions the number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
-#' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
-#' @param verbose boolean value used for displaying the progress bar
-#'
+#' @param resolution A sequence of resolution values.
+#' @param n_repetitions The number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the
+#' sequence will be built starting from 1 with a step of 100.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
+#' @param ncores The number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
+#' @param verbose Boolean value used for displaying the progress bar.
+#' @param algorithm An index or a list of indexes indicating which community detection
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
+#' More details can be found in the Seurat's `FindClusters` function.
 #'
 #' @return A list having two fields:
 #'
@@ -1250,13 +1318,14 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'
 #' @examples
 #' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 25,
+#'     k.param = 5,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
 get_clustering_difference_object = function(graph_adjacency_matrix,
                                             resolution,
@@ -1264,6 +1333,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
                                             seed_sequence = NULL,
                                             ecs_thresh = 1,
                                             ncores = 1,
+                                            algorithm = 1:4,
                                             verbose = TRUE) {
   # check the parameters
   if (!is.numeric(resolution))
@@ -1281,6 +1351,9 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
     stop("n_repetitions parameter should be numeric")
   # convert n_repetitions to an integer
   n_repetitions = as.integer(n_repetitions)
+
+  if (!is.numeric(algorithm) || !(all(algorithm %in% 1:4)))
+    stop("algorithm should be a vector of numbers between 1 and 4")
 
   if (!is.logical(verbose))
     stop("verbose parameter should take a logical value")
@@ -1300,7 +1373,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
   algorithm_names = c("Louvain", "Louvain.refined", "SLM", "Leiden")
   result_object = list()
 
-  for (i in 1:4) {
+  for (i in algorithm) {
     # if verbose is set to TRUE, create a progress bar
     if(verbose) {
       message(paste("generating partitions for", algorithm_names[i], "method"))
@@ -1385,8 +1458,8 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
 #' field of the object returned by the `get_clustering_difference_object` method.
 #' Above each boxplot, the number of clusters will be displayed.
 #'
-#' @param clustering_difference_object an object returned by the
-#' `get_clustering_difference_object` method
+#' @param clustering_difference_object An object returned by the
+#' `get_clustering_difference_object` method.
 #'
 #'
 #' @return A ggplot object
@@ -1395,13 +1468,14 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
 #'
 #' @examples
 #' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 25,
+#'     k.param = 5,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
 plot_clustering_difference_boxplot = function(clustering_difference_object) {
@@ -1453,15 +1527,15 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 #' the distribution of the EC consistency on a given embedding. We will use the `all`
 #' field of the object returned by the `get_clustering_difference_object` method.
 #'
-#' @param clustering_difference_object an object returned by the
-#' `get_clustering_difference_object` method
-#' @param embedding an embedding (only the first two dimensions will be used for
-#' visualisation)
-#' @param low_limit the lowest value of ECC that will be displayed on the embedding
-#' @param high_limit the highest value of ECC that will be displayed on the embedding
-#' @param grid boolean value indicating whether the facet should be a grid (where each
+#' @param clustering_difference_object An object returned by the
+#' `get_clustering_difference_object` method.
+#' @param embedding An embedding (only the first two dimensions will be used for
+#' visualisation).
+#' @param low_limit The lowest value of ECC that will be displayed on the embedding.
+#' @param high_limit The highest value of ECC that will be displayed on the embedding.
+#' @param grid Boolean value indicating whether the facet should be a grid (where each
 #' row is associated with a resolution value and each column with a clustering method) or
-#' a wrap
+#' a wrap.
 #'
 #' @return A ggplot facet object
 #' @export
@@ -1469,13 +1543,14 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 #'
 #' @examples
 #' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 25,
+#'     k.param = 5,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
 #' plot_clustering_difference_facet(clust_diff_obj, as.matrix(mtcars[,1:2]))
 plot_clustering_difference_facet = function(clustering_difference_object,
@@ -1541,7 +1616,7 @@ get_resolution_partitions = function(clustered_object,
                                      clustering_function,
                                      seed_sequence,
                                      ncores = 1,
-                                     ecs_thresh = 0.99,
+                                     ecs_thresh = 1,
                                      ...) {
   different_partitions = list()
   ncores = min(ncores, length(seed_sequence), parallel::detectCores())
@@ -1570,26 +1645,26 @@ get_resolution_partitions = function(clustered_object,
   }
 
   # the variables needed in the PSOCK processes
-  needed_vars = c("resolution", "clustering_function", "clustered_object", "suppl_arg_names")
+  needed_vars = c("resolution", "clustering_function", "clustered_object", "suppl_args")
   all_vars = ls()
 
   seed = 0
 
   different_partitions_temp = foreach::foreach(seed = seed_sequence,
                                                .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
-                                                 clust_args = list()
+                                                 #clust_args = list()
 
                                                  seed = get("seed")
 
-                                                 for(suppl_arg_name in suppl_arg_names) {
-                                                   clust_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                                 }
+                                                 # for(suppl_arg_name in suppl_arg_names) {
+                                                 #   clust_args[[suppl_arg_name]] = get(suppl_arg_name)
+                                                 # }
 
                                                  # apply the clustering, which should return a membership vector
                                                  do.call(clustering_function, c(list(object = clustered_object,
                                                                                      resolution = resolution,
                                                                                      seed = seed),
-                                                                                clust_args))
+                                                                                suppl_args))
                                                }
 
   # if a parallel backend was created, terminate the processes
@@ -1629,23 +1704,22 @@ get_resolution_partitions = function(clustered_object,
 #' @description Perform a gridsearch over the resolution, number of neighbors
 #' and graph type.
 #'
-#' @param embedding the base embedding for the graph construction.
-#' @param resolution a sequence of resolution values.
-#' @param n_neigh a value or a sequence of number of neighbors used for graph construction.
-#' @param n_repetitions the number of repetitions of applying the pipeline with
+#' @param embedding The base embedding for the graph construction.
+#' @param resolution A sequence of resolution values.
+#' @param n_neigh A value or a sequence of number of neighbors used for graph construction.
+#' @param n_repetitions The number of repetitions of applying the pipeline with
 #' different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence a custom seed sequence; if the value is NULL, the sequence
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the sequence
 #' will be built starting from 1 with a step of 100.
-#' @param clustering_method the graph clustering method that should be applied;
-#' the user should provide an integer between 1 and 4, where encodings are the
-#' same as specified in the Seurat's `FindClusters` method. The arguments allows
-#' selecting multiple algorithms.
-#' @param graph_type argument indicating whether the graph should be
+#' @param clustering_method An index or a list of indexes indicating which community detection
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
+#' More details can be found in the Seurat's `FindClusters` function.
+#' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
-#' @param object_name user specified string that uniquely describes the
+#' @param object_name User specified string that uniquely describes the
 #' embedding characteristics.
-#' @param ecs_thresh the ECS threshold used for merging similar clusterings.
-#' @param ncores the number of parallel R instances that will run the code.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
+#' @param ncores The number of parallel R instances that will run the code.
 #' If the value is set to 1, the code will be run sequentially.
 #'
 #'
@@ -1669,7 +1743,7 @@ get_resolution_partitions = function(clustered_object,
 #'    resolution = c(0.8,1),
 #'    n_neigh = c(25,30),
 #'    n_repetitions = 1,
-#'    clustering_method = 1,
+#'    clustering_method = 1:2,
 #'    graph_type = 0,
 #'    object_name = "mt_cars")
 wrapper_gridsearch = function(embedding,
@@ -1906,7 +1980,8 @@ wrapper_gridsearch = function(embedding,
 #'
 #' @param res_obj A list associated to a configuration field from the object
 #' returned by the `wrapper_gridsearch` method.
-#' @param ncores the number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
+#' @param ncores The number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
 #'
 #'
 #' @return A list having one field assigned to each number of clusters. A number
@@ -2006,13 +2081,13 @@ merge_resolutions = function(res_obj,
 #' as the fraction between the number of total appearances and the number of
 #' runs.
 #'
-#' @param res_object_list an object or a concatenation of objects returned by the
-#' `wrapper_gridsearch` method
-#' @param res_object_names custom names that the user could assing to each
+#' @param res_object_list An object or a concatenation of objects returned by the
+#' `wrapper_gridsearch` method.
+#' @param res_object_names Custom names that the user could assing to each
 #' configuration; if not specified, the plot will use the generated configuration
-#' names
-#' @param given_height used for adjusting the vertical position of the boxplot; the value
-#' will be passed in the `height` argument of the `ggstance::position_dodgev` method
+#' names.
+#' @param given_height Used for adjusting the vertical position of the boxplot; the value
+#' will be passed in the `width` argument of the `ggplot::position_dodge` method.
 #'
 #'
 #' @return A ggplot object
@@ -2111,11 +2186,11 @@ plot_k_resolution_corresp = function(res_object_list,
 #' common partition relative to the total number of appearances of that specific
 #' number of clusters.
 #'
-#' @param partition_obj_list an object or a concatenation of objects returned by the
-#' `merge_resolutions` method
-#' @param object_names custom names that the user could assing to each
+#' @param partition_obj_list An object or a concatenation of objects returned by the
+#' `merge_resolutions` method.
+#' @param object_names Custom names that the user could assing to each
 #' configuration; if not specified, the plot will use the generated configuration
-#' names
+#' names.
 #'
 #' @return A ggplot object
 #' @export
