@@ -1432,13 +1432,7 @@ setOldClass("Matrix::Matrix")
 #' @slot affinity_matrix A Matrix containing the personalized pagerank
 #' equilibrium distribution.
 #'
-#'
-#' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
-#' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(mtcars))
-#' hc.clustering = create_clustering(hc.res)
-#' element_sim(km.clustering, hc.clustering)
+#' @keywords internal
 Clustering <- setClass("Clustering",
                        representation(names="character",
                                       n_elements="numeric",
@@ -1478,13 +1472,9 @@ Clustering <- setClass("Clustering",
 #'
 #' @return A Clustering object.
 #'
+#' @keywords internal
+#'
 #' @md
-#' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
-#' km.clustering = create_clustering(km.res)
-#' hc.res = hclust(dist(mtcars))
-#' hc.clustering = create_clustering(hc.res)
-#' element_sim(km.clustering, hc.clustering)
 setGeneric("create_clustering",
            function(clustering_result, ...)
              standardGeneric("create_clustering") )
@@ -1725,10 +1715,7 @@ setGeneric("length")
 #'
 #' @return The number of elements.
 #'
-#' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
-#' km.clustering = create_clustering(km.res)
-#' length(km.clustering)
+#' @keywords internal
 setMethod("length",
           signature(x="Clustering"),
           function(x) {
@@ -1753,10 +1740,7 @@ setGeneric("print")
 #'
 #' @return The printed character string.
 #'
-#' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
-#' km.clustering = create_clustering(km.res)
-#' print(km.clustering)
+#' @keywords internal
 setMethod("print",
           signature(x="Clustering"),
           function(x) {
