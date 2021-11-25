@@ -282,6 +282,7 @@ corrected_L1 = function(x, y, alpha){
   return(res)
 }
 
+# corrected L1 distance for two membership vectors
 corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
   n = length(mb1)
 
@@ -766,17 +767,17 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
 
   if(ncores > 1) {
     # create a parallel backend
-    my_cluster <- parallel::makeCluster(
+    sim_matrix_cluster <- parallel::makeCluster(
       ncores,
       type = "PSOCK"
     )
-    doParallel::registerDoParallel(cl = my_cluster)
+    doParallel::registerDoParallel(cl = sim_matrix_cluster)
   } else {
     # create a sequential backend
     foreach::registerDoSEQ()
   }
 
-  i = 1
+  i = NA
 
   # calculate the ecs between every pair of partitions
   ecs_values = foreach::foreach(i = 1:n_combinations, .export = c("corrected_l1_mb", "create_clu2elm_dict"), .noexport = c("my_cluster"), .combine = "c") %dopar% {
@@ -787,7 +788,7 @@ element_sim_matrix_flat_disjoint = function(mb_list, ncores = 1, alpha = 0.9, ou
 
   if(ncores > 1)
     # terminate the processes if a parallel backend was created
-    parallel::stopCluster(cl = my_cluster)
+    parallel::stopCluster(cl = sim_matrix_cluster)
 
   sim_matrix = matrix(NA, nrow=n_clusterings, ncol=n_clusterings)
   sim_matrix[lower.tri(sim_matrix, diag=FALSE)]= ecs_values
@@ -843,12 +844,13 @@ merge_identical_partitions = function(clustering_list,
   }
 
   for(i in 2:n_partitions) {
+    # n_partitions = length(merged_partitions)
     n_merged_partitions = length(merged_partitions)
 
     assigned_partition = -1
 
     # for each partition, look into the merged list and see if there is a perfect match
-    for(j in 1:n_merged_partitions) {
+    for(j in 1:n_merged_partitions) { # for(j in 1:n_partitions) {}
       are_identical = are_identical_memberships(merged_partitions[[j]]$mb, clustering_list[[i]]$mb)
       if(are_identical) {
         assigned_partition = j
@@ -896,7 +898,7 @@ merge_partitions_ecs = function(partition_list,
   }
 
 
-  for(n_changes in 1:(nparts-1)) {
+  while(length(partition_groups) > 1) {
     # if the similarity between any pair of partitions is below the threshold
     # we do not perform any merging
     if(max(sim_matrix, na.rm = T) < ecs_thresh) {
@@ -913,13 +915,16 @@ merge_partitions_ecs = function(partition_list,
       second_cluster = second_cluster - 1
     }
 
+    # update the partition group of the first partition, where we add the second one
+    partition_groups[[as.character(first_cluster)]] = c(partition_groups[[as.character(first_cluster)]],
+                                                        partition_groups[[as.character(second_cluster)]])
     # remove the partition group of the second partition that will be merged
     partition_groups[[as.character(second_cluster)]] = NULL
-    # update the partition group of the first partition, where we add the second one
-    partition_groups[[as.character(first_cluster)]] = c(partition_groups[[as.character(first_cluster)]], second_cluster)
 
     # update the similarities in a single-linkeage fashion
-    for(i in 1:nparts) {
+    # iterate only through the names of the groups of partitions, as the others
+    # are already filled with NAs
+    for(i in as.numeric(names(partition_groups))) {
       if(first_cluster < i) {
         if(!is.na(sim_matrix[first_cluster, i])) {
           sim_matrix[first_cluster, i] = min(sim_matrix[first_cluster, i], sim_matrix[second_cluster, i], sim_matrix[i, second_cluster], na.rm = T)
@@ -959,9 +964,9 @@ merge_partitions_ecs = function(partition_list,
 #' @description Merge partitions whose ECS score is above a given threshold.
 #' The merging is done using a complete linkeage approach.
 #'
-#' @param partition_list A list of flat Clustering objects
-#' @param ecs_thresh the ecs threshold object
-#' @param ncores the number of parallel R instances that will run the code.
+#' @param partition_list A list of flat Clustering objects.
+#' @param ecs_thresh The ecs threshold object.
+#' @param ncores The number of parallel R instances that will run the code.
 #' If the value is set to 1, the code will be run sequentially.
 #' @param order A logical: if TRUE, order the partitions based on their frequencies.
 #' @return a list of the merged partitions
@@ -1147,7 +1152,7 @@ weighted_element_consistency = function(clustering_list,
   }
 
   all_vars = ls()
-  i = 1
+  i = NA
 
   # calculate the ecs between each pair of distinct partitions and multiply the
   # results by their weights
@@ -1328,7 +1333,7 @@ element_agreement_flat_disjoint = function(reference_clustering,
     foreach::registerDoSEQ()
   }
 
-  obj = NULL
+  obj = NA
 
   # calculate the average of the ecs between one member of the clustering list
   # and the reference clustering
@@ -1370,7 +1375,7 @@ create_clustering_list = function(object_list,
     foreach::registerDoSEQ()
   }
 
-  obj = NULL
+  obj = NA
 
   clustering_list = foreach::foreach(obj = object_list,
                                      .packages = "ClustAssess") %dopar% {
