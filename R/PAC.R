@@ -39,6 +39,7 @@ calculate_dist = function(x, dist_method, p=2){
 #' @param lower_lim The lower limit for determining whether a pair is
 #' clustered ambiguously; the lower this value, the higher the PAC.
 #' @param p_minkowski The power of the Minkowski distance.
+#' @param verbose Logical value used for choosing to display a progress bar or not.
 #'
 #' @return A data.frame with PAC values across iterations, as well as parameter
 #' values used when calling the method.
