@@ -25,7 +25,14 @@ Imports:
     magrittr,
     Rcpp,
     methods,
-    stats
+    stats,
+    foreach,
+    doParallel,
+    irlba,
+    progress,
+    reshape2,
+    stringr,
+    uwot
 RoxygenNote: 7.1.1
 LinkingTo: 
     Rcpp
