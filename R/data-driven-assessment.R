@@ -1,9 +1,6 @@
 #' @importFrom foreach %dopar%
 NULL
 
-# set these variables as global to solve the foreach warnings
-# utils::globalVariables(c("i", "seed", "obj"))
-
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
 seurat_clustering = function(object, resolution, seed, algorithm = 4, ...) {
