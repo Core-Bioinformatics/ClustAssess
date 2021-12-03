@@ -15,7 +15,7 @@ seurat_clustering = function(object, resolution, seed, algorithm = 4, ...) {
   cluster.result[[colnames(cluster.result)[1]]]
 }
 
-# generate values from an interval that simulates the loghartimic scale
+# generate values from an interval that simulates the logarithmic scale
 generate_breaks = function(min.range, max.range) {
   start.point = min.range + 5 - min.range %% 5
   breaks.list = list()
@@ -81,8 +81,8 @@ generate_breaks = function(min.range, max.range) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
-#'    feature_set = colnames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
+#'    feature_set = rownames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
@@ -93,21 +93,24 @@ generate_breaks = function(min.range, max.range) {
 #'    n_epochs = 0,
 #'    init = "random",
 #'    min_dist = 0.3)
-get_feature_stability_object = function(data_matrix,
-                                        feature_set,
-                                        steps,
-                                        feature_type,
-                                        n_repetitions = 30,
-                                        seed_sequence = NULL,
-                                        graph_reduction_type = "PCA",
-                                        npcs = 30,
-                                        ecs_thresh = 1,
-                                        ncores = 1,
-                                        algorithm = 4,
-                                        ...) {
+get_feature_stability = function(data_matrix,
+                                 feature_set,
+                                 steps,
+                                 feature_type,
+                                 n_repetitions = 30,
+                                 seed_sequence = NULL,
+                                 graph_reduction_type = "PCA",
+                                 npcs = 30,
+                                 ecs_thresh = 1,
+                                 ncores = 1,
+                                 algorithm = 4,
+                                 ...) {
   # check parameters
-  if (!is.matrix(data_matrix))
+  if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix"))
     stop("object parameter should be a matrix")
+
+  # transpose the matrix to have cells on rows and genes on columns
+  data_matrix = t(data_matrix)
 
   if(!is.character(feature_set))
     stop("feature_set parameter should be a string")
@@ -124,7 +127,7 @@ get_feature_stability_object = function(data_matrix,
     stop("feature_type parameter should be a string")
 
   if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
-    stop("n_repetitions parameter should take numeric value")
+    stop("n_repetitions parameter should be numeric")
   # convert n_repetitions to integers
   n_repetitions = as.integer(n_repetitions)
 
@@ -143,13 +146,13 @@ get_feature_stability_object = function(data_matrix,
     stop("algorithm should be a number between 1 and 4")
 
   if(!is.numeric(ncores) || length(ncores) > 1)
-    stop("ncores parameter should take numeric value")
+    stop("ncores parameter should be numeric")
   # convert number of cores to integers
   ncores = as.integer(ncores)
 
   partitions_list = list()
 
-  object_name = paste(feature_type, graph_reduction_type, ecs_thresh, sep = "_")
+  object_name = paste(feature_type, graph_reduction_type, ecs_thresh, sep = '_')
   return_list = list()
   return_list[[object_name]] = list()
 
@@ -320,8 +323,8 @@ get_feature_stability_object = function(data_matrix,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
-#'    feature_set = colnames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
+#'    feature_set = rownames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
@@ -414,8 +417,8 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
-#'    feature_set = colnames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
+#'    feature_set = rownames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
@@ -502,8 +505,8 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
-#'    feature_set = colnames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
+#'    feature_set = rownames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
@@ -575,14 +578,14 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability_object(data_matrix = as.matrix(mtcars),
-#'    feature_set = colnames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
+#'    feature_set = rownames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = c(6,7),
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
-#'    n_neighbors = 3,
+#'    n_neighbors = 2,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
 #'    init = "random",
@@ -617,7 +620,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
           step = paste(
             names(feature_object_list[[config_name]])[i],
             names(feature_object_list[[config_name]])[i+1],
-            sep = "-"
+            sep = '-'
           ),
           index = i,
           feature_set = config_name
@@ -630,7 +633,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
         steps_df = rbind(steps_df, c(paste(
           names(feature_object_list[[config_name]])[i],
           names(feature_object_list[[config_name]])[i+1],
-          sep = "-"
+          sep = '-'
         ),
         i,
         config_name))
@@ -695,6 +698,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #' @param n_repetitions The number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
 #' @param seed_sequence A custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
 #' @param graph_reduction_type The graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
+#' @param transpose Decides whether the input object will be transposed or not.
 #' @param ncores The number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
 #' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
 #'
@@ -721,32 +725,40 @@ get_nn_conn_comps = function(object,
                              n_repetitions = 30,
                              seed_sequence = NULL,
                              graph_reduction_type = "UMAP",
+                             transpose = (graph_reduction_type == "PCA"),
                              ncores = 1,
                              ...) {
   # check parameters
   if(!is.numeric(n_neigh_sequence))
-    stop("n_neigh_sequence parameter should take numeric value")
+    stop("n_neigh_sequence parameter should be numeric")
   # convert number of neighbors to integers
   n_neigh_sequence = as.integer(n_neigh_sequence)
 
   if(!is.numeric(ncores) || length(ncores) > 1)
-    stop("ncores parameter should take numeric value")
+    stop("ncores parameter should be numeric")
   # convert number of cores to integers
   ncores = as.integer(ncores)
 
   if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
-    stop("n_repetitions parameter should take numeric value")
+    stop("n_repetitions parameter should be numeric")
   # convert n_repetitions to integers
   n_repetitions = as.integer(n_repetitions)
 
-  if (!is.matrix(object))
+  if (!is.matrix(object) && !methods::is(object, "Matrix"))
     stop("object parameter should be a matrix")
 
   if(!(graph_reduction_type %in% c("PCA", "UMAP")))
     stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
 
+  if(!is.logical(transpose))
+    stop("tranpose parameter should be logical")
+
   if(!is.character(config_name))
     stop("config_name parameter should be a string")
+
+  # transpose the matrix if the parameter is set to TRUE
+  if(transpose)
+    object = t(object)
 
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
@@ -844,7 +856,7 @@ get_nn_conn_comps = function(object,
   }
 
   nn_conn_comps_list = list(nn_conn_comps_list)
-  names(nn_conn_comps_list) = c(paste(config_name, graph_reduction_type, sep = "_"))
+  names(nn_conn_comps_list) = c(paste(config_name, graph_reduction_type, sep = '_'))
 
   nn_conn_comps_list
 }
@@ -934,7 +946,7 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' @param ecs_thresh The ECS threshold used for merging similar clusterings.
 #' @param ncores The number of parallel R instances that will run the code.
 #' If the value is set to 1, the code will be run sequentially.
-#' @param transpose Decides whether the input object will be transposed or not
+#' @param transpose Decides whether the input object will be transposed or not.
 #' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
 #' @param algorithm An index indicating which community detection algorithm will
@@ -978,30 +990,30 @@ get_nn_importance = function(object,
                              ...) {
   # check parameters
   if(!is.logical(transpose))
-    stop("tranpose parameter should take a logical value")
+    stop("tranpose parameter should be logical")
 
   if(!is.numeric(n_neigh_sequence))
-    stop("n_neigh_sequence parameter should take numeric value")
+    stop("n_neigh_sequence parameter should be numeric")
   # convert number of neighbors to integers
   n_neigh_sequence = as.integer(n_neigh_sequence)
 
   if(!is.numeric(ncores) || length(ncores) > 1)
-    stop("ncores parameter should take numeric value")
+    stop("ncores parameter should be numeric")
   # convert number of cores to integers
   ncores = as.integer(ncores)
 
   if(!is.numeric(n_repetitions) || length(n_repetitions) > 1)
-    stop("n_repetitions parameter should take numeric value")
+    stop("n_repetitions parameter should be numeric")
   # convert n_repetitions to integers
   n_repetitions = as.integer(n_repetitions)
 
   if(!is.numeric(ecs_thresh) || length(ecs_thresh) > 1)
-    stop("ecs_thresh parameter should take numeric value")
+    stop("ecs_thresh parameter should be numeric")
 
   if (!is.numeric(graph_type) || !(graph_type %in% 0:2))
     stop("graph_type should be a number between 0 and 2")
 
-  if (!is.matrix(object))
+  if (!is.matrix(object) && !methods::is(object, "Matrix"))
     stop("object parameter should be a matrix")
 
   if (!is.numeric(algorithm) || length(algorithm) > 1 || !(algorithm %in% 1:4))
@@ -1025,10 +1037,10 @@ get_nn_importance = function(object,
   partitions_list = list()
 
   if(graph_type != 1)
-    partitions_list[[paste(graph_reduction_type, "nn", ecs_thresh, sep = "_")]] = list()
+    partitions_list[[paste(graph_reduction_type, "nn", ecs_thresh, sep = '_')]] = list()
 
   if(graph_type != 0)
-    partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]] = list()
+    partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = '_')]] = list()
 
   # transpose the matrix if the parameter is set to TRUE
   if(transpose)
@@ -1052,7 +1064,7 @@ get_nn_importance = function(object,
   suppl_arg_names = names(suppl_args)
 
   for (n_neigh in n_neigh_sequence) {
-    partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] = list()
+    partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = '_')]][[as.character(n_neigh)]] = list()
 
     if(ncores > 1) {
       # create a parallel backend
@@ -1319,19 +1331,19 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
-#' get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
+#' get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     algorithm = 1:2,
 #'     verbose = FALSE)
-get_clustering_difference_object = function(graph_adjacency_matrix,
-                                            resolution,
-                                            n_repetitions = 30,
-                                            seed_sequence = NULL,
-                                            ecs_thresh = 1,
-                                            ncores = 1,
-                                            algorithm = 1:4,
-                                            verbose = TRUE) {
+get_clustering_difference = function(graph_adjacency_matrix,
+                                     resolution,
+                                     n_repetitions = 30,
+                                     seed_sequence = NULL,
+                                     ecs_thresh = 1,
+                                     ncores = 1,
+                                     algorithm = 1:4,
+                                     verbose = TRUE) {
   # check the parameters
   if (!is.numeric(resolution))
     stop("resolution parameter should be numeric")
@@ -1353,7 +1365,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
     stop("algorithm should be a vector of numbers between 1 and 4")
 
   if (!is.logical(verbose))
-    stop("verbose parameter should take a logical value")
+    stop("verbose parameter should be logical")
 
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
@@ -1469,7 +1481,7 @@ get_clustering_difference_object = function(graph_adjacency_matrix,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
-#' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
+#' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     algorithm = 1:2,
@@ -1544,7 +1556,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
-#' clust_diff_obj = get_clustering_difference_object(graph_adjacency_matrix = adj_matrix,
+#' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     algorithm = 1:2,
@@ -1649,13 +1661,7 @@ get_resolution_partitions = function(clustered_object,
 
   different_partitions_temp = foreach::foreach(seed = seed_sequence,
                                                .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
-                                                 #clust_args = list()
-
                                                  seed = get("seed")
-
-                                                 # for(suppl_arg_name in suppl_arg_names) {
-                                                 #   clust_args[[suppl_arg_name]] = get(suppl_arg_name)
-                                                 # }
 
                                                  # apply the clustering, which should return a membership vector
                                                  do.call(clustering_function, c(list(object = clustered_object,
@@ -1696,7 +1702,7 @@ get_resolution_partitions = function(clustered_object,
   different_partitions
 }
 
-#' Resolution gridsearch
+#' Resolution importance
 #'
 #' @description Perform a gridsearch over the resolution, number of neighbors
 #' and graph type.
@@ -1736,23 +1742,23 @@ get_resolution_partitions = function(clustered_object,
 #' @export
 #'
 #' @examples
-#' wrapper_gridsearch(embedding = as.matrix(mtcars),
+#' get_resolution_importance(embedding = as.matrix(mtcars),
 #'    resolution = c(0.8,1),
 #'    n_neigh = c(25,30),
 #'    n_repetitions = 1,
 #'    clustering_method = 1:2,
 #'    graph_type = 0,
 #'    object_name = "mt_cars")
-wrapper_gridsearch = function(embedding,
-                              resolution,
-                              n_neigh,
-                              n_repetitions = 100,
-                              seed_sequence = NULL,
-                              clustering_method = 4,
-                              graph_type = 0,
-                              object_name = NULL,
-                              ecs_thresh = 1,
-                              ncores = 1) {
+get_resolution_importance = function(embedding,
+                                     resolution,
+                                     n_neigh,
+                                     n_repetitions = 100,
+                                     seed_sequence = NULL,
+                                     clustering_method = 4,
+                                     graph_type = 0,
+                                     object_name = NULL,
+                                     ecs_thresh = 1,
+                                     ncores = 1) {
   # another parameters
   # prune ? for FindNeighbors, SNN case
   # num_iter for FindClusters
@@ -1760,51 +1766,44 @@ wrapper_gridsearch = function(embedding,
   different_partitions = list()
 
   # check the parameters
-  if (all(class(resolution) != "numeric")) {
-    stop("resolution parameter should take numeric value")
-  }
+  if (!is.numeric(resolution))
+    stop("resolution parameter should be numeric")
 
-  if (!(all(class(n_neigh) %in% c("numeric", "integer")))) {
-    stop("n_neigh parameter should take numeric value")
-  }
+  if (!is.numeric(n_neigh))
+    stop("n_neigh parameter should be numeric")
+
   # convert number of neighbors to integers
   n_neigh = sapply(n_neigh, as.integer)
 
-  if (!(all(class(clustering_method) %in% c("numeric", "integer"))) ||
-      sum(clustering_method %in% 1:4) != length(clustering_method)) {
+  if (!is.numeric(clustering_method) ||
+      !all(clustering_method %in% 1:4))
     stop("clustering_method should be a number between 1 and 4")
-  }
 
-  if (!all(class(graph_type) %in% c("numeric", "integer")) || !(graph_type %in% 0:2)) {
+  if (!is.numeric(graph_type) || length(graph_type) > 1 || !(graph_type %in% 0:2))
     stop("graph_type should be a number between 0 and 2")
-  }
 
-  if (!(all(class(ecs_thresh) %in% c("numeric", "integer")))) {
-    stop("ecs_thresh parameter should take numeric value")
-  }
+  if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1)
+    stop("ecs_thresh parameter should be numeric")
 
-  if (!(all(class(ncores) %in% c("numeric", "integer")))) {
-    stop("ncores parameter should take numeric value")
-  }
+  if (!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should be numeric")
   # convert ncores to an integer
   ncores = as.integer(ncores)
 
-  if (!(all(class(n_repetitions) %in% c("numeric", "integer")))) {
-    stop("n_repetitions parameter should take numeric value")
-  }
+  if (!is.numeric(n_repetitions) || length(n_repetitions) > 1)
+    stop("n_repetitions parameter should be numeric")
   # convert n_repetitions to an integer
   n_repetitions = as.integer(n_repetitions)
 
-  if(!is.null(object_name) && all(class(object_name) != "character")) {
+  if(!is.null(object_name) && !is.character(object_name))
     stop("object_name parameter should be a string")
-  }
 
   if (length(clustering_method) > 1) {
     # generate a list of partitions for each clustering method chosen by the user
     for (i in 1:length(clustering_method)) {
       different_partitions = c(
         different_partitions,
-        wrapper_gridsearch(
+        get_resolution_importance(
           embedding = embedding,
           resolution = resolution,
           n_neigh = n_neigh,
@@ -1827,7 +1826,7 @@ wrapper_gridsearch = function(embedding,
     for (i in 1:length(n_neigh)) {
       different_partitions = c(
         different_partitions,
-        wrapper_gridsearch(
+        get_resolution_importance(
           embedding = embedding,
           resolution = resolution,
           n_neigh = n_neigh[i],
@@ -1849,7 +1848,7 @@ wrapper_gridsearch = function(embedding,
   if (graph_type == 2) {
     # generate a list of partitions for both types of graphs: nn and snn
     different_partitions = c(
-      wrapper_gridsearch(
+      get_resolution_importance(
         embedding = embedding,
         resolution = resolution,
         n_neigh = n_neigh,
@@ -1861,7 +1860,7 @@ wrapper_gridsearch = function(embedding,
         ecs_thresh = ecs_thresh,
         ncores = ncores
       ),
-      wrapper_gridsearch(
+      get_resolution_importance(
         embedding = embedding,
         resolution = resolution,
         n_neigh = n_neigh,
@@ -1885,7 +1884,7 @@ wrapper_gridsearch = function(embedding,
                           "SLM",
                           "Leiden")
 
-  details = paste(n_neigh, graph_type_name, algorithm_name, sep = "_")
+  details = paste(n_neigh, graph_type_name, algorithm_name, sep = '_')
 
   if (length(resolution) > 1) {
     # generate a list of partitions for each resolution value
@@ -1893,7 +1892,7 @@ wrapper_gridsearch = function(embedding,
       res = resolution[i]
 
       if (i == 1) {
-        different_partitions = wrapper_gridsearch(
+        different_partitions = get_resolution_importance(
           embedding = embedding,
           resolution = res,
           n_neigh = n_neigh,
@@ -1910,7 +1909,7 @@ wrapper_gridsearch = function(embedding,
       } else {
         different_partitions[[used_name]] = c(
           different_partitions[[used_name]],
-          wrapper_gridsearch(
+          get_resolution_importance(
             embedding = embedding,
             resolution = res,
             n_neigh = n_neigh,
@@ -1932,7 +1931,7 @@ wrapper_gridsearch = function(embedding,
   if (is.null(object_name)) {
     object_name = details
   } else {
-    object_name = paste(object_name, details, sep = "_")
+    object_name = paste(object_name, details, sep = '_')
   }
 
   # create a seed sequence if it's not provided
@@ -1976,7 +1975,7 @@ wrapper_gridsearch = function(embedding,
 #' that have the same number of clusters.
 #'
 #' @param res_obj A list associated to a configuration field from the object
-#' returned by the `wrapper_gridsearch` method.
+#' returned by the `get_resolution_importance` method.
 #' @param ncores The number of parallel R instances that will run the code.
 #' If the value is set to 1, the code will be run sequentially.
 #'
@@ -2012,8 +2011,8 @@ wrapper_gridsearch = function(embedding,
 #'))
 merge_resolutions = function(res_obj,
                              ncores = 1) {
-  if (!(all(class(ncores) %in% c("numeric", "integer"))))
-    stop("ncores parameter should take numeric value")
+  if (!is.numeric(ncores) || length(ncores) > 1)
+    stop("ncores parameter should be numeric")
 
   # convert ncores to an integer
   ncores = as.integer(ncores)
@@ -2079,7 +2078,7 @@ merge_resolutions = function(res_obj,
 #' runs.
 #'
 #' @param res_object_list An object or a concatenation of objects returned by the
-#' `wrapper_gridsearch` method.
+#' `get_resolution_importance` method.
 #' @param res_object_names Custom names that the user could assing to each
 #' configuration; if not specified, the plot will use the generated configuration
 #' names.
@@ -2092,7 +2091,7 @@ merge_resolutions = function(res_obj,
 #'
 #'
 #' @examples
-#' gridsearch_result = wrapper_gridsearch(embedding = as.matrix(mtcars),
+#' gridsearch_result = get_resolution_importance(embedding = as.matrix(mtcars),
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
@@ -2194,7 +2193,7 @@ plot_k_resolution_corresp = function(res_object_list,
 #'
 #'
 #' @examples
-#' gridsearch_result = wrapper_gridsearch(embedding = as.matrix(mtcars),
+#' gridsearch_result = get_resolution_importance(embedding = as.matrix(mtcars),
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
