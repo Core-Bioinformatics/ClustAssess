@@ -22,6 +22,7 @@ library(readr)
 library(Matrix)
 library(ggplot2)
 library(ClustAssess)
+library(patchwork)
 ```
 
 In this vignette we illustrate a data driven pipeline for the assessment of optimal clustering parameters for a given dataset. The case study is based on a subset of cells from the Cuomo et al 2020 (Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression [ref](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
@@ -85,35 +86,10 @@ QC overview for the Cuomo dataset.
 No significant effects are noted.
 
 ```{r qc, fig.width=15, fig.height = 8, include = T, echo = F}
-plotlist = list(
-  ggplot(data.frame(raw_umap), aes(x = UMAP_1, y = UMAP_2)) +
-    geom_point(aes(color = cuomo@meta.data$day.ident)) +
-    theme_classic() +
-    labs(color = "timepoint"),
-  ggplot(data.frame(raw_umap), aes(x = UMAP_1, y = UMAP_2)) +
-    geom_point(aes(color = cuomo@meta.data$donor.ident)) +
-    theme_classic() +
-    labs(color = "donor"),
-  ggplot(data.frame(raw_umap, nCount = cuomo@meta.data$nCount_RNA), aes(x = UMAP_1, y = UMAP_2, color = nCount)) +
-    geom_point() +
-    theme_classic() + 
-    scale_color_viridis_c(),
-  ggplot(data.frame(raw_umap, nFeature = cuomo@meta.data$nFeature_RNA), aes(x = UMAP_1, y = UMAP_2, color = nFeature)) +
-    geom_point() +
-    theme_classic() + 
-    scale_color_viridis_c(),
-  ggplot(data.frame(raw_umap, percent_mito = cuomo@meta.data$percent.mito), aes(x = UMAP_1, y = UMAP_2, color = percent_mito)) +
-    geom_point() +
-    theme_classic() + 
-    scale_color_viridis_c(),
-  ggplot(data.frame(raw_umap, percent_rp = cuomo@meta.data$percent.rp), aes(x = UMAP_1, y = UMAP_2, color = percent_rp)) +
-    geom_point() +
-    theme_classic() + 
-    scale_color_viridis_c())
-
-ggarrange(plotlist = plotlist, ncol = 3, nrow = 2, labels = c("A", "B", "C", "D", "E", "F"))
+wrap_plots(c(DimPlot(cuomo, group.by=c('day.ident', 'donor.ident'), combine = F),
+                        FeaturePlot(cuomo, features = c('nFeature_RNA', 'nCount_RNA','percent.mito', 'percent.rp'), combine = F))) +
+  plot_annotation(tag_levels = 'A')
 ```
-
 
 *Note*: The following sections provide an example of applying the ClustAssess summary assessment methods. The values of the parameters should be varied and critically assessed for each individual dataset. Also, we recommend increasing the number of repetitions used for stability inference, to ensure reliable and robust conclusions. 
 
