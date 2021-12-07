@@ -43,9 +43,10 @@ generate_breaks = function(min.range, max.range) {
 #' @description Creates an object that summaries the consistency of the partitions obtained
 #' across different runs for varying subsets of a given feature set.
 #'
-#' @param data_matrix A data matrix having the features on the columns
-#' and the observations on the rows.
-#' @param feature_set A set of feature names that can be found in the data matrix.
+#' @param data_matrix A data matrix having the features on the rows
+#' and the observations on the columns.
+#' @param feature_set A set of feature names that can be found on the rownames of
+#' the data matrix.
 #' @param steps Vector containing the sizes of the subsets; negative values will
 #' be interpreted as using all features.
 #' @param n_repetitions The number of repetitions of applying the pipeline with
@@ -68,12 +69,12 @@ generate_breaks = function(min.range, max.range) {
 #' @return A list having one field associated with a step value. Each step
 #' contains a list with three fields:
 #'
-#' * ecs - the EC-Consistency of the partitions obtained on all repetitions
+#' * ecc - the EC-Consistency of the partitions obtained on all repetitions
 #' * embedding - one UMAP embedding generated on the feature subset
 #' * most_frequent_partition - the most common partition obtained across repetitions
 #' @md
 #'
-#' @note The algorithm assumes that the feature_set is already when performing
+#' @note The algorithm assumes that the feature_set is already sorted when performing
 #' the subsetting. For example, if the user wants to analyze highly variable feature set,
 #' they should provide them sorted by their variability.
 #'
@@ -81,13 +82,14 @@ generate_breaks = function(min.range, max.range) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
-#'    feature_set = rownames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
+#'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
+#'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
@@ -323,13 +325,14 @@ get_feature_stability = function(data_matrix,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
-#'    feature_set = rownames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
+#'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
+#'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
@@ -417,13 +420,14 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
-#'    feature_set = rownames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
+#'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
+#'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
@@ -505,13 +509,14 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
-#'    feature_set = rownames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
+#'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = -1,
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
+#'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
@@ -578,13 +583,14 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = as.matrix(mtcars),
-#'    feature_set = rownames(mtcars),
+#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
+#'    feature_set = colnames(mtcars),
 #'    feature_type = "feature_name",
 #'    steps = c(6,7),
 #'    npcs = 2,
 #'    n_repetitions = 1,
 #'    algorithm = 1,
+#'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 2,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
@@ -691,8 +697,8 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #' times by changing the seed at each repetition.
 #'
 #' @param object A matrix object. If the graph reduction type is PCA, the object
-#' should be an expression matrix; in the case of UMAP, the user could also provide
-#' a matrix associated to a PCA embedding.
+#' should be an expression matrix, with features on rows and observations on columns;
+#' in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
 #' @param n_neigh_sequence A sequence of the number of nearest neighbors.
 #' @param config_name User specified string that uniquely describes the embedding characteristics.
 #' @param n_repetitions The number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
@@ -711,11 +717,18 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' get_nn_conn_comps(object = as.matrix(mtcars),
+#' # get the PCA embedding of the data
+#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = rownames(mtcars)
+#'
+#' # run the function on the PCA embedding
+#' nn_conn_comps_obj = get_nn_conn_comps(object = pca_embedding,
 #'     n_neigh_sequence = c(2,5,15),
 #'     config_name = "mt_cars",
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "UMAP",
+#'     # the following parameters are used by the umap function and are not mandatory
 #'     min_dist = 0.3,
 #'     n_neighbors = 5,
 #'     metric = "cosine")
@@ -877,11 +890,14 @@ get_nn_conn_comps = function(object,
 #' @note The number of connected components is displayed on a logarithmic scale.
 #'
 #' @examples
+#' # the graph reduction type is PCA, so we can provide the expression matrix as argument
 #' nn_conn_comps_obj = get_nn_conn_comps(object = as.matrix(mtcars),
 #'     n_neigh_sequence = c(2,5,15),
 #'     config_name = "mt_cars",
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
+#'     transpose = FALSE,
+#'     # the following parameter is used by the irlba function and is not mandatory
 #'     nv = 4)
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution = function(nn_conn_comps_object) {
@@ -934,8 +950,8 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' namely the base embedding, the graph type and the number of neighbours.
 #'
 #' @param object A matrix object. If the graph reduction type is PCA, the object
-#' should be an expression matrix; in the case of UMAP, the user could also provide
-#' a matrix associated to a PCA embedding.
+#' should be an expression matrix, with features on rows and observations on columns;
+#' in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
 #' @param n_neigh_sequence A sequence of the number of nearest neighbours.
 #' @param n_repetitions The number of repetitions of applying the pipeline with
 #' different seeds; ignored if seed_sequence is provided by the user.
@@ -952,28 +968,36 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' @param algorithm An index indicating which community detection algorithm will
 #' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
 #' can be found in the Seurat's `FindClusters` function.
-#' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
+#' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap`
+#' method, depending on the value of graph_reduction_type.
 #'
 #'
 #'
-#' @return A list having four fields:
+#' @return A list having three fields:
+#'
 #'
 #' * n_neigh_k_corresp - list containing the number of the clusters obtained by running
 #' the pipeline multiple times with different seed, number of neighbors and graph type (weighted vs unweigted)
 #' * n_neigh_ec_consistency - list containing the EC consistency of the partitions obtained
 #' at multiple runs when changing the number of neighbors or the graph type
-#' * partitions_list - the merged list of partitions obtained on the specified number of repetitions
-#' * graph_reduction_type - a string representing the graph reduction type
+#' * n_different_partitions - the number of different partitions obtained by each
+#' number of neighbors
 #'
 #' @md
 #' @export
 #'
 #' @examples
-#' get_nn_importance(object = as.matrix(mtcars),
+#' #' # get the PCA embedding of the data
+#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = rownames(mtcars)
+#'
+#' nn_importance_obj = get_nn_importance(object = pca_embedding,
 #'     n_neigh_sequence = c(5,15),
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "UMAP",
 #'     algorithm = 1,
+#'     # the following parameters are used by the umap function and are not mandatory
 #'     min_dist = 0.3,
 #'     n_neighbors = 5,
 #'     metric = "cosine")
@@ -1208,6 +1232,8 @@ get_nn_importance = function(object,
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
 #'     algorithm = 1,
+#'     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
+#'     # the following parameter is used by the irlba function and is not mandatory
 #'     nv = 2)
 #' plot_n_neigh_k_correspondence(nn_importance_obj)
 plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
@@ -1264,6 +1290,8 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #'     n_repetitions = 1,
 #'     graph_reduction_type = "PCA",
 #'     algorithm = 1,
+#'     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
+#'     # the following parameter is used by the irlba function and is not mandatory
 #'     nv = 2)
 #' plot_n_neigh_ecs(nn_importance_obj)
 plot_n_neigh_ecs = function(nn_ecs_object) {
@@ -1326,12 +1354,13 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'
 #'
 #' @examples
+#' # calculate the adjacency matrix
 #' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
 #'     k.param = 5,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
-#' get_clustering_difference(graph_adjacency_matrix = adj_matrix,
+#' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
 #'     algorithm = 1:2,
@@ -1742,7 +1771,13 @@ get_resolution_partitions = function(clustered_object,
 #' @export
 #'
 #' @examples
-#' get_resolution_importance(embedding = as.matrix(mtcars),
+#' # get the PCA embedding of the data
+#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = rownames(mtcars)
+#'
+#' # run the function on the pca embedding
+#' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8,1),
 #'    n_neigh = c(25,30),
 #'    n_repetitions = 1,
@@ -2091,14 +2126,20 @@ merge_resolutions = function(res_obj,
 #'
 #'
 #' @examples
-#' gridsearch_result = get_resolution_importance(embedding = as.matrix(mtcars),
+#' # get the PCA embedding of the data
+#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = rownames(mtcars)
+#'
+#' # run the function on the pca embedding
+#' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
 #'    clustering_method = 1,
 #'    graph_type = 2,
 #'    object_name = "mt_cars")
-#' plot_k_resolution_corresp(gridsearch_result)
+#' plot_k_resolution_corresp(resolution_result)
 plot_k_resolution_corresp = function(res_object_list,
                                      res_object_names = NULL,
                                      given_height = 0.7) {
@@ -2193,14 +2234,20 @@ plot_k_resolution_corresp = function(res_object_list,
 #'
 #'
 #' @examples
-#' gridsearch_result = get_resolution_importance(embedding = as.matrix(mtcars),
+#' # get the PCA embedding of the data
+#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = rownames(mtcars)
+#'
+#' # run the function on the pca embedding
+#' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(25, 30),
 #'    n_repetitions = 1,
 #'    clustering_method = 1,
 #'    graph_type = 2,
 #'    object_name = "mt_cars")
-#' merged_resolutions = lapply(gridsearch_result, merge_resolutions)
+#' merged_resolutions = lapply(resolution_result, merge_resolutions)
 #' plot_k_n_partitions(merged_resolutions)
 plot_k_n_partitions = function(partition_obj_list, object_names = NULL) {
   # use the names of the fields from the list
