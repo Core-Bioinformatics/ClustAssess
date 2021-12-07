@@ -109,14 +109,14 @@ get_feature_stability = function(data_matrix,
   if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix"))
     stop("object parameter should be a matrix")
 
-  # transpose the matrix to have cells on rows and genes on columns
+  # transpose the matrix to have observations on rows and features on columns
   data_matrix = t(data_matrix)
 
   if(!is.character(feature_set))
     stop("feature_set parameter should be a string")
 
   if(!all(feature_set %in% colnames(data_matrix)))
-    stop("all genes from the feature_set should be found in the data_matrix")
+    stop("all features from the feature_set should be found in the data_matrix")
 
   if(!is.numeric(steps))
     stop("steps parameter should be numeric")
