@@ -33,7 +33,7 @@ Imports:
     reshape2,
     stringr,
     uwot
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 LinkingTo: 
     Rcpp
 Suggests: 
@@ -42,7 +42,8 @@ Suggests:
     e1071,
     dbscan,
     dendextend,
-    Seurat
+    Seurat,
+    readr
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
