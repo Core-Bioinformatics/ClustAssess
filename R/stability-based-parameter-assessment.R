@@ -1000,7 +1000,10 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #'     # the following parameters are used by the umap function and are not mandatory
 #'     min_dist = 0.3,
 #'     n_neighbors = 5,
-#'     metric = "cosine")
+#'     metric = "cosine",
+#'     approx_pow = TRUE,
+#'     n_epochs = 0,
+#'     init = "random")
 get_nn_importance = function(object,
                              n_neigh_sequence,
                              n_repetitions = 30,
@@ -1356,14 +1359,13 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #' @examples
 #' # calculate the adjacency matrix
 #' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 5,
-#'     nn.method = "rann",
+#'     k.param = 3,
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
-#'     algorithm = 1:2,
+#'     algorithm = 1,
 #'     verbose = FALSE)
 get_clustering_difference = function(graph_adjacency_matrix,
                                      resolution,
@@ -1513,7 +1515,7 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
-#'     algorithm = 1:2,
+#'     algorithm = 1,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
 plot_clustering_difference_boxplot = function(clustering_difference_object) {
@@ -1588,7 +1590,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
 #'     n_repetitions = 1,
-#'     algorithm = 1:2,
+#'     algorithm = 1,
 #'     verbose = FALSE)
 #' plot_clustering_difference_facet(clust_diff_obj, as.matrix(mtcars[,1:2]))
 plot_clustering_difference_facet = function(clustering_difference_object,
@@ -1779,7 +1781,7 @@ get_resolution_partitions = function(clustered_object,
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8,1),
-#'    n_neigh = c(25,30),
+#'    n_neigh = c(5,7),
 #'    n_repetitions = 1,
 #'    clustering_method = 1:2,
 #'    graph_type = 0,
@@ -2134,7 +2136,7 @@ merge_resolutions = function(res_obj,
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
-#'    n_neigh = c(25, 30),
+#'    n_neigh = c(5, 7),
 #'    n_repetitions = 1,
 #'    clustering_method = 1,
 #'    graph_type = 2,
@@ -2242,7 +2244,7 @@ plot_k_resolution_corresp = function(res_object_list,
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
-#'    n_neigh = c(25, 30),
+#'    n_neigh = c(5, 7),
 #'    n_repetitions = 1,
 #'    clustering_method = 1,
 #'    graph_type = 2,
