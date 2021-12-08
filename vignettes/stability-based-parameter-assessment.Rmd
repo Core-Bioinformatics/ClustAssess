@@ -1,8 +1,8 @@
 ---
-title: "Stability-based parameter assessment vignette"
+title: "Stability-based parameter assessment"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Stability-based parameter assessment pipeline}
+  %\VignetteIndexEntry{Stability-based parameter assessment}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,7 +25,7 @@ library(ClustAssess)
 library(patchwork)
 ```
 
-In this vignette we illustrate a data driven pipeline for the assessment of optimal clustering parameters for a given dataset. The case study is based on a subset of cells from the Cuomo et al 2020 (Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression [ref](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
+In this vignette we illustrate a data-driven pipeline for the assessment of optimal clustering parameters for a given dataset. The case study is based on a subset of cells from the Cuomo et al 2020 (Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression [ref](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
 
 ```{r}
 cell_metadata = read.csv('http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/cuomo_metadata.csv', sep=',', header = TRUE, row.names = 1)
@@ -319,7 +319,7 @@ clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_mat
                                                 algorithm = 1:3)
 ```
 
-The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note similar outputs for all three algorithms. An exception is noted when resolution is 0.9; for this, SLM produced more stable results.
+The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note similar outputs for all three algorithms. An exception is noted when resolution is 0.9; for this case, SLM produced more stable results.
 
 ```{r, fig.width = 15, fig.height=6}
 plot_clustering_difference_boxplot(clustering_diff_obj)
