@@ -604,8 +604,10 @@ get_sparse_transition_matrix = function(graph){
 calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
                                               repetition=1000, th=1e-4){
   total_length = nrow(W_matrix)
-  e_s = Matrix::sparseMatrix(i=1, j=index, x=1, dims=c(1, total_length))
-  p = Matrix::sparseMatrix(i=1, j=index, x=1, dims=c(1, total_length))
+  e_s = matrix(0, nrow = 1, ncol = total_length)
+  e_s[1, index] = 1
+  p = matrix(0, nrow = 1, ncol = total_length)
+  p[1, index] = 1
   for (i in 1:repetition){
     new_p =  ((1-alpha) * e_s) + ((alpha) * (p %*% W_matrix))
     if (max(abs(new_p - p)) < th){
