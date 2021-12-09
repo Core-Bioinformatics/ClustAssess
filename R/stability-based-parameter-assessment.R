@@ -217,13 +217,7 @@ get_feature_stability = function(data_matrix,
 
     # send the name of the umap arguments
     partitions_list[[as.character(step)]] = foreach::foreach(seed = seed_sequence,
-                                                             .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% { #
-                                                               # umap_args = list()
-                                                               #
-                                                               # for(umap_arg_name in umap_arg_names) {
-                                                               #   umap_args[[umap_arg_name]] = get(umap_arg_name)
-                                                               # }
-
+                                                             .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% {
                                                                # calculate the PCA embedding
                                                                set.seed(seed)
                                                                pca_embedding = irlba::irlba(A = trimmed_matrix, nv = npcs)
@@ -319,6 +313,7 @@ get_feature_stability = function(data_matrix,
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
+#' @param text_size The size of the labels above boxplots.
 #'
 #'
 #' @return A ggplot object
@@ -339,7 +334,8 @@ get_feature_stability = function(data_matrix,
 #'    init = "random",
 #'    min_dist = 0.3)
 #' plot_feature_stability_boxplot(feature_stability_result)
-plot_feature_stability_boxplot = function(feature_object_list) {
+plot_feature_stability_boxplot = function(feature_object_list,
+                                          text_size = 4) {
   min_index = -1 # indicates the number of steps that will be displayed on the plot
 
   # create a dataframe based on the object returned by `get_feature_stability_object`
@@ -397,7 +393,7 @@ plot_feature_stability_boxplot = function(feature_object_list) {
       ggplot2::aes(label = final_steps_df$step),
       position = ggplot2::position_dodge(width = 0.7),
       vjust = -0.5,
-      size = 4
+      size = text_size
     ) +
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
@@ -414,6 +410,8 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
 #' @param text_size The size of the cluster label
+#' @param n_facet_cols The number of facet's columns.
+#' @param point_size The size of the points displayed on the plot.
 #'
 #'
 #' @return A ggplot facet object
@@ -434,7 +432,10 @@ plot_feature_stability_boxplot = function(feature_object_list) {
 #'    init = "random",
 #'    min_dist = 0.3)
 #' plot_feature_stability_mb_facet(feature_stability_result)
-plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
+plot_feature_stability_mb_facet = function(feature_object_list,
+                                           text_size = 5,
+                                           n_facet_cols = 3,
+                                           point_size = 0.3) {
   if(!is.numeric(text_size) || length(text_size) > 1)
     stop("text_size parameter should be numeric")
 
@@ -473,7 +474,7 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
                     y = .data$y,
                     color = .data$mb
                   )) +
-    ggplot2::geom_point(size = 0.3) +
+    ggplot2::geom_point(size = point_size) +
     ggplot2::theme_classic() +
     ggplot2::geom_text(
       data = text.labs,
@@ -492,7 +493,7 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
       panel.grid.minor = ggplot2::element_blank()
     ) +
     ggplot2::labs(x = "UMAP_1", y = "UMAP_2") +
-    ggplot2::facet_wrap(~ config_name + steps)
+    ggplot2::facet_wrap(~ config_name + steps, ncol = n_facet_cols)
 }
 
 #' Feature Stability - ECC facet
@@ -503,7 +504,8 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability_object` method
-#'
+#' @param n_facet_cols The number of facet's columns.
+#' @param point_size The size of the points displayed on the plot.
 #'
 #' @return A ggplot facet object
 #' @export
@@ -523,7 +525,9 @@ plot_feature_stability_mb_facet = function(feature_object_list, text_size = 5) {
 #'    init = "random",
 #'    min_dist = 0.3)
 #' plot_feature_stability_ecs_facet(feature_stability_result)
-plot_feature_stability_ecs_facet = function(feature_object_list) {
+plot_feature_stability_ecs_facet = function(feature_object_list,
+                                            n_facet_cols = 3,
+                                            point_size = 0.3) {
   first_temp = T
 
   for (config_name in names(feature_object_list)) {
@@ -554,7 +558,7 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
                     y = .data$y,
                     color = .data$ecc
                   )) +
-    ggplot2::geom_point(size = 0.3) +
+    ggplot2::geom_point(size = point_size) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
@@ -564,7 +568,7 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
     ggplot2::labs(color = "ECC",
                   x = "UMAP_1",
                   y = "UMAP_2") +
-    ggplot2::facet_wrap(~ config_name + steps)
+    ggplot2::facet_wrap(~ config_name + steps, ncol = n_facet_cols)
 }
 
 #' Feature Stability Incremental Boxplot
@@ -577,7 +581,7 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #' `get_feature_stability_object` method.
 #' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
 #' will be passed in the `width` argument of the `ggplot2::position_dodge` method.
-#'
+#' @param text_size The size of the labels above boxplots.
 #'
 #' @return A ggplot object
 #' @export
@@ -598,7 +602,8 @@ plot_feature_stability_ecs_facet = function(feature_object_list) {
 #'    min_dist = 0.3)
 #' plot_feature_stability_ecs_incremental(feature_stability_result, 0.7)
 plot_feature_stability_ecs_incremental = function(feature_object_list,
-                                                  dodge_width = 0.7) {
+                                                  dodge_width = 0.7,
+                                                  text_size = 4) {
   if(!is.numeric(dodge_width) || length(dodge_width) > 1)
     stop("dodge_width parameter should be numeric")
 
@@ -674,7 +679,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
       ggplot2::aes(label = steps_df$step),
       position = ggplot2::position_dodge(width = dodge_width),
       vjust = -0.5,
-      size = 4
+      size = text_size
     ) +
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
@@ -1500,7 +1505,7 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #'
 #' @param clustering_difference_object An object returned by the
 #' `get_clustering_difference_object` method.
-#'
+#' @param text_size The size of the labels above boxplots.
 #'
 #' @return A ggplot object
 #' @export
@@ -1518,7 +1523,8 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #'     algorithm = 1,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
-plot_clustering_difference_boxplot = function(clustering_difference_object) {
+plot_clustering_difference_boxplot = function(clustering_difference_object,
+                                              text_size = 3) {
   # get the labels representing the number of clusters
   k_labels = reshape2::melt(lapply(clustering_difference_object$filtered, function(config_object) {
     lapply(config_object, function(res) {
@@ -1557,7 +1563,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object) {
       ggplot2::aes(label = k_labels$value),
       position = ggplot2::position_dodge(width = 0.9),
       vjust = -0.5,
-      size = 3
+      size = text_size
     )
 }
 
