@@ -56,7 +56,7 @@
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
     </li>
   </ul>
 </li>
@@ -84,8 +84,8 @@
       <h1 data-toc-skip>Stability-based parameter assessment</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/vignettes/stability-parameter-assessment.Rmd" class="external-link"><code>vignettes/stability-parameter-assessment.Rmd</code></a></small>
-      <div class="hidden name"><code>stability-parameter-assessment.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/vignettes/stability-based-parameter-assessment.Rmd" class="external-link"><code>vignettes/stability-based-parameter-assessment.Rmd</code></a></small>
+      <div class="hidden name"><code>stability-based-parameter-assessment.Rmd</code></div>
 
     </div>
 
@@ -126,20 +126,19 @@
 <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">cuomo.counts</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt;            used  (Mb) gc trigger   (Mb)  max used   (Mb)</span>
-<span class="co">#&gt; Ncells  2842806 151.9    5555671  296.8   4859671  259.6</span>
-<span class="co">#&gt; Vcells 29430015 224.6  134232845 1024.2 162911812 1243.0</span></code></pre></div>
+<span class="co">#&gt; Ncells  2842807 151.9    5555560  296.7   4859723  259.6</span>
+<span class="co">#&gt; Vcells 29430037 224.6  134232867 1024.2 162911834 1243.0</span></code></pre></div>
 <p>The analysis is based on the Seurat pipeline (Hao et al 2021, Integrated analysis of multimodal single-cell data, <a href="https://www.sciencedirect.com/science/article/pii/S0092867421005833?via%3Dihub" class="external-link">ref</a>); subsequent to the filtering step, the mitochondrial and ribosomal genes are excluded from the downstream analysis.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove MT and RP genes</span>
 <span class="va">all.index</span> <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">cuomo</span><span class="op">)</span>
-<span class="va">MT.index</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"^MT-"</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">cuomo</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># Select row indices and not ERCC names </span>
+<span class="va">MT.index</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"^MT-"</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">cuomo</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">RP.index</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"^RP[SL][[:digit:]]"</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">cuomo</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">cuomo</span> <span class="op">=</span> <span class="va">cuomo</span><span class="op">[</span><span class="op">!</span><span class="op">(</span><span class="op">(</span><span class="va">all.index</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">MT.index</span><span class="op">)</span> <span class="op">|</span> <span class="op">(</span><span class="va">all.index</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">RP.index</span><span class="op">)</span>  <span class="op">)</span>, <span class="op">]</span></code></pre></div>
-<p>The data is normalized using the Seurat’s <code>SCTransform</code> method.</p>
+<p>The data is normalized and scaled using the Seurat’s <code>NormalizeData</code> and <code>ScaleData</code> methods. The variable feature set is obtained by running the <code>FindVariableFeatures</code> function from the same package.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">cuomo</span> <span class="op">=</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/NormalizeData.html" class="external-link">NormalizeData</a></span><span class="op">(</span><span class="va">cuomo</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
 <span class="va">cuomo</span> <span class="op">=</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindVariableFeatures.html" class="external-link">FindVariableFeatures</a></span><span class="op">(</span><span class="va">cuomo</span>, selection.method <span class="op">=</span> <span class="st">"vst"</span>, nfeatures <span class="op">=</span> <span class="fl">3000</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span>
-<span class="co">#cuomo = SCTransform(cuomo, do.scale = T, return.only.var.genes=FALSE, verbose=FALSE, seed.use = 1448145)</span>
 
 <span class="va">features</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">cuomo</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">RNA</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>
 <span class="va">var_features</span> <span class="op">=</span> <span class="va">cuomo</span><span class="op">@</span><span class="va">assays</span><span class="op">[[</span><span class="st">"RNA"</span><span class="op">]</span><span class="op">]</span><span class="op">@</span><span class="va">var.features</span>
@@ -159,7 +158,7 @@
 <li>–(F) distributions of sequencing depths (C), number of features (D), and percentages of reads incident to mitochondrial genes (E) and ribosomal genes (F) illustrated using the colour gradient.</li>
 </ol>
 <p>No significant effects are noted.</p>
-<p><img src="stability-parameter-assessment_files/figure-html/qc-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/qc-1.png" width="672"></p>
 <p><em>Note</em>: The following sections provide an example of applying the ClustAssess summary assessment methods. The values of the parameters should be varied and critically assessed for each individual dataset. Also, we recommend increasing the number of repetitions used for stability inference, to ensure reliable and robust conclusions.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">n_repetitions</span> <span class="op">=</span> <span class="fl">30</span></code></pre></div>
@@ -225,119 +224,27 @@
                                                        metric <span class="op">=</span> <span class="st">"cosine"</span>,
                                                        ncores <span class="op">=</span> <span class="va">n_cores</span>,
                                                        ecs_thresh <span class="op">=</span> <span class="fl">1</span>,
-                                                       algorithm <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span>
-
-<span class="co">#&gt; Warning in irlba::irlba(A = trimmed_matrix, nv = npcs): You're computing too</span>
-<span class="co">#&gt; large a percentage of total singular values, use a standard svd instead.</span></code></pre></div>
+                                                       algorithm <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>The function <code>get_feature_stability</code> outputs the stability of different feature sets and concatenates the results to ease cross-comparisons. The plot illustrates the stability assessment, across 30 runs, each with different random seeds, on the three gene sets described above. We assessed the stability of each set on incremental number of selected genes. Thus, the boxplots are arranged in groups of three (the number of evaluated feature sets); above each boxplot we specify the number of elements per subset. For the Cuomo case study, a conclusion that is supported based on this plot is that the most abundant set is more stable than the other two options, since it has higher Element-Centric Consistency scores.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_boxplot.html">plot_feature_stability_boxplot</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, text_size  <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span> <span class="op">+</span> 
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span>,
         legend.justification <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/feature_stability_boxplot-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/feature_stability_boxplot-1.png" width="672"></p>
 <p>Another angle for assessing the stability is centred on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_ecs_incremental.html">plot_feature_stability_ecs_incremental</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, dodge_width <span class="op">=</span> <span class="fl">1</span>, text_size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span>
     <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span>,
         legend.justification <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/feature_stability_ecs_incremental-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/feature_stability_ecs_incremental-1.png" width="672"></p>
 <p>To enhance the summarized information presented as boxplots, we use <code>plot_feature_stability_mb_facet</code> to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes can be explained by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_mb_facet.html">plot_feature_stability_mb_facet</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, text_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/feature_stability_mb_facet-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/feature_stability_mb_facet-1.png" width="672"></p>
 <p>To further understand the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the Element-Centric Consistency score of the partitions obtained for each step and feature set. For the Highly Variable and the intersection sets, we note that the instability appears in groups of cells with high density. These visualizations can help us understand the relationship between stability and the topology of the data.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_ecs_facet.html">plot_feature_stability_ecs_facet</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/feature_stability_ecs_facet-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/feature_stability_ecs_facet-1.png" width="672"></p>
 <p>For the Cuomo case study, based on the plots presented above, we conclude that the most abundant gene set is not a suitable choice, as its stability is explained by the presence of multiple isolated groups of cells. Thus, we settle on using the highly variable genes set, as it produces a compact distribution of cells that is consistent across different seeds.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">cuomo</span> <span class="op">=</span> <span class="va">cuomo</span><span class="op">[</span><span class="va">var_features</span>, <span class="op">]</span>
@@ -377,7 +284,7 @@
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_connected_comps_evolution.html">plot_connected_comps_evolution</a></span><span class="op">(</span><span class="va">nn_conn_comps_object</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Transformation introduced infinite values in continuous y-axis</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/connected_comps_evolution-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/connected_comps_evolution-1.png" width="672"></p>
 <p><code>get_nn_importance</code> is a method used for assessing the impact of number of nearest neighbours, of the graph type (NN or SNN) and of the base embedding (PCA or UMAP) in determining the final number of clusters. The input is either a normalized expression matrix or a PCA embedding, a range for the number of neighbours and the reduction type used for building the graph. The graph type is not provided, as the method will check both cases i.e. aaa and bbb. The output comprises a list of configurations (reduction type, and the graph type). Each configuration will contain a list of unique partitions obtained from multiple runs (iterations) for each selected value of the nearest neighbours.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">nn_importance_object</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mapply.html" class="external-link">mapply</a></span><span class="op">(</span><span class="va">c</span>,
@@ -406,11 +313,11 @@
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_n_neigh_k_correspondence.html">plot_n_neigh_k_correspondence</a></span><span class="op">(</span><span class="va">nn_importance_object</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Transformation introduced infinite values in continuous y-axis</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/n_neigh_k_correspondence-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/n_neigh_k_correspondence-1.png" width="672"></p>
 <p>The stability of these parameters can be also evaluated using the Element-Centric Consistency applied on the partition list obtained over the multiple runs. The following summary plot underlines the evolution of the consistency as the number of neighbours increases; the SNN graph yields stable results even for smaller number of nearest neighbours, whereas the NN exhibits a stability improvement as the number of neighbours increases.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">nn_importance_object</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/n_neigh_ecs-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/n_neigh_ecs-1.png" width="672"></p>
 </div>
 <div class="section level1">
 <h1 id="graph-clustering">Graph clustering<a class="anchor" aria-label="anchor" href="#graph-clustering"></a>
@@ -434,11 +341,11 @@
 <p>The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note similar outputs for all three algorithms. We also notice that Louvain and its refined version are less consistent for higher values of the resolution parameter. Thus, SLM is a more stable choice when it comes to clustering.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_clustering_difference_boxplot.html">plot_clustering_difference_boxplot</a></span><span class="op">(</span><span class="va">clustering_diff_obj</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/clustering_difference_boxplot-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/clustering_difference_boxplot-1.png" width="672"></p>
 <p>To further underline the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the ECC score of the partitions obtained for each resolution parameter with each clustering method. We notice how increasing the resolution is causing a change of the unstable areas. For example, when resolution is 0.5 or 0.6, all algorithms are unstable in areas from the bottom-left islands. In the case where the resolution is 1, the area of instability has moved to the top-left island.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_clustering_difference_facet.html">plot_clustering_difference_facet</a></span><span class="op">(</span><span class="va">clustering_diff_obj</span>, <span class="va">cuomo</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">umap</span><span class="op">@</span><span class="va">cell.embeddings</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/clustering_difference_facet-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/clustering_difference_facet-1.png" width="672"></p>
 <p>As previously suggested, the resolution parameter affects the number of clusters obtained. The <code>get_resolution_importance</code> evaluates the effect of a range of values for the resolution parameter on the stability of the output. Besides the resolution, the user can input multiple values of the following parameters: number of neighbours, the graph type and the clustering method. The function will return a list associated with each parameter value combination. For each resolution value, the list will contain multiple sublists of partitions corresponding to specific number of clusters.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resolution_gridsearch</span> <span class="op">=</span> <span class="fu"><a href="../reference/get_resolution_importance.html">get_resolution_importance</a></span><span class="op">(</span>embedding <span class="op">=</span> <span class="va">cuomo</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">umap</span><span class="op">@</span><span class="va">cell.embeddings</span>,
@@ -452,7 +359,7 @@
 <p>The resulting object can be visualized with <code>plot_k_resolution_corresp</code> as shown in the code below; we showcase the relationship between the number of clusters and the resolution value. This plot also provides information on suitable resolution values for predefined number of clusters. The colour gradient is proportional to the number of occurrences of the most frequent partition. It can also be used as proxy to describe the co-variation between (k, resolution). Lighter (higher) values indicate that little variation is observed, on changes of the random seed, between the number of clusters and the resolution value.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/k_resolution_corresp-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_resolution_corresp-1.png" width="672"></p>
 <p>By default, the <code>get_resolution_importance</code> function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score. In practice, we also noticed minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resolution_gridsearch_thresh_99</span> <span class="op">=</span> <span class="fu"><a href="../reference/merge_partitions.html">merge_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span>,
@@ -461,7 +368,7 @@
 <p>Lowering the ECS threshold leads, in general, to higher number of occurences for the most frequent partition.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch_thresh_99</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/k_resolution_corresp_merged-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_resolution_corresp_merged-1.png" width="672"></p>
 <p>The <code>merge_resolutions</code> function diminishes the dependency between the resolution and the numver of clusters (k) i.e. the partitions with the same number of clusters, part of the same list for each configuration, are merged.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">k_parts_obj</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span>, <span class="kw">function</span><span class="op">(</span><span class="va">config_name</span><span class="op">)</span> <span class="op">{</span>
@@ -471,7 +378,7 @@
 <p>The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a high stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">k_parts_obj</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/k_n_partitions-1.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_partitions-1.png" width="672"></p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 
@@ -480,19 +387,19 @@
                                          ncores <span class="op">=</span> <span class="va">n_cores</span><span class="op">)</span>
 
 <span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">k_parts_obj_thresh_99</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-parameter-assessment_files/figure-html/k_n_partitions-2.png" width="672"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_partitions-2.png" width="672"></p>
 <p>We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other computers may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Feature stability methods runtime:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_feature_stability</span> <span class="op">-</span> <span class="va">start_time_feature_stability</span>, units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Feature stability methods runtime: 11.90894 minutes"</span>
+<span class="co">#&gt; [1] "Feature stability methods runtime: 10.16616 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN - # connected components methods runtime:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_conn</span> <span class="op">-</span> <span class="va">start_time_nn_conn</span>, units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN - # connected components methods runtime: 5.217229 minutes"</span>
+<span class="co">#&gt; [1] "NN - # connected components methods runtime: 4.856925 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN importance methods runtime:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_importance</span> <span class="op">-</span> <span class="va">start_time_nn_importance</span>, units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN importance methods runtime: 10.34085 minutes"</span>
+<span class="co">#&gt; [1] "NN importance methods runtime: 13.36345 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Clustering importance methods runtime:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_clustering_method</span> <span class="op">-</span> <span class="va">start_time_clustering_method</span>, units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Clustering importance methods runtime: 2.218758 minutes"</span>
+<span class="co">#&gt; [1] "Clustering importance methods runtime: 2.396203 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Resolution gridsearch methods runtime:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_resolution</span> <span class="op">-</span> <span class="va">start_time_resolution</span>, units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.228326 minutes"</span></code></pre></div>
+<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.314191 minutes"</span></code></pre></div>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt; R version 4.1.2 (2021-11-01)</span>

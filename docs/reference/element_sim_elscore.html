@@ -39,7 +39,7 @@ two Clustering objects."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -149,47 +149,9 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">km.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers<span class="op">=</span><span class="fl">8</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
-<span class="r-in"><span class="va">hc.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">element_sim_elscore</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         1         2         3         4         5         6         7         8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3792737 0.3824792 0.4047372 0.3952341 0.3719621 0.4325111 0.3920955 0.3737116 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         9        10        11        12        13        14        15        16 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3887683 0.3824792 0.4341248 0.2401136 0.3822592 0.3878971 0.4027093 0.4027093 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        17        18        19        20        21        22        23        24 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4114971 0.3792737 0.4325111 0.4247690 0.4399023 0.4247690 0.3563973 0.4161541 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        25        26        27        28        29        30        31        32 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2401136 0.3822592 0.4161541 0.3811764 0.3811764 0.3635113 0.3635113 0.4399023 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        33        34        35        36        37        38        39        40 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3998206 0.3998206 0.3824792 0.3249868 0.4414856 0.3719621 0.3887683 0.3737116 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        41        42        43        44        45        46        47        48 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3848182 0.2984819 0.4009256 0.4245416 0.4356321 0.3824792 0.4316975 0.3952341 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        49        50        51        52        53        54        55        56 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4341248 0.2973245 0.3971228 0.3888342 0.3971228 0.4145138 0.3990188 0.4431152 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        57        58        59        60        61        62        63        64 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3888342 0.2642398 0.3990188 0.4160351 0.2068583 0.4492832 0.4076366 0.4053566 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        65        66        67        68        69        70        71        72 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4009317 0.3942835 0.4431152 0.4669962 0.2465365 0.4045893 0.3658773 0.4492832 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        73        74        75        76        77        78        79        80 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3807791 0.3966004 0.3946250 0.3942835 0.3971972 0.3841961 0.4063244 0.1490502 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        81        82        83        84        85        86        87        88 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.1722459 0.1722459 0.4655941 0.3804013 0.4431152 0.3834688 0.3968295 0.3005642 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        89        90        91        92        93        94        95        96 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4737055 0.4145138 0.4431152 0.4053566 0.4655941 0.2642398 0.4695627 0.4688420 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        97        98        99       100       101       102       103       104 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4688420 0.3946250 0.2405771 0.4695627 0.3760626 0.3756142 0.3548650 0.4160964 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       105       106       107       108       109       110       111       112 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4160964 0.3689191 0.3606773 0.3469864 0.3909326 0.3755302 0.4017703 0.3644471 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       113       114       115       116       117       118       119       120 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4070205 0.3767517 0.3539799 0.4024236 0.4109749 0.3755302 0.3585443 0.2562671 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       121       122       123       124       125       126       127       128 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3853528 0.3696192 0.3689191 0.3759927 0.3926925 0.3605472 0.3759927 0.3664491 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       129       130       131       132       133       134       135       136 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4109749 0.3605472 0.3469864 0.3755302 0.4109749 0.3804013 0.3345733 0.3755302 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       137       138       139       140       141       142       143       144 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3753281 0.4109749 0.3664491 0.4070205 0.3858800 0.4070205 0.3756142 0.3853528 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       145       146       147       148       149       150 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3858800 0.4070205 0.3644471 0.4017703 0.3753281 0.3538772 </span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="va">km.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers<span class="op">=</span><span class="fl">8</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span>
+<span class="va">hc.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>
+<span class="fu">element_sim_elscore</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span>
 </code></pre></div>
     </div>
   </div>

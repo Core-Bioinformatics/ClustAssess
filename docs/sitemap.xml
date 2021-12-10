@@ -19,7 +19,7 @@
     <loc>/articles/index.html</loc>
   </url>
   <url>
-    <loc>/articles/stability-parameter-assessment.html</loc>
+    <loc>/articles/stability-based-parameter-assessment.html</loc>
   </url>
   <url>
     <loc>/authors.html</loc>
@@ -41,9 +41,6 @@
   </url>
   <url>
     <loc>/reference/element_consistency.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_frustration.html</loc>
   </url>
   <url>
     <loc>/reference/element_sim.html</loc>

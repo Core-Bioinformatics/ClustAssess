@@ -4,6 +4,6 @@ pkgdown_sha: ~
 articles:
   ClustAssess: ClustAssess.html
   comparing-soft-and-hierarchical: comparing-soft-and-hierarchical.html
-  stability-parameter-assessment: stability-parameter-assessment.html
-last_built: 2021-12-10T07:53Z
+  stability-based-parameter-assessment: stability-based-parameter-assessment.html
+last_built: 2021-12-10T12:15Z
 

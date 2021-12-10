@@ -40,7 +40,7 @@ displayed as a boxplot."><!-- mathjax --><script src="https://cdnjs.cloudflare.c
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -90,18 +90,16 @@ displayed as a boxplot.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># the graph reduction type is PCA, so we can provide the expression matrix as argument</span></span>
-<span class="r-in"><span class="va">nn_conn_comps_obj</span> <span class="op">=</span> <span class="fu"><a href="get_nn_conn_comps.html">get_nn_conn_comps</a></span><span class="op">(</span>object <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>,</span>
-<span class="r-in">    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">15</span><span class="op">)</span>,</span>
-<span class="r-in">    config_name <span class="op">=</span> <span class="st">"mt_cars"</span>,</span>
-<span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">1</span>,</span>
-<span class="r-in">    graph_reduction_type <span class="op">=</span> <span class="st">"PCA"</span>,</span>
-<span class="r-in">    transpose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span class="r-in">    <span class="co"># the following parameter is used by the irlba function and is not mandatory</span></span>
-<span class="r-in">    nv <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">plot_connected_comps_evolution</span><span class="op">(</span><span class="va">nn_conn_comps_obj</span><span class="op">)</span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Transformation introduced infinite values in continuous y-axis</span>
-<span class="r-plt img"><img src="plot_connected_comps_evolution-1.png" alt="" width="700" height="433"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># the graph reduction type is PCA, so we can provide the expression matrix as argument</span>
+<span class="va">nn_conn_comps_obj</span> <span class="op">=</span> <span class="fu"><a href="get_nn_conn_comps.html">get_nn_conn_comps</a></span><span class="op">(</span>object <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>,
+    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">15</span><span class="op">)</span>,
+    config_name <span class="op">=</span> <span class="st">"mt_cars"</span>,
+    n_repetitions <span class="op">=</span> <span class="fl">1</span>,
+    graph_reduction_type <span class="op">=</span> <span class="st">"PCA"</span>,
+    transpose <span class="op">=</span> <span class="cn">FALSE</span>,
+    <span class="co"># the following parameter is used by the irlba function and is not mandatory</span>
+    nv <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>
+<span class="fu">plot_connected_comps_evolution</span><span class="op">(</span><span class="va">nn_conn_comps_obj</span><span class="op">)</span>
 </code></pre></div>
     </div>
   </div>

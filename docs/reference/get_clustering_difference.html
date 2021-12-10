@@ -41,7 +41,7 @@ partitions obtained at different seeds."><!-- mathjax --><script src="https://cd
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -120,16 +120,16 @@ size</p></li>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># calculate the adjacency matrix</span></span>
-<span class="r-in"><span class="va">adj_matrix</span> <span class="op">=</span> <span class="fu">Seurat</span><span class="fu">::</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>,</span>
-<span class="r-in">    k.param <span class="op">=</span> <span class="fl">3</span>,</span>
-<span class="r-in">    verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span class="r-in">    compute.SNN <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">nn</span></span>
-<span class="r-in"><span class="va">clust_diff_obj</span> <span class="op">=</span> <span class="fu">get_clustering_difference</span><span class="op">(</span>graph_adjacency_matrix <span class="op">=</span> <span class="va">adj_matrix</span>,</span>
-<span class="r-in">    resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">1</span>,</span>
-<span class="r-in">    algorithm <span class="op">=</span> <span class="fl">1</span>,</span>
-<span class="r-in">    verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># calculate the adjacency matrix</span>
+<span class="va">adj_matrix</span> <span class="op">=</span> <span class="fu">Seurat</span><span class="fu">::</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>,
+    k.param <span class="op">=</span> <span class="fl">3</span>,
+    verbose <span class="op">=</span> <span class="cn">FALSE</span>,
+    compute.SNN <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">nn</span>
+<span class="va">clust_diff_obj</span> <span class="op">=</span> <span class="fu">get_clustering_difference</span><span class="op">(</span>graph_adjacency_matrix <span class="op">=</span> <span class="va">adj_matrix</span>,
+    resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,
+    n_repetitions <span class="op">=</span> <span class="fl">1</span>,
+    algorithm <span class="op">=</span> <span class="fl">1</span>,
+    verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 </code></pre></div>
     </div>
   </div>
