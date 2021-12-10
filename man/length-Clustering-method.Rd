@@ -15,8 +15,4 @@ The number of elements.
 \description{
 Get the number of elements in the Clustering.
 }
-\examples{
-km.res = kmeans(mtcars, 3)$cluster
-km.clustering = create_clustering(km.res)
-length(km.clustering)
-}
+\keyword{internal}

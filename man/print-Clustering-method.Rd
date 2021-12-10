@@ -16,8 +16,4 @@ The printed character string.
 Prints out information about the Clustering, including
 number of elements.
 }
-\examples{
-km.res = kmeans(mtcars, 3)$cluster
-km.clustering = create_clustering(km.res)
-print(km.clustering)
-}
+\keyword{internal}

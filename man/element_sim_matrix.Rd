@@ -4,14 +4,51 @@
 \alias{element_sim_matrix}
 \title{Pairwise Comparison of Clusterings}
 \usage{
-element_sim_matrix(clustering_list, output_type = "matrix")
+element_sim_matrix(
+  clustering_list,
+  output_type = "matrix",
+  alpha = 0.9,
+  r = 1,
+  rescale_path_type = "max",
+  ppr_implementation = "prpack",
+  dist_rescaled = FALSE,
+  row_normalize = TRUE,
+  ncores = 1
+)
 }
 \arguments{
-\item{clustering_list}{A list of Clustering objects to be compared with
-element-centric similarity.}
+\item{clustering_list}{The clustering result, either:
+* A numeric/character/factor vector of cluster labels for each element.
+* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+* An hclust object.}
 
 \item{output_type}{A string specifying whether the output should be a
 matrix or a data.frame.}
+
+\item{alpha}{A numeric giving the personalized PageRank damping factor;
+1 - alpha is the restart probability for the PPR random walk.}
+
+\item{r}{A numeric hierarchical scaling parameter.}
+
+\item{rescale_path_type}{A string; rescale the hierarchical height by:
+* "max" : the maximum path from the root.
+* "min" : the minimum path form the root.
+* "linkage" : use the linkage distances in the clustering.}
+
+\item{ppr_implementation}{Choose a implementation for personalized
+page-rank calculation:
+* "prpack": use PPR algorithms in igraph.
+* "power_iteration": use power_iteration method.}
+
+\item{dist_rescaled}{A logical: if TRUE, the linkage distances are linearly
+rescaled to be in-between 0 and 1.}
+
+\item{row_normalize}{Whether to normalize all rows in clustering_result
+so they sum to one before calculating ECS. It is recommended to set this to
+TRUE, which will lead to slightly different ECS values compared to clusim.}
+
+\item{ncores}{the number of parallel R instances that will run the code.
+If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A matrix or data.frame containing the pairwise ECS values.
@@ -22,11 +59,10 @@ average element-centric clustering similarities.
 }
 \examples{
 clustering.list = list()
-for (i in 1:20){
-  km.res = kmeans(mtcars, 3)$cluster
-  clustering.list[[i]] = create_clustering(km.res)
+for (i in 1:20) {
+  clustering.list[[i]] = kmeans(mtcars, 3)$cluster
 }
-element_sim_matrix(clustering.list, output_type='matrix')
+element_sim_matrix(clustering.list, output_type="matrix")
 }
 \references{
 Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).

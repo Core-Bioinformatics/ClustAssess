@@ -4,14 +4,54 @@
 \alias{element_agreement}
 \title{Element-Wise Average Agreement Between a Set of Clusterings}
 \usage{
-element_agreement(reference_clustering, clustering_list)
+element_agreement(
+  reference_clustering,
+  clustering_list,
+  alpha = 0.9,
+  r = 1,
+  rescale_path_type = "max",
+  ppr_implementation = "prpack",
+  dist_rescaled = FALSE,
+  row_normalize = TRUE,
+  ncores = 1
+)
 }
 \arguments{
-\item{reference_clustering}{A Clustering objects for the reference clustering
-that each clustering in clustering_list is compared to.}
+\item{reference_clustering}{The reference clustering, that each clustering in
+clustering_list is compared to. It can be either:
+* A numeric/character/factor vector of cluster labels for each element.
+* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+* An hclust object.}
 
-\item{clustering_list}{A list of Clustering objects used to calculate
-the element-wise average agreement}
+\item{clustering_list}{The clustering list, either:
+* A numeric/character/factor vector of cluster labels for each element.
+* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+* An hclust object.}
+
+\item{alpha}{A numeric giving the personalized PageRank damping factor;
+1 - alpha is the restart probability for the PPR random walk.}
+
+\item{r}{A numeric hierarchical scaling parameter.}
+
+\item{rescale_path_type}{A string; rescale the hierarchical height by:
+* "max" : the maximum path from the root.
+* "min" : the minimum path form the root.
+* "linkage" : use the linkage distances in the clustering.}
+
+\item{ppr_implementation}{Choose a implementation for personalized
+page-rank calculation:
+* "prpack": use PPR algorithms in igraph.
+* "power_iteration": use power_iteration method.}
+
+\item{dist_rescaled}{A logical: if TRUE, the linkage distances are linearly
+rescaled to be in-between 0 and 1.}
+
+\item{row_normalize}{Whether to normalize all rows in clustering_result
+so they sum to one before calculating ECS. It is recommended to set this to
+TRUE, which will lead to slightly different ECS values compared to clusim.}
+
+\item{ncores}{the number of parallel R instances that will run the code.
+If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A vector containing the element-wise average agreement.
@@ -21,11 +61,10 @@ Inspect how consistently of a set of clusterings agree with
 a reference clustering by calculating their element-wise average agreement.
 }
 \examples{
-reference.clustering = create_clustering(iris$Species)
+reference.clustering = iris$Species
 clustering.list = list()
 for (i in 1:20){
-  km.res = kmeans(iris[,1:4], 3)$cluster
-  clustering.list[[i]] = create_clustering(km.res)
+  clustering.list[[i]] = kmeans(iris[,1:4], 3)$cluster
 }
 element_agreement(reference.clustering, clustering.list)
 }

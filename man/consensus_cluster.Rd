@@ -15,7 +15,8 @@ consensus_cluster(
   dist_method = "euclidean",
   linkage = "complete",
   lower_lim = 0.1,
-  upper_lim = 0.9
+  upper_lim = 0.9,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ clustered ambiguously; the lower this value, the higher the PAC.}
 
 \item{upper_lim}{The upper limit for determining whether a pair is
 clustered ambiguously; the higher this value, the higher the PAC.}
+
+\item{verbose}{Logical value used for choosing to display a progress bar or not.}
 }
 \value{
 A data.frame with PAC values across iterations, as well as parameter

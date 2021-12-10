@@ -3,6 +3,7 @@
 \name{create_clustering}
 \alias{create_clustering}
 \alias{create_clustering,numeric-method}
+\alias{create_clustering,integer-method}
 \alias{create_clustering,character-method}
 \alias{create_clustering,factor-method}
 \alias{create_clustering,matrix-method}
@@ -13,6 +14,8 @@
 create_clustering(clustering_result, ...)
 
 \S4method{create_clustering}{numeric}(clustering_result, alpha = 0.9)
+
+\S4method{create_clustering}{integer}(clustering_result, alpha = 0.9)
 
 \S4method{create_clustering}{character}(clustering_result, alpha = 0.9)
 
@@ -55,10 +58,10 @@ create_clustering(clustering_result, ...)
 1 - alpha is the restart probability for the PPR random walk.}
 
 \item{ppr_implementation}{Choose a implementation for personalized
-page-rank calcuation:
+page-rank calculation:
 \itemize{
-\item 'prpack': use PPR alogrithms in igraph.
-\item 'power_iteration': use power_iteration method.
+\item "prpack": use PPR algorithms in igraph.
+\item "power_iteration": use power_iteration method.
 }}
 
 \item{row_normalize}{Whether to normalize all rows in clustering_result
@@ -69,9 +72,9 @@ TRUE, which will lead to slightly different ECS values compared to clusim.}
 
 \item{rescale_path_type}{A string; rescale the hierarchical height by:
 \itemize{
-\item 'max' : the maximum path from the root.
-\item 'min' : the minimum path form the root.
-\item 'linkage' : use the linkage distances in the clustering.
+\item "max" : the maximum path from the root.
+\item "min" : the minimum path form the root.
+\item "linkage" : use the linkage distances in the clustering.
 }}
 
 \item{dist_rescaled}{A logical: if TRUE, the linkage distances are linearly
@@ -88,6 +91,8 @@ method.
 \itemize{
 \item \code{numeric}: Create Clustering Object from Numeric Vector
 
+\item \code{integer}: Create Clustering Object from Integer Vector
+
 \item \code{character}: Create Clustering Object from Character Vector
 
 \item \code{factor}: Create Clustering Object from Factor Vector
@@ -99,10 +104,4 @@ method.
 \item \code{hclust}: Create Clustering Object from hclust
 }}
 
-\examples{
-km.res = kmeans(mtcars, 3)$cluster
-km.clustering = create_clustering(km.res)
-hc.res = hclust(dist(mtcars))
-hc.clustering = create_clustering(hc.res)
-element_sim(km.clustering, hc.clustering)
-}
+\keyword{internal}
