@@ -25,6 +25,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -37,18 +39,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="articles/ClustAssess.html">Get started</a>
 </li>
@@ -65,13 +61,16 @@
 <li>
       <a href="articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
+    <li>
+      <a href="articles/stability-parameter-assessment.html">Stability-based parameter assessment</a>
+    </li>
   </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/Core-Bioinformatics/ClustAssess/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+  <a href="https://github.com/Core-Bioinformatics/ClustAssess/" class="external-link">
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -88,26 +87,31 @@
       </header><div class="row">
   <div class="contents col-md-9">
 
-<div id="clustassess-tools-for-assessing-clustering" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#clustassess-tools-for-assessing-clustering" class="anchor"></a>ClustAssess: Tools for Assessing Clustering</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="clustassess-tools-for-assessing-clustering">ClustAssess: Tools for Assessing Clustering<a class="anchor" aria-label="anchor" href="#clustassess-tools-for-assessing-clustering"></a>
+</h1></div>
 
-<p>This repo contains the ClustAssess R package, which provides a set of tools for assessing clustering robustness.</p>
+<p>This repo contains the ClustAssess R package, which provides a set of tools for evaluating clustering robustness.</p>
 <ul>
-<li><a href="#the-tools">The Tools</a></li>
+<li>
+<a href="#the-tools">The Tools</a>
+<ul>
 <li><a href="#proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)</a></li>
 <li><a href="#element-centric-clustering-similarity-ecs">Element Centric Clustering Similarity (ECS)</a></li>
-<li><a href="#marker-gene-overlap">Marker gene overlap</a></li>
+<li><a href="#marker-gene-overlap">Marker Gene Overlap</a></li>
+</ul>
+</li>
+<li><a href="#handling-large-datasets">Handling Large Datasets</a></li>
 <li><a href="#installation">Installation</a></li>
 <li><a href="#references">References</a></li>
 </ul>
 </div>
-<div id="the-tools" class="section level1">
-<h1 class="hasAnchor">
-<a href="#the-tools" class="anchor"></a>The Tools</h1>
-<div id="proportion-of-ambiguously-clustered-pairs-pac" class="section level2">
-<h2 class="hasAnchor">
-<a href="#proportion-of-ambiguously-clustered-pairs-pac" class="anchor"></a>Proportion of Ambiguously Clustered Pairs (PAC)</h2>
+<div class="section level1">
+<h1 id="the-tools">The Tools<a class="anchor" aria-label="anchor" href="#the-tools"></a>
+</h1>
+<div class="section level2">
+<h2 id="proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)<a class="anchor" aria-label="anchor" href="#proportion-of-ambiguously-clustered-pairs-pac"></a>
+</h2>
 <p>To assess clustering robustness, the proportion of ambiguously clustered pairs (PAC) [1] uses a consensus clustering. The rate of element co-clustering is recorded across various numbers of clusters, <em>k</em>. The lower the PAC, the stabler the clustering for that <em>k</em>.</p>
 <p>ClustAssess uses a heirarchical clustering as base for the consensus clustering, and an optimized Rcpp [2] implementation to compute the PAC values. To calculate PAC, we write:</p>
 <p><code>cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)</code></p>
@@ -118,112 +122,109 @@
 <p>A local minimum in the PAC landscape, as visualized below using the <code>pac_landscape</code> function, can be interpreted as an optimal <em>k</em> for the dataset:</p>
 <p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/reference/pac_landscape-1.png" width="80%/"></p>
 </div>
-<div id="element-centric-clustering-similarity-ecs" class="section level2">
-<h2 class="hasAnchor">
-<a href="#element-centric-clustering-similarity-ecs" class="anchor"></a>Element Centric Clustering Similarity (ECS)</h2>
+<div class="section level2">
+<h2 id="element-centric-clustering-similarity-ecs">Element Centric Clustering Similarity (ECS)<a class="anchor" aria-label="anchor" href="#element-centric-clustering-similarity-ecs"></a>
+</h2>
 <p>Element-centric similarity (ECS) [4] is a per-observation measure of clustering similarity. Briefly, ECS is obtained by constructing a cluster-induced element graph, and subsequently calculating the stationary probability distribution of a random walk with restarts (also known as a personalized Pagerank) over the elements.</p>
 <p>In addition to providing per-element information on clustering agreement, ECS avoids several pitfalls associated with other measures of clustering similarity (refer to [4] for more detail).</p>
-<p>To calculate ECS, the user first needs to create a <code>Clustering</code> object:</p>
-<p><code>clustering_object1 = create_clustering(clustering_result1, alpha=0.9)</code></p>
-<p>where <code>1-alpha</code> is the restart probability of the random walk. To compare two clusterings, we use the <code>element_sim_elscore</code> function:</p>
-<p><code>ecs = element_sim_elscore(clustering_object1, clustering_object2)</code></p>
-<p>and we can subsequently visualize the ECS on a PCA of the data:</p>
+<p>To compare two clusterings with ECS, we use the <code>element_sim_elscore</code> function:</p>
+<p><code>ecs = element_sim_elscore(clustering_result1, clustering_result2, alpha=0.9)</code></p>
+<p>where <code>1-alpha</code> is the restart probability of the random walk. We can subsequently visualize the ECS on a PCA of the data:</p>
 <p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="80%/"></p>
-<p>In addition to flat disjoint clusterings (like the result of k-means for example), ClustAssess can also compare overlapping clusterings and hierarchical clusterings; refer to the <code>create_clustering</code> documentation for more detail.</p>
-<p>Besides comparing two clusterings with <code>element_sim_elscore</code>, ClustAssess also enables computing the per-element consistency (aka frustration) between a set of clusterings with the <code>element_frustration</code> function, and comparing a set of clusterings with a ground truth partitioning of elements with the <code>element_agreement</code> function.</p>
+<p>In addition to flat disjoint clusterings (like the result of k-means for example), ClustAssess can also compare overlapping clusterings and hierarchical clusterings; refer to the <code>comparing-soft-and-hierarchical</code> vignette for more detail.</p>
+<p>Besides comparing two clusterings with <code>element_sim_elscore</code>, ClustAssess also enables computing the per-element consistency (aka frustration) between a set of clusterings with the <code>element_consistency</code> function, and comparing a set of clusterings with a ground truth partitioning of elements with the <code>element_agreement</code> function.</p>
 </div>
-<div id="marker-gene-overlap" class="section level2">
-<h2 class="hasAnchor">
-<a href="#marker-gene-overlap" class="anchor"></a>Marker Gene Overlap</h2>
+<div class="section level2">
+<h2 id="marker-gene-overlap">Marker Gene Overlap<a class="anchor" aria-label="anchor" href="#marker-gene-overlap"></a>
+</h2>
 <p>In the analysis of single-cell RNA-seq data, cluster marker genes are typically used to infer the cell type of clusters. However, two different clustering results may lead to two different sets of markers for the cells. The <code>marker_overlap</code> function allows the comparison of two sets of markers. The output can be either as the number of common marker genes per cell, or as Jaccard similarity (size of intersect divided by size of union) per cell.</p>
 <p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
 </div>
 </div>
-<div id="installation" class="section level1">
-<h1 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h1>
-<p>ClustAssess can be installed from <a href="https://cran.r-project.org/index.html">CRAN</a>:</p>
-<p><code><a href="https://rdrr.io/r/utils/install.packages.html">install.packages("ClustAssess")</a></code></p>
-<p>or from github using remotes:</p>
-<p><code><a href="https://remotes.r-lib.org/reference/install_github.html">remotes::install_github("Core-Bioinformatics/ClustAssess")</a></code></p>
-<p>The following packages are required for ClustAssess:</p>
-<ul>
-<li>ggplot2</li>
-<li>dplyr</li>
-<li>fastcluster</li>
-<li>rlang</li>
-<li>Matrix</li>
-<li>igraph</li>
-<li>magrittr</li>
-<li>Rcpp</li>
-<li>methods</li>
-<li>stats</li>
-</ul>
-<p>To run all examples and vignettes, the following packages are also needed:</p>
-<ul>
-<li>knitr</li>
-<li>rmarkdown</li>
-<li>e1071</li>
-<li>dbscan</li>
-<li>dendextend</li>
-<li>Seurat</li>
-</ul>
+<div class="section level1">
+<h1 id="handling-large-datasets">Handling Large Datasets<a class="anchor" aria-label="anchor" href="#handling-large-datasets"></a>
+</h1>
+<p>If your dataset is large, the runtime for the tools described above may be prohibitive. In these cases, we recommend subsampling your data using geometric sketching [3]. In R, the subsampling can be done via reticulate:</p>
+<p><code>geosketch &lt;- reticulate::import('geosketch')</code></p>
+<p>assuming data.embed contains a dimensionality reduction of your data, you can then call:</p>
+<p><code>sketch.indices &lt;- geosketch$gs(data.embed, sketch.size, one_indexed = TRUE)</code></p>
+<p>and use the resulting indices for your subsample. For PAC, subsampling to &lt;1000 cells should help, and for ECS and data assessment functions, &lt;5000 cells may be appropriate (and parallelization can further help reduce the runtime).</p>
 </div>
-<div id="references" class="section level1">
-<h1 class="hasAnchor">
-<a href="#references" class="anchor"></a>References</h1>
-<p>[1] Șenbabaoğlu, Y., Michailidis, G., &amp; Li, J. Z. (2014). Critical limitations of consensus clustering in class discovery. Scientific reports, 4(1), 1-13. <a href="https://doi.org/10.1038/srep06207" class="uri">https://doi.org/10.1038/srep06207</a></p>
-<p>[2] Eddelbuettel, D., &amp; Balamuta, J. J. (2018). Extending R with C++: A brief introduction to Rcpp. The American Statistician, 72(1), 28-36. <a href="https://doi.org/10.1080/00031305.2017.1375990" class="uri">https://doi.org/10.1080/00031305.2017.1375990</a></p>
-<p>[3] Hie, B., Cho, H., DeMeo, B., Bryson, B., &amp; Berger, B. (2019). Geometric sketching compactly summarizes the single-cell transcriptomic landscape. Cell systems, 8(6), 483-493. <a href="https://doi.org/10.1016/j.cels.2019.05.003" class="uri">https://doi.org/10.1016/j.cels.2019.05.003</a></p>
-<p>[4] Gates, A. J., Wood, I. B., Hetrick, W. P., &amp; Ahn, Y. Y. (2019). Element-centric clustering comparison unifies overlaps and hierarchy. Scientific reports, 9(1), 1-13. <a href="https://doi.org/10.1038/s41598-019-44892-y" class="uri">https://doi.org/10.1038/s41598-019-44892-y</a></p>
+<div class="section level1">
+<h1 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h1>
+<p>ClustAssess can be installed from <a href="https://cran.r-project.org/index.html" class="external-link">CRAN</a>:</p>
+<p><code>install.packages("ClustAssess")</code></p>
+<p>or from github using remotes:</p>
+<p><code>remotes::install_github("Core-Bioinformatics/ClustAssess")</code></p>
+<p>The following packages are required for ClustAssess: * ggplot2 * dplyr * fastcluster * rlang * Matrix * igraph * magrittr * Rcpp * methods * stats * foreach * doParallel * irlba * progress * reshape2 * stringr</p>
+<p>To run all examples and vignettes, the following packages are also needed: * knitr * rmarkdown * e1071 * dbscan * dendextend * Seurat</p>
+</div>
+<div class="section level1">
+<h1 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h1>
+<p>[1] Șenbabaoğlu, Y., Michailidis, G., &amp; Li, J. Z. (2014). Critical limitations of consensus clustering in class discovery. Scientific reports, 4(1), 1-13. <a href="https://doi.org/10.1038/srep06207" class="external-link uri">https://doi.org/10.1038/srep06207</a></p>
+<p>[2] Eddelbuettel, D., &amp; Balamuta, J. J. (2018). Extending R with C++: A brief introduction to Rcpp. The American Statistician, 72(1), 28-36. <a href="https://doi.org/10.1080/00031305.2017.1375990" class="external-link uri">https://doi.org/10.1080/00031305.2017.1375990</a></p>
+<p>[3] Hie, B., Cho, H., DeMeo, B., Bryson, B., &amp; Berger, B. (2019). Geometric sketching compactly summarizes the single-cell transcriptomic landscape. Cell systems, 8(6), 483-493. <a href="https://doi.org/10.1016/j.cels.2019.05.003" class="external-link uri">https://doi.org/10.1016/j.cels.2019.05.003</a></p>
+<p>[4] Gates, A. J., Wood, I. B., Hetrick, W. P., &amp; Ahn, Y. Y. (2019). Element-centric clustering comparison unifies overlaps and hierarchy. Scientific reports, 9(1), 1-13. <a href="https://doi.org/10.1038/s41598-019-44892-y" class="external-link uri">https://doi.org/10.1038/s41598-019-44892-y</a></p>
 </div>
 
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Download from CRAN at <br><a href="https://cloud.r-project.org/package=ClustAssess">https://​cloud.r-project.org/​package=ClustAssess</a>
-</li>
-<li>Browse source code at <br><a href="https://github.com/Core-Bioinformatics/ClustAssess/">https://​github.com/​Core-Bioinformatics/​ClustAssess/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/Core-Bioinformatics/ClustAssess/issues">https://​github.com/​Core-Bioinformatics/​ClustAssess/​issues</a>
-</li>
+<li><a href="https://cloud.r-project.org/package=ClustAssess" class="external-link">View on CRAN</a></li>
+<li><a href="https://github.com/Core-Bioinformatics/ClustAssess/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/Core-Bioinformatics/ClustAssess/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
+
 <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://opensource.org/licenses/mit-license.php">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
+<li><small><a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing ClustAssess</a></li>
+</ul>
+</div>
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Arash Shahsavari <br><small class="roles"> Author, maintainer </small>  </li>
 <li>Irina Mohorianu <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/r-hub/cranlogs.app"><img src="https://cranlogs.r-pkg.org/badges/ClustAssess" alt="rstudio mirror downloads"></a></li>
-<li><a href="https://github.com/r-hub/cranlogs.app"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess" alt="rstudio mirror downloads"></a></li>
+<li><a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/ClustAssess" alt="rstudio mirror downloads"></a></li>
+<li><a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess" alt="rstudio mirror downloads"></a></li>
 </ul>
 </div>
-</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Arash Shahsavari, Irina Mohorianu.</p>
+  <p></p>
+<p>Developed by Arash Shahsavari, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
 </div>
 
       </footer>
@@ -231,6 +232,8 @@
 
   
 
+
+  
 
   </body>
 </html>
