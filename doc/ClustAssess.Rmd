@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
 set.seed(1001)
 ```
 
+
 In this vignette we will illustrate several of the tools available in 
 ClustAssess on a small single-cell RNA-seq dataset.
 ```{r setup, fig.width=7, fig.height=4.5}

@@ -39,14 +39,13 @@ gc()
 ## ----remove_mt_rp-------------------------------------------------------------
 # remove MT and RP genes
 all.index = 1:nrow(cuomo)
-MT.index <- grep(pattern = "^MT-", x = rownames(cuomo), value = FALSE) # Select row indices and not ERCC names 
+MT.index <- grep(pattern = "^MT-", x = rownames(cuomo), value = FALSE)
 RP.index = grep(pattern = "^RP[SL][[:digit:]]", x = rownames(cuomo), value = FALSE)
 cuomo = cuomo[!((all.index %in% MT.index) | (all.index %in% RP.index)  ), ]
 
 ## ----normalize, warning=F-----------------------------------------------------
 cuomo = NormalizeData(cuomo, verbose = F)
 cuomo = FindVariableFeatures(cuomo, selection.method = "vst", nfeatures = 3000, verbose = F)
-#cuomo = SCTransform(cuomo, do.scale = T, return.only.var.genes=FALSE, verbose=FALSE, seed.use = 1448145)
 
 features = dimnames(cuomo@assays$RNA)[[1]]
 var_features = cuomo@assays[["RNA"]]@var.features
@@ -83,7 +82,7 @@ ma_hv_steps = sapply(steps, function(x) { length(intersect(most_abundant_genes[1
 ## ---- include = FALSE---------------------------------------------------------
 start_time_feature_stability = Sys.time()
 
-## ----feature_stability--------------------------------------------------------
+## ----feature_stability, warning=FALSE-----------------------------------------
 pca_feature_stability_object = c(get_feature_stability(data_matrix = cuomo@assays[["RNA"]]@scale.data,
                                                        feature_set = most_abundant_genes,
                                                        steps = steps,

@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
 set.seed(1001)
 ```
 
+
 In this vignette we will illustrate how element-centric similarity can be used
 to compare different kinds of clustering results: flat disjoint clusterings, 
 flat overlapping clusterings, and hierarchical clusterings.

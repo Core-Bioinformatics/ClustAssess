@@ -57,17 +57,16 @@ The analysis is based on the Seurat pipeline (Hao et al 2021, Integrated analysi
 ```{r remove_mt_rp}
 # remove MT and RP genes
 all.index = 1:nrow(cuomo)
-MT.index <- grep(pattern = "^MT-", x = rownames(cuomo), value = FALSE) # Select row indices and not ERCC names 
+MT.index <- grep(pattern = "^MT-", x = rownames(cuomo), value = FALSE)
 RP.index = grep(pattern = "^RP[SL][[:digit:]]", x = rownames(cuomo), value = FALSE)
 cuomo = cuomo[!((all.index %in% MT.index) | (all.index %in% RP.index)  ), ]
 ```
 
-The data is normalized using the Seurat's `SCTransform` method. 
+The data is normalized and scaled using the Seurat's `NormalizeData` and `ScaleData` methods. The variable feature set is obtained by running the `FindVariableFeatures` function from the same package.
 
 ```{r normalize, warning=F}
 cuomo = NormalizeData(cuomo, verbose = F)
 cuomo = FindVariableFeatures(cuomo, selection.method = "vst", nfeatures = 3000, verbose = F)
-#cuomo = SCTransform(cuomo, do.scale = T, return.only.var.genes=FALSE, verbose=FALSE, seed.use = 1448145)
 
 features = dimnames(cuomo@assays$RNA)[[1]]
 var_features = cuomo@assays[["RNA"]]@var.features
@@ -137,7 +136,7 @@ start_time_feature_stability = Sys.time()
 ```
 
 
-```{r feature_stability}
+```{r feature_stability, warning=FALSE}
 pca_feature_stability_object = c(get_feature_stability(data_matrix = cuomo@assays[["RNA"]]@scale.data,
                                                        feature_set = most_abundant_genes,
                                                        steps = steps,
