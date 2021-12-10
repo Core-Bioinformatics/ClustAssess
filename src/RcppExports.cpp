@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // calculate_pac_cpp
 double calculate_pac_cpp(IntegerMatrix indicator, NumericMatrix connectivity, double lower_lim, double upper_lim);
 RcppExport SEXP _ClustAssess_calculate_pac_cpp(SEXP indicatorSEXP, SEXP connectivitySEXP, SEXP lower_limSEXP, SEXP upper_limSEXP) {
