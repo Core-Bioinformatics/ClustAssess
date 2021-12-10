@@ -197,13 +197,13 @@ plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width
 
 To enhance the summarized information presented as boxplots, we use `plot_feature_stability_mb_facet` to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes can be explained by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.
 
-```{r feature_stability_mb_facet, fig.width = 8, fig.height = 15}
+```{r feature_stability_mb_facet, fig.width = 7, fig.height = 15}
 plot_feature_stability_mb_facet(pca_feature_stability_object, text_size = 3)
 ```
 
 To further understand the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the Element-Centric Consistency score of the partitions obtained for each step and feature set. For the Highly Variable and the intersection sets, we note that the instability appears in groups of cells with high density. These visualizations can help us understand the relationship between stability and the topology of the data.
 
-```{r feature_stability_ecs_facet, fig.width = 8, fig.height = 15}
+```{r feature_stability_ecs_facet, fig.width = 7, fig.height = 15}
 plot_feature_stability_ecs_facet(pca_feature_stability_object)
 ```
 
@@ -322,7 +322,7 @@ The final step in a standard single-cell analysis pipeline is applying a graph-b
 ```{r clustering_diff}
 cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F)
 cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
-adj_matrix = FindNeighbors(cuomo@reductions$pca@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
+adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
 
 start_time_clustering_method = Sys.time()
 clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
@@ -357,7 +357,7 @@ start_time_resolution = Sys.time()
 As previously suggested, the resolution parameter affects the number of clusters obtained. The `get_resolution_importance` evaluates the effect of a range of values for the resolution parameter on the stability of the output. Besides the resolution, the user can input multiple values of the following parameters: number of neighbours, the graph type and the clustering method. The function will return a list associated with each parameter value combination. For each resolution value, the list will contain multiple sublists of partitions corresponding to specific number of clusters.
 
 ```{r resolution_importance}
-resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$pca@cell.embeddings,
+resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$umap@cell.embeddings,
                                                   resolution = seq(from = 0.5, to = 1, by = 0.1),
                                                   n_neigh = 30,
                                                   n_repetitions = n_repetitions,
@@ -428,3 +428,4 @@ paste("Resolution gridsearch methods runtime:", format(as.numeric(stop_time_reso
 ```{r}
 sessionInfo()
 ```
+
