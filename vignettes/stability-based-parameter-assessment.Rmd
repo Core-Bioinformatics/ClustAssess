@@ -25,14 +25,18 @@ library(ClustAssess)
 library(patchwork)
 ```
 
-In this vignette we illustrate a data-driven pipeline for the assessment of optimal clustering parameters for a given dataset. The case study is based on a subset of cells from the Cuomo et al 2020 (Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression [ref](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
+In this vignette we illustrate a data-driven pipeline for the assessment of optimal clustering parameters for a single-cell RNA-seq dataset. Popular pipelines for single-cell clustering (including [Seurat](https://satijalab.org/seurat/), [SCANPY](https://scanpy.readthedocs.io/en/stable/), and [Monocle v3](https://cole-trapnell-lab.github.io/monocle3/)) consist of a sequence of steps, including normalization, dimensionality reduction, nearest-neighbor graph construction, and community detection on that graph. The obtained communities are then the clusters, which can be used for downstream analysis by looking at marker genes, trajectories, and more. ClustAssess offers a set of tools to assess the stability of parameters in the clustering pipeline, for the steps of dimensionality reduction, nearest-neighbor graph construction, and community detection.
+
+To illustrate these tools, we will use a subset of cells from the Cuomo et al 2020 ([Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
 
 ```{r load}
-cell_metadata = read.csv('http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/cuomo_metadata.csv', sep=',', header = TRUE, row.names = 1)
+meta.path = 'http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/cuomo_metadata.csv'
+counts.path = 'http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/all_genes_with_RP_MT.csv.gz'
+cell_metadata = read.csv(meta.path, sep=',', header = TRUE, row.names = 1)
 cell_metadata$donor = as.factor(cell_metadata$donor)
 cell_metadata$day = as.factor(cell_metadata$day)
 
-cuomo.counts = read_csv('http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/all_genes_with_RP_MT.csv.gz')
+cuomo.counts = read_csv(counts.path)
 gene_names = cuomo.counts$gene_name
 cuomo.counts = cuomo.counts[, 1:1880]
 
@@ -52,7 +56,7 @@ gc()
 ```
 
 
-The analysis is based on the Seurat pipeline (Hao et al 2021, Integrated analysis of multimodal single-cell data, [ref](https://www.sciencedirect.com/science/article/pii/S0092867421005833?via%3Dihub)); subsequent to the filtering step, the mitochondrial and ribosomal genes are excluded from the downstream analysis.
+The analysis is based on the Seurat pipeline ([Hao et al 2021, Integrated analysis of multimodal single-cell data](https://doi.org/10.1016/j.cell.2021.04.048)); after creating the object and recording the mitochondrial and ribosomal gene percentages, those genes are excluded from the downstream analysis.
 
 ```{r remove_mt_rp}
 # remove MT and RP genes
@@ -70,11 +74,22 @@ cuomo = FindVariableFeatures(cuomo, selection.method = "vst", nfeatures = 3000, 
 
 features = dimnames(cuomo@assays$RNA)[[1]]
 var_features = cuomo@assays[["RNA"]]@var.features
+n_abundant = 3000
+abundant_features = rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA), decreasing=TRUE)][1:n_abundant]
 
 cuomo = ScaleData(cuomo, features = features, verbose = F)
 
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F, features = intersect(rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA), decreasing=TRUE)][1:3000], cuomo@assays$RNA@var.features))
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo, 
+               npcs = 30, 
+               approx = F, 
+               verbose = F, 
+               features = intersect(abundant_features, cuomo@assays$RNA@var.features))
+cuomo = RunUMAP(cuomo,reduction = "pca", 
+                dims = 1:30, 
+                n.neighbors = 30, 
+                min.dist = 0.3, 
+                metric = "cosine", 
+                verbose = F)
 raw_umap = cuomo@reductions$umap@cell.embeddings
 ```
 
@@ -216,8 +231,16 @@ For the Cuomo case study, based on the plots presented above, we conclude that t
 ```{r update_object}
 cuomo = cuomo[var_features, ]
 
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F)
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo, 
+               npcs = 30, 
+               approx = F, 
+               verbose = F)
+cuomo = RunUMAP(cuomo,reduction = "pca", 
+                dims = 1:30, 
+                n.neighbors = 30, 
+                min.dist = 0.3, 
+                metric = "cosine", 
+                verbose = F)
 ```
 
 
@@ -319,8 +342,16 @@ stop_time_nn_importance = Sys.time()
 The final step in a standard single-cell analysis pipeline is applying a graph-based clustering method. Choosing a community detection algorithm has a significant impact on the partitioning results. Using the `get_clustering_difference` we assess the stability and reproducibility of results obtained using various graph clustering methods available in the Seurat package: Louvain, Louvain refined, SLM and Leiden.
 
 ```{r clustering_diff}
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F)
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo, 
+               npcs = 30, 
+               approx = F, 
+               verbose = F)
+cuomo = RunUMAP(cuomo,reduction = "pca", 
+                dims = 1:30, 
+                n.neighbors = 30, 
+                min.dist = 0.3, 
+                metric = "cosine",
+                verbose = F)
 adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
 
 start_time_clustering_method = Sys.time()
@@ -369,7 +400,8 @@ resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$u
 The resulting object can be visualized with `plot_k_resolution_corresp` as shown in the code below; we showcase the relationship between the number of clusters and the resolution value. This plot also provides information on suitable resolution values for predefined number of clusters. The colour gradient is proportional to the number of occurrences of the most frequent partition. It can also be used as proxy to describe the co-variation between (k, resolution). Lighter (higher) values indicate that little variation is observed, on changes of the random seed, between the number of clusters and the resolution value.
 
 ```{r k_res_corr, fig.width = 7, fig.height=5}
-plot_k_resolution_corresp(resolution_gridsearch) + ggtitle("resolution - k correspondence with ecs threshold = 1")
+plot_k_resolution_corresp(resolution_gridsearch) + 
+  ggtitle("resolution - k correspondence with ecs threshold = 1")
 ```
 
 By default, the `get_resolution_importance` function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score.
@@ -384,7 +416,8 @@ resolution_gridsearch_thresh_99 = merge_partitions(resolution_gridsearch,
 Lowering the ECS threshold leads, in general, to higher number of occurences for the most frequent partition.
 
 ```{r k_res_corr, fig.width = 7, fig.height=5}
-plot_k_resolution_corresp(resolution_gridsearch_thresh_99) + ggtitle("resolution - k correspondence with ecs threshold = 0.99")
+plot_k_resolution_corresp(resolution_gridsearch_thresh_99) + 
+  ggtitle("resolution - k correspondence with ecs threshold = 0.99")
 ```
 
 The `merge_resolutions` function diminishes the dependency between the resolution and the numver of clusters (k) i.e. the partitions with the same number of clusters, part of the same list for each configuration, are merged.
@@ -406,7 +439,8 @@ k_parts_obj_thresh_99 = merge_partitions(k_parts_obj,
                                          ecs_thresh = 0.99,
                                          ncores = n_cores)
 
-plot_k_n_partitions(k_parts_obj_thresh_99) + ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
+plot_k_n_partitions(k_parts_obj_thresh_99) + 
+  ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
 ```
 
 ```{r, include = F}
@@ -416,14 +450,25 @@ stop_time_resolution = Sys.time()
 We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other computers may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.
 
 ```{r}
-paste("Feature stability methods runtime:", format(as.numeric(stop_time_feature_stability - start_time_feature_stability, units = "mins")), "minutes")
-paste("NN - # connected components methods runtime:", format(as.numeric(stop_time_nn_conn - start_time_nn_conn, units = "mins")), "minutes")
-paste("NN importance methods runtime:", format(as.numeric(stop_time_nn_importance - start_time_nn_importance, units = "mins")), "minutes")
-paste("Clustering importance methods runtime:", format(as.numeric(stop_time_clustering_method - start_time_clustering_method, units = "mins")), "minutes")
-paste("Resolution gridsearch methods runtime:", format(as.numeric(stop_time_resolution - start_time_resolution, units = "mins")), "minutes")
+paste("Feature stability methods runtime:", 
+      format(as.numeric(stop_time_feature_stability - start_time_feature_stability, 
+                        units = "mins")), "minutes")
+paste("NN - # connected components methods runtime:", 
+      format(as.numeric(stop_time_nn_conn - start_time_nn_conn, 
+                        units = "mins")), "minutes")
+paste("NN importance methods runtime:", 
+      format(as.numeric(stop_time_nn_importance - start_time_nn_importance, 
+                        units = "mins")), "minutes")
+paste("Clustering importance methods runtime:", 
+      format(as.numeric(stop_time_clustering_method - start_time_clustering_method, 
+                        units = "mins")), "minutes")
+paste("Resolution gridsearch methods runtime:", 
+      format(as.numeric(stop_time_resolution - start_time_resolution, 
+                        units = "mins")), "minutes")
 ```
 
 
+# Session info
 ```{r}
 sessionInfo()
 ```
