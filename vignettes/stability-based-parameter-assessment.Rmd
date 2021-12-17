@@ -201,7 +201,7 @@ plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) +
         legend.justification = c(1,0))
 ```
 
-Another angle for assessing the stability is centred on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.
+Another angle for assessing the stability is centered on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.
 
 ```{r stab_ecs_inc, fig.width=7, fig.height=5}
 plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width = 1, text_size = 2) +
@@ -310,7 +310,6 @@ nn_importance_object = mapply(c,
                                          n_neigh_sequence = seq(from = 5, to = 30, by = 5),
                                          n_repetitions = n_repetitions,
                                          graph_reduction_type = "UMAP",
-                                         transpose = TRUE,
                                          ecs_thresh = 1,
                                          ncores = n_cores,
                                          algorithm = 1,
