@@ -18,7 +18,7 @@ of clusters."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/lib
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
       </span>
     </div>
 
@@ -86,8 +86,10 @@ variability of PAC across the last n_shade iterations.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="va">pac.res</span> <span class="op">=</span> <span class="fu"><a href="consensus_cluster.html">consensus_cluster</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, k_max<span class="op">=</span><span class="fl">20</span><span class="op">)</span>
-<span class="fu">pac_landscape</span><span class="op">(</span><span class="va">pac.res</span><span class="op">)</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">pac.res</span> <span class="op">=</span> <span class="fu"><a href="consensus_cluster.html">consensus_cluster</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, k_max<span class="op">=</span><span class="fl">20</span><span class="op">)</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating consensus clustering</span>
+<span class="r-in"><span class="fu">pac_landscape</span><span class="op">(</span><span class="va">pac.res</span><span class="op">)</span></span>
+<span class="r-plt img"><img src="pac_landscape-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </div>
@@ -98,7 +100,7 @@ variability of PAC across the last n_shade iterations.</p></dd>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">

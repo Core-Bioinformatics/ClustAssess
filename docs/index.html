@@ -39,7 +39,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
       </span>
     </div>
 
@@ -99,6 +99,7 @@
 <li><a href="#proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)</a></li>
 <li><a href="#element-centric-clustering-similarity-ecs">Element Centric Clustering Similarity (ECS)</a></li>
 <li><a href="#marker-gene-overlap">Marker Gene Overlap</a></li>
+<li><a href="#stability-based-parameter-assessment">Stability-Based Parameter Assessment</a></li>
 </ul>
 </li>
 <li><a href="#handling-large-datasets">Handling Large Datasets</a></li>
@@ -109,6 +110,7 @@
 <div class="section level1">
 <h1 id="the-tools">The Tools<a class="anchor" aria-label="anchor" href="#the-tools"></a>
 </h1>
+<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/diagram.png" width="80%/"></p>
 <div class="section level2">
 <h2 id="proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)<a class="anchor" aria-label="anchor" href="#proportion-of-ambiguously-clustered-pairs-pac"></a>
 </h2>
@@ -140,6 +142,13 @@
 <p>In the analysis of single-cell RNA-seq data, cluster marker genes are typically used to infer the cell type of clusters. However, two different clustering results may lead to two different sets of markers for the cells. The <code>marker_overlap</code> function allows the comparison of two sets of markers. The output can be either as the number of common marker genes per cell, or as Jaccard similarity (size of intersect divided by size of union) per cell.</p>
 <p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
 </div>
+<div class="section level2">
+<h2 id="stability-based-parameter-assessment">Stability-Based Parameter Assessment<a class="anchor" aria-label="anchor" href="#stability-based-parameter-assessment"></a>
+</h2>
+<p>The most common clustering pipeline for single-cell data consists of constructing a nearest-neighbor graph of the cells, followed by community detection to obtain the clustering. This pipeline is available in multiple single-cell toolkits, including Seurat, Monocle v3, and SCANPY. ClustAssess provides several methods to assess the stability of parameter choices that influence the final clustering, for example to evaluate feature sets, we use <code>get_feature_stability_object</code>, and plot the results with <code>plot_feature_stability_boxplot</code>:</p>
+<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
+<p>where the higher element-centric consistency (ECC) indicates more stable clustering results across random seeds. For more details, please see the <code>stability-based-parameter-assessment</code> vignette.</p>
+</div>
 </div>
 <div class="section level1">
 <h1 id="handling-large-datasets">Handling Large Datasets<a class="anchor" aria-label="anchor" href="#handling-large-datasets"></a>
@@ -157,8 +166,37 @@
 <p><code>install.packages("ClustAssess")</code></p>
 <p>or from github using remotes:</p>
 <p><code>remotes::install_github("Core-Bioinformatics/ClustAssess")</code></p>
-<p>The following packages are required for ClustAssess: * ggplot2 * dplyr * fastcluster * rlang * Matrix * igraph * magrittr * Rcpp * methods * stats * foreach * doParallel * irlba * progress * reshape2 * stringr</p>
-<p>To run all examples and vignettes, the following packages are also needed: * knitr * rmarkdown * e1071 * dbscan * dendextend * Seurat</p>
+<p>The following packages are required for ClustAssess:</p>
+<ul>
+<li>ggplot2</li>
+<li>dplyr</li>
+<li>fastcluster</li>
+<li>rlang</li>
+<li>Matrix</li>
+<li>igraph</li>
+<li>magrittr</li>
+<li>Rcpp</li>
+<li>methods</li>
+<li>stats</li>
+<li>foreach</li>
+<li>doParallel</li>
+<li>irlba</li>
+<li>progress</li>
+<li>reshape2</li>
+<li>stringr</li>
+<li>uwot</li>
+</ul>
+<p>To use all data-driven assessment methods, and run all examples and vignettes, the following packages are also needed:</p>
+<ul>
+<li>knitr</li>
+<li>rmarkdown</li>
+<li>e1071</li>
+<li>dbscan</li>
+<li>dendextend</li>
+<li>Seurat</li>
+<li>readr</li>
+<li>patchwork</li>
+</ul>
 </div>
 <div class="section level1">
 <h1 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -201,6 +239,7 @@
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Arash Shahsavari <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Andi Munteanu <br><small class="roles"> Author </small>  </li>
 <li>Irina Mohorianu <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
@@ -219,7 +258,7 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Arash Shahsavari, Irina Mohorianu.</p>
+<p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">

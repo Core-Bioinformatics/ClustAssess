@@ -23,7 +23,7 @@ times by changing the seed at each repetition."><!-- mathjax --><script src="htt
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
       </span>
     </div>
 
@@ -82,7 +82,7 @@ times by changing the seed at each repetition.</p>
   <span class="va">object</span>,
   <span class="va">n_neigh_sequence</span>,
   config_name <span class="op">=</span> <span class="st">""</span>,
-  n_repetitions <span class="op">=</span> <span class="fl">30</span>,
+  n_repetitions <span class="op">=</span> <span class="fl">100</span>,
   seed_sequence <span class="op">=</span> <span class="cn">NULL</span>,
   graph_reduction_type <span class="op">=</span> <span class="st">"UMAP"</span>,
   transpose <span class="op">=</span> <span class="op">(</span><span class="va">graph_reduction_type</span> <span class="op">==</span> <span class="st">"PCA"</span><span class="op">)</span>,
@@ -123,21 +123,21 @@ obtained on the specified number of repetitions.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="co"># get the PCA embedding of the data</span>
-<span class="va">pca_embedding</span> <span class="op">=</span> <span class="fu">irlba</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/irlba/man/irlba.html" class="external-link">irlba</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>, nv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>
-<span class="va">pca_embedding</span> <span class="op">=</span> <span class="va">pca_embedding</span><span class="op">$</span><span class="va">u</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">$</span><span class="va">d</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>
-
-<span class="co"># run the function on the PCA embedding</span>
-<span class="va">nn_conn_comps_obj</span> <span class="op">=</span> <span class="fu">get_nn_conn_comps</span><span class="op">(</span>object <span class="op">=</span> <span class="va">pca_embedding</span>,
-    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">15</span><span class="op">)</span>,
-    config_name <span class="op">=</span> <span class="st">"mt_cars"</span>,
-    n_repetitions <span class="op">=</span> <span class="fl">1</span>,
-    graph_reduction_type <span class="op">=</span> <span class="st">"UMAP"</span>,
-    <span class="co"># the following parameters are used by the umap function and are not mandatory</span>
-    min_dist <span class="op">=</span> <span class="fl">0.3</span>,
-    n_neighbors <span class="op">=</span> <span class="fl">5</span>,
-    metric <span class="op">=</span> <span class="st">"cosine"</span><span class="op">)</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># get the PCA embedding of the data</span></span>
+<span class="r-in"><span class="va">pca_embedding</span> <span class="op">=</span> <span class="fu">irlba</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/irlba/man/irlba.html" class="external-link">irlba</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>, nv <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span class="r-in"><span class="va">pca_embedding</span> <span class="op">=</span> <span class="va">pca_embedding</span><span class="op">$</span><span class="va">u</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">$</span><span class="va">d</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># run the function on the PCA embedding</span></span>
+<span class="r-in"><span class="va">nn_conn_comps_obj</span> <span class="op">=</span> <span class="fu">get_nn_conn_comps</span><span class="op">(</span>object <span class="op">=</span> <span class="va">pca_embedding</span>,</span>
+<span class="r-in">    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">15</span><span class="op">)</span>,</span>
+<span class="r-in">    config_name <span class="op">=</span> <span class="st">"mt_cars"</span>,</span>
+<span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">1</span>,</span>
+<span class="r-in">    graph_reduction_type <span class="op">=</span> <span class="st">"UMAP"</span>,</span>
+<span class="r-in">    <span class="co"># the following parameters are used by the umap function and are not mandatory</span></span>
+<span class="r-in">    min_dist <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span class="r-in">    n_neighbors <span class="op">=</span> <span class="fl">5</span>,</span>
+<span class="r-in">    metric <span class="op">=</span> <span class="st">"cosine"</span><span class="op">)</span></span>
 </code></pre></div>
     </div>
   </div>
@@ -148,7 +148,7 @@ obtained on the specified number of repetitions.</p>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
