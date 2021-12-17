@@ -8,7 +8,7 @@ get_nn_conn_comps(
   object,
   n_neigh_sequence,
   config_name = "",
-  n_repetitions = 30,
+  n_repetitions = 100,
   seed_sequence = NULL,
   graph_reduction_type = "UMAP",
   transpose = (graph_reduction_type == "PCA"),

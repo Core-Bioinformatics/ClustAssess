@@ -7,7 +7,7 @@
 get_clustering_difference(
   graph_adjacency_matrix,
   resolution,
-  n_repetitions = 30,
+  n_repetitions = 100,
   seed_sequence = NULL,
   ecs_thresh = 1,
   ncores = 1,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_n_neigh_ecs}
 \alias{plot_n_neigh_ecs}
-\title{Graph construction parameteres - ECC facet}
+\title{Graph construction parameters - ECC facet}
 \usage{
 plot_n_neigh_ecs(nn_ecs_object)
 }

@@ -7,7 +7,7 @@
 get_nn_importance(
   object,
   n_neigh_sequence,
-  n_repetitions = 30,
+  n_repetitions = 100,
   seed_sequence = NULL,
   graph_reduction_type = "PCA",
   ecs_thresh = 1,

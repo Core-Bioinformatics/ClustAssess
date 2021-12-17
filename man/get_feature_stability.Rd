@@ -9,7 +9,7 @@ get_feature_stability(
   feature_set,
   steps,
   feature_type,
-  n_repetitions = 30,
+  n_repetitions = 100,
   seed_sequence = NULL,
   graph_reduction_type = "PCA",
   npcs = 30,
