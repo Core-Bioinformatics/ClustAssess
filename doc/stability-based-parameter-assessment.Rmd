@@ -25,14 +25,18 @@ library(ClustAssess)
 library(patchwork)
 ```
 
-In this vignette we illustrate a data-driven pipeline for the assessment of optimal clustering parameters for a given dataset. The case study is based on a subset of cells from the Cuomo et al 2020 (Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression [ref](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
+In this vignette we illustrate a data-driven pipeline for the assessment of optimal clustering parameters for a single-cell RNA-seq dataset. Popular pipelines for single-cell clustering (including [Seurat](https://satijalab.org/seurat/), [SCANPY](https://scanpy.readthedocs.io/en/stable/), and [Monocle v3](https://cole-trapnell-lab.github.io/monocle3/)) consist of a sequence of steps, including normalization, dimensionality reduction, nearest-neighbor graph construction, and community detection on that graph. The obtained communities are then the clusters, which can be used for downstream analysis by looking at marker genes, trajectories, and more. ClustAssess offers a set of tools to assess the stability of parameters in the clustering pipeline, for the steps of dimensionality reduction, nearest-neighbor graph construction, and community detection.
+
+To illustrate these tools, we will use a subset of cells from the Cuomo et al 2020 ([Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression](https://www.nature.com/articles/s41467-020-14457-z)) dataset. Specifically, 6 donors and 4 time points were chosen, comprising 1880 cells and 35430 expressed genes. The input is provided as a 35430 x 1880 expression level matrix containing the raw quantification (in csv format).
 
 ```{r load}
-cell_metadata = read.csv('http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/cuomo_metadata.csv', sep=',', header = TRUE, row.names = 1)
+meta.path = 'http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/cuomo_metadata.csv'
+counts.path = 'http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/all_genes_with_RP_MT.csv.gz'
+cell_metadata = read.csv(meta.path, sep=',', header = TRUE, row.names = 1)
 cell_metadata$donor = as.factor(cell_metadata$donor)
 cell_metadata$day = as.factor(cell_metadata$day)
 
-cuomo.counts = read_csv('http://bioinf.stemcells.cam.ac.uk:3838/clustassess_1gmg5bq/all_genes_with_RP_MT.csv.gz')
+cuomo.counts = read_csv(counts.path)
 gene_names = cuomo.counts$gene_name
 cuomo.counts = cuomo.counts[, 1:1880]
 
@@ -52,7 +56,7 @@ gc()
 ```
 
 
-The analysis is based on the Seurat pipeline (Hao et al 2021, Integrated analysis of multimodal single-cell data, [ref](https://www.sciencedirect.com/science/article/pii/S0092867421005833?via%3Dihub)); subsequent to the filtering step, the mitochondrial and ribosomal genes are excluded from the downstream analysis.
+The analysis is based on the Seurat pipeline ([Hao et al 2021, Integrated analysis of multimodal single-cell data](https://doi.org/10.1016/j.cell.2021.04.048)); after creating the object and recording the mitochondrial and ribosomal gene percentages, those genes are excluded from the downstream analysis.
 
 ```{r remove_mt_rp}
 # remove MT and RP genes
@@ -70,21 +74,33 @@ cuomo = FindVariableFeatures(cuomo, selection.method = "vst", nfeatures = 3000, 
 
 features = dimnames(cuomo@assays$RNA)[[1]]
 var_features = cuomo@assays[["RNA"]]@var.features
+n_abundant = 3000
+most_abundant_genes = rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA),
+                                                       decreasing=TRUE)]
 
 cuomo = ScaleData(cuomo, features = features, verbose = F)
 
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F, features = intersect(rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA), decreasing=TRUE)][1:3000], cuomo@assays$RNA@var.features))
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo, 
+               npcs = 30, 
+               approx = F, 
+               verbose = F, 
+               features = intersect(most_abundant_genes, cuomo@assays$RNA@var.features))
+cuomo = RunUMAP(cuomo,reduction = "pca", 
+                dims = 1:30, 
+                n.neighbors = 30, 
+                min.dist = 0.3, 
+                metric = "cosine", 
+                verbose = F)
 raw_umap = cuomo@reductions$umap@cell.embeddings
 ```
 
-# QC
+# Quality checks
 
 QC overview for the Cuomo dataset.
 
-(A) time point induced separation of cells;
-(B) distributions of cells per donor, we notice a good overlap across all 6 donors, supporting the assumption of no significant batch effect.
-(C) –(F) distributions of sequencing depths (C), number of features (D), and percentages of reads incident to mitochondrial genes (E) and ribosomal genes (F) illustrated using the colour gradient.
+A time point induced separation of cells;
+B distributions of cells per donor, we notice a good overlap across all 6 donors, supporting the assumption of no significant batch effect.
+C – F distributions of sequencing depths (C), number of features (D), and percentages of reads incident to mitochondrial genes (E) and ribosomal genes (F) illustrated using the colour gradient.
 
 No significant effects are noted.
 
@@ -114,7 +130,7 @@ n_cores = 1
 
 # Dimensionality reduction
 
-The first parameter that we will evaluate and note to substantially influence the dimensionality reduction (linear or non-linear) is the feature set. The Seurat pipeline relies on the highly variable genes (default) for the computation of the Principal Components; the Monocle pipeline relies on all the features. The top x most variable genes or most abundant genes can be selected, where x varies according to the characteristics of the dataset; frequently used values are 500, 1000, 2000, 3000 etc.
+The first parameter that we will evaluate and note to substantially influence the dimensionality reduction (linear or non-linear) is the feature set. The Seurat pipeline relies on the highly variable genes (default) for the computation of the Principal Components. The top x most variable genes or most abundant genes can be selected, where x varies according to the characteristics of the dataset; frequently used values are 500, 1000, 2000, 3000 etc.
 
 To showcase the importance of this parameter, we assess three different sets of features:
 
@@ -123,7 +139,6 @@ To showcase the importance of this parameter, we assess three different sets of 
 * **intersection between highly variable and most abundant genes**: this set is obtained by intersecting a subset of the most abundant genes and the whole highly variable feature set. Taking the intersection will lead to a smaller number of genes compared to the initial sets.
 
 ```{r feature_sets}
-most_abundant_genes = rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA), decreasing=TRUE)]
 ma_hv_genes_intersection = intersect(most_abundant_genes[1:3000], var_features)
 steps = seq(from = 500, to = 3000, by = 500)
 ma_hv_steps = sapply(steps, function(x) { length(intersect(most_abundant_genes[1:x], var_features))})
@@ -180,29 +195,29 @@ pca_feature_stability_object = c(get_feature_stability(data_matrix = cuomo@assay
 
 The function `get_feature_stability` outputs the stability of different feature sets and concatenates the results to ease cross-comparisons. The plot illustrates the stability assessment, across 30 runs, each with different random seeds, on the three gene sets described above. We assessed the stability of each set on incremental number of selected genes. Thus, the boxplots are arranged in groups of three (the number of evaluated feature sets); above each boxplot we specify the number of elements per subset. For the Cuomo case study, a conclusion that is supported based on this plot is that the most abundant set is more stable than the other two options, since it has higher Element-Centric Consistency scores.
 
-```{r feature_stability_boxplot, fig.width = 7, fig.height=5}
-plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) + 
+```{r stab_boxplot, fig.width = 7, fig.height=5}
+plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) +
   theme(legend.position = c(1,0),
         legend.justification = c(1,0))
 ```
 
-Another angle for assessing the stability is centred on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.
+Another angle for assessing the stability is centered on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.
 
-```{r feature_stability_ecs_incremental, fig.width=7, fig.height=5}
+```{r stab_ecs_inc, fig.width=7, fig.height=5}
 plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width = 1, text_size = 2) +
     theme(legend.position = c(1,0),
         legend.justification = c(1,0))
 ```
 
-To enhance the summarized information presented as boxplots, we use `plot_feature_stability_mb_facet` to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes can be explained by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.
+To enhance the summarized information presented as boxplots, we use `plot_feature_stability_mb_facet` to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes might be explained in part by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.
 
-```{r feature_stability_mb_facet, fig.width = 7, fig.height = 15}
+```{r stab_mb, fig.width = 7, fig.height = 15}
 plot_feature_stability_mb_facet(pca_feature_stability_object, text_size = 3)
 ```
 
 To further understand the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the Element-Centric Consistency score of the partitions obtained for each step and feature set. For the Highly Variable and the intersection sets, we note that the instability appears in groups of cells with high density. These visualizations can help us understand the relationship between stability and the topology of the data.
 
-```{r feature_stability_ecs_facet, fig.width = 7, fig.height = 15}
+```{r stab_ecs_fa, fig.width = 7, fig.height = 15}
 plot_feature_stability_ecs_facet(pca_feature_stability_object)
 ```
 
@@ -211,13 +226,21 @@ stop_time_feature_stability = Sys.time()
 ```
 
 
-For the Cuomo case study, based on the plots presented above, we conclude that the most abundant gene set is not a suitable choice, as its stability is explained by the presence of multiple isolated groups of cells. Thus, we settle on using the highly variable genes set, as it produces a compact distribution of cells that is consistent across different seeds.
+For the Cuomo case study, based on the plots presented above, we conclude that the most abundant gene set is not a suitable choice, due to the presence of multiple isolated groups of cells. Thus, we settle on using the highly variable genes set, as it produces a compact distribution of cells that is consistent across different seeds.
 
 ```{r update_object}
 cuomo = cuomo[var_features, ]
 
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F)
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo,
+               npcs = 30,
+               approx = F,
+               verbose = F)
+cuomo = RunUMAP(cuomo,reduction = "pca",
+                dims = 1:30,
+                n.neighbors = 30,
+                min.dist = 0.3,
+                metric = "cosine",
+                verbose = F)
 ```
 
 
@@ -256,9 +279,9 @@ nn_conn_comps_object = c(get_nn_conn_comps(object = cuomo@reductions$pca@cell.em
 
 The following plot describes the covariation between the number neighbours and the number of connected components obtained using both PCA and UMAP reductions as base for graph building. As the number of neighbours increases, the number of connected components decreases (this is an expected result, as increasing the number of neighbours result in a better connected graph). Please note that the number of connected components provides a lower bound on the number of clusters we can obtain by downstream community detection algorithms such as Louvain and Leiden.
 
-Another comparison may be performed on the PCA and UMAP embeddings to assess graph connectivity. We note that, when using UMAPs, a better separation of the cells is achieved; this is not observed for PCAs, for which a quick convergence to a connected graph (which is a graph where there exists a path between every two nodes) is obtained. The link between the number of connected components and the functional interpretation of the results is that the former could be interpreted as the minimum number of clusters that could be obtained with the given number of neighbours e.g. for the UMAP case, to obtain 5 communities from the clustering step, we would require at least 10 nearest neighbours.
+Another comparison may be performed on the PCA and UMAP embeddings to assess graph connectivity. We note that, when using UMAPs, groups of cells are more separated compared to PCAs, for which a quick convergence to a connected graph (which is a graph where there exists a path between every two nodes) is obtained. The link between the number of connected components and the functional interpretation of the results is that the former could be interpreted as the minimum number of clusters that could be obtained with the given number of neighbours e.g. for the UMAP case, to obtain 5 communities from the clustering step, we would require at least 10 nearest neighbours.
 
-```{r connected_comps_evolution, fig.width=7, fig.height=5}
+```{r comps_evo, fig.width=7, fig.height=5}
 plot_connected_comps_evolution(nn_conn_comps_object)
 ```
 
@@ -266,7 +289,7 @@ plot_connected_comps_evolution(nn_conn_comps_object)
 stop_time_nn_conn = Sys.time()
 ```
 
-`get_nn_importance` is a method used for assessing the impact of number of nearest neighbours, of the graph type (NN or SNN) and of the base embedding (PCA or UMAP) in determining the final number of clusters. The input is either a normalized expression matrix or a PCA embedding, a range for the number of neighbours and the reduction type used for building the graph. The graph type is not provided, as the method will check both cases i.e. aaa and bbb. The output comprises a list of configurations (reduction type, and the graph type). Each configuration will contain a list of unique partitions obtained from multiple runs (iterations) for each selected value of the nearest neighbours.
+`get_nn_importance` is a method used for assessing the impact of number of nearest neighbours, of the graph type (NN or SNN) and of the base embedding (PCA or UMAP) in determining the final number of clusters. The input is either a normalized expression matrix or a PCA embedding, a range for the number of neighbours and the reduction type used for building the graph. The graph type is not provided, as the method will check both cases i.e. NN and SNN. The output comprises a list of configurations (reduction type, and the graph type). Each configuration will contain a list of unique partitions obtained from multiple runs (iterations) for each selected value of the nearest neighbours.
 
 ```{r, include = FALSE}
 start_time_nn_importance = Sys.time()
@@ -287,7 +310,6 @@ nn_importance_object = mapply(c,
                                          n_neigh_sequence = seq(from = 5, to = 30, by = 5),
                                          n_repetitions = n_repetitions,
                                          graph_reduction_type = "UMAP",
-                                         transpose = TRUE,
                                          ecs_thresh = 1,
                                          ncores = n_cores,
                                          algorithm = 1,
@@ -298,13 +320,13 @@ nn_importance_object = mapply(c,
 )
 ```
 
-We input the resulting object into `plot_n_neigh_k_correspondence`, to generate the following plot; it summarizes the relationship between the number of nearest neighbours and k, the number of clusters. As for the # neighbours vs # connected components correspondence plot, we note a similar descending trend of the number of clusters proportional to the increase the number of nearest neighbours. The plot also illustrates the difference between the two graph types: SNN reaches more stable results in terms of the number of clusters (over multiple iterations). If the initial object contains graphs based on both UMAP and PCA embedding, this plot will showcase the impact of this choice, as well.
+We input the resulting object into `plot_n_neigh_k_correspondence`, to generate the following plot; it summarizes the relationship between the number of nearest neighbours and k, the number of clusters. As for the # neighbours vs # connected components correspondence plot, we note a similar descending trend of the number of clusters as the number of nearest neighbours increases. The plot also illustrates the difference between the two graph types: SNN has a tighter distribution of k (over multiple iterations) compared to NN. If the initial object contains graphs based on both UMAP and PCA embedding, this plot will showcase the impact of this choice, as well. For the Cuomo dataset, we notice that the UMAP-based graph is partitioned into a greater number of clusters compared to the PCA case.
 
-```{r n_neigh_k_correspondence, fig.width = 7, fig.height=5}
+```{r n_k_corr, fig.width = 7, fig.height=5}
 plot_n_neigh_k_correspondence(nn_importance_object)
 ```
 
-The stability of these parameters can be also evaluated using the Element-Centric Consistency applied on the partition list obtained over the multiple runs. The following summary plot underlines the evolution of the consistency as the number of neighbours increases; the SNN graph yields stable results even for smaller number of nearest neighbours, whereas the NN exhibits a stability improvement as the number of neighbours increases.
+The stability of these parameters can be also evaluated using the Element-Centric Consistency applied on the partition list obtained over the multiple runs. The following summary plot underlines the evolution of the consistency as the number of neighbours increases; the PCA graphs yields stable results even for smaller number of nearest neighbours, whereas the UMAP exhibits a stability improvement as the number of neighbours increases. For the same number of nearest neighbors, SNN is more stable than NN.
 
 ```{r n_neigh_ecs, fig.width=7, fig.height=5}
 plot_n_neigh_ecs(nn_importance_object)
@@ -319,8 +341,16 @@ stop_time_nn_importance = Sys.time()
 The final step in a standard single-cell analysis pipeline is applying a graph-based clustering method. Choosing a community detection algorithm has a significant impact on the partitioning results. Using the `get_clustering_difference` we assess the stability and reproducibility of results obtained using various graph clustering methods available in the Seurat package: Louvain, Louvain refined, SLM and Leiden.
 
 ```{r clustering_diff}
-cuomo = RunPCA(cuomo, npcs = 30, approx = F, verbose = F)
-cuomo = RunUMAP(cuomo,reduction = "pca", dims = 1:30, n.neighbors = 30, min.dist = 0.3, metric = "cosine", verbose = F)
+cuomo = RunPCA(cuomo,
+               npcs = 30,
+               approx = F,
+               verbose = F)
+cuomo = RunUMAP(cuomo,reduction = "pca",
+                dims = 1:30,
+                n.neighbors = 30,
+                min.dist = 0.3,
+                metric = "cosine",
+                verbose = F)
 adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
 
 start_time_clustering_method = Sys.time()
@@ -329,18 +359,18 @@ clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_mat
                                                 n_repetitions = n_repetitions,
                                                 ecs_thresh = 1,
                                                 ncores = n_cores,
-                                                algorithm = 1:3)
+                                                algorithm = 1:4)
 ```
 
-The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note similar outputs for all three algorithms. We also notice that Louvain and its refined version are less consistent for higher values of the resolution parameter. Thus, SLM is a more stable choice when it comes to clustering.
+The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot, we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note consistently high stability for all four algorithms, although Leiden seems to perform noticeably worse for the resolution value of 0.6.
 
-```{r clustering_difference_boxplot, fig.width = 7, fig.height=5}
+```{r diff_boxplot, fig.width = 7, fig.height=5}
 plot_clustering_difference_boxplot(clustering_diff_obj)
 ```
 
-To further underline the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the ECC score of the partitions obtained for each resolution parameter with each clustering method. We notice how increasing the resolution is causing a change of the unstable areas. For example, when resolution is 0.5 or 0.6, all algorithms are unstable in areas from the bottom-left islands. In the case where the resolution is 1, the area of instability has moved to the top-left island.
+To further underline the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the ECC score of the partitions obtained for each resolution parameter with each clustering method. We note how all four algorithms are unstable in similar regions of the plot (upper island as well as different parts of the shape in the lower left). In addition, we observe that the clustering methods, except Leiden, are more stable as the resolution value increases.
 
-```{r clustering_difference_facet, fig.width= 7, fig.height=10}
+```{r diff_facet, fig.width= 7, fig.height=10}
 plot_clustering_difference_facet(clustering_diff_obj, cuomo@reductions$umap@cell.embeddings)
 ```
 
@@ -368,12 +398,13 @@ resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$u
 
 The resulting object can be visualized with `plot_k_resolution_corresp` as shown in the code below; we showcase the relationship between the number of clusters and the resolution value. This plot also provides information on suitable resolution values for predefined number of clusters. The colour gradient is proportional to the number of occurrences of the most frequent partition. It can also be used as proxy to describe the co-variation between (k, resolution). Lighter (higher) values indicate that little variation is observed, on changes of the random seed, between the number of clusters and the resolution value.
 
-```{r k_resolution_corresp, fig.width = 7, fig.height=5}
-plot_k_resolution_corresp(resolution_gridsearch) + ggtitle("resolution - k correspondence with ecs threshold = 1")
+```{r k_res_corr_1, fig.width = 7, fig.height=5}
+plot_k_resolution_corresp(resolution_gridsearch) +
+  ggtitle("resolution - k correspondence with ecs threshold = 1")
 ```
 
 By default, the `get_resolution_importance` function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score.
-In practice, we also noticed minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.
+In practice, we also noticed cases with minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.
 
 ```{r merge_partitions}
 resolution_gridsearch_thresh_99 = merge_partitions(resolution_gridsearch,
@@ -383,11 +414,12 @@ resolution_gridsearch_thresh_99 = merge_partitions(resolution_gridsearch,
 
 Lowering the ECS threshold leads, in general, to higher number of occurences for the most frequent partition.
 
-```{r k_resolution_corresp_merged, fig.width = 7, fig.height=5}
-plot_k_resolution_corresp(resolution_gridsearch_thresh_99) + ggtitle("resolution - k correspondence with ecs threshold = 0.99")
+```{r k_res_corr_99, fig.width = 7, fig.height=5}
+plot_k_resolution_corresp(resolution_gridsearch_thresh_99) +
+  ggtitle("resolution - k correspondence with ecs threshold = 0.99")
 ```
 
-The `merge_resolutions` function diminishes the dependency between the resolution and the numver of clusters (k) i.e. the partitions with the same number of clusters, part of the same list for each configuration, are merged.
+The `merge_resolutions` merges the partitions with the same number of clusters into the same list, even if they come from different resolutions. The resulting object can be used to investigate the relationship between the number of clusters and the number of unique partitions.
 
 ```{r merge_resolutions}
 k_parts_obj = lapply(resolution_gridsearch, function(config_name) {
@@ -396,34 +428,47 @@ k_parts_obj = lapply(resolution_gridsearch, function(config_name) {
 })
 ```
 
-The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a high stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
+The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
 
-```{r k_n_partitions, fig.width=7, fig.height=5}
+```{r k_n_part_1, fig.width=7, fig.height=5}
 plot_k_n_partitions(k_parts_obj) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
+```
 
-
+```{r k_n_part_99, fig.width=7, fig.height=5}
 k_parts_obj_thresh_99 = merge_partitions(k_parts_obj,
                                          ecs_thresh = 0.99,
                                          ncores = n_cores)
 
-plot_k_n_partitions(k_parts_obj_thresh_99) + ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
+plot_k_n_partitions(k_parts_obj_thresh_99) +
+  ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
 ```
 
 ```{r, include = F}
 stop_time_resolution = Sys.time()
 ```
 
-We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other computers may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.
+We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other systems may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.
 
 ```{r}
-paste("Feature stability methods runtime:", format(as.numeric(stop_time_feature_stability - start_time_feature_stability, units = "mins")), "minutes")
-paste("NN - # connected components methods runtime:", format(as.numeric(stop_time_nn_conn - start_time_nn_conn, units = "mins")), "minutes")
-paste("NN importance methods runtime:", format(as.numeric(stop_time_nn_importance - start_time_nn_importance, units = "mins")), "minutes")
-paste("Clustering importance methods runtime:", format(as.numeric(stop_time_clustering_method - start_time_clustering_method, units = "mins")), "minutes")
-paste("Resolution gridsearch methods runtime:", format(as.numeric(stop_time_resolution - start_time_resolution, units = "mins")), "minutes")
+paste("Feature stability methods runtime:",
+      format(as.numeric(stop_time_feature_stability - start_time_feature_stability,
+                        units = "mins")), "minutes")
+paste("NN - # connected components methods runtime:",
+      format(as.numeric(stop_time_nn_conn - start_time_nn_conn,
+                        units = "mins")), "minutes")
+paste("NN importance methods runtime:",
+      format(as.numeric(stop_time_nn_importance - start_time_nn_importance,
+                        units = "mins")), "minutes")
+paste("Clustering importance methods runtime:",
+      format(as.numeric(stop_time_clustering_method - start_time_clustering_method,
+                        units = "mins")), "minutes")
+paste("Resolution gridsearch methods runtime:",
+      format(as.numeric(stop_time_resolution - start_time_resolution,
+                        units = "mins")), "minutes")
 ```
 
 
+# Session info
 ```{r}
 sessionInfo()
 ```
