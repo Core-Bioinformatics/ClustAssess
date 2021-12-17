@@ -99,7 +99,7 @@ get_feature_stability = function(data_matrix,
                                  feature_set,
                                  steps,
                                  feature_type,
-                                 n_repetitions = 30,
+                                 n_repetitions = 100,
                                  seed_sequence = NULL,
                                  graph_reduction_type = "PCA",
                                  npcs = 30,
@@ -740,7 +740,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 get_nn_conn_comps = function(object,
                              n_neigh_sequence,
                              config_name = "",
-                             n_repetitions = 30,
+                             n_repetitions = 100,
                              seed_sequence = NULL,
                              graph_reduction_type = "UMAP",
                              transpose = (graph_reduction_type == "PCA"),
@@ -1011,7 +1011,7 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #'     init = "random")
 get_nn_importance = function(object,
                              n_neigh_sequence,
-                             n_repetitions = 30,
+                             n_repetitions = 100,
                              seed_sequence = NULL,
                              graph_reduction_type = "PCA",
                              ecs_thresh = 1,
@@ -1138,7 +1138,7 @@ get_nn_importance = function(object,
                                                 verbose = F
                                               )
 
-                                              # apply the Leiden clustering on the graph specified by the variable `graph_type`
+                                              # apply the clustering method on the graph specified by the variable `graph_type`
                                               if(graph_type != 1) {
                                                 cluster_results_nn = Seurat::FindClusters(
                                                   neigh_matrix$nn,
@@ -1278,7 +1278,7 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 
 # 3. ECS distribution across different seeds for different number of neighbors
 
-#' Graph construction parameteres - ECC facet
+#' Graph construction parameters - ECC facet
 #'
 #' @description Display, for all configurations consisting in different number
 #' of neighbors, graph types and base embeddings, the EC Consistency of the partitions
@@ -1304,7 +1304,7 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #' plot_n_neigh_ecs(nn_importance_obj)
 plot_n_neigh_ecs = function(nn_ecs_object) {
   melted_obj = reshape2::melt(nn_ecs_object$n_neigh_ec_consistency)
-  colnames(melted_obj) = c("ECS", "n_neigh", "config_name")
+  colnames(melted_obj) = c("ECC", "n_neigh", "config_name")
 
   melted_obj$n_neigh = factor(melted_obj$n_neigh)
   melted_obj$n_neigh = factor(melted_obj$n_neigh, levels(melted_obj$n_neigh)[stringr::str_order(levels(melted_obj$n_neigh), numeric = T)])
@@ -1312,7 +1312,7 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
   ggplot2::ggplot(melted_obj,
                   ggplot2::aes(
                     x = .data$n_neigh,
-                    y = .data$ECS,
+                    y = .data$ECC,
                     fill = .data$config_name
                   )) +
     ggplot2::geom_boxplot() +
@@ -1320,7 +1320,7 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
     ggplot2::labs(x = "# of nearest neighbors",
                   y = "EC consistency",
                   fill = "configuration") +
-    ggplot2::ggtitle("Distribution of ECS across different seeds for different # neighbors")
+    ggplot2::ggtitle("Distribution of ECC across different seeds for different # neighbors")
 }
 
 ############################## Clustering ########################################
@@ -1374,7 +1374,7 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'     verbose = FALSE)
 get_clustering_difference = function(graph_adjacency_matrix,
                                      resolution,
-                                     n_repetitions = 30,
+                                     n_repetitions = 100,
                                      seed_sequence = NULL,
                                      ecs_thresh = 1,
                                      ncores = 1,
