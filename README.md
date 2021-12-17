@@ -137,6 +137,7 @@ or from github using remotes:
 `remotes::install_github("Core-Bioinformatics/ClustAssess")`
 
 The following packages are required for ClustAssess:
+
 * ggplot2
 * dplyr
 * fastcluster
@@ -157,6 +158,7 @@ The following packages are required for ClustAssess:
 
 To use all data-driven assessment methods, and run all examples and vignettes,
 the following packages are also needed:
+
 * knitr
 * rmarkdown
 * e1071
