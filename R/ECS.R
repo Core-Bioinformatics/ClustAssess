@@ -43,6 +43,7 @@ NULL
 #'
 #' @return The average element-wise similarity between the two Clusterings.
 #' @export
+#' @md
 #'
 #' @examples
 #' km.res = kmeans(mtcars, 3)$cluster
@@ -120,6 +121,7 @@ element_sim = function(clustering1,
 #' @return Vector of element-centric similarity between the two clusterings for
 #'  each element.
 #' @export
+#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -651,6 +653,7 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
 #' @export
+#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -1017,6 +1020,7 @@ merge_partitions = function(partition_list,
 #'
 #' @return a vector containing the element-wise consistency.
 #' @export
+#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -1181,6 +1185,7 @@ weighted_element_consistency = function(clustering_list,
 #'
 #' @return A vector containing the element-wise average agreement.
 #' @export
+#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
