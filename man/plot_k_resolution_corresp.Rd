@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_k_resolution_corresp}
 \alias{plot_k_resolution_corresp}
-\title{Correspondence between the resolution parameter and the number of clusters}
+\title{Correspondence Between Resolution and the Number of Clusters}
 \usage{
 plot_k_resolution_corresp(
   res_object_list,
@@ -22,15 +22,15 @@ names.}
 will be passed in the `width` argument of the `ggplot::position_dodge` method.}
 }
 \value{
-A ggplot object
-}
-\description{
-For each configuration provided in the object, display what
-number of clusters appear for different values of the resolution parameters.
-Different shapes of points indicate different configuration, while the color
+A ggplot2 object. Different shapes of points indicate different
+parameter configuration, while the color
 illustrates the frequency of the most common partition. The frequency is calculated
 as the fraction between the number of total appearances and the number of
 runs.
+}
+\description{
+For each configuration provided in the res_object_list, display what
+number of clusters appear for different values of the resolution parameters.
 }
 \examples{
 # get the PCA embedding of the data

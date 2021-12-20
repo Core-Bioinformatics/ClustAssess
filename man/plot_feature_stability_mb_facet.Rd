@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_feature_stability_mb_facet}
 \alias{plot_feature_stability_mb_facet}
-\title{Feature Stability - Cluster Membership facet}
+\title{Feature Stability - Cluster Membership Facet Plot}
 \usage{
 plot_feature_stability_mb_facet(
   feature_object_list,
@@ -13,7 +13,7 @@ plot_feature_stability_mb_facet(
 }
 \arguments{
 \item{feature_object_list}{An object or a concatenation of objects returned by the
-`get_feature_stability_object` method}
+`get_feature_stability` method}
 
 \item{text_size}{The size of the cluster label}
 
@@ -22,12 +22,12 @@ plot_feature_stability_mb_facet(
 \item{point_size}{The size of the points displayed on the plot.}
 }
 \value{
-A ggplot facet object
+A ggplot2 object.
 }
 \description{
-Display a facet of plots where each graph is associated with a step of
-a feature set and illustrates the distribution of the most frequent partition over the UMAP
-embedding.
+Display a facet of plots where each subpanel is associated with
+a feature set and illustrates the distribution of the most frequent partition
+over the UMAP embedding.
 }
 \examples{
 feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),

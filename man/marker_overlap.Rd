@@ -2,7 +2,7 @@
 % Please edit documentation in R/marker-overlap.R
 \name{marker_overlap}
 \alias{marker_overlap}
-\title{Cell-wise marker gene overlap}
+\title{Cell-Wise Marker Gene Overlap}
 \usage{
 marker_overlap(
   markers1,

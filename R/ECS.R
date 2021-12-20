@@ -4,10 +4,16 @@ NULL
 #' The Element-Centric Clustering Similarity
 #'
 #' @description Calculates the average element-centric similarity between two
-#' Clustering objects.
+#' clustering results
 #'
-#' @param clustering1 The first Clustering.
-#' @param clustering2 The second Clustering.
+#' @param clustering1 The first clustering result, which can be one of:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param clustering2 The second clustering result, which can be one of:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
 #' @param alpha A numeric giving the personalized PageRank damping factor;
 #' 1 - alpha is the restart probability for the PPR random walk.
 #' @param ppr_implementation_cl1 Choose a implementation for personalized
@@ -81,10 +87,16 @@ element_sim = function(clustering1,
 #' The Element-Centric Clustering Similarity for each Element
 #'
 #' @description Calculates the element-wise element-centric similarity between
-#' two Clustering objects.
+#' two clustering results.
 #'
-#' @param clustering1 The first Clustering.
-#' @param clustering2 The second Clustering.
+#' @param clustering1 The first clustering result, which can be one of:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param clustering2 The second clustering result, which can be one of:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
 #' @param alpha A numeric giving the personalized PageRank damping factor;
 #' 1 - alpha is the restart probability for the PPR random walk.
 #' @param ppr_implementation_cl1 Choose a implementation for personalized
@@ -146,7 +158,7 @@ element_sim_elscore = function(clustering1,
                                row_normalize_cl2 = TRUE) {
 
   # if both clusterings are membership vectors, calculate the ecs without
-  # creating a ClustAssess object
+  # creating a Clustering object
   if(any(class(clustering1) %in% c("numeric", "integer", "factor", "character")) &&
      any(class(clustering2) %in% c("numeric", "integer", "factor", "character"))) {
 
@@ -626,7 +638,7 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' @description Compare a set of clusterings by calculating their pairwise
 #' average element-centric clustering similarities.
 #'
-#' @param clustering_list The clustering result, either:
+#' @param clustering_list The list of clustering results, each of which is either:
 #' * A numeric/character/factor vector of cluster labels for each element.
 #' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
 #' * An hclust object.
@@ -689,7 +701,7 @@ element_sim_matrix = function(clustering_list,
 
   if(any(are_all_flat_disjoint == FALSE) &&
      any(are_all_viable_objects == FALSE)) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
+    stop("Please ensure each entry in clustering_list is from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
   # if the condition is met, perform element frustration using only the membership vector
@@ -938,9 +950,9 @@ merge_partitions_ecs = function(partition_list,
   merged_partitions
 }
 
-#' Merge partitions
-#' @description Merge partitions whose ECS score is above a given threshold.
-#' The merging is done using a complete linkage approach.
+#' Merge Partitions
+#' @description Merge flat disjoint clusterings whose pairwise ECS score is
+#' above a given threshold. The merging is done using a complete linkage approach.
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
@@ -950,7 +962,7 @@ merge_partitions_ecs = function(partition_list,
 #' @return a list of the merged partitions
 #' @export
 #' @examples
-#' initial_list = list(c(1,1,2), c(2,2,2))
+#' initial_list = list(c(1,1,2), c(2,2,2), c('B','B','A'))
 #' merge_partitions(initial_list, 0.99)
 merge_partitions = function(partition_list,
                             ecs_thresh = 0.99,
@@ -995,7 +1007,7 @@ merge_partitions = function(partition_list,
 #' @description Inspect the consistency of a set of clusterings by calculating
 #' their element-wise clustering consistency (also known as element-wise frustration).
 #'
-#' @param clustering_list The clustering result, either:
+#' @param clustering_list The list of clustering results, each of which is either:
 #' * A numeric/character/factor vector of cluster labels for each element.
 #' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
 #' * An hclust object.
@@ -1051,7 +1063,7 @@ element_consistency = function(clustering_list,
 
   if(any(are_all_flat_disjoint == FALSE) &&
      any(are_all_viable_objects == FALSE)) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
+    stop("Please ensure each entry in clustering_list is from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
   # if the condition is met, perform element consistency using only the membership vector
@@ -1074,7 +1086,7 @@ element_consistency = function(clustering_list,
                                            dist_rescaled = dist_rescaled,
                                            row_normalize = row_normalize)
 
-  # calculate the consistency between the ClustAssess objects
+  # calculate the consistency between the Clustering objects
   n.clusterings = length(clustering_list)
   consistency = rep(0, length(clustering_list[[1]]))
   for (i in 1:(n.clusterings-1)){
@@ -1160,7 +1172,7 @@ weighted_element_consistency = function(clustering_list,
 #' * A numeric/character/factor vector of cluster labels for each element.
 #' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
 #' * An hclust object.
-#' @param clustering_list The clustering list, either:
+#' @param clustering_list The list of clustering results, each of which is either:
 #' * A numeric/character/factor vector of cluster labels for each element.
 #' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
 #' * An hclust object.
@@ -1228,7 +1240,7 @@ element_agreement = function(reference_clustering,
   if(any(are_all_flat_disjoint == FALSE &&
          are_all_viable_objects == FALSE) ||
      !(any(class(reference_clustering) %in% c("numeric", "integer", "factor", "character", "matrix", "Matrix", "hclust") ))) {
-    stop("You should provide objects from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
+    stop("Please ensure reference_clustering and each entry in clustering_list is from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
   }
 
   clustering_list = create_clustering_list(object_list = clustering_list,
@@ -1240,7 +1252,7 @@ element_agreement = function(reference_clustering,
                                            dist_rescaled = dist_rescaled,
                                            row_normalize = row_normalize)
 
-  # create ClustAssess object for the reference clustering
+  # create Clustering object for the reference clustering
   if(methods::is(reference_clustering, "hclust")) {
     reference_clustering = create_clustering(clustering_result = reference_clustering,
                                              alpha = alpha,
@@ -1314,7 +1326,7 @@ element_agreement_flat_disjoint = function(reference_clustering,
   return(avg_agreement / length(clustering_list))
 }
 
-# create a list of ClustAssess objects
+# create a list of Clustering objects
 create_clustering_list = function(object_list,
                                   ncores = 1,
                                   alpha = 0.9,

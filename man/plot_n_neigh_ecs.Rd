@@ -11,7 +11,7 @@ plot_n_neigh_ecs(nn_ecs_object)
 `get_nn_importance` method.}
 }
 \value{
-A ggplot facet object
+A ggplot2 object.
 }
 \description{
 Display, for all configurations consisting in different number

@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_connected_comps_evolution}
 \alias{plot_connected_comps_evolution}
-\title{Graphical representation of the link between NN and graph connectivity}
+\title{Relationship Between Number of Nearest Neighbors and Graph Connectivity}
 \usage{
 plot_connected_comps_evolution(nn_conn_comps_object)
 }
@@ -11,12 +11,11 @@ plot_connected_comps_evolution(nn_conn_comps_object)
 `get_nn_conn_comps` method.}
 }
 \value{
-A ggplot object
+A ggplot2 object with boxplots for the connected component distributions.
 }
 \description{
-Display, for each number of neighbors, the distribution of the
-number connected components obtained at different seeds. The distribution is
-displayed as a boxplot.
+Display the distribution of the number connected components
+obtained for each number of neighbors across random seeds.
 }
 \note{
 The number of connected components is displayed on a logarithmic scale.

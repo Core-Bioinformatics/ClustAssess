@@ -2,7 +2,7 @@
 % Please edit documentation in R/ECS.R
 \name{merge_partitions}
 \alias{merge_partitions}
-\title{Merge partitions}
+\title{Merge Partitions}
 \usage{
 merge_partitions(partition_list, ecs_thresh = 0.99, ncores = 1, order = TRUE)
 }
@@ -20,10 +20,10 @@ If the value is set to 1, the code will be run sequentially.}
 a list of the merged partitions
 }
 \description{
-Merge partitions whose ECS score is above a given threshold.
-The merging is done using a complete linkage approach.
+Merge flat disjoint clusterings whose pairwise ECS score is
+above a given threshold. The merging is done using a complete linkage approach.
 }
 \examples{
-initial_list = list(c(1,1,2), c(2,2,2))
+initial_list = list(c(1,1,2), c(2,2,2), c('B','B','A'))
 merge_partitions(initial_list, 0.99)
 }

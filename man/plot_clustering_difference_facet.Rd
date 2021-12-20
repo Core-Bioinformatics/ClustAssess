@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_clustering_difference_facet}
 \alias{plot_clustering_difference_facet}
-\title{Graphical representation of the clustering method importance}
+\title{Clustering Method Stability Facet Plot}
 \usage{
 plot_clustering_difference_facet(
   clustering_difference_object,
@@ -28,15 +28,16 @@ row is associated with a resolution value and each column with a clustering meth
 a wrap.}
 }
 \value{
-A ggplot facet object
+A ggplot2 object.
 }
 \description{
-Display, for each clustering method and each resolution value,
-the distribution of the EC consistency on a given embedding. We will use the `all`
-field of the object returned by the `get_clustering_difference_object` method.
+Display the distribution of the EC consistency for each
+clustering method and each resolution value on a given embedding The `all`
+field of the object returned by the `get_clustering_difference_object` method is used.
 }
 \examples{
-adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
+pca.mt=prcomp(as.matrix(mtcars))$x
+adj_matrix = Seurat::FindNeighbors(pca.mt,
     k.param = 5,
     nn.method = "rann",
     verbose = FALSE,
@@ -46,5 +47,5 @@ clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
     n_repetitions = 1,
     algorithm = 1,
     verbose = FALSE)
-plot_clustering_difference_facet(clust_diff_obj, as.matrix(mtcars[,1:2]))
+plot_clustering_difference_facet(clust_diff_obj, pca.mt[,1:2])
 }

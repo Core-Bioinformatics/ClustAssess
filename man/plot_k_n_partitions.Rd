@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_k_n_partitions}
 \alias{plot_k_n_partitions}
-\title{Reproducibility display of the number of clusters}
+\title{Relationship Between the Number of Clusters and the Number of Unique Partitions}
 \usage{
 plot_k_n_partitions(partition_obj_list, object_names = NULL)
 }
@@ -15,14 +15,14 @@ configuration; if not specified, the plot will use the generated configuration
 names.}
 }
 \value{
-A ggplot object
-}
-\description{
-For each configuration provided in the object, display how
-many different partitions with the same number of clusters can be obtained
-by changing the seed. The color gradient suggests the frequency of the most
+A ggplot2 object. The color gradient suggests the frequency of the most
 common partition relative to the total number of appearances of that specific
 number of clusters.
+}
+\description{
+For each configuration provided in partition_obj_list, display how
+many different partitions with the same number of clusters can be obtained
+by changing the seed.
 }
 \examples{
 # get the PCA embedding of the data

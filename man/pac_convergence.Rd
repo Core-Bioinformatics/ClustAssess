@@ -12,7 +12,9 @@ pac_convergence(pac_res, k_plot)
 \item{k_plot}{A vector with values of k to plot.}
 }
 \value{
-A ggplot2 object with the convergence plot.
+A ggplot2 object with the convergence plot. Convergence has been
+reached when the lines flatten out across k_plot values.
+out across
 }
 \description{
 Plot PAC across iterations for a set of k to assess convergence.

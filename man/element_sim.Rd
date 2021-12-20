@@ -21,9 +21,19 @@ element_sim(
 )
 }
 \arguments{
-\item{clustering1}{The first Clustering.}
+\item{clustering1}{The first clustering result, which can be one of:
+\itemize{
+\item A numeric/character/factor vector of cluster labels for each element.
+\item A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+\item An hclust object.
+}}
 
-\item{clustering2}{The second Clustering.}
+\item{clustering2}{The second clustering result, which can be one of:
+\itemize{
+\item A numeric/character/factor vector of cluster labels for each element.
+\item A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+\item An hclust object.
+}}
 
 \item{alpha}{A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.}
@@ -32,14 +42,18 @@ element_sim(
 
 \item{rescale_path_type_cl1}{A string; rescale the hierarchical height of
 the first clustering by:
-* "max" : the maximum path from the root.
-* "min" : the minimum path form the root.
-* "linkage" : use the linkage distances in the clustering.}
+\itemize{
+\item "max" : the maximum path from the root.
+\item "min" : the minimum path form the root.
+\item "linkage" : use the linkage distances in the clustering.
+}}
 
 \item{ppr_implementation_cl1}{Choose a implementation for personalized
 page-rank calculation for the first clustering:
-* "prpack": use PPR algorithms in igraph.
-* "power_iteration": use power_iteration method.}
+\itemize{
+\item "prpack": use PPR algorithms in igraph.
+\item "power_iteration": use power_iteration method.
+}}
 
 \item{dist_rescaled_cl1}{A logical: if TRUE, the linkage distances of the first
 clustering are linearly rescaled to be in-between 0 and 1.}
@@ -52,14 +66,18 @@ TRUE, which will lead to slightly different ECS values compared to clusim.}
 
 \item{rescale_path_type_cl2}{A string; rescale the hierarchical height of
 the second clustering by:
-* "max" : the maximum path from the root.
-* "min" : the minimum path form the root.
-* "linkage" : use the linkage distances in the clustering.}
+\itemize{
+\item "max" : the maximum path from the root.
+\item "min" : the minimum path form the root.
+\item "linkage" : use the linkage distances in the clustering.
+}}
 
 \item{ppr_implementation_cl2}{Choose a implementation for personalized
 page-rank calculation for the second clustering:
-* "prpack": use PPR algorithms in igraph.
-* "power_iteration": use power_iteration method.}
+\itemize{
+\item "prpack": use PPR algorithms in igraph.
+\item "power_iteration": use power_iteration method.
+}}
 
 \item{dist_rescaled_cl2}{A logical: if TRUE, the linkage distances of the second
 clustering are linearly rescaled to be in-between 0 and 1.}
@@ -73,7 +91,7 @@ The average element-wise similarity between the two Clusterings.
 }
 \description{
 Calculates the average element-centric similarity between two
-Clustering objects.
+clustering results
 }
 \examples{
 km.res = kmeans(mtcars, 3)$cluster

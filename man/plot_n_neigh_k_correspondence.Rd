@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_n_neigh_k_correspondence}
 \alias{plot_n_neigh_k_correspondence}
-\title{Graphical representation of the link between NN and number of clusters}
+\title{Relationship Between Number of Nearest Neighbors and Number of Clusters}
 \usage{
 plot_n_neigh_k_correspondence(nn_object_n_clusters)
 }
@@ -11,12 +11,11 @@ plot_n_neigh_k_correspondence(nn_object_n_clusters)
 `get_nn_importance` method.}
 }
 \value{
-A ggplot object
+A ggplot2 object with the distributions displayed as boxplots.
 }
 \description{
-Display, for each number of neighbors, the distribution of the
-number of clusters obtained at different seeds. The distribution is
-displayed as a boxplot.
+Display the distribution of the
+number of clusters obtained for each number of neighbors across random seeds.
 }
 \note{
 The number of clusters is displayed on a logarithmic scale.

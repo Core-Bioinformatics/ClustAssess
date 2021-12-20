@@ -139,7 +139,9 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
 #' @param pac_res The data.frame output by consensus_cluster.
 #' @param k_plot A vector with values of k to plot.
 #'
-#' @return A ggplot2 object with the convergence plot.
+#' @return A ggplot2 object with the convergence plot. Convergence has been
+#' reached when the lines flatten out across k_plot values.
+#' out across
 #' @export
 #'
 #' @importFrom rlang .data
@@ -165,10 +167,11 @@ pac_convergence = function(pac_res, k_plot){
 #' of clusters.
 #'
 #' @param pac_res The data.frame output by consensus_cluster.
-#' @param n_shade The number of iterations to shade to show the
-#' variability of PAC across the last n_shade iterations.
+#' @param n_shade The PAC values across the last n_shade iterations will be
+#' shaded to illustrate the how stable the PAC score is.
 #'
-#' @return A ggplot2 object with the final PAC vs k plot.
+#' @return A ggplot2 object with the final PAC vs k plot. A local minimum in the
+#' landscape indicates an especially stable value of k.
 #' @export
 #'
 #' @importFrom rlang .data

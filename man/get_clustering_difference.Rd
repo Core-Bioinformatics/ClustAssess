@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{get_clustering_difference}
 \alias{get_clustering_difference}
-\title{Clustering Method Importance}
+\title{Graph Clustering Method Stability}
 \usage{
 get_clustering_difference(
   graph_adjacency_matrix,
@@ -49,8 +49,8 @@ size
 }
 }
 \description{
-Analyzes the importance of choosing a specific graph clustering
-method in the pipeline. The method will iterate through different values of
+Evaluates the stability of different graph clustering methods
+in the clustering pipeline. The method will iterate through different values of
 the resolution parameter and compare, using the EC Consistency score, the
 partitions obtained at different seeds.
 }

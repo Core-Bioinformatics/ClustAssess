@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{get_nn_importance}
 \alias{get_nn_importance}
-\title{Graph building Parameters Importance}
+\title{Assess Graph Building Parameters}
 \usage{
 get_nn_importance(
   object,
@@ -19,9 +19,10 @@ get_nn_importance(
 )
 }
 \arguments{
-\item{object}{A matrix object. If the graph reduction type is PCA, the object
+\item{object}{The data matrix. If the graph reduction type is PCA, the object
 should be an expression matrix, with features on rows and observations on columns;
-in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.}
+in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
+See also the transpose argument.}
 
 \item{n_neigh_sequence}{A sequence of the number of nearest neighbours.}
 
@@ -39,7 +40,9 @@ should be built on either the PCA or the UMAP embedding.}
 \item{ncores}{The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.}
 
-\item{transpose}{Decides whether the input object will be transposed or not.}
+\item{transpose}{Logical: whether the input object will be transposed or not.
+Set to FALSE if the input is an observations X features matrix, and set to TRUE
+if the input is a features X observations matrix.}
 
 \item{graph_type}{Argument indicating whether the graph should be
 unweighted (0), weighted (1) or both (2).}
@@ -63,8 +66,8 @@ number of neighbors
 }
 }
 \description{
-Creates an object that contain stability measurements and assessments
-when changing the values of different parameters involved in the Graph Building step,
+Evaluates clustering stability when changing the values of different
+parameters involved in the graph building step,
 namely the base embedding, the graph type and the number of neighbours.
 }
 \examples{

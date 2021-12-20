@@ -11,7 +11,7 @@ jaccard_index = function(a,
   }
 }
 
-#' Cell-wise marker gene overlap
+#' Cell-Wise Marker Gene Overlap
 #'
 #' @description Calculates the per-cell overlap of previously calculated
 #' marker genes.

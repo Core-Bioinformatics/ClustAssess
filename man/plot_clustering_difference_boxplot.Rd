@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{plot_clustering_difference_boxplot}
 \alias{plot_clustering_difference_boxplot}
-\title{Graphical representation of the clustering method importance}
+\title{Clustering Method Stability Boxplot}
 \usage{
 plot_clustering_difference_boxplot(clustering_difference_object, text_size = 3)
 }
@@ -13,13 +13,14 @@ plot_clustering_difference_boxplot(clustering_difference_object, text_size = 3)
 \item{text_size}{The size of the labels above boxplots.}
 }
 \value{
-A ggplot object
+A ggplot2 object with the EC consistency distributions. Higher
+consistency indicates a more stable clustering.
 }
 \description{
-Display, for each clustering method and each resolution value,
-the distribution of the EC consistency as a boxplot. We will use the `filtered`
-field of the object returned by the `get_clustering_difference_object` method.
-Above each boxplot, the number of clusters will be displayed.
+Display EC consistency across clustering method and resolution
+values. The `filtered` field of the object returned by the
+`get_clustering_difference_object` method is used.
+Above each boxplot, the number of clusters is displayed.
 }
 \examples{
 adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),

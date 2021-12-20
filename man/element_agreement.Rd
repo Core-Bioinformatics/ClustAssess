@@ -19,14 +19,18 @@ element_agreement(
 \arguments{
 \item{reference_clustering}{The reference clustering, that each clustering in
 clustering_list is compared to. It can be either:
-* A numeric/character/factor vector of cluster labels for each element.
-* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
-* An hclust object.}
+\itemize{
+\item A numeric/character/factor vector of cluster labels for each element.
+\item A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+\item An hclust object.
+}}
 
-\item{clustering_list}{The clustering list, either:
-* A numeric/character/factor vector of cluster labels for each element.
-* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
-* An hclust object.}
+\item{clustering_list}{The list of clustering results, each of which is either:
+\itemize{
+\item A numeric/character/factor vector of cluster labels for each element.
+\item A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+\item An hclust object.
+}}
 
 \item{alpha}{A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.}
@@ -34,14 +38,18 @@ clustering_list is compared to. It can be either:
 \item{r}{A numeric hierarchical scaling parameter.}
 
 \item{rescale_path_type}{A string; rescale the hierarchical height by:
-* "max" : the maximum path from the root.
-* "min" : the minimum path form the root.
-* "linkage" : use the linkage distances in the clustering.}
+\itemize{
+\item "max" : the maximum path from the root.
+\item "min" : the minimum path form the root.
+\item "linkage" : use the linkage distances in the clustering.
+}}
 
 \item{ppr_implementation}{Choose a implementation for personalized
 page-rank calculation:
-* "prpack": use PPR algorithms in igraph.
-* "power_iteration": use power_iteration method.}
+\itemize{
+\item "prpack": use PPR algorithms in igraph.
+\item "power_iteration": use power_iteration method.
+}}
 
 \item{dist_rescaled}{A logical: if TRUE, the linkage distances are linearly
 rescaled to be in-between 0 and 1.}

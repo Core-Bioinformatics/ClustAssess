@@ -8,16 +8,16 @@ plot_feature_stability_boxplot(feature_object_list, text_size = 4)
 }
 \arguments{
 \item{feature_object_list}{An object or a concatenation of objects returned by the
-`get_feature_stability_object` method}
+`get_feature_stability` method}
 
 \item{text_size}{The size of the labels above boxplots.}
 }
 \value{
-A ggplot object
+A ggplot2 object.
 }
 \description{
-Display, for each feature set and for each step, the distribution
-of the ECC as a boxplot. Above each boxplot there will a number representing
+Display EC consistency for each feature set and for each step.
+Above each boxplot there is a number representing
 the step (or the size of the subset)
 }
 \examples{

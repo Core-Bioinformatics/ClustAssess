@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{get_resolution_importance}
 \alias{get_resolution_importance}
-\title{Resolution importance}
+\title{Evaluate Stability Across Resolution, Number of Neighbors, and Graph Type}
 \usage{
 get_resolution_importance(
   embedding,
@@ -59,7 +59,7 @@ the seed used to obtain this partition in this configuration.
 }
 }
 \description{
-Perform a gridsearch over the resolution, number of neighbors
+Perform a grid search over the resolution, number of neighbors
 and graph type.
 }
 \examples{

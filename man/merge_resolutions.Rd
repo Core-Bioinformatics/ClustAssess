@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{merge_resolutions}
 \alias{merge_resolutions}
-\title{Merge resolutions}
+\title{Merge Resolutions}
 \usage{
 merge_resolutions(res_obj, ncores = 1)
 }
@@ -22,25 +22,4 @@ of cluster will contain a list of all merged partitions. To avoid duplicates,
 Merge partitions obtained with different resolution values
 that have the same number of clusters.
 }
-\examples{
-merge_resolutions(list(
- "0.8" = list(
-   "2" = list(
-     list(mb = c(1,1,1,2),
-          freq = 2),
-     list(mb = c(1,1,2,2),
-          freq = 5)
-   )
- ),
- "0.9" = list(
-   "3" = list(
-     list(mb = c(1,2,3,3),
-          freq = 1)
-   ),
-   "2" = list(
-     list(mb = c(2,2,3,3),
-          freq = 2)
-   )
- )
-))
-}
+\keyword{internal}

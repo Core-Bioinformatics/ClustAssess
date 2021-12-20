@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{get_nn_conn_comps}
 \alias{get_nn_conn_comps}
-\title{Nearest Neighbors - Connected Components Link}
+\title{Relationship Between Nearest Neighbors and Connected Components}
 \usage{
 get_nn_conn_comps(
   object,
@@ -17,9 +17,10 @@ get_nn_conn_comps(
 )
 }
 \arguments{
-\item{object}{A matrix object. If the graph reduction type is PCA, the object
+\item{object}{A data matrix. If the graph reduction type is PCA, the object
 should be an expression matrix, with features on rows and observations on columns;
-in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.}
+in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
+See also the transpose argument.}
 
 \item{n_neigh_sequence}{A sequence of the number of nearest neighbors.}
 
@@ -31,7 +32,9 @@ in the case of UMAP, the user could also provide a matrix associated to a PCA em
 
 \item{graph_reduction_type}{The graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.}
 
-\item{transpose}{Decides whether the input object will be transposed or not.}
+\item{transpose}{Logical: whether the input object will be transposed or not.
+Set to FALSE if the input is an observations X features matrix, and set to TRUE
+if the input is a features X observations matrix.}
 
 \item{ncores}{The number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.}
 
@@ -43,9 +46,9 @@ Each value contains an array of the number of connected components
 obtained on the specified number of repetitions.
 }
 \description{
-One of the steps in the PhenoGraph pipeline is building a graph
-by using the kNN method on a reduced-space embedding. This method returns an
-object that describes the relationship between different number of nearest
+One of the steps in the clustering pipeline is building a
+k-nearest neighbor graph on a reduced-space embedding. This method assesses
+the relationship between different number of nearest
 neighbors and the connectivity of the graph. In the context of graph clustering,
 the number of connected components can be used as a
 lower bound for the number of clusters. The calculations are performed multiple

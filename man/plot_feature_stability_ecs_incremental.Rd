@@ -12,7 +12,7 @@ plot_feature_stability_ecs_incremental(
 }
 \arguments{
 \item{feature_object_list}{An object or a concatenation of objects returned by the
-`get_feature_stability_object` method.}
+`get_feature_stability` method.}
 
 \item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
 will be passed in the `width` argument of the `ggplot2::position_dodge` method.}
@@ -20,12 +20,12 @@ will be passed in the `width` argument of the `ggplot2::position_dodge` method.}
 \item{text_size}{The size of the labels above boxplots.}
 }
 \value{
-A ggplot object
+A ggplot2 object with ECS distribution will be displayed as a
+boxplot. Above each boxplot there will be a pair of numbers representing the
+two steps that are compared.
 }
 \description{
-Perform an incremental ECS between two consecutive steps. The
-ECS distribution will be displayed as a boxplot. Above each boxplot there will be
-a pair of numbers representing the two steps that are compared.
+Perform an incremental ECS between two consecutive feature steps.
 }
 \examples{
 feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),

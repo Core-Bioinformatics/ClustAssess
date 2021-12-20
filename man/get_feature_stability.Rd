@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-based-parameter-assessment.R
 \name{get_feature_stability}
 \alias{get_feature_stability}
-\title{Feature Stability Object Generator}
+\title{Evaluate Feature Set Stability}
 \usage{
 get_feature_stability(
   data_matrix,
@@ -63,8 +63,8 @@ contains a list with three fields:
 }
 }
 \description{
-Creates an object that summaries the consistency of the partitions obtained
-across different runs for varying subsets of a given feature set.
+Evaluate the stability of clusterings obtained
+based on incremental subsets of a given feature set.
 }
 \note{
 The algorithm assumes that the feature_set is already sorted when performing

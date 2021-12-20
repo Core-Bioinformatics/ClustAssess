@@ -38,10 +38,10 @@ generate_breaks = function(min.range, max.range) {
 
 #### PCA ####
 
-#' Feature Stability Object Generator
+#' Evaluate Feature Set Stability
 #'
-#' @description Creates an object that summaries the consistency of the partitions obtained
-#' across different runs for varying subsets of a given feature set.
+#' @description Evaluate the stability of clusterings obtained
+#' based on incremental subsets of a given feature set.
 #'
 #' @param data_matrix A data matrix having the features on the rows
 #' and the observations on the columns.
@@ -307,16 +307,16 @@ get_feature_stability = function(data_matrix,
 
 #' Feature Stability Boxplot
 #'
-#' @description Display, for each feature set and for each step, the distribution
-#' of the ECC as a boxplot. Above each boxplot there will a number representing
+#' @description Display EC consistency for each feature set and for each step.
+#' Above each boxplot there is a number representing
 #' the step (or the size of the subset)
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability_object` method
+#' `get_feature_stability` method
 #' @param text_size The size of the labels above boxplots.
 #'
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object.
 #' @export
 #'
 #' @examples
@@ -338,7 +338,7 @@ plot_feature_stability_boxplot = function(feature_object_list,
                                           text_size = 4) {
   min_index = -1 # indicates the number of steps that will be displayed on the plot
 
-  # create a dataframe based on the object returned by `get_feature_stability_object`
+  # create a dataframe based on the object returned by `get_feature_stability`
   for(config_name in names(feature_object_list)) {
     melt_object = reshape2::melt(lapply(feature_object_list[[config_name]], function(x) {
       x$ecc
@@ -401,20 +401,20 @@ plot_feature_stability_boxplot = function(feature_object_list,
     ggplot2::ylab("EC consistency")
 }
 
-#' Feature Stability - Cluster Membership facet
+#' Feature Stability - Cluster Membership Facet Plot
 #'
-#' @description Display a facet of plots where each graph is associated with a step of
-#' a feature set and illustrates the distribution of the most frequent partition over the UMAP
-#' embedding.
+#' @description Display a facet of plots where each subpanel is associated with
+#' a feature set and illustrates the distribution of the most frequent partition
+#' over the UMAP embedding.
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability_object` method
+#' `get_feature_stability` method
 #' @param text_size The size of the cluster label
 #' @param n_facet_cols The number of facet's columns.
 #' @param point_size The size of the points displayed on the plot.
 #'
 #'
-#' @return A ggplot facet object
+#' @return A ggplot2 object.
 #' @export
 #'
 #' @examples
@@ -496,18 +496,18 @@ plot_feature_stability_mb_facet = function(feature_object_list,
     ggplot2::facet_wrap(~ config_name + steps, ncol = n_facet_cols)
 }
 
-#' Feature Stability - ECC facet
+#' Feature Stability - EC Consistency Facet Plot
 #'
-#' @description Display a facet of plots where each graph is associated with a step of
-#' a feature set and illustrates the distribution of the ECC score over the UMAP
-#' embedding.
+#' @description Display a facet of plots where each subpanel is associated with a
+#' feature set and illustrates the distribution of the EC consistency score
+#' over the UMAP embedding.
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability_object` method
+#' `get_feature_stability` method
 #' @param n_facet_cols The number of facet's columns.
 #' @param point_size The size of the points displayed on the plot.
 #'
-#' @return A ggplot facet object
+#' @return A ggplot2 object
 #' @export
 #'
 #' @examples
@@ -573,17 +573,18 @@ plot_feature_stability_ecs_facet = function(feature_object_list,
 
 #' Feature Stability Incremental Boxplot
 #'
-#' @description Perform an incremental ECS between two consecutive steps. The
-#' ECS distribution will be displayed as a boxplot. Above each boxplot there will be
-#' a pair of numbers representing the two steps that are compared.
+#' @description Perform an incremental ECS between two consecutive feature steps.
+#'
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability_object` method.
+#' `get_feature_stability` method.
 #' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
 #' will be passed in the `width` argument of the `ggplot2::position_dodge` method.
 #' @param text_size The size of the labels above boxplots.
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object with ECS distribution will be displayed as a
+#' boxplot. Above each boxplot there will be a pair of numbers representing the
+#' two steps that are compared.
 #' @export
 #'
 #' @examples
@@ -691,25 +692,28 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 
 #### connected components ####
 
-#' Nearest Neighbors - Connected Components Link
+#' Relationship Between Nearest Neighbors and Connected Components
 #'
-#' @description One of the steps in the PhenoGraph pipeline is building a graph
-#' by using the kNN method on a reduced-space embedding. This method returns an
-#' object that describes the relationship between different number of nearest
+#' @description One of the steps in the clustering pipeline is building a
+#' k-nearest neighbor graph on a reduced-space embedding. This method assesses
+#' the relationship between different number of nearest
 #' neighbors and the connectivity of the graph. In the context of graph clustering,
 #' the number of connected components can be used as a
 #' lower bound for the number of clusters. The calculations are performed multiple
 #' times by changing the seed at each repetition.
 #'
-#' @param object A matrix object. If the graph reduction type is PCA, the object
+#' @param object A data matrix. If the graph reduction type is PCA, the object
 #' should be an expression matrix, with features on rows and observations on columns;
 #' in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
+#' See also the transpose argument.
 #' @param n_neigh_sequence A sequence of the number of nearest neighbors.
 #' @param config_name User specified string that uniquely describes the embedding characteristics.
 #' @param n_repetitions The number of repetitions of applying the pipeline with different seeds; ignored if seed_sequence is provided by the user.
 #' @param seed_sequence A custom seed sequence; if the value is NULL, the sequence will be built starting from 1 with a step of 100.
 #' @param graph_reduction_type The graph reduction type, denoting if the graph should be built on either the PCA or the UMAP embedding.
-#' @param transpose Decides whether the input object will be transposed or not.
+#' @param transpose Logical: whether the input object will be transposed or not.
+#' Set to FALSE if the input is an observations X features matrix, and set to TRUE
+#' if the input is a features X observations matrix.
 #' @param ncores The number of parallel R instances that will run the code. If the value is set to 1, the code will be run sequentially.
 #' @param ... Additional arguments passed to the `irlba::irlba` or the `uwot::umap` method, depending on the value of graph_reduction_type.
 #'
@@ -879,17 +883,16 @@ get_nn_conn_comps = function(object,
   nn_conn_comps_list
 }
 
-#' Graphical representation of the link between NN and graph connectivity
+#' Relationship Between Number of Nearest Neighbors and Graph Connectivity
 #'
-#' @description Display, for each number of neighbors, the distribution of the
-#' number connected components obtained at different seeds. The distribution is
-#' displayed as a boxplot.
+#' @description Display the distribution of the number connected components
+#' obtained for each number of neighbors across random seeds.
 #'
 #' @param nn_conn_comps_object An object or a concatenation of objects returned by the
 #' `get_nn_conn_comps` method.
 #'
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object with boxplots for the connected component distributions.
 #' @export
 #'
 #' @note The number of connected components is displayed on a logarithmic scale.
@@ -948,15 +951,16 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 
 #### number of neigh, graph type importance ####
 
-#' Graph building Parameters Importance
+#' Assess Graph Building Parameters
 #'
-#' @description Creates an object that contain stability measurements and assessments
-#' when changing the values of different parameters involved in the Graph Building step,
+#' @description Evaluates clustering stability when changing the values of different
+#' parameters involved in the graph building step,
 #' namely the base embedding, the graph type and the number of neighbours.
 #'
-#' @param object A matrix object. If the graph reduction type is PCA, the object
+#' @param object The data matrix. If the graph reduction type is PCA, the object
 #' should be an expression matrix, with features on rows and observations on columns;
 #' in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
+#' See also the transpose argument.
 #' @param n_neigh_sequence A sequence of the number of nearest neighbours.
 #' @param n_repetitions The number of repetitions of applying the pipeline with
 #' different seeds; ignored if seed_sequence is provided by the user.
@@ -967,7 +971,9 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' @param ecs_thresh The ECS threshold used for merging similar clusterings.
 #' @param ncores The number of parallel R instances that will run the code.
 #' If the value is set to 1, the code will be run sequentially.
-#' @param transpose Decides whether the input object will be transposed or not.
+#' @param transpose Logical: whether the input object will be transposed or not.
+#' Set to FALSE if the input is an observations X features matrix, and set to TRUE
+#' if the input is a features X observations matrix.
 #' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
 #' @param algorithm An index indicating which community detection algorithm will
@@ -1219,17 +1225,16 @@ get_nn_importance = function(object,
 
 # 2. neighbors <-> number of clusters association
 
-#' Graphical representation of the link between NN and number of clusters
+#' Relationship Between Number of Nearest Neighbors and Number of Clusters
 #'
-#' @description Display, for each number of neighbors, the distribution of the
-#' number of clusters obtained at different seeds. The distribution is
-#' displayed as a boxplot.
+#' @description Display the distribution of the
+#' number of clusters obtained for each number of neighbors across random seeds.
 #'
 #' @param nn_object_n_clusters An object or a concatenation of objects returned by the
 #' `get_nn_importance` method.
 #'
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object with the distributions displayed as boxplots.
 #' @export
 #'
 #' @note The number of clusters is displayed on a logarithmic scale.
@@ -1288,7 +1293,7 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #' `get_nn_importance` method.
 #'
 #'
-#' @return A ggplot facet object
+#' @return A ggplot2 object.
 #' @export
 #'
 #'
@@ -1327,10 +1332,9 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 
 #### clustering methods ####
 
-#' Clustering Method Importance
-#'
-#' @description Analyzes the importance of choosing a specific graph clustering
-#' method in the pipeline. The method will iterate through different values of
+#' Graph Clustering Method Stability
+#' @description Evaluates the stability of different graph clustering methods
+#' in the clustering pipeline. The method will iterate through different values of
 #' the resolution parameter and compare, using the EC Consistency score, the
 #' partitions obtained at different seeds.
 #'
@@ -1496,18 +1500,19 @@ get_clustering_difference = function(graph_adjacency_matrix,
        all = all_result)
 }
 
-#' Graphical representation of the clustering method importance
+#' Clustering Method Stability Boxplot
 #'
-#' @description Display, for each clustering method and each resolution value,
-#' the distribution of the EC consistency as a boxplot. We will use the `filtered`
-#' field of the object returned by the `get_clustering_difference_object` method.
-#' Above each boxplot, the number of clusters will be displayed.
+#' @description Display EC consistency across clustering method and resolution
+#' values. The `filtered` field of the object returned by the
+#' `get_clustering_difference_object` method is used.
+#' Above each boxplot, the number of clusters is displayed.
 #'
 #' @param clustering_difference_object An object returned by the
 #' `get_clustering_difference_object` method.
 #' @param text_size The size of the labels above boxplots.
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object with the EC consistency distributions. Higher
+#' consistency indicates a more stable clustering.
 #' @export
 #'
 #'
@@ -1567,11 +1572,11 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
     )
 }
 
-#' Graphical representation of the clustering method importance
+#' Clustering Method Stability Facet Plot
 #'
-#' @description Display, for each clustering method and each resolution value,
-#' the distribution of the EC consistency on a given embedding. We will use the `all`
-#' field of the object returned by the `get_clustering_difference_object` method.
+#' @description Display the distribution of the EC consistency for each
+#' clustering method and each resolution value on a given embedding The `all`
+#' field of the object returned by the `get_clustering_difference_object` method is used.
 #'
 #' @param clustering_difference_object An object returned by the
 #' `get_clustering_difference_object` method.
@@ -1583,12 +1588,13 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
 #' row is associated with a resolution value and each column with a clustering method) or
 #' a wrap.
 #'
-#' @return A ggplot facet object
+#' @return A ggplot2 object.
 #' @export
 #'
 #'
 #' @examples
-#' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
+#' pca.mt=prcomp(as.matrix(mtcars))$x
+#' adj_matrix = Seurat::FindNeighbors(pca.mt,
 #'     k.param = 5,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
@@ -1598,7 +1604,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
 #'     n_repetitions = 1,
 #'     algorithm = 1,
 #'     verbose = FALSE)
-#' plot_clustering_difference_facet(clust_diff_obj, as.matrix(mtcars[,1:2]))
+#' plot_clustering_difference_facet(clust_diff_obj, pca.mt[,1:2])
 plot_clustering_difference_facet = function(clustering_difference_object,
                                             embedding,
                                             low_limit = 0,
@@ -1637,14 +1643,16 @@ plot_clustering_difference_facet = function(clustering_difference_object,
                                   y = .data$y,
                                   color = .data$value
                                 )) +
-    ggplot2::geom_point(size = 0.2) +
+    ggplot2::geom_point() +
     ggplot2::scale_color_viridis_c() +
     ggplot2::theme_bw() +
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank()
     ) +
-    ggplot2::labs(color = "ECC")
+    ggplot2::labs(color = "ECC",
+                  x=colnames(embedding)[1],
+                  y=colnames(embedding)[2])
 
   if (grid) {
     return(return_plot + ggplot2::facet_grid(L2 ~ L1))
@@ -1739,9 +1747,9 @@ get_resolution_partitions = function(clustered_object,
   different_partitions
 }
 
-#' Resolution importance
+#' Evaluate Stability Across Resolution, Number of Neighbors, and Graph Type
 #'
-#' @description Perform a gridsearch over the resolution, number of neighbors
+#' @description Perform a grid search over the resolution, number of neighbors
 #' and graph type.
 #'
 #' @param embedding The base embedding for the graph construction.
@@ -2012,7 +2020,7 @@ get_resolution_importance = function(embedding,
   ret_object
 }
 
-#' Merge resolutions
+#' Merge Resolutions
 #'
 #' @description Merge partitions obtained with different resolution values
 #' that have the same number of clusters.
@@ -2028,30 +2036,7 @@ get_resolution_importance = function(embedding,
 #' `merged_partitions` with threshold 1 is applied.
 #'
 #' @md
-#' @export
-#'
-#'
-#' @examples
-#' merge_resolutions(list(
-#'  "0.8" = list(
-#'    "2" = list(
-#'      list(mb = c(1,1,1,2),
-#'           freq = 2),
-#'      list(mb = c(1,1,2,2),
-#'           freq = 5)
-#'    )
-#'  ),
-#'  "0.9" = list(
-#'    "3" = list(
-#'      list(mb = c(1,2,3,3),
-#'           freq = 1)
-#'    ),
-#'    "2" = list(
-#'      list(mb = c(2,2,3,3),
-#'           freq = 2)
-#'    )
-#'  )
-#'))
+#' @keywords internal
 merge_resolutions = function(res_obj,
                              ncores = 1) {
   if (!is.numeric(ncores) || length(ncores) > 1)
@@ -2111,14 +2096,11 @@ merge_resolutions = function(res_obj,
   clusters_obj
 }
 
-#' Correspondence between the resolution parameter and the number of clusters
+#' Correspondence Between Resolution and the Number of Clusters
 #'
-#' @description For each configuration provided in the object, display what
+#' @description For each configuration provided in the res_object_list, display what
 #' number of clusters appear for different values of the resolution parameters.
-#' Different shapes of points indicate different configuration, while the color
-#' illustrates the frequency of the most common partition. The frequency is calculated
-#' as the fraction between the number of total appearances and the number of
-#' runs.
+#'
 #'
 #' @param res_object_list An object or a concatenation of objects returned by the
 #' `get_resolution_importance` method.
@@ -2129,7 +2111,11 @@ merge_resolutions = function(res_obj,
 #' will be passed in the `width` argument of the `ggplot::position_dodge` method.
 #'
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object. Different shapes of points indicate different
+#' parameter configuration, while the color
+#' illustrates the frequency of the most common partition. The frequency is calculated
+#' as the fraction between the number of total appearances and the number of
+#' runs.
 #' @export
 #'
 #'
@@ -2223,13 +2209,11 @@ plot_k_resolution_corresp = function(res_object_list,
     ))
 }
 
-#' Reproducibility display of the number of clusters
+#' Relationship Between the Number of Clusters and the Number of Unique Partitions
 #'
-#' @description For each configuration provided in the object, display how
+#' @description For each configuration provided in partition_obj_list, display how
 #' many different partitions with the same number of clusters can be obtained
-#' by changing the seed. The color gradient suggests the frequency of the most
-#' common partition relative to the total number of appearances of that specific
-#' number of clusters.
+#' by changing the seed.
 #'
 #' @param partition_obj_list An object or a concatenation of objects returned by the
 #' `merge_resolutions` method.
@@ -2237,7 +2221,9 @@ plot_k_resolution_corresp = function(res_object_list,
 #' configuration; if not specified, the plot will use the generated configuration
 #' names.
 #'
-#' @return A ggplot object
+#' @return A ggplot2 object. The color gradient suggests the frequency of the most
+#' common partition relative to the total number of appearances of that specific
+#' number of clusters.
 #' @export
 #'
 #'
