@@ -6,7 +6,7 @@ calculate_dist = function(x, dist_method, p=2){
   if (dist_method %in% c("euclidean", "maximum", "manhattan", "canberra",
                          "binary", "minkowski")){
     d <- stats::dist(x, method=dist_method, p=p)
-  } else if (dist_method == 'pearson'){
+  } else if (dist_method=='pearson'){
     d <- 1 - stats::cor(x, method='pearson')
   } else {
     stop('Distance measure not recognized. Please choose one of euclidean,
@@ -149,10 +149,11 @@ consensus_cluster <- function(x, k_min=3, k_max=100, n_reps=100, p_sample=0.8,
 #' pac_convergence(pac.res, k_plot=c(3,5,7,9))
 pac_convergence = function(pac_res, k_plot){
   conv = pac_res %>% dplyr::filter(.data$n.clusters %in% k_plot)
+  conv$n.clusters = as.factor(conv$n.clusters)
 
   ggplot2::ggplot(data=conv,
-                  ggplot2::aes(x = .data$iteration, y = .data$pac,
-                               color = as.factor(.data$n.clusters),
+                  ggplot2::aes(x=.data$iteration, y=.data$pac,
+                               color=.data$n.clusters,
                                group=.data$n.clusters)) +
           ggplot2::geom_line() +
           ggplot2::labs(title='PAC convergence')
@@ -184,7 +185,7 @@ pac_landscape = function(pac_res, n_shade = max(pac_res$iteration)/5){
   # create data frame with shaded regions
   pac.df = pac_res %>% dplyr::group_by(.data$n.clusters) %>%
     dplyr::top_n(n_shade, wt=.data$iteration) %>%
-    dplyr::mutate(pmin = min(.data$pac), pmax=max(.data$pac)) %>%
+    dplyr::mutate(pmin=min(.data$pac), pmax=max(.data$pac)) %>%
     dplyr::top_n(1, wt=.data$iteration)
 
   ggplot2::ggplot(data=pac.df,
