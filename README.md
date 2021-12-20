@@ -18,7 +18,7 @@ for evaluating clustering robustness.
 
 # The Tools
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/diagram.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/man/figures/diagram.png width=80%/>
 
 ## Proportion of Ambiguously Clustered Pairs (PAC)
 To assess clustering robustness, the proportion of ambiguously clustered pairs
@@ -156,8 +156,8 @@ The following packages are required for ClustAssess:
 * stringr
 * uwot
 
-To use all data-driven assessment methods, and run all examples and vignettes,
-the following packages are also needed:
+To use all stability-based assessment methods, and run all examples and 
+vignettes, the following packages are also needed:
 
 * knitr
 * rmarkdown
