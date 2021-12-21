@@ -82,12 +82,18 @@ generate_breaks = function(min.range, max.range) {
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-#'    feature_set = colnames(mtcars),
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(100*10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:200)
+#' colnames(expr_matrix) = paste("feature", 1:10)
+#'
+#' feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+#'    feature_set = colnames(expr_matrix),
 #'    feature_type = "feature_name",
-#'    steps = -1,
+#'    steps = 5,
 #'    npcs = 2,
-#'    n_repetitions = 1,
+#'    n_repetitions = 10,
 #'    algorithm = 1,
 #'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
@@ -95,6 +101,7 @@ generate_breaks = function(min.range, max.range) {
 #'    n_epochs = 0,
 #'    init = "random",
 #'    min_dist = 0.3)
+#' plot_feature_stability_boxplot(feature_stability_result)
 get_feature_stability = function(data_matrix,
                                  feature_set,
                                  steps,
@@ -320,12 +327,18 @@ get_feature_stability = function(data_matrix,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-#'    feature_set = colnames(mtcars),
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(100*10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:200)
+#' colnames(expr_matrix) = paste("feature", 1:10)
+#'
+#' feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+#'    feature_set = colnames(expr_matrix),
 #'    feature_type = "feature_name",
-#'    steps = -1,
+#'    steps = 5,
 #'    npcs = 2,
-#'    n_repetitions = 1,
+#'    n_repetitions = 10,
 #'    algorithm = 1,
 #'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
@@ -418,12 +431,18 @@ plot_feature_stability_boxplot = function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-#'    feature_set = colnames(mtcars),
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(50*10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:150)
+#' colnames(expr_matrix) = paste("feature", 1:10)
+#'
+#' feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+#'    feature_set = colnames(expr_matrix),
 #'    feature_type = "feature_name",
-#'    steps = -1,
+#'    steps = c(5,10),
 #'    npcs = 2,
-#'    n_repetitions = 1,
+#'    n_repetitions = 3,
 #'    algorithm = 1,
 #'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
@@ -511,12 +530,18 @@ plot_feature_stability_mb_facet = function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-#'    feature_set = colnames(mtcars),
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(50*10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:150)
+#' colnames(expr_matrix) = paste("feature", 1:10)
+#'
+#' feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+#'    feature_set = colnames(expr_matrix),
 #'    feature_type = "feature_name",
-#'    steps = -1,
+#'    steps = c(5,10),
 #'    npcs = 2,
-#'    n_repetitions = 1,
+#'    n_repetitions = 3,
 #'    algorithm = 1,
 #'    # the following parameters are used by the umap function and are not mandatory
 #'    n_neighbors = 3,
@@ -588,20 +613,26 @@ plot_feature_stability_ecs_facet = function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-#'    feature_set = colnames(mtcars),
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(25*10), runif(75*10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:100)
+#' colnames(expr_matrix) = paste("feature", 1:10)
+#'
+#' feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+#'    feature_set = colnames(expr_matrix),
 #'    feature_type = "feature_name",
-#'    steps = c(6,7),
+#'    steps = c(5,10),
 #'    npcs = 2,
-#'    n_repetitions = 1,
+#'    n_repetitions = 3,
 #'    algorithm = 1,
 #'    # the following parameters are used by the umap function and are not mandatory
-#'    n_neighbors = 2,
+#'    n_neighbors = 3,
 #'    approx_pow = TRUE,
 #'    n_epochs = 0,
 #'    init = "random",
 #'    min_dist = 0.3)
-#' plot_feature_stability_ecs_incremental(feature_stability_result, 0.7)
+#' plot_feature_stability_ecs_incremental(feature_stability_result)
 plot_feature_stability_ecs_incremental = function(feature_object_list,
                                                   dodge_width = 0.7,
                                                   text_size = 4) {
@@ -726,21 +757,21 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' # get the PCA embedding of the data
-#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
-#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-#' rownames(pca_embedding) = rownames(mtcars)
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(50*10), runif(50*10, min = 1, max = 2)), nrow = 100, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:100)
 #'
-#' # run the function on the PCA embedding
-#' nn_conn_comps_obj = get_nn_conn_comps(object = pca_embedding,
-#'     n_neigh_sequence = c(2,5,15),
-#'     config_name = "mt_cars",
-#'     n_repetitions = 1,
-#'     graph_reduction_type = "UMAP",
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     min_dist = 0.3,
-#'     n_neighbors = 5,
-#'     metric = "cosine")
+#' # the graph reduction type is PCA, so we can provide the expression matrix as argument
+#' nn_conn_comps_obj = get_nn_conn_comps(object = expr_matrix,
+#'     n_neigh_sequence = c(2,3,5),
+#'     config_name = "example_config",
+#'     n_repetitions = 10,
+#'     graph_reduction_type = "PCA",
+#'     transpose = FALSE,
+#'     # the following parameter is used by the irlba function and is not mandatory
+#'     nv = 3)
+#' plot_connected_comps_evolution(nn_conn_comps_obj)
 get_nn_conn_comps = function(object,
                              n_neigh_sequence,
                              config_name = "",
@@ -898,15 +929,20 @@ get_nn_conn_comps = function(object,
 #' @note The number of connected components is displayed on a logarithmic scale.
 #'
 #' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(50*10), runif(50*10, min = 1, max = 2)), nrow = 100, byrow = TRUE)
+#' rownames(expr_matrix) = as.character(1:100)
+#'
 #' # the graph reduction type is PCA, so we can provide the expression matrix as argument
-#' nn_conn_comps_obj = get_nn_conn_comps(object = as.matrix(mtcars),
-#'     n_neigh_sequence = c(2,5,15),
-#'     config_name = "mt_cars",
-#'     n_repetitions = 1,
+#' nn_conn_comps_obj = get_nn_conn_comps(object = expr_matrix,
+#'     n_neigh_sequence = c(2,3,5),
+#'     config_name = "example_config",
+#'     n_repetitions = 10,
 #'     graph_reduction_type = "PCA",
 #'     transpose = FALSE,
 #'     # the following parameter is used by the irlba function and is not mandatory
-#'     nv = 4)
+#'     nv = 3)
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution = function(nn_conn_comps_object) {
   final_comps_df = reshape2::melt(nn_conn_comps_object)
@@ -998,23 +1034,20 @@ plot_connected_comps_evolution = function(nn_conn_comps_object) {
 #' @export
 #'
 #' @examples
-#' #' # get the PCA embedding of the data
-#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
-#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-#' rownames(pca_embedding) = rownames(mtcars)
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(100*10, min=5, max=6)), nrow = 200)
+#' rownames(expr_matrix) = as.character(1:200)
 #'
-#' nn_importance_obj = get_nn_importance(object = pca_embedding,
-#'     n_neigh_sequence = c(5,15),
-#'     n_repetitions = 1,
-#'     graph_reduction_type = "UMAP",
+#' nn_importance_obj = get_nn_importance(object = expr_matrix,
+#'     n_neigh_sequence = c(10,15,20),
+#'     n_repetitions = 10,
+#'     graph_reduction_type = "PCA",
 #'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     min_dist = 0.3,
-#'     n_neighbors = 5,
-#'     metric = "cosine",
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random")
+#'     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
+#'     # the following parameter is used by the irlba function and is not mandatory
+#'     nv = 2)
+#' plot_n_neigh_ecs(nn_importance_obj)
 get_nn_importance = function(object,
                              n_neigh_sequence,
                              n_repetitions = 100,
@@ -1240,9 +1273,14 @@ get_nn_importance = function(object,
 #' @note The number of clusters is displayed on a logarithmic scale.
 #'
 #' @examples
-#' nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
-#'     n_neigh_sequence = c(2,5,15),
-#'     n_repetitions = 1,
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(100*10), nrow = 100)
+#' rownames(expr_matrix) = as.character(1:100)
+#'
+#' nn_importance_obj = get_nn_importance(object = expr_matrix,
+#'     n_neigh_sequence = c(2,5),
+#'     n_repetitions = 5,
 #'     graph_reduction_type = "PCA",
 #'     algorithm = 1,
 #'     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
@@ -1298,9 +1336,14 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #'
 #'
 #' @examples
-#' nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
-#'     n_neigh_sequence = c(2,5,15),
-#'     n_repetitions = 1,
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(100*10), runif(100*10, min=5, max=6)), nrow = 200)
+#' rownames(expr_matrix) = as.character(1:200)
+#'
+#' nn_importance_obj = get_nn_importance(object = expr_matrix,
+#'     n_neigh_sequence = c(10,15,20),
+#'     n_repetitions = 10,
 #'     graph_reduction_type = "PCA",
 #'     algorithm = 1,
 #'     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
@@ -1366,16 +1409,22 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
 #'
 #'
 #' @examples
-#' # calculate the adjacency matrix
-#' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 3,
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(100*10), nrow = 100)
+#' rownames(expr_matrix) = as.character(1:100)
+#'
+#' adj_matrix = Seurat::FindNeighbors(expr_matrix,
+#'     k.param = 10,
+#'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
-#'     n_repetitions = 1,
-#'     algorithm = 1,
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
+#' plot_clustering_difference_boxplot(clust_diff_obj)
 get_clustering_difference = function(graph_adjacency_matrix,
                                      resolution,
                                      n_repetitions = 100,
@@ -1517,15 +1566,20 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #'
 #'
 #' @examples
-#' adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-#'     k.param = 5,
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(500*10), nrow = 500)
+#' rownames(expr_matrix) = as.character(1:500)
+#'
+#' adj_matrix = Seurat::FindNeighbors(expr_matrix,
+#'     k.param = 10,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
-#'     n_repetitions = 1,
-#'     algorithm = 1,
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
 plot_clustering_difference_boxplot = function(clustering_difference_object,
@@ -1593,18 +1647,26 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
 #'
 #'
 #' @examples
-#' pca.mt=prcomp(as.matrix(mtcars))$x
-#' adj_matrix = Seurat::FindNeighbors(pca.mt,
-#'     k.param = 5,
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(c(runif(250*10), runif(250*10, min = 5, max = 7)), nrow = 500)
+#' rownames(expr_matrix) = as.character(1:500)
+#'
+#' pca_embedding = irlba::irlba(expr_matrix, nv = 2)
+#' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
+#' rownames(pca_embedding) = as.character(1:500)
+#'
+#' adj_matrix = Seurat::FindNeighbors(pca_embedding,
+#'     k.param = 10,
 #'     nn.method = "rann",
 #'     verbose = FALSE,
 #'     compute.SNN = FALSE)$nn
 #' clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
 #'     resolution = c(0.5, 1),
-#'     n_repetitions = 1,
-#'     algorithm = 1,
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
 #'     verbose = FALSE)
-#' plot_clustering_difference_facet(clust_diff_obj, pca.mt[,1:2])
+#' plot_clustering_difference_facet(clust_diff_obj,pca_embedding)
 plot_clustering_difference_facet = function(clustering_difference_object,
                                             embedding,
                                             low_limit = 0,
@@ -1772,34 +1834,46 @@ get_resolution_partitions = function(clustered_object,
 #'
 #'
 #'
-#' @return A five-level list. The hierarchy is as follows:
+#' @return A list having two fields:
 #'
-#' * the configuration name: concatenation between the object name provided by
+#' * split_by_resolution: A five-level list. The hierarchy is as follows:
+#'
+#'     * the configuration name: concatenation between the object name provided by
 #' the user, the number of neighbors, the graph type and the clustering method
-#' * the resolution value \eqn{\gamma}
-#' * the number of clusters *k* that can be obtained using the specified resolution
-#' * the partitions obtained with resolution \eqn{\gamma} and have *k* clusters
-#' * the structure of a partitions, which consists in having a `mb` field with
+#'     * the resolution value \eqn{\gamma}
+#'     * the number of clusters *k* that can be obtained using the specified resolution
+#'     * the partitions obtained with resolution \eqn{\gamma} and have *k* clusters
+#'     * the structure of a partitions, which consists in having a `mb` field with
 #' the flat membership vector, `freq` denoting its frequency and `seed`, that is
 #' the seed used to obtain this partition in this configuration.
+#'
+#' * split_by_k: has a similar structure, but the resolution level is removed.
+#' The partitions obtained in a configuration with the same number of clusters
+#' will be merged into the same list.
 #'
 #' @md
 #' @export
 #'
 #' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(500*10), nrow = 500)
+#'
 #' # get the PCA embedding of the data
-#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = irlba::irlba(expr_matrix, nv = 2)
 #' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-#' rownames(pca_embedding) = rownames(mtcars)
+#' rownames(pca_embedding) = as.character(1:500)
 #'
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
-#'    resolution = c(0.8,1),
-#'    n_neigh = c(5,7),
-#'    n_repetitions = 1,
-#'    clustering_method = 1:2,
-#'    graph_type = 0,
-#'    object_name = "mt_cars")
+#'    resolution = c(0.8, 1),
+#'    n_neigh = c(5, 7),
+#'    n_repetitions = 5,
+#'    clustering_method = 1,
+#'    graph_type = 2,
+#'    object_name = "name_example")
+#'
+#' plot_k_resolution_corresp(resolution_result)
 get_resolution_importance = function(embedding,
                                      resolution,
                                      n_neigh,
@@ -1851,22 +1925,39 @@ get_resolution_importance = function(embedding,
 
   if (length(clustering_method) > 1) {
     # generate a list of partitions for each clustering method chosen by the user
-    for (i in 1:length(clustering_method)) {
-      different_partitions = c(
-        different_partitions,
-        get_resolution_importance(
-          embedding = embedding,
-          resolution = resolution,
-          n_neigh = n_neigh,
-          n_repetitions = n_repetitions,
-          seed_sequence = seed_sequence,
-          clustering_method = clustering_method[i],
-          graph_type = graph_type,
-          object_name = object_name,
-          ncores = ncores,
-          ecs_thresh = ecs_thresh
-        )
+    different_partitions =  get_resolution_importance(
+      embedding = embedding,
+      resolution = resolution,
+      n_neigh = n_neigh,
+      n_repetitions = n_repetitions,
+      seed_sequence = seed_sequence,
+      clustering_method = clustering_method[1],
+      graph_type = graph_type,
+      object_name = object_name,
+      ncores = ncores,
+      ecs_thresh = ecs_thresh
+    )
+
+    i = 2
+    while (i <= length(clustering_method)) {
+      temp_res_imp = get_resolution_importance(
+        embedding = embedding,
+        resolution = resolution,
+        n_neigh = n_neigh,
+        n_repetitions = n_repetitions,
+        seed_sequence = seed_sequence,
+        clustering_method = clustering_method[i],
+        graph_type = graph_type,
+        object_name = object_name,
+        ncores = ncores,
+        ecs_thresh = ecs_thresh
       )
+
+      different_partitions$split_by_resolution = c(different_partitions$split_by_resolution,
+                                                   temp_res_imp$split_by_resolution)
+      different_partitions$split_by_k = c(different_partitions$split_by_k,
+                                          temp_res_imp$split_by_k)
+      i = i+1
     }
 
     return(different_partitions)
@@ -1874,23 +1965,38 @@ get_resolution_importance = function(embedding,
 
   if (length(n_neigh) > 1) {
     # generate a list of partitions for each number of neighbours chosen by the user
-    for (i in 1:length(n_neigh)) {
-      different_partitions = c(
-        different_partitions,
-        get_resolution_importance(
-          embedding = embedding,
-          resolution = resolution,
-          n_neigh = n_neigh[i],
-          n_repetitions = n_repetitions,
-          seed_sequence = seed_sequence,
-          clustering_method = clustering_method,
-          graph_type = graph_type,
-          object_name = object_name,
-          ncores = ncores,
-          ecs_thresh = ecs_thresh
-        )
-      )
+    different_partitions = get_resolution_importance(
+      embedding = embedding,
+      resolution = resolution,
+      n_neigh = n_neigh[1],
+      n_repetitions = n_repetitions,
+      seed_sequence = seed_sequence,
+      clustering_method = clustering_method,
+      graph_type = graph_type,
+      object_name = object_name,
+      ncores = ncores,
+      ecs_thresh = ecs_thresh
+    )
 
+    i = 2
+    while(i <= length(n_neigh)) {
+      temp_res_imp = get_resolution_importance(
+        embedding = embedding,
+        resolution = resolution,
+        n_neigh = n_neigh[i],
+        n_repetitions = n_repetitions,
+        seed_sequence = seed_sequence,
+        clustering_method = clustering_method,
+        graph_type = graph_type,
+        object_name = object_name,
+        ncores = ncores,
+        ecs_thresh = ecs_thresh
+      )
+      different_partitions$split_by_resolution = c(different_partitions$split_by_resolution,
+                                                   temp_res_imp$split_by_resolution)
+      different_partitions$split_by_k = c(different_partitions$split_by_k,
+                                          temp_res_imp$split_by_k)
+      i = i+1
     }
 
     return(different_partitions)
@@ -1898,7 +2004,7 @@ get_resolution_importance = function(embedding,
 
   if (graph_type == 2) {
     # generate a list of partitions for both types of graphs: nn and snn
-    different_partitions = c(
+    different_partitions = mapply(c,
       get_resolution_importance(
         embedding = embedding,
         resolution = resolution,
@@ -1922,7 +2028,8 @@ get_resolution_importance = function(embedding,
         object_name = object_name,
         ecs_thresh = ecs_thresh,
         ncores = ncores
-      )
+      ),
+      SIMPLIFY = FALSE
     )
 
     return(different_partitions)
@@ -1937,13 +2044,29 @@ get_resolution_importance = function(embedding,
 
   details = paste(n_neigh, graph_type_name, algorithm_name, sep = '_')
 
-  if (length(resolution) > 1) {
-    # generate a list of partitions for each resolution value
-    for (i in 1:length(resolution)) {
-      res = resolution[i]
+  # generate a list of partitions for each resolution value
+  for (i in 1:length(resolution)) {
+    res = resolution[i]
 
-      if (i == 1) {
-        different_partitions = get_resolution_importance(
+    if (i == 1) {
+      different_partitions = one_resolution_importance(
+        embedding = embedding,
+        resolution = res,
+        n_neigh = n_neigh,
+        n_repetitions = n_repetitions,
+        seed_sequence = seed_sequence,
+        clustering_method = clustering_method,
+        graph_type = graph_type,
+        object_name = object_name,
+        ncores = ncores,
+        ecs_thresh = ecs_thresh
+      )
+
+      used_name = names(different_partitions)[1]
+    } else {
+      different_partitions[[used_name]] = c(
+        different_partitions[[used_name]],
+        one_resolution_importance(
           embedding = embedding,
           resolution = res,
           n_neigh = n_neigh,
@@ -1954,30 +2077,39 @@ get_resolution_importance = function(embedding,
           object_name = object_name,
           ncores = ncores,
           ecs_thresh = ecs_thresh
-        )
-
-        used_name = names(different_partitions)[1]
-      } else {
-        different_partitions[[used_name]] = c(
-          different_partitions[[used_name]],
-          get_resolution_importance(
-            embedding = embedding,
-            resolution = res,
-            n_neigh = n_neigh,
-            n_repetitions = n_repetitions,
-            seed_sequence = seed_sequence,
-            clustering_method = clustering_method,
-            graph_type = graph_type,
-            object_name = object_name,
-            ncores = ncores,
-            ecs_thresh = ecs_thresh
-          )[[used_name]]
-        )
-      }
+        )[[used_name]]
+      )
     }
-
-    return(different_partitions)
   }
+
+  return_object = list(split_by_resolution = different_partitions,
+                       split_by_k = merge_resolutions(different_partitions[[1]],
+                                                      ncores = ncores,
+                                                      object_name = used_name))
+
+  return(return_object)
+}
+
+# call the get_resolution_partitions using a single resolution value
+# and the clustering methods provided by Seurat
+one_resolution_importance = function(embedding,
+                                     resolution,
+                                     n_neigh,
+                                     n_repetitions = 100,
+                                     seed_sequence = NULL,
+                                     clustering_method = 4,
+                                     graph_type = 0,
+                                     object_name = NULL,
+                                     ecs_thresh = 1,
+                                     ncores = 1) {
+  graph_type_name = ifelse(graph_type == 0, "NN", "SNN")
+  algorithm_name = switch(clustering_method,
+                          "Louvain",
+                          "Louvain.refined",
+                          "SLM",
+                          "Leiden")
+
+  details = paste(n_neigh, graph_type_name, algorithm_name, sep = '_')
 
   if (is.null(object_name)) {
     object_name = details
@@ -2038,6 +2170,7 @@ get_resolution_importance = function(embedding,
 #' @md
 #' @keywords internal
 merge_resolutions = function(res_obj,
+                             object_name,
                              ncores = 1) {
   if (!is.numeric(ncores) || length(ncores) > 1)
     stop("ncores parameter should be numeric")
@@ -2093,7 +2226,9 @@ merge_resolutions = function(res_obj,
   if(ncores > 1)
     parallel::stopCluster(cl = my_cluster)
 
-  clusters_obj
+  return_object = list()
+  return_object[[object_name]] = clusters_obj
+  return_object
 }
 
 #' Correspondence Between Resolution and the Number of Clusters
@@ -2102,7 +2237,7 @@ merge_resolutions = function(res_obj,
 #' number of clusters appear for different values of the resolution parameters.
 #'
 #'
-#' @param res_object_list An object or a concatenation of objects returned by the
+#' @param res_object_list An object returned by the
 #' `get_resolution_importance` method.
 #' @param res_object_names Custom names that the user could assing to each
 #' configuration; if not specified, the plot will use the generated configuration
@@ -2120,23 +2255,30 @@ merge_resolutions = function(res_obj,
 #'
 #'
 #' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(500*10), nrow = 500)
+#'
 #' # get the PCA embedding of the data
-#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = irlba::irlba(expr_matrix, nv = 2)
 #' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-#' rownames(pca_embedding) = rownames(mtcars)
+#' rownames(pca_embedding) = as.character(1:500)
 #'
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(5, 7),
-#'    n_repetitions = 1,
+#'    n_repetitions = 5,
 #'    clustering_method = 1,
 #'    graph_type = 2,
-#'    object_name = "mt_cars")
+#'    object_name = "name_example")
+#'
 #' plot_k_resolution_corresp(resolution_result)
 plot_k_resolution_corresp = function(res_object_list,
                                      res_object_names = NULL,
                                      given_height = 0.7) {
+  res_object_list = res_object_list$split_by_resolution
+
   # use the names of the fields from the list
   if (is.null(res_object_names))
     res_object_names = names(res_object_list)
@@ -2228,22 +2370,29 @@ plot_k_resolution_corresp = function(res_object_list,
 #'
 #'
 #' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix = matrix(runif(500*10), nrow = 500)
+#'
 #' # get the PCA embedding of the data
-#' pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+#' pca_embedding = irlba::irlba(expr_matrix, nv = 2)
 #' pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
-#' rownames(pca_embedding) = rownames(mtcars)
+#' rownames(pca_embedding) = as.character(1:500)
 #'
 #' # run the function on the pca embedding
 #' resolution_result = get_resolution_importance(embedding = pca_embedding,
 #'    resolution = c(0.8, 1),
 #'    n_neigh = c(5, 7),
-#'    n_repetitions = 1,
+#'    n_repetitions = 5,
 #'    clustering_method = 1,
 #'    graph_type = 2,
-#'    object_name = "mt_cars")
-#' merged_resolutions = lapply(resolution_result, merge_resolutions)
-#' plot_k_n_partitions(merged_resolutions)
-plot_k_n_partitions = function(partition_obj_list, object_names = NULL) {
+#'    object_name = "name_example")
+#'
+#' plot_k_n_partitions(resolution_result)
+plot_k_n_partitions = function(partition_obj_list,
+                               object_names = NULL) {
+  partition_obj_list = partition_obj_list$split_by_k
+
   # use the names of the fields from the list
   if (is.null(object_names))
     object_names = names(partition_obj_list)
