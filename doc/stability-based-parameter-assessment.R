@@ -29,7 +29,7 @@ cuomo =  CreateSeuratObject(cuomo.counts, row.names = gene_names)
 cuomo = PercentageFeatureSet(cuomo, pattern = '^MT-', col.name = 'percent.mito')
 cuomo = PercentageFeatureSet(cuomo, pattern = "^RP[SL][[:digit:]]", col.name = 'percent.rp')
 one_level = as.factor(rep("cuomo", dim(cuomo)[2]))
-  
+
 cuomo@meta.data$level.ident = one_level
 cuomo@meta.data$day.ident = cell_metadata$day
 cuomo@meta.data$donor.ident = cell_metadata$donor
@@ -57,27 +57,27 @@ most_abundant_genes = rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@ass
 
 cuomo = ScaleData(cuomo, features = features, verbose = F)
 
-cuomo = RunPCA(cuomo, 
-               npcs = 30, 
-               approx = F, 
-               verbose = F, 
+cuomo = RunPCA(cuomo,
+               npcs = 30,
+               approx = F,
+               verbose = F,
                features = intersect(most_abundant_genes, cuomo@assays$RNA@var.features))
-cuomo = RunUMAP(cuomo,reduction = "pca", 
-                dims = 1:30, 
-                n.neighbors = 30, 
-                min.dist = 0.3, 
-                metric = "cosine", 
+cuomo = RunUMAP(cuomo,reduction = "pca",
+                dims = 1:30,
+                n.neighbors = 30,
+                min.dist = 0.3,
+                metric = "cosine",
                 verbose = F)
 raw_umap = cuomo@reductions$umap@cell.embeddings
 
-## ----qc, fig.width = 7, fig.height=7, include = T, echo = F-------------------
+## ----qc, fig.width=7, fig.height=7, include = T, echo = F---------------------
 wrap_plots(lapply(c(DimPlot(cuomo, group.by=c('day.ident', 'donor.ident'), combine = F),
-                    FeaturePlot(cuomo, features = c('nFeature_RNA', 'nCount_RNA','percent.mito', 'percent.rp'), combine = F)), 
+                    FeaturePlot(cuomo, features = c('nFeature_RNA', 'nCount_RNA','percent.mito', 'percent.rp'), combine = F)),
                   function(x) { x + labs(title = element_blank()) + theme(legend.key.size = unit(0.3, "cm"),
                                                                           legend.key.width = unit(0.1,"cm"),
                                                                           legend.text = element_text(size = 7),
                                                                           axis.text = element_text(size = 7),
-                                                                          axis.title = element_text(size = 9)) })) + 
+                                                                          axis.title = element_text(size = 9)) })) +
   plot_annotation(tag_levels = 'A') +
   plot_layout(nrow = 3)
 
@@ -136,7 +136,7 @@ pca_feature_stability_object = c(get_feature_stability(data_matrix = cuomo@assay
                                                        ecs_thresh = 1,
                                                        algorithm = 1))
 
-## ----stab_boxplot, fig.width = 7, fig.height=5--------------------------------
+## ----stab_boxplot, fig.width=7, fig.height=5----------------------------------
 plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) +
   theme(legend.position = c(1,0),
         legend.justification = c(1,0))
@@ -146,10 +146,10 @@ plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width
     theme(legend.position = c(1,0),
         legend.justification = c(1,0))
 
-## ----stab_mb, fig.width = 7, fig.height = 15----------------------------------
+## ----stab_mb, fig.width=7, fig.height = 15------------------------------------
 plot_feature_stability_mb_facet(pca_feature_stability_object, text_size = 3)
 
-## ----stab_ecs_fa, fig.width = 7, fig.height = 15------------------------------
+## ----stab_ecs_fa, fig.width=7, fig.height = 15--------------------------------
 plot_feature_stability_ecs_facet(pca_feature_stability_object)
 
 ## ---- include = F-------------------------------------------------------------
@@ -220,7 +220,7 @@ nn_importance_object = mapply(c,
                               SIMPLIFY = FALSE
 )
 
-## ----n_k_corr, fig.width = 7, fig.height=5------------------------------------
+## ----n_k_corr, fig.width=7, fig.height=5--------------------------------------
 plot_n_neigh_k_correspondence(nn_importance_object)
 
 ## ----n_neigh_ecs, fig.width=7, fig.height=5-----------------------------------
@@ -250,10 +250,10 @@ clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_mat
                                                 ncores = n_cores,
                                                 algorithm = 1:4)
 
-## ----diff_boxplot, fig.width = 7, fig.height=5--------------------------------
+## ----diff_boxplot, fig.width=7, fig.height=5----------------------------------
 plot_clustering_difference_boxplot(clustering_diff_obj)
 
-## ----diff_facet, fig.width= 7, fig.height=10----------------------------------
+## ----diff_facet, fig.width=7, fig.height=10-----------------------------------
 plot_clustering_difference_facet(clustering_diff_obj, cuomo@reductions$umap@cell.embeddings)
 
 ## ---- include = F-------------------------------------------------------------
@@ -272,34 +272,24 @@ resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$u
                                                   ecs_thresh = 1,
                                                   ncores = n_cores)
 
-## ----k_res_corr_1, fig.width = 7, fig.height=5--------------------------------
+## ----k_res_corr_1, fig.width=7, fig.height=5----------------------------------
 plot_k_resolution_corresp(resolution_gridsearch) +
   ggtitle("resolution - k correspondence with ecs threshold = 1")
+
+## ----k_n_part_1, fig.width=7, fig.height=5------------------------------------
+plot_k_n_partitions(resolution_gridsearch) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
 
 ## ----merge_partitions---------------------------------------------------------
 resolution_gridsearch_thresh_99 = merge_partitions(resolution_gridsearch,
                                                    ecs_thresh = 0.99,
                                                    ncores = n_cores)
 
-## ----k_res_corr_99, fig.width = 7, fig.height=5-------------------------------
+## ----k_res_corr_99, fig.width=7, fig.height=5---------------------------------
 plot_k_resolution_corresp(resolution_gridsearch_thresh_99) +
   ggtitle("resolution - k correspondence with ecs threshold = 0.99")
 
-## ----merge_resolutions--------------------------------------------------------
-k_parts_obj = lapply(resolution_gridsearch, function(config_name) {
-   merge_resolutions(config_name,
-                     ncores = n_cores)
-})
-
-## ----k_n_part_1, fig.width=7, fig.height=5------------------------------------
-plot_k_n_partitions(k_parts_obj) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
-
 ## ----k_n_part_99, fig.width=7, fig.height=5-----------------------------------
-k_parts_obj_thresh_99 = merge_partitions(k_parts_obj,
-                                         ecs_thresh = 0.99,
-                                         ncores = n_cores)
-
-plot_k_n_partitions(k_parts_obj_thresh_99) +
+plot_k_n_partitions(resolution_gridsearch_thresh_99) +
   ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
 
 ## ---- include = F-------------------------------------------------------------
