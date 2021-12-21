@@ -36,16 +36,24 @@ clustering method and each resolution value on a given embedding The `all`
 field of the object returned by the `get_clustering_difference_object` method is used.
 }
 \examples{
-pca.mt=prcomp(as.matrix(mtcars))$x
-adj_matrix = Seurat::FindNeighbors(pca.mt,
-    k.param = 5,
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(250*10), runif(250*10, min = 5, max = 7)), nrow = 500)
+rownames(expr_matrix) = as.character(1:500)
+
+pca_embedding = irlba::irlba(expr_matrix, nv = 2)
+pca_embedding = pca_embedding$u \%*\% diag(pca_embedding$d)
+rownames(pca_embedding) = as.character(1:500)
+
+adj_matrix = Seurat::FindNeighbors(pca_embedding,
+    k.param = 10,
     nn.method = "rann",
     verbose = FALSE,
     compute.SNN = FALSE)$nn
 clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
-    n_repetitions = 1,
-    algorithm = 1,
+    n_repetitions = 10,
+    algorithm = 1:2,
     verbose = FALSE)
-plot_clustering_difference_facet(clust_diff_obj, pca.mt[,1:2])
+plot_clustering_difference_facet(clust_diff_obj,pca_embedding)
 }

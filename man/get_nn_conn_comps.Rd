@@ -55,19 +55,19 @@ lower bound for the number of clusters. The calculations are performed multiple
 times by changing the seed at each repetition.
 }
 \examples{
-# get the PCA embedding of the data
-pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
-pca_embedding = pca_embedding$u \%*\% diag(pca_embedding$d)
-rownames(pca_embedding) = rownames(mtcars)
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(50*10), runif(50*10, min = 1, max = 2)), nrow = 100, byrow = TRUE)
+rownames(expr_matrix) = as.character(1:100)
 
-# run the function on the PCA embedding
-nn_conn_comps_obj = get_nn_conn_comps(object = pca_embedding,
-    n_neigh_sequence = c(2,5,15),
-    config_name = "mt_cars",
-    n_repetitions = 1,
-    graph_reduction_type = "UMAP",
-    # the following parameters are used by the umap function and are not mandatory
-    min_dist = 0.3,
-    n_neighbors = 5,
-    metric = "cosine")
+# the graph reduction type is PCA, so we can provide the expression matrix as argument
+nn_conn_comps_obj = get_nn_conn_comps(object = expr_matrix,
+    n_neigh_sequence = c(2,3,5),
+    config_name = "example_config",
+    n_repetitions = 10,
+    graph_reduction_type = "PCA",
+    transpose = FALSE,
+    # the following parameter is used by the irlba function and is not mandatory
+    nv = 3)
+plot_connected_comps_evolution(nn_conn_comps_obj)
 }

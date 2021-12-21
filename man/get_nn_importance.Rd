@@ -71,21 +71,18 @@ parameters involved in the graph building step,
 namely the base embedding, the graph type and the number of neighbours.
 }
 \examples{
-#' # get the PCA embedding of the data
-pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
-pca_embedding = pca_embedding$u \%*\% diag(pca_embedding$d)
-rownames(pca_embedding) = rownames(mtcars)
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(100*10), runif(100*10, min=5, max=6)), nrow = 200)
+rownames(expr_matrix) = as.character(1:200)
 
-nn_importance_obj = get_nn_importance(object = pca_embedding,
-    n_neigh_sequence = c(5,15),
-    n_repetitions = 1,
-    graph_reduction_type = "UMAP",
+nn_importance_obj = get_nn_importance(object = expr_matrix,
+    n_neigh_sequence = c(10,15,20),
+    n_repetitions = 10,
+    graph_reduction_type = "PCA",
     algorithm = 1,
-    # the following parameters are used by the umap function and are not mandatory
-    min_dist = 0.3,
-    n_neighbors = 5,
-    metric = "cosine",
-    approx_pow = TRUE,
-    n_epochs = 0,
-    init = "random")
+    transpose = FALSE, # the matrix is already observations x features, so we won't transpose it
+    # the following parameter is used by the irlba function and is not mandatory
+    nv = 2)
+plot_n_neigh_ecs(nn_importance_obj)
 }

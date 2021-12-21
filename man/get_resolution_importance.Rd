@@ -46,7 +46,9 @@ embedding characteristics.}
 If the value is set to 1, the code will be run sequentially.}
 }
 \value{
-A five-level list. The hierarchy is as follows:
+A list having two fields:
+\itemize{
+\item split_by_resolution: A five-level list. The hierarchy is as follows:
 \itemize{
 \item the configuration name: concatenation between the object name provided by
 the user, the number of neighbors, the graph type and the clustering method
@@ -57,23 +59,33 @@ the user, the number of neighbors, the graph type and the clustering method
 the flat membership vector, \code{freq} denoting its frequency and \code{seed}, that is
 the seed used to obtain this partition in this configuration.
 }
+\item split_by_k: has a similar structure, but the resolution level is removed.
+The partitions obtained in a configuration with the same number of clusters
+will be merged into the same list.
+}
 }
 \description{
 Perform a grid search over the resolution, number of neighbors
 and graph type.
 }
 \examples{
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(runif(500*10), nrow = 500)
+
 # get the PCA embedding of the data
-pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+pca_embedding = irlba::irlba(expr_matrix, nv = 2)
 pca_embedding = pca_embedding$u \%*\% diag(pca_embedding$d)
-rownames(pca_embedding) = rownames(mtcars)
+rownames(pca_embedding) = as.character(1:500)
 
 # run the function on the pca embedding
 resolution_result = get_resolution_importance(embedding = pca_embedding,
-   resolution = c(0.8,1),
-   n_neigh = c(5,7),
-   n_repetitions = 1,
-   clustering_method = 1:2,
-   graph_type = 0,
-   object_name = "mt_cars")
+   resolution = c(0.8, 1),
+   n_neigh = c(5, 7),
+   n_repetitions = 5,
+   clustering_method = 1,
+   graph_type = 2,
+   object_name = "name_example")
+
+plot_k_resolution_corresp(resolution_result)
 }

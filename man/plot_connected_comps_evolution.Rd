@@ -21,14 +21,19 @@ obtained for each number of neighbors across random seeds.
 The number of connected components is displayed on a logarithmic scale.
 }
 \examples{
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(50*10), runif(50*10, min = 1, max = 2)), nrow = 100, byrow = TRUE)
+rownames(expr_matrix) = as.character(1:100)
+
 # the graph reduction type is PCA, so we can provide the expression matrix as argument
-nn_conn_comps_obj = get_nn_conn_comps(object = as.matrix(mtcars),
-    n_neigh_sequence = c(2,5,15),
-    config_name = "mt_cars",
-    n_repetitions = 1,
+nn_conn_comps_obj = get_nn_conn_comps(object = expr_matrix,
+    n_neigh_sequence = c(2,3,5),
+    config_name = "example_config",
+    n_repetitions = 10,
     graph_reduction_type = "PCA",
     transpose = FALSE,
     # the following parameter is used by the irlba function and is not mandatory
-    nv = 4)
+    nv = 3)
 plot_connected_comps_evolution(nn_conn_comps_obj)
 }

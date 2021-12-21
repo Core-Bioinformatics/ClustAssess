@@ -28,18 +28,24 @@ two steps that are compared.
 Perform an incremental ECS between two consecutive feature steps.
 }
 \examples{
-feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-   feature_set = colnames(mtcars),
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(25*10), runif(75*10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+rownames(expr_matrix) = as.character(1:100)
+colnames(expr_matrix) = paste("feature", 1:10)
+
+feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+   feature_set = colnames(expr_matrix),
    feature_type = "feature_name",
-   steps = c(6,7),
+   steps = c(5,10),
    npcs = 2,
-   n_repetitions = 1,
+   n_repetitions = 3,
    algorithm = 1,
    # the following parameters are used by the umap function and are not mandatory
-   n_neighbors = 2,
+   n_neighbors = 3,
    approx_pow = TRUE,
    n_epochs = 0,
    init = "random",
    min_dist = 0.3)
-plot_feature_stability_ecs_incremental(feature_stability_result, 0.7)
+plot_feature_stability_ecs_incremental(feature_stability_result)
 }

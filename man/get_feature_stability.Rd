@@ -72,12 +72,18 @@ the subsetting. For example, if the user wants to analyze highly variable featur
 they should provide them sorted by their variability.
 }
 \examples{
-feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-   feature_set = colnames(mtcars),
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(100*10), runif(100*10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+rownames(expr_matrix) = as.character(1:200)
+colnames(expr_matrix) = paste("feature", 1:10)
+
+feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+   feature_set = colnames(expr_matrix),
    feature_type = "feature_name",
-   steps = -1,
+   steps = 5,
    npcs = 2,
-   n_repetitions = 1,
+   n_repetitions = 10,
    algorithm = 1,
    # the following parameters are used by the umap function and are not mandatory
    n_neighbors = 3,
@@ -85,4 +91,5 @@ feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcar
    n_epochs = 0,
    init = "random",
    min_dist = 0.3)
+plot_feature_stability_boxplot(feature_stability_result)
 }

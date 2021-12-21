@@ -4,7 +4,7 @@
 \alias{merge_partitions}
 \title{Merge Partitions}
 \usage{
-merge_partitions(partition_list, ecs_thresh = 0.99, ncores = 1, order = TRUE)
+merge_partitions(partition_list, ecs_thresh = 1, ncores = 1, order = TRUE)
 }
 \arguments{
 \item{partition_list}{A list of flat disjoint membership vectors.}

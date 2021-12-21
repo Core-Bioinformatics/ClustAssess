@@ -21,9 +21,14 @@ number of clusters obtained for each number of neighbors across random seeds.
 The number of clusters is displayed on a logarithmic scale.
 }
 \examples{
-nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
-    n_neigh_sequence = c(2,5,15),
-    n_repetitions = 1,
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(runif(100*10), nrow = 100)
+rownames(expr_matrix) = as.character(1:100)
+
+nn_importance_obj = get_nn_importance(object = expr_matrix,
+    n_neigh_sequence = c(2,5),
+    n_repetitions = 5,
     graph_reduction_type = "PCA",
     algorithm = 1,
     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it

@@ -27,12 +27,18 @@ feature set and illustrates the distribution of the EC consistency score
 over the UMAP embedding.
 }
 \examples{
-feature_stability_result = get_feature_stability(data_matrix = t(as.matrix(mtcars)),
-   feature_set = colnames(mtcars),
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(100*10), runif(50*10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+rownames(expr_matrix) = as.character(1:150)
+colnames(expr_matrix) = paste("feature", 1:10)
+
+feature_stability_result = get_feature_stability(data_matrix = t(expr_matrix),
+   feature_set = colnames(expr_matrix),
    feature_type = "feature_name",
-   steps = -1,
+   steps = c(5,10),
    npcs = 2,
-   n_repetitions = 1,
+   n_repetitions = 3,
    algorithm = 1,
    # the following parameters are used by the umap function and are not mandatory
    n_neighbors = 3,

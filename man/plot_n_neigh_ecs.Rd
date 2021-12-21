@@ -19,9 +19,14 @@ of neighbors, graph types and base embeddings, the EC Consistency of the partiti
 obtained over multiple runs on an UMAP embedding.
 }
 \examples{
-nn_importance_obj = get_nn_importance(object = as.matrix(mtcars),
-    n_neigh_sequence = c(2,5,15),
-    n_repetitions = 1,
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(c(runif(100*10), runif(100*10, min=5, max=6)), nrow = 200)
+rownames(expr_matrix) = as.character(1:200)
+
+nn_importance_obj = get_nn_importance(object = expr_matrix,
+    n_neigh_sequence = c(10,15,20),
+    n_repetitions = 10,
     graph_reduction_type = "PCA",
     algorithm = 1,
     transpose = FALSE, # the matrix is already observations x features, so we won't transpose it

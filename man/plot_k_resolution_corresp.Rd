@@ -11,7 +11,7 @@ plot_k_resolution_corresp(
 )
 }
 \arguments{
-\item{res_object_list}{An object or a concatenation of objects returned by the
+\item{res_object_list}{An object returned by the
 `get_resolution_importance` method.}
 
 \item{res_object_names}{Custom names that the user could assing to each
@@ -33,18 +33,23 @@ For each configuration provided in the res_object_list, display what
 number of clusters appear for different values of the resolution parameters.
 }
 \examples{
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(runif(500*10), nrow = 500)
+
 # get the PCA embedding of the data
-pca_embedding = irlba::irlba(as.matrix(mtcars), nv = 2)
+pca_embedding = irlba::irlba(expr_matrix, nv = 2)
 pca_embedding = pca_embedding$u \%*\% diag(pca_embedding$d)
-rownames(pca_embedding) = rownames(mtcars)
+rownames(pca_embedding) = as.character(1:500)
 
 # run the function on the pca embedding
 resolution_result = get_resolution_importance(embedding = pca_embedding,
    resolution = c(0.8, 1),
    n_neigh = c(5, 7),
-   n_repetitions = 1,
+   n_repetitions = 5,
    clustering_method = 1,
    graph_type = 2,
-   object_name = "mt_cars")
+   object_name = "name_example")
+
 plot_k_resolution_corresp(resolution_result)
 }

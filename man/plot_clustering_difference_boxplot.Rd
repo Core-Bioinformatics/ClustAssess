@@ -23,15 +23,20 @@ values. The `filtered` field of the object returned by the
 Above each boxplot, the number of clusters is displayed.
 }
 \examples{
-adj_matrix = Seurat::FindNeighbors(as.matrix(mtcars),
-    k.param = 5,
+set.seed(2021)
+# create an artificial expression matrix
+expr_matrix = matrix(runif(500*10), nrow = 500)
+rownames(expr_matrix) = as.character(1:500)
+
+adj_matrix = Seurat::FindNeighbors(expr_matrix,
+    k.param = 10,
     nn.method = "rann",
     verbose = FALSE,
     compute.SNN = FALSE)$nn
 clust_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
-    n_repetitions = 1,
-    algorithm = 1,
+    n_repetitions = 10,
+    algorithm = 1:2,
     verbose = FALSE)
 plot_clustering_difference_boxplot(clust_diff_obj)
 }
