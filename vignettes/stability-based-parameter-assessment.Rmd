@@ -403,6 +403,12 @@ plot_k_resolution_corresp(resolution_gridsearch) +
   ggtitle("resolution - k correspondence with ecs threshold = 1")
 ```
 
+The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
+
+```{r k_n_part_1, fig.width=7, fig.height=5}
+plot_k_n_partitions(resolution_gridsearch) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
+```
+
 By default, the `get_resolution_importance` function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score.
 In practice, we also noticed cases with minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.
 
@@ -419,27 +425,8 @@ plot_k_resolution_corresp(resolution_gridsearch_thresh_99) +
   ggtitle("resolution - k correspondence with ecs threshold = 0.99")
 ```
 
-The `merge_resolutions` merges the partitions with the same number of clusters into the same list, even if they come from different resolutions. The resulting object can be used to investigate the relationship between the number of clusters and the number of unique partitions.
-
-```{r merge_resolutions}
-k_parts_obj = lapply(resolution_gridsearch, function(config_name) {
-   merge_resolutions(config_name,
-                     ncores = n_cores)
-})
-```
-
-The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
-
-```{r k_n_part_1, fig.width=7, fig.height=5}
-plot_k_n_partitions(k_parts_obj) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
-```
-
 ```{r k_n_part_99, fig.width=7, fig.height=5}
-k_parts_obj_thresh_99 = merge_partitions(k_parts_obj,
-                                         ecs_thresh = 0.99,
-                                         ncores = n_cores)
-
-plot_k_n_partitions(k_parts_obj_thresh_99) +
+plot_k_n_partitions(resolution_gridsearch_thresh_99) +
   ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
 ```
 
