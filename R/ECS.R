@@ -965,7 +965,7 @@ merge_partitions_ecs = function(partition_list,
 #' initial_list = list(c(1,1,2), c(2,2,2), c('B','B','A'))
 #' merge_partitions(initial_list, 0.99)
 merge_partitions = function(partition_list,
-                            ecs_thresh = 0.99,
+                            ecs_thresh = 1,
                             ncores = 1,
                             order = TRUE) {
   # check the parameters
