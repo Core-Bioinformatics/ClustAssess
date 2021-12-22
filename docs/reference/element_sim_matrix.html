@@ -84,10 +84,10 @@ average element-centric clustering similarities.</p>
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>clustering_list</dt>
-<dd><p>The clustering result, either:
-* A numeric/character/factor vector of cluster labels for each element.
-* A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
-* An hclust object.</p></dd>
+<dd><p>The list of clustering results, each of which is either:</p><ul><li><p>A numeric/character/factor vector of cluster labels for each element.</p></li>
+<li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
+<li><p>An hclust object.</p></li>
+</ul></dd>
 <dt>output_type</dt>
 <dd><p>A string specifying whether the output should be a
 matrix or a data.frame.</p></dd>
@@ -97,15 +97,15 @@ matrix or a data.frame.</p></dd>
 <dt>r</dt>
 <dd><p>A numeric hierarchical scaling parameter.</p></dd>
 <dt>rescale_path_type</dt>
-<dd><p>A string; rescale the hierarchical height by:
-* "max" : the maximum path from the root.
-* "min" : the minimum path form the root.
-* "linkage" : use the linkage distances in the clustering.</p></dd>
+<dd><p>A string; rescale the hierarchical height by:</p><ul><li><p>"max" : the maximum path from the root.</p></li>
+<li><p>"min" : the minimum path form the root.</p></li>
+<li><p>"linkage" : use the linkage distances in the clustering.</p></li>
+</ul></dd>
 <dt>ppr_implementation</dt>
 <dd><p>Choose a implementation for personalized
-page-rank calculation:
-* "prpack": use PPR algorithms in igraph.
-* "power_iteration": use power_iteration method.</p></dd>
+page-rank calculation:</p><ul><li><p>"prpack": use PPR algorithms in igraph.</p></li>
+<li><p>"power_iteration": use power_iteration method.</p></li>
+</ul></dd>
 <dt>dist_rescaled</dt>
 <dd><p>A logical: if TRUE, the linkage distances are linearly
 rescaled to be in-between 0 and 1.</p></dd>
@@ -136,12 +136,12 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 <span class="r-in"><span class="op">}</span></span>
 <span class="r-in"><span class="fu">element_sim_matrix</span><span class="op">(</span><span class="va">clustering.list</span>, output_type<span class="op">=</span><span class="st">"matrix"</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       [,1]      [,2]      [,3]      [,4]      [,5]      [,6]      [,7]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]    1 0.5396205 1.0000000 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]   NA 1.0000000 0.5396205 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,]   NA        NA 1.0000000 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]   NA        NA        NA 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,]   NA        NA        NA        NA 1.0000000 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,]   NA        NA        NA        NA        NA 1.0000000 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]    1 0.5503724 0.7012775 1.0000000 0.5503724 0.5503724 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]   NA 1.0000000 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,]   NA        NA 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]   NA        NA        NA 1.0000000 0.5503724 0.5503724 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,]   NA        NA        NA        NA 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,]   NA        NA        NA        NA        NA 1.0000000 1.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [7,]   NA        NA        NA        NA        NA        NA 1.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [8,]   NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]   NA        NA        NA        NA        NA        NA        NA</span>
@@ -157,19 +157,19 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [19,]   NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [20,]   NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            [,8]      [,9]     [,10]     [,11]     [,12]     [,13]     [,14]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.7012775 0.5503724 0.5503724 0.7012775 0.5503724 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 0.7012775 0.5503724 0.5503724 0.7012775 0.5503724 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]        NA 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]        NA        NA 1.0000000 0.5396205 1.0000000 0.5396205 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]        NA        NA        NA 1.0000000 0.5396205 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]        NA        NA        NA        NA 1.0000000 0.5396205 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]        NA        NA        NA        NA        NA 1.0000000 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 0.7012775 0.5503724 0.7012775 0.5503724 0.7012775 0.7012775 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 0.7012775 0.5503724 0.7012775 0.5503724 0.7012775 0.7012775 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]        NA 1.0000000 0.5396205 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]        NA        NA 1.0000000 0.5396205 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]        NA        NA        NA 1.0000000 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]        NA        NA        NA        NA 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]        NA        NA        NA        NA        NA 1.0000000 1.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [14,]        NA        NA        NA        NA        NA        NA 1.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [15,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA        NA        NA        NA        NA        NA        NA</span>
@@ -178,22 +178,22 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [19,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [20,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           [,15]     [,16]     [,17]     [,18]     [,19]     [,20]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.5503724 0.7012775 0.5503724 0.7012775 0.5503724 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 0.5503724 0.7012775 0.5503724 0.7012775 0.5503724 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,] 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14,] 0.5503724 0.7012775 0.5503724 0.7012775 0.5503724 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15,] 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA 1.0000000 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 0.5503724 0.7012775 0.7012775 0.5503724 0.7012775 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 0.5503724 0.7012775 0.7012775 0.5503724 0.7012775 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14,] 0.5396205 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15,] 1.0000000 0.5396205 0.5396205 1.0000000 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA 1.0000000 1.0000000 0.5396205 1.0000000 0.5396205</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [17,]        NA        NA 1.0000000 0.5396205 1.0000000 0.5396205</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [18,]        NA        NA        NA 1.0000000 0.5396205 1.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [19,]        NA        NA        NA        NA 1.0000000 0.5396205</span>

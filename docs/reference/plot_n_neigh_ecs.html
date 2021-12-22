@@ -81,14 +81,19 @@ obtained over multiple runs on an UMAP embedding.</p>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A ggplot facet object</p>
+    <p>A ggplot2 object.</p>
     </div>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">nn_importance_obj</span> <span class="op">=</span> <span class="fu"><a href="get_nn_importance.html">get_nn_importance</a></span><span class="op">(</span>object <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span>,</span>
-<span class="r-in">    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">5</span>,<span class="fl">15</span><span class="op">)</span>,</span>
-<span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">1</span>,</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2021</span><span class="op">)</span></span>
+<span class="r-in"><span class="co"># create an artificial expression matrix</span></span>
+<span class="r-in"><span class="va">expr_matrix</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span><span class="op">*</span><span class="fl">10</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span><span class="op">*</span><span class="fl">10</span>, min<span class="op">=</span><span class="fl">5</span>, max<span class="op">=</span><span class="fl">6</span><span class="op">)</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">200</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">nn_importance_obj</span> <span class="op">=</span> <span class="fu"><a href="get_nn_importance.html">get_nn_importance</a></span><span class="op">(</span>object <span class="op">=</span> <span class="va">expr_matrix</span>,</span>
+<span class="r-in">    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">15</span>,<span class="fl">20</span><span class="op">)</span>,</span>
+<span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span>
 <span class="r-in">    graph_reduction_type <span class="op">=</span> <span class="st">"PCA"</span>,</span>
 <span class="r-in">    algorithm <span class="op">=</span> <span class="fl">1</span>,</span>
 <span class="r-in">    transpose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="co"># the matrix is already observations x features, so we won't transpose it</span></span>

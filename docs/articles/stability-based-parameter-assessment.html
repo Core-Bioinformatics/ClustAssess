@@ -129,8 +129,8 @@
 <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">cuomo.counts</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt;            used  (Mb) gc trigger   (Mb)  max used   (Mb)</span>
-<span class="co">#&gt; Ncells  2843344 151.9    5487095  293.1   4861572  259.7</span>
-<span class="co">#&gt; Vcells 29431276 224.6  134234056 1024.2 162913073 1243.0</span></code></pre></div>
+<span class="co">#&gt; Ncells  2844453 152.0    5489435  293.2   4862686  259.7</span>
+<span class="co">#&gt; Vcells 29432554 224.6  134235283 1024.2 162914351 1243.0</span></code></pre></div>
 <p>The analysis is based on the Seurat pipeline (<a href="https://doi.org/10.1016/j.cell.2021.04.048" class="external-link">Hao et al 2021, Integrated analysis of multimodal single-cell data</a>); after creating the object and recording the mitochondrial and ribosomal gene percentages, those genes are excluded from the downstream analysis.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove MT and RP genes</span>
@@ -386,61 +386,51 @@
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
 <p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_1-1.png" width="768"></p>
-<p>By default, the <code>get_resolution_importance</code> function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score. In practice, we also noticed cases with minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.</p>
+<p>The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_1-1.png" width="768"></p>
+<p>By default, the <code>get_resolution_importance</code> function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score. In practice, we also noticed cases with minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resolution_gridsearch_thresh_99</span> <span class="op">=</span> <span class="fu"><a href="../reference/merge_partitions.html">merge_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span>,
                                                    ecs_thresh <span class="op">=</span> <span class="fl">0.99</span>,
                                                    ncores <span class="op">=</span> <span class="va">n_cores</span><span class="op">)</span></code></pre></div>
 <p>Lowering the ECS threshold leads, in general, to higher number of occurences for the most frequent partition.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch_thresh_99</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
 <p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_99-1.png" width="768"></p>
-<p>The <code>merge_resolutions</code> merges the partitions with the same number of clusters into the same list, even if they come from different resolutions. The resulting object can be used to investigate the relationship between the number of clusters and the number of unique partitions.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">k_parts_obj</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span>, <span class="kw">function</span><span class="op">(</span><span class="va">config_name</span><span class="op">)</span> <span class="op">{</span>
-   <span class="fu"><a href="../reference/merge_resolutions.html">merge_resolutions</a></span><span class="op">(</span><span class="va">config_name</span>,
-                     ncores <span class="op">=</span> <span class="va">n_cores</span><span class="op">)</span>
-<span class="op">}</span><span class="op">)</span></code></pre></div>
-<p>The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">k_parts_obj</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_1-1.png" width="768"></p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">k_parts_obj_thresh_99</span> <span class="op">=</span> <span class="fu"><a href="../reference/merge_partitions.html">merge_partitions</a></span><span class="op">(</span><span class="va">k_parts_obj</span>,
-                                         ecs_thresh <span class="op">=</span> <span class="fl">0.99</span>,
-                                         ncores <span class="op">=</span> <span class="va">n_cores</span><span class="op">)</span>
-
-<span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">k_parts_obj_thresh_99</span><span class="op">)</span> <span class="op">+</span>
+<code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch_thresh_99</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
 <p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_99-1.png" width="768"></p>
 <p>We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other systems may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Feature stability methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_feature_stability</span> <span class="op">-</span> <span class="va">start_time_feature_stability</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Feature stability methods runtime: 11.63887 minutes"</span>
+<span class="co">#&gt; [1] "Feature stability methods runtime: 20.35029 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN - # connected components methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_conn</span> <span class="op">-</span> <span class="va">start_time_nn_conn</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN - # connected components methods runtime: 5.69326 minutes"</span>
+<span class="co">#&gt; [1] "NN - # connected components methods runtime: 7.895996 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_importance</span> <span class="op">-</span> <span class="va">start_time_nn_importance</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN importance methods runtime: 21.39789 minutes"</span>
+<span class="co">#&gt; [1] "NN importance methods runtime: 36.98898 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Clustering importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_clustering_method</span> <span class="op">-</span> <span class="va">start_time_clustering_method</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Clustering importance methods runtime: 4.633679 minutes"</span>
+<span class="co">#&gt; [1] "Clustering importance methods runtime: 10.61586 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Resolution gridsearch methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_resolution</span> <span class="op">-</span> <span class="va">start_time_resolution</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.226964 minutes"</span></code></pre></div>
+<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 2.512017 minutes"</span></code></pre></div>
 </div>
 <div class="section level1">
 <h1 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h1>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt; R version 4.1.2 (2021-11-01)</span>
 <span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span>

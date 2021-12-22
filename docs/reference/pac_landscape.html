@@ -76,12 +76,13 @@ of clusters.</p>
     <dl><dt>pac_res</dt>
 <dd><p>The data.frame output by consensus_cluster.</p></dd>
 <dt>n_shade</dt>
-<dd><p>The number of iterations to shade to show the
-variability of PAC across the last n_shade iterations.</p></dd>
+<dd><p>The PAC values across the last n_shade iterations will be
+shaded to illustrate the how stable the PAC score is.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A ggplot2 object with the final PAC vs k plot.</p>
+    <p>A ggplot2 object with the final PAC vs k plot. A local minimum in the
+landscape indicates an especially stable value of k.</p>
     </div>
 
     <div id="ref-examples">
