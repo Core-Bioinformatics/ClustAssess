@@ -103,7 +103,7 @@ choices that influence the final clustering, for example to evaluate feature
 sets, we use `get_feature_stability_object`, and plot the results with
 `plot_feature_stability_boxplot`:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png width=80%/>
 
 where the higher element-centric consistency (ECC) indicates more stable
 clustering results across random seeds. For more details, please see the
