@@ -7,13 +7,13 @@ Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
                   email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
                   email="iim22@cam.ac.uk", role="aut"))
 Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
-Description: A set of tools for evaluating clustering similarity across methods 
+Description: A set of tools for evaluating clustering robustness using 
+    proportion of ambiguously clustered pairs (Senbabaoglu et al. (2014) 
+    <doi:10.1038/srep06207>), as well as similarity across methods 
     and method stability using element-centric clustering comparison (Gates et 
     al. (2019) <doi:10.1038/s41598-019-44892-y>). Additionally, this package 
-    enables data-wide assessment of clustering robustness using proportion of
-    ambiguously clustered pairs (Senbabaoglu et al. (2014) 
-    <doi:10.1038/srep06207>), which can be used to infer the optimal number of 
-    clusters in the data.
+    enables stability-based parameter assessment for graph-based clustering 
+    pipelines typical in single-cell data analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports: 
