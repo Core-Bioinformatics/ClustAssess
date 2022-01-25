@@ -78,7 +78,7 @@
 
       
 
-      </header><div class="row">
+      </header><script src="stability-based-parameter-assessment_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Stability-based parameter assessment</h1>
@@ -128,9 +128,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">cuomo.counts</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt;            used  (Mb) gc trigger   (Mb)  max used   (Mb)</span>
-<span class="co">#&gt; Ncells  2844453 152.0    5489435  293.2   4862686  259.7</span>
-<span class="co">#&gt; Vcells 29432554 224.6  134235283 1024.2 162914351 1243.0</span></code></pre></div>
+<span class="co">#&gt;            used  (Mb) gc trigger (Mb)  max used   (Mb)</span>
+<span class="co">#&gt; Ncells  2838146 151.6    4830444  258   4830444  258.0</span>
+<span class="co">#&gt; Vcells 29413916 224.5  134217380 1024 162897137 1242.9</span></code></pre></div>
 <p>The analysis is based on the Seurat pipeline (<a href="https://doi.org/10.1016/j.cell.2021.04.048" class="external-link">Hao et al 2021, Integrated analysis of multimodal single-cell data</a>); after creating the object and recording the mitochondrial and ribosomal gene percentages, those genes are excluded from the downstream analysis.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove MT and RP genes</span>
@@ -169,7 +169,7 @@
 <p>QC overview for the Cuomo dataset.</p>
 <p>A time point induced separation of cells; B distributions of cells per donor, we notice a good overlap across all 6 donors, supporting the assumption of no significant batch effect. C – F distributions of sequencing depths (C), number of features (D), and percentages of reads incident to mitochondrial genes (E) and ribosomal genes (F) illustrated using the colour gradient.</p>
 <p>No significant effects are noted.</p>
-<p><img src="stability-based-parameter-assessment_files/figure-html/qc-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/qc-1.png" width="672"></p>
 <p><em>Note</em>: The following sections provide an example of applying the ClustAssess summary assessment methods. The values of the parameters should be varied and critically assessed for each individual dataset. Also, we recommend increasing the number of repetitions used for stability inference, to ensure reliable and robust conclusions.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">n_repetitions</span> <span class="op">=</span> <span class="fl">30</span></code></pre></div>
@@ -240,21 +240,21 @@
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_boxplot.html">plot_feature_stability_boxplot</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, text_size  <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span>,
         legend.justification <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png" width="672"></p>
 <p>Another angle for assessing the stability is centered on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_ecs_incremental.html">plot_feature_stability_ecs_incremental</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, dodge_width <span class="op">=</span> <span class="fl">1</span>, text_size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span>
     <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span>,
         legend.justification <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/stab_ecs_inc-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/stab_ecs_inc-1.png" width="672"></p>
 <p>To enhance the summarized information presented as boxplots, we use <code>plot_feature_stability_mb_facet</code> to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes might be explained in part by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_mb_facet.html">plot_feature_stability_mb_facet</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span>, text_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/stab_mb-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/stab_mb-1.png" width="672"></p>
 <p>To further understand the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the Element-Centric Consistency score of the partitions obtained for each step and feature set. For the Highly Variable and the intersection sets, we note that the instability appears in groups of cells with high density. These visualizations can help us understand the relationship between stability and the topology of the data.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_feature_stability_ecs_facet.html">plot_feature_stability_ecs_facet</a></span><span class="op">(</span><span class="va">pca_feature_stability_object</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/stab_ecs_fa-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/stab_ecs_fa-1.png" width="672"></p>
 <p>For the Cuomo case study, based on the plots presented above, we conclude that the most abundant gene set is not a suitable choice, due to the presence of multiple isolated groups of cells. Thus, we settle on using the highly variable genes set, as it produces a compact distribution of cells that is consistent across different seeds.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">cuomo</span> <span class="op">=</span> <span class="va">cuomo</span><span class="op">[</span><span class="va">var_features</span>, <span class="op">]</span>
@@ -302,7 +302,7 @@
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_connected_comps_evolution.html">plot_connected_comps_evolution</a></span><span class="op">(</span><span class="va">nn_conn_comps_object</span><span class="op">)</span>
 <span class="co">#&gt; Warning: Transformation introduced infinite values in continuous y-axis</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/comps_evo-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/comps_evo-1.png" width="672"></p>
 <p><code>get_nn_importance</code> is a method used for assessing the impact of number of nearest neighbours, of the graph type (NN or SNN) and of the base embedding (PCA or UMAP) in determining the final number of clusters. The input is either a normalized expression matrix or a PCA embedding, a range for the number of neighbours and the reduction type used for building the graph. The graph type is not provided, as the method will check both cases i.e. NN and SNN. The output comprises a list of configurations (reduction type, and the graph type). Each configuration will contain a list of unique partitions obtained from multiple runs (iterations) for each selected value of the nearest neighbours.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">nn_importance_object</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mapply.html" class="external-link">mapply</a></span><span class="op">(</span><span class="va">c</span>,
@@ -329,11 +329,11 @@
 <p>We input the resulting object into <code>plot_n_neigh_k_correspondence</code>, to generate the following plot; it summarizes the relationship between the number of nearest neighbours and k, the number of clusters. As for the # neighbours vs # connected components correspondence plot, we note a similar descending trend of the number of clusters as the number of nearest neighbours increases. The plot also illustrates the difference between the two graph types: SNN has a tighter distribution of k (over multiple iterations) compared to NN. If the initial object contains graphs based on both UMAP and PCA embedding, this plot will showcase the impact of this choice, as well. For the Cuomo dataset, we notice that the UMAP-based graph is partitioned into a greater number of clusters compared to the PCA case.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_n_neigh_k_correspondence.html">plot_n_neigh_k_correspondence</a></span><span class="op">(</span><span class="va">nn_importance_object</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/n_k_corr-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/n_k_corr-1.png" width="672"></p>
 <p>The stability of these parameters can be also evaluated using the Element-Centric Consistency applied on the partition list obtained over the multiple runs. The following summary plot underlines the evolution of the consistency as the number of neighbours increases; the PCA graphs yields stable results even for smaller number of nearest neighbours, whereas the UMAP exhibits a stability improvement as the number of neighbours increases. For the same number of nearest neighbors, SNN is more stable than NN.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">nn_importance_object</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/n_neigh_ecs-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/n_neigh_ecs-1.png" width="672"></p>
 </div>
 <div class="section level1">
 <h1 id="graph-clustering">Graph clustering<a class="anchor" aria-label="anchor" href="#graph-clustering"></a>
@@ -366,11 +366,11 @@
 <p>The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot, we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters; in addition, we note consistently high stability for all four algorithms, although Leiden seems to perform noticeably worse for the resolution value of 0.6.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_clustering_difference_boxplot.html">plot_clustering_difference_boxplot</a></span><span class="op">(</span><span class="va">clustering_diff_obj</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/diff_boxplot-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/diff_boxplot-1.png" width="672"></p>
 <p>To further underline the areas of instability, we provide an additional plot where we display, on the same UMAPs as before, the ECC score of the partitions obtained for each resolution parameter with each clustering method. We note how all four algorithms are unstable in similar regions of the plot (upper island as well as different parts of the shape in the lower left). In addition, we observe that the clustering methods, except Leiden, are more stable as the resolution value increases.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_clustering_difference_facet.html">plot_clustering_difference_facet</a></span><span class="op">(</span><span class="va">clustering_diff_obj</span>, <span class="va">cuomo</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">umap</span><span class="op">@</span><span class="va">cell.embeddings</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/diff_facet-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/diff_facet-1.png" width="672"></p>
 <p>As previously suggested, the resolution parameter affects the number of clusters obtained. The <code>get_resolution_importance</code> evaluates the effect of a range of values for the resolution parameter on the stability of the output. Besides the resolution, the user can input multiple values of the following parameters: number of neighbours, the graph type and the clustering method. The function will return a list associated with each parameter value combination. For each resolution value, the list will contain multiple sublists of partitions corresponding to specific number of clusters.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resolution_gridsearch</span> <span class="op">=</span> <span class="fu"><a href="../reference/get_resolution_importance.html">get_resolution_importance</a></span><span class="op">(</span>embedding <span class="op">=</span> <span class="va">cuomo</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">umap</span><span class="op">@</span><span class="va">cell.embeddings</span>,
@@ -385,11 +385,11 @@
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_1-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_1-1.png" width="672"></p>
 <p>The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 1"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_1-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_1-1.png" width="672"></p>
 <p>By default, the <code>get_resolution_importance</code> function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score. In practice, we also noticed cases with minor differences between two partitions (only 5 cells change their cluster labels). For the merging of identical partitions, these would be classed as different, although, in practice, the biological interpretation is likely to be the same. To address this we included a similarity threshold for additional flexibility i.e.: two partitions are considered identical and will be merged if the Element-Centric Similarity Score between them is above a user-defined ECS threshold.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">resolution_gridsearch_thresh_99</span> <span class="op">=</span> <span class="fu"><a href="../reference/merge_partitions.html">merge_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch</span>,
@@ -399,108 +399,107 @@
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_resolution_corresp.html">plot_k_resolution_corresp</a></span><span class="op">(</span><span class="va">resolution_gridsearch_thresh_99</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"resolution - k correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_99-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_res_corr_99-1.png" width="672"></p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">resolution_gridsearch_thresh_99</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"k - # partitions correspondence with ecs threshold = 0.99"</span><span class="op">)</span></code></pre></div>
-<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_99-1.png" width="768"></p>
+<p><img src="stability-based-parameter-assessment_files/figure-html/k_n_part_99-1.png" width="672"></p>
 <p>We conclude by summarizing the runtime for executing each step of the assessment pipeline. The results observed on other systems may vary; the runtime is also affected by the size of the date (i.e number of cells and features), the data itself and by actual values for the various parameters.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Feature stability methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_feature_stability</span> <span class="op">-</span> <span class="va">start_time_feature_stability</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Feature stability methods runtime: 20.35029 minutes"</span>
+<span class="co">#&gt; [1] "Feature stability methods runtime: 9.079207 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN - # connected components methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_conn</span> <span class="op">-</span> <span class="va">start_time_nn_conn</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN - # connected components methods runtime: 7.895996 minutes"</span>
+<span class="co">#&gt; [1] "NN - # connected components methods runtime: 5.098747 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_importance</span> <span class="op">-</span> <span class="va">start_time_nn_importance</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN importance methods runtime: 36.98898 minutes"</span>
+<span class="co">#&gt; [1] "NN importance methods runtime: 23.55189 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Clustering importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_clustering_method</span> <span class="op">-</span> <span class="va">start_time_clustering_method</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Clustering importance methods runtime: 10.61586 minutes"</span>
+<span class="co">#&gt; [1] "Clustering importance methods runtime: 4.920113 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Resolution gridsearch methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_resolution</span> <span class="op">-</span> <span class="va">start_time_resolution</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 2.512017 minutes"</span></code></pre></div>
+<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.006608 minutes"</span></code></pre></div>
 </div>
 <div class="section level1">
 <h1 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h1>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; R version 4.1.2 (2021-11-01)</span>
+<span class="co">#&gt; R version 4.0.3 (2020-10-10)</span>
 <span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span>
-<span class="co">#&gt; Running under: Linux Mint 20.1</span>
+<span class="co">#&gt; Running under: Debian GNU/Linux 10 (buster)</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Matrix products: default</span>
-<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0</span>
-<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0</span>
+<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.8.0</span>
+<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.8.0</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; locale:</span>
-<span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span>
-<span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span>
-<span class="co">#&gt;  [5] LC_MONETARY=ro_RO.UTF-8    LC_MESSAGES=en_US.UTF-8   </span>
-<span class="co">#&gt;  [7] LC_PAPER=ro_RO.UTF-8       LC_NAME=C                 </span>
+<span class="co">#&gt;  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              </span>
+<span class="co">#&gt;  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    </span>
+<span class="co">#&gt;  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   </span>
+<span class="co">#&gt;  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 </span>
 <span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span>
-<span class="co">#&gt; [11] LC_MEASUREMENT=ro_RO.UTF-8 LC_IDENTIFICATION=C       </span>
+<span class="co">#&gt; [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; attached base packages:</span>
 <span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; other attached packages:</span>
 <span class="co">#&gt; [1] patchwork_1.1.1    ClustAssess_0.3.0  ggplot2_3.3.5      Matrix_1.4-0      </span>
-<span class="co">#&gt; [5] readr_2.1.0        SeuratObject_4.0.4 Seurat_4.0.5      </span>
+<span class="co">#&gt; [5] readr_2.1.1        SeuratObject_4.0.4 Seurat_4.1.0      </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; loaded via a namespace (and not attached):</span>
-<span class="co">#&gt;   [1] systemfonts_1.0.3     plyr_1.8.6            igraph_1.2.10        </span>
-<span class="co">#&gt;   [4] lazyeval_0.2.2        splines_4.1.2         listenv_0.8.0        </span>
+<span class="co">#&gt;   [1] systemfonts_1.0.3     plyr_1.8.6            igraph_1.2.11        </span>
+<span class="co">#&gt;   [4] lazyeval_0.2.2        splines_4.0.3         listenv_0.8.0        </span>
 <span class="co">#&gt;   [7] scattermore_0.7       digest_0.6.29         foreach_1.5.1        </span>
-<span class="co">#&gt;  [10] htmltools_0.5.2       fansi_0.5.0           magrittr_2.0.1       </span>
+<span class="co">#&gt;  [10] htmltools_0.5.2       fansi_1.0.0           magrittr_2.0.1       </span>
 <span class="co">#&gt;  [13] memoise_2.0.1         tensor_1.5            cluster_2.1.2        </span>
 <span class="co">#&gt;  [16] ROCR_1.0-11           tzdb_0.2.0            globals_0.14.0       </span>
-<span class="co">#&gt;  [19] matrixStats_0.61.0    vroom_1.5.6           pkgdown_2.0.1        </span>
-<span class="co">#&gt;  [22] spatstat.sparse_2.0-0 prettyunits_1.1.1     colorspace_2.0-2     </span>
-<span class="co">#&gt;  [25] rappdirs_0.3.3        ggrepel_0.9.1         textshaping_0.3.6    </span>
-<span class="co">#&gt;  [28] xfun_0.28             dplyr_1.0.7           crayon_1.4.2         </span>
-<span class="co">#&gt;  [31] jsonlite_1.7.2        spatstat.data_2.1-0   survival_3.2-13      </span>
-<span class="co">#&gt;  [34] zoo_1.8-9             iterators_1.0.13      glue_1.6.0           </span>
-<span class="co">#&gt;  [37] polyclip_1.10-0       gtable_0.3.0          leiden_0.3.9         </span>
-<span class="co">#&gt;  [40] future.apply_1.8.1    abind_1.4-5           scales_1.1.1         </span>
-<span class="co">#&gt;  [43] DBI_1.1.1             miniUI_0.1.1.1        Rcpp_1.0.7           </span>
-<span class="co">#&gt;  [46] progress_1.2.2        viridisLite_0.4.0     xtable_1.8-4         </span>
-<span class="co">#&gt;  [49] reticulate_1.22       spatstat.core_2.3-2   bit_4.0.4            </span>
-<span class="co">#&gt;  [52] htmlwidgets_1.5.4     httr_1.4.2            RColorBrewer_1.1-2   </span>
-<span class="co">#&gt;  [55] ellipsis_0.3.2        ica_1.0-2             pkgconfig_2.0.3      </span>
-<span class="co">#&gt;  [58] farver_2.1.0          sass_0.4.0            uwot_0.1.11          </span>
-<span class="co">#&gt;  [61] deldir_1.0-6          here_1.0.1            utf8_1.2.2           </span>
-<span class="co">#&gt;  [64] tidyselect_1.1.1      labeling_0.4.2        rlang_0.4.12         </span>
-<span class="co">#&gt;  [67] reshape2_1.4.4        later_1.3.0           munsell_0.5.0        </span>
-<span class="co">#&gt;  [70] tools_4.1.2           cachem_1.0.6          cli_3.1.0            </span>
-<span class="co">#&gt;  [73] generics_0.1.1        ggridges_0.5.3        evaluate_0.14        </span>
-<span class="co">#&gt;  [76] stringr_1.4.0         fastmap_1.1.0         yaml_2.2.1           </span>
-<span class="co">#&gt;  [79] ragg_1.2.1            goftest_1.2-3         knitr_1.36           </span>
-<span class="co">#&gt;  [82] bit64_4.0.5           fs_1.5.0              fitdistrplus_1.1-6   </span>
-<span class="co">#&gt;  [85] purrr_0.3.4           RANN_2.6.1            pbapply_1.5-0        </span>
-<span class="co">#&gt;  [88] future_1.23.0         nlme_3.1-153          mime_0.12            </span>
-<span class="co">#&gt;  [91] compiler_4.1.2        rstudioapi_0.13       plotly_4.10.0        </span>
-<span class="co">#&gt;  [94] curl_4.3.2            png_0.1-7             spatstat.utils_2.2-0 </span>
-<span class="co">#&gt;  [97] tibble_3.1.6          bslib_0.3.1           stringi_1.7.6        </span>
-<span class="co">#&gt; [100] highr_0.9             desc_1.4.0            RSpectra_0.16-0      </span>
-<span class="co">#&gt; [103] lattice_0.20-45       vctrs_0.3.8           pillar_1.6.4         </span>
-<span class="co">#&gt; [106] lifecycle_1.0.1       spatstat.geom_2.3-0   lmtest_0.9-39        </span>
-<span class="co">#&gt; [109] jquerylib_0.1.4       RcppAnnoy_0.0.19      data.table_1.14.2    </span>
-<span class="co">#&gt; [112] cowplot_1.1.1         irlba_2.3.5           httpuv_1.6.3         </span>
-<span class="co">#&gt; [115] R6_2.5.1              promises_1.2.0.1      KernSmooth_2.23-20   </span>
-<span class="co">#&gt; [118] gridExtra_2.3         parallelly_1.29.0     codetools_0.2-18     </span>
-<span class="co">#&gt; [121] MASS_7.3-54           assertthat_0.2.1      rprojroot_2.0.2      </span>
-<span class="co">#&gt; [124] withr_2.4.3           sctransform_0.3.2     mgcv_1.8-38          </span>
-<span class="co">#&gt; [127] parallel_4.1.2        hms_1.1.1             grid_4.1.2           </span>
-<span class="co">#&gt; [130] rpart_4.1-15          tidyr_1.1.4           rmarkdown_2.11       </span>
-<span class="co">#&gt; [133] Rtsne_0.15            shiny_1.7.1</span></code></pre></div>
+<span class="co">#&gt;  [19] matrixStats_0.61.0    vroom_1.5.7           pkgdown_2.0.1        </span>
+<span class="co">#&gt;  [22] spatstat.sparse_2.1-0 prettyunits_1.1.1     colorspace_2.0-2     </span>
+<span class="co">#&gt;  [25] ggrepel_0.9.1         textshaping_0.3.6     xfun_0.29            </span>
+<span class="co">#&gt;  [28] dplyr_1.0.7           crayon_1.4.2          jsonlite_1.7.2       </span>
+<span class="co">#&gt;  [31] spatstat.data_2.1-2   survival_3.2-13       zoo_1.8-9            </span>
+<span class="co">#&gt;  [34] iterators_1.0.13      glue_1.6.0            polyclip_1.10-0      </span>
+<span class="co">#&gt;  [37] gtable_0.3.0          leiden_0.3.9          future.apply_1.8.1   </span>
+<span class="co">#&gt;  [40] abind_1.4-5           scales_1.1.1          DBI_1.1.2            </span>
+<span class="co">#&gt;  [43] miniUI_0.1.1.1        Rcpp_1.0.8            progress_1.2.2       </span>
+<span class="co">#&gt;  [46] viridisLite_0.4.0     xtable_1.8-4          reticulate_1.22      </span>
+<span class="co">#&gt;  [49] spatstat.core_2.3-2   bit_4.0.4             htmlwidgets_1.5.4    </span>
+<span class="co">#&gt;  [52] httr_1.4.2            RColorBrewer_1.1-2    ellipsis_0.3.2       </span>
+<span class="co">#&gt;  [55] ica_1.0-2             pkgconfig_2.0.3       farver_2.1.0         </span>
+<span class="co">#&gt;  [58] sass_0.4.0            uwot_0.1.11           deldir_1.0-6         </span>
+<span class="co">#&gt;  [61] utf8_1.2.2            tidyselect_1.1.1      labeling_0.4.2       </span>
+<span class="co">#&gt;  [64] rlang_0.4.12          reshape2_1.4.4        later_1.3.0          </span>
+<span class="co">#&gt;  [67] munsell_0.5.0         tools_4.0.3           cachem_1.0.6         </span>
+<span class="co">#&gt;  [70] cli_3.1.0             generics_0.1.1        ggridges_0.5.3       </span>
+<span class="co">#&gt;  [73] evaluate_0.14         stringr_1.4.0         fastmap_1.1.0        </span>
+<span class="co">#&gt;  [76] yaml_2.2.1            ragg_1.2.1            goftest_1.2-3        </span>
+<span class="co">#&gt;  [79] knitr_1.37            bit64_4.0.5           fs_1.5.2             </span>
+<span class="co">#&gt;  [82] fitdistrplus_1.1-6    purrr_0.3.4           RANN_2.6.1           </span>
+<span class="co">#&gt;  [85] pbapply_1.5-0         future_1.23.0         nlme_3.1-155         </span>
+<span class="co">#&gt;  [88] mime_0.12             compiler_4.0.3        rstudioapi_0.13      </span>
+<span class="co">#&gt;  [91] plotly_4.10.0         curl_4.3.2            png_0.1-7            </span>
+<span class="co">#&gt;  [94] spatstat.utils_2.3-0  tibble_3.1.6          bslib_0.3.1          </span>
+<span class="co">#&gt;  [97] stringi_1.7.6         highr_0.9             desc_1.4.0           </span>
+<span class="co">#&gt; [100] RSpectra_0.16-0       lattice_0.20-45       vctrs_0.3.8          </span>
+<span class="co">#&gt; [103] pillar_1.6.4          lifecycle_1.0.1       spatstat.geom_2.3-1  </span>
+<span class="co">#&gt; [106] lmtest_0.9-39         jquerylib_0.1.4       RcppAnnoy_0.0.19     </span>
+<span class="co">#&gt; [109] data.table_1.14.2     cowplot_1.1.1         irlba_2.3.5          </span>
+<span class="co">#&gt; [112] httpuv_1.6.5          R6_2.5.1              promises_1.2.0.1     </span>
+<span class="co">#&gt; [115] KernSmooth_2.23-20    gridExtra_2.3         parallelly_1.30.0    </span>
+<span class="co">#&gt; [118] codetools_0.2-18      MASS_7.3-55           assertthat_0.2.1     </span>
+<span class="co">#&gt; [121] rprojroot_2.0.2       withr_2.4.3           sctransform_0.3.3    </span>
+<span class="co">#&gt; [124] mgcv_1.8-38           parallel_4.0.3        hms_1.1.1            </span>
+<span class="co">#&gt; [127] grid_4.0.3            rpart_4.1-15          tidyr_1.1.4          </span>
+<span class="co">#&gt; [130] rmarkdown_2.11        Rtsne_0.15            shiny_1.7.1</span></code></pre></div>
 </div>
   </div>
 

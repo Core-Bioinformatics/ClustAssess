@@ -78,7 +78,7 @@
 
       
 
-      </header><div class="row">
+      </header><script src="comparing-soft-and-hierarchical_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Comparing soft and hierarchical clusterings with element-centric similarity</h1>
@@ -134,7 +134,7 @@
 <span class="va">hc.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="va">distances</span>, method<span class="op">=</span><span class="st">'complete'</span><span class="op">)</span>
 <span class="co"># plot the resulting dendrogram</span>
 <span class="va">node.colors</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'blue'</span>, <span class="st">'red'</span>, <span class="st">'green'</span><span class="op">)</span>
-<span class="va">hc.res</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/pkg/dbscan/man/reachability.html" class="external-link">as.dendrogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
+<span class="va">hc.res</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/stats/dendrogram.html" class="external-link">as.dendrogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
   <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_pch"</span>, <span class="fl">19</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
   <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_cex"</span>, <span class="fl">0.5</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
   <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_col"</span>, <span class="va">node.colors</span><span class="op">[</span><span class="va">df.iris</span><span class="op">$</span><span class="va">species</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
@@ -180,47 +180,47 @@
 </h2>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; R version 4.1.2 (2021-11-01)</span>
+<span class="co">#&gt; R version 4.0.3 (2020-10-10)</span>
 <span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span>
-<span class="co">#&gt; Running under: Linux Mint 20.1</span>
+<span class="co">#&gt; Running under: Debian GNU/Linux 10 (buster)</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Matrix products: default</span>
-<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0</span>
-<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0</span>
+<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.8.0</span>
+<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.8.0</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; locale:</span>
-<span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span>
-<span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span>
-<span class="co">#&gt;  [5] LC_MONETARY=ro_RO.UTF-8    LC_MESSAGES=en_US.UTF-8   </span>
-<span class="co">#&gt;  [7] LC_PAPER=ro_RO.UTF-8       LC_NAME=C                 </span>
+<span class="co">#&gt;  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              </span>
+<span class="co">#&gt;  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    </span>
+<span class="co">#&gt;  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   </span>
+<span class="co">#&gt;  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 </span>
 <span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span>
-<span class="co">#&gt; [11] LC_MEASUREMENT=ro_RO.UTF-8 LC_IDENTIFICATION=C       </span>
+<span class="co">#&gt; [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; attached base packages:</span>
 <span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; other attached packages:</span>
-<span class="co">#&gt; [1] dendextend_1.15.2 ggplot2_3.3.5     dbscan_1.1-8      e1071_1.7-9      </span>
+<span class="co">#&gt; [1] dendextend_1.15.2 ggplot2_3.3.5     dbscan_1.1-9      e1071_1.7-9      </span>
 <span class="co">#&gt; [5] ClustAssess_0.3.0</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; loaded via a namespace (and not attached):</span>
-<span class="co">#&gt;  [1] tidyselect_1.1.1  xfun_0.28         bslib_0.3.1       purrr_0.3.4      </span>
+<span class="co">#&gt;  [1] tidyselect_1.1.1  xfun_0.29         bslib_0.3.1       purrr_0.3.4      </span>
 <span class="co">#&gt;  [5] lattice_0.20-45   colorspace_2.0-2  vctrs_0.3.8       generics_0.1.1   </span>
 <span class="co">#&gt;  [9] viridisLite_0.4.0 htmltools_0.5.2   yaml_2.2.1        utf8_1.2.2       </span>
 <span class="co">#&gt; [13] rlang_0.4.12      pkgdown_2.0.1     jquerylib_0.1.4   pillar_1.6.4     </span>
-<span class="co">#&gt; [17] withr_2.4.3       glue_1.6.0        DBI_1.1.1         foreach_1.5.1    </span>
+<span class="co">#&gt; [17] withr_2.4.3       glue_1.6.0        DBI_1.1.2         foreach_1.5.1    </span>
 <span class="co">#&gt; [21] lifecycle_1.0.1   stringr_1.4.0     munsell_0.5.0     gtable_0.3.0     </span>
 <span class="co">#&gt; [25] ragg_1.2.1        codetools_0.2-18  memoise_2.0.1     evaluate_0.14    </span>
-<span class="co">#&gt; [29] labeling_0.4.2    knitr_1.36        fastmap_1.1.0     class_7.3-19     </span>
-<span class="co">#&gt; [33] fansi_0.5.0       highr_0.9         Rcpp_1.0.7        scales_1.1.1     </span>
+<span class="co">#&gt; [29] labeling_0.4.2    knitr_1.37        fastmap_1.1.0     class_7.3-20     </span>
+<span class="co">#&gt; [33] fansi_1.0.0       highr_0.9         Rcpp_1.0.8        scales_1.1.1     </span>
 <span class="co">#&gt; [37] cachem_1.0.6      desc_1.4.0        jsonlite_1.7.2    farver_2.1.0     </span>
-<span class="co">#&gt; [41] systemfonts_1.0.3 fs_1.5.0          gridExtra_2.3     textshaping_0.3.6</span>
-<span class="co">#&gt; [45] digest_0.6.29     stringi_1.7.6     dplyr_1.0.7       grid_4.1.2       </span>
-<span class="co">#&gt; [49] rprojroot_2.0.2   tools_4.1.2       magrittr_2.0.1    sass_0.4.0       </span>
+<span class="co">#&gt; [41] systemfonts_1.0.3 fs_1.5.2          gridExtra_2.3     textshaping_0.3.6</span>
+<span class="co">#&gt; [45] digest_0.6.29     stringi_1.7.6     dplyr_1.0.7       grid_4.0.3       </span>
+<span class="co">#&gt; [49] rprojroot_2.0.2   tools_4.0.3       magrittr_2.0.1    sass_0.4.0       </span>
 <span class="co">#&gt; [53] proxy_0.4-26      tibble_3.1.6      crayon_1.4.2      pkgconfig_2.0.3  </span>
 <span class="co">#&gt; [57] ellipsis_0.3.2    Matrix_1.4-0      viridis_0.6.2     assertthat_0.2.1 </span>
-<span class="co">#&gt; [61] rmarkdown_2.11    iterators_1.0.13  R6_2.5.1          igraph_1.2.10    </span>
-<span class="co">#&gt; [65] compiler_4.1.2</span></code></pre></div>
+<span class="co">#&gt; [61] rmarkdown_2.11    iterators_1.0.13  R6_2.5.1          igraph_1.2.11    </span>
+<span class="co">#&gt; [65] compiler_4.0.3</span></code></pre></div>
 </div>
   </div>
 
