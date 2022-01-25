@@ -106,8 +106,8 @@ sets, we use `get_feature_stability_object`, and plot the results with
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png width=80%/>
 
 where the higher element-centric consistency (ECC) indicates more stable
-clustering results across random seeds. For more details, please see the
-`stability-based-parameter-assessment` vignette.
+clustering results across random seeds. For more details, please see [this 
+vignette](https://core-bioinformatics.github.io/ClustAssess/articles/stability-based-parameter-assessment.html).
 
 
 # Handling Large Datasets
