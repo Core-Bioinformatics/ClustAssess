@@ -130,7 +130,7 @@
 <span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt;            used  (Mb) gc trigger (Mb)  max used   (Mb)</span>
 <span class="co">#&gt; Ncells  2838146 151.6    4830444  258   4830444  258.0</span>
-<span class="co">#&gt; Vcells 29413916 224.5  134217380 1024 162897137 1242.9</span></code></pre></div>
+<span class="co">#&gt; Vcells 29413920 224.5  134217384 1024 162897141 1242.9</span></code></pre></div>
 <p>The analysis is based on the Seurat pipeline (<a href="https://doi.org/10.1016/j.cell.2021.04.048" class="external-link">Hao et al 2021, Integrated analysis of multimodal single-cell data</a>); after creating the object and recording the mitochondrial and ribosomal gene percentages, those genes are excluded from the downstream analysis.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove MT and RP genes</span>
@@ -409,23 +409,23 @@
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Feature stability methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_feature_stability</span> <span class="op">-</span> <span class="va">start_time_feature_stability</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Feature stability methods runtime: 9.079207 minutes"</span>
+<span class="co">#&gt; [1] "Feature stability methods runtime: 9.556682 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN - # connected components methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_conn</span> <span class="op">-</span> <span class="va">start_time_nn_conn</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN - # connected components methods runtime: 5.098747 minutes"</span>
+<span class="co">#&gt; [1] "NN - # connected components methods runtime: 5.262722 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"NN importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_nn_importance</span> <span class="op">-</span> <span class="va">start_time_nn_importance</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "NN importance methods runtime: 23.55189 minutes"</span>
+<span class="co">#&gt; [1] "NN importance methods runtime: 23.88001 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Clustering importance methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_clustering_method</span> <span class="op">-</span> <span class="va">start_time_clustering_method</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Clustering importance methods runtime: 4.920113 minutes"</span>
+<span class="co">#&gt; [1] "Clustering importance methods runtime: 5.116683 minutes"</span>
 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Resolution gridsearch methods runtime:"</span>,
       <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">stop_time_resolution</span> <span class="op">-</span> <span class="va">start_time_resolution</span>,
                         units <span class="op">=</span> <span class="st">"mins"</span><span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.006608 minutes"</span></code></pre></div>
+<span class="co">#&gt; [1] "Resolution gridsearch methods runtime: 1.018917 minutes"</span></code></pre></div>
 </div>
 <div class="section level1">
 <h1 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
