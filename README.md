@@ -172,10 +172,15 @@ vignettes, the following packages are also needed:
 
 # Citing ClustAssess
 If you have used ClustAssess in your work, please cite [Shahsavari et al. 2022](https://doi.org/10.1101/2022.01.31.478592):
-> Shahsavari, A., Munteanu, A., & Mohorianu, I. (2022). ClustAssess: Tools for Assessing Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592
 
-or in BibTex;
-> @ARTICLE{clustassess,
+```
+Shahsavari, A., Munteanu, A., & Mohorianu, I. (2022). ClustAssess: Tools for Assessing Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592
+```
+
+or in BibTex:
+
+```
+@ARTICLE{clustassess,
   title     = "ClustAssess: Tools for Assessing Clustering",
   author    = "Shahsavari, Arash and Munteanu, Andi and Mohorianu, Irina",
   journal   = "bioRxiv",
@@ -183,6 +188,7 @@ or in BibTex;
   url       = "https://doi.org/10.1101/2022.01.31.478592",
   language  = "en"
 }
+```
 
 
 # References
