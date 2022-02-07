@@ -126,16 +126,14 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span><span class="op">{</span></span>
-<span class="r-in">  <span class="va">clustering.list</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># cluster across 20 random seeds</span></span>
+<span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu">element_consistency</span><span class="op">(</span><span class="va">clustering.list</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.6405960 0.6405960 0.8321594 0.5946685 0.7885851 0.5814684 0.7885851</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.8321594 0.8321594 0.6405960 0.6405960 0.6580314 0.6580314 0.6580314</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] 0.7677527 0.7677527 0.7677527 0.8321594 0.8321594 0.8321594 0.8321594</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [22] 0.6580314 0.6580314 0.7885851 0.7677527 0.8321594 0.8321594 0.8321594</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [29] 0.7885851 0.6405960 0.7885851 0.8321594</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.6439822 0.6439822 0.8163893 0.5006835 0.7480861 0.4983193 0.7480861</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.8163893 0.8163893 0.6439822 0.6439822 0.6947710 0.6947710 0.6947710</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15] 0.6246867 0.6246867 0.6246867 0.8163893 0.8163893 0.8163893 0.8163893</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [22] 0.6947710 0.6947710 0.7480861 0.6246867 0.8163893 0.8163893 0.8163893</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [29] 0.7480861 0.6439822 0.7480861 0.8163893</span>
 </code></pre></div>
     </div>
   </div>
@@ -150,7 +148,7 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer></div>

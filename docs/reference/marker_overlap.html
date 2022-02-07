@@ -108,7 +108,8 @@ test), no sign is needed.</p></dd>
 <dd><p>A logical: should the sign of markers match for overlap
 calculations? So a gene must be a positive or a negative marker in both
 clusters being compared. If TRUE, markers1 and markers2 must have a
-'avg_logFC' column, from which the sign of the DE will be extracted.</p></dd>
+'avg_logFC' or 'avg_log2FC' column, from which the sign of the DE will be
+extracted.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -120,6 +121,7 @@ clusters being compared. If TRUE, markers1 and markers2 must have a
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="op">{</span></span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1234</span><span class="op">)</span></span>
 <span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
+<span class="r-in"><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">'pbmc_small'</span><span class="op">)</span></span>
 <span class="r-in"></span>
 <span class="r-in"><span class="co"># cluster with Louvain algorithm</span></span>
 <span class="r-in"><span class="va">pbmc_small</span> <span class="op">=</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span><span class="va">pbmc_small</span>, resolution<span class="op">=</span><span class="fl">0.8</span>, verbose<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
@@ -163,7 +165,7 @@ clusters being compared. If TRUE, markers1 and markers2 must have a
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer></div>

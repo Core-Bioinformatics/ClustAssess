@@ -133,34 +133,32 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">reference.clustering</span> <span class="op">=</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span></span>
-<span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
-<span class="r-in"><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span><span class="op">)</span><span class="op">{</span></span>
-<span class="r-in">  <span class="va">clustering.list</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># perform k-means clustering across 20 random seeds</span></span>
+<span class="r-in"><span class="va">reference.clustering</span> <span class="op">=</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span></span>
+<span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu">element_agreement</span><span class="op">(</span><span class="va">reference.clustering</span>, <span class="va">clustering.list</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [1] 0.9150000 0.8350000 0.8350000 0.8350000 0.9150000 0.9150000 0.9150000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [8] 0.9150000 0.8350000 0.8350000 0.9150000 0.9150000 0.8350000 0.8350000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [15] 0.9150000 0.9150000 0.9150000 0.9150000 0.9150000 0.9150000 0.9150000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [22] 0.9150000 0.9150000 0.9150000 0.8350000 0.8350000 0.9150000 0.9150000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [29] 0.9150000 0.8350000 0.8350000 0.9150000 0.9150000 0.9150000 0.8350000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [36] 0.9150000 0.9150000 0.9150000 0.8350000 0.9150000 0.9150000 0.8350000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [43] 0.8350000 0.9150000 0.9150000 0.8350000 0.9150000 0.8350000 0.9150000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [50] 0.9150000 0.7004368 0.7004368 0.1497917 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [57] 0.7004368 0.6006452 0.7004368 0.7004368 0.6006452 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [64] 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [71] 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [78] 0.1497917 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [85] 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [92] 0.7004368 0.7004368 0.6006452 0.7004368 0.7004368 0.7004368 0.7004368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [99] 0.6006452 0.7004368 0.6702083 0.2995632 0.6702083 0.6702083 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [106] 0.6702083 0.2995632 0.6702083 0.6702083 0.6702083 0.6702083 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [113] 0.6702083 0.2995632 0.2995632 0.6702083 0.6702083 0.6702083 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [120] 0.2995632 0.6702083 0.2995632 0.6702083 0.2995632 0.6702083 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [127] 0.2995632 0.2995632 0.6702083 0.6702083 0.6702083 0.6702083 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [134] 0.2995632 0.6702083 0.6702083 0.6702083 0.6702083 0.2995632 0.6702083</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [141] 0.6702083 0.6702083 0.2995632 0.6702083 0.6702083 0.6702083 0.2995632</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [148] 0.6702083 0.6702083 0.2995632</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1] 0.8640000 0.7360000 0.7360000 0.7360000 0.8640000 0.8640000 0.8640000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8] 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000 0.7360000 0.7360000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15] 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22] 0.8640000 0.8640000 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29] 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000 0.8640000 0.7360000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36] 0.8640000 0.8640000 0.8640000 0.7360000 0.8640000 0.8640000 0.7360000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43] 0.7360000 0.8640000 0.8640000 0.7360000 0.8640000 0.7360000 0.8640000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50] 0.8640000 0.6561828 0.6561828 0.2156667 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57] 0.6561828 0.4965161 0.6561828 0.6561828 0.4965161 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78] 0.2156667 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92] 0.6561828 0.6561828 0.4965161 0.6561828 0.6561828 0.6561828 0.6561828</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99] 0.4965161 0.6561828 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106] 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113] 0.6403333 0.3438172 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [120] 0.3438172 0.6403333 0.3438172 0.6403333 0.3438172 0.6403333 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [127] 0.3438172 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [134] 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.3438172 0.6403333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [141] 0.6403333 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333 0.3438172</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [148] 0.6403333 0.6403333 0.3438172</span>
 </code></pre></div>
     </div>
   </div>
@@ -175,7 +173,7 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer></div>
