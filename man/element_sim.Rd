@@ -94,7 +94,7 @@ Calculates the average element-centric similarity between two
 clustering results
 }
 \examples{
-km.res = kmeans(mtcars, 3)$cluster
+km.res = kmeans(mtcars, centers=3)$cluster
 hc.res = hclust(dist(mtcars))
 element_sim(km.res, hc.res)
 }

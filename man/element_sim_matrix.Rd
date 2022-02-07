@@ -64,10 +64,8 @@ Compare a set of clusterings by calculating their pairwise
 average element-centric clustering similarities.
 }
 \examples{
-clustering.list = list()
-for (i in 1:20) {
-  clustering.list[[i]] = kmeans(mtcars, 3)$cluster
-}
+# cluster across 20 random seeds
+clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
 element_sim_matrix(clustering.list, output_type="matrix")
 }
 \references{

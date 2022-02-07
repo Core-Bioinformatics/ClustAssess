@@ -41,7 +41,8 @@ test), no sign is needed.}
 \item{use_sign}{A logical: should the sign of markers match for overlap
 calculations? So a gene must be a positive or a negative marker in both
 clusters being compared. If TRUE, markers1 and markers2 must have a
-'avg_logFC' column, from which the sign of the DE will be extracted.}
+'avg_logFC' or 'avg_log2FC' column, from which the sign of the DE will be
+extracted.}
 }
 \value{
 A vector of the marker gene overlap per cell.
@@ -54,6 +55,7 @@ marker genes.
 suppressWarnings({
 set.seed(1234)
 library(Seurat)
+data('pbmc_small')
 
 # cluster with Louvain algorithm
 pbmc_small = FindClusters(pbmc_small, resolution=0.8, verbose=FALSE)
