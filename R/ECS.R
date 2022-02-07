@@ -52,7 +52,7 @@ NULL
 #' @md
 #'
 #' @examples
-#' km.res = kmeans(mtcars, 3)$cluster
+#' km.res = kmeans(mtcars, centers=3)$cluster
 #' hc.res = hclust(dist(mtcars))
 #' element_sim(km.res, hc.res)
 element_sim = function(clustering1,
@@ -672,10 +672,8 @@ calculate_ppr_with_power_iteration = function(W_matrix, index, alpha=0.9,
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #'
 #' @examples
-#' clustering.list = list()
-#' for (i in 1:20) {
-#'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
-#' }
+#' # cluster across 20 random seeds
+#' clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
 #' element_sim_matrix(clustering.list, output_type="matrix")
 element_sim_matrix = function(clustering_list,
                               output_type="matrix",
@@ -1038,10 +1036,8 @@ merge_partitions = function(partition_list,
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #' @examples
-#' clustering.list = list()
-#' for (i in 1:20){
-#'   clustering.list[[i]] = kmeans(mtcars, 3)$cluster
-#' }
+#' # cluster across 20 random seeds
+#' clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
 #' element_consistency(clustering.list)
 element_consistency = function(clustering_list,
                                alpha = 0.9,
@@ -1204,11 +1200,9 @@ weighted_element_consistency = function(clustering_list,
 #' Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y
 #'
 #' @examples
+#' # perform k-means clustering across 20 random seeds
 #' reference.clustering = iris$Species
-#' clustering.list = list()
-#' for (i in 1:20){
-#'   clustering.list[[i]] = kmeans(iris[,1:4], 3)$cluster
-#' }
+#' clustering.list = lapply(1:20, function(x) kmeans(iris[,1:4], centers=3)$cluster)
 #' element_agreement(reference.clustering, clustering.list)
 element_agreement = function(reference_clustering,
                              clustering_list,
