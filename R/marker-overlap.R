@@ -34,7 +34,8 @@ jaccard_index = function(a,
 #' @param use_sign A logical: should the sign of markers match for overlap
 #' calculations? So a gene must be a positive or a negative marker in both
 #' clusters being compared. If TRUE, markers1 and markers2 must have a
-#' 'avg_logFC' column, from which the sign of the DE will be extracted.
+#' 'avg_logFC' or 'avg_log2FC' column, from which the sign of the DE will be
+#' extracted.
 #'
 #'
 #' @return A vector of the marker gene overlap per cell.
@@ -44,6 +45,7 @@ jaccard_index = function(a,
 #' suppressWarnings({
 #' set.seed(1234)
 #' library(Seurat)
+#' data('pbmc_small')
 #'
 #' # cluster with Louvain algorithm
 #' pbmc_small = FindClusters(pbmc_small, resolution=0.8, verbose=FALSE)
@@ -92,10 +94,22 @@ marker_overlap = function(markers1,
   # during overlap calculations
   if (use_sign){
     append_sign = function(x) if (x>0) '+' else if (x<0) '-' else '0'
-    markers1$gene = paste0(markers1$gene,
-                           sapply(markers1$avg_logFC, append_sign))
-    markers2$gene = paste0(markers2$gene,
-                           sapply(markers2$avg_logFC, append_sign))
+    if ('avg_logFC' %in% intersect(colnames(markers1),
+                                   colnames(markers2))){
+      markers1$gene = paste0(markers1$gene,
+                             sapply(markers1$avg_logFC, append_sign))
+      markers2$gene = paste0(markers2$gene,
+                             sapply(markers2$avg_logFC, append_sign))
+    } else if ('avg_log2FC' %in% intersect(colnames(markers1),
+                                           colnames(markers2))){
+      markers1$gene = paste0(markers1$gene,
+                             sapply(markers1$avg_log2FC, append_sign))
+      markers2$gene = paste0(markers2$gene,
+                             sapply(markers2$avg_log2FC, append_sign))
+    } else {
+      stop('If use_sign is TRUE, the marker tables must contain a column with
+           name avg_logFC or avg_log2FC.')
+    }
   }
 
   # compare every cluster in clustering1 with every cluster in clustering2
