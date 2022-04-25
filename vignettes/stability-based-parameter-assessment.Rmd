@@ -136,12 +136,12 @@ To showcase the importance of this parameter, we assess three different sets of 
 
 * **highly variable genes**: this set can be obtained in the Seurat pipeline by using either the `SCTransform` or `FindVariableFeatures` method. Depending on the method, using the default parameters will get a number of 2000 or 3000 genes.
 * **most abundant genes**: this set can be obtained by sorting the genes based on their expression level.
-* **intersection between highly variable and most abundant genes**: this set is obtained by intersecting a subset of the most abundant genes and the whole highly variable feature set. Taking the intersection will lead to a smaller number of genes compared to the initial sets.
+* **intersection between highly variable and most abundant genes**: this set is obtained by intersecting a subset of the most abundant genes and the highly variable feature set. Taking the intersection will lead to a smaller number of genes compared to the initial sets.
 
 ```{r feature_sets}
-ma_hv_genes_intersection = intersect(most_abundant_genes[1:3000], var_features)
 steps = seq(from = 500, to = 3000, by = 500)
-ma_hv_steps = sapply(steps, function(x) { length(intersect(most_abundant_genes[1:x], var_features))})
+ma_hv_genes_intersection = intersect(most_abundant_genes[1:3000], var_features[1:3000])
+ma_hv_steps = sapply(steps, function(step) { length(intersect(most_abundant_genes[1:step], var_features[1:step])) })
 ```
 
 `get_feature_stability` is a function that explores the stability of a feature set. The input consists of a normalized expression matrix, that is summarized using either PCA or UMAP. The obtained embedding is then processed using the Leiden community detection method (on default values as described in the Seurat pipeline). This process is iterated across random seeds. The method outputs a list containing an UMAP embedding, the cell assignment corresponding to the most frequent partition and the Element-Centric Consistency (ECC) across all communities obtained throughout the iterations. The higher the Element-Centric Consistency, the more stable the clustering.
