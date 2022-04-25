@@ -196,6 +196,7 @@ get_feature_stability = function(data_matrix,
 
   for (step in steps) {
     used_features = feature_set[1:step]
+    actual_npcs = min(npcs, step %/% 2)
 
     partitions_list[[as.character(step)]] = list()
     return_list[[object_name]][[as.character(step)]] = list()
@@ -204,7 +205,7 @@ get_feature_stability = function(data_matrix,
     trimmed_matrix = data_matrix[, used_features]
 
     # the variables needed in each PSOCK process
-    needed_vars = c("trimmed_matrix", "graph_reduction_type", "npcs", "suppl_args", "algorithm")
+    needed_vars = c("trimmed_matrix", "graph_reduction_type", "actual_npcs", "suppl_args", "algorithm")
 
     if(ncores > 1) {
       # create a parallel backend
@@ -227,7 +228,7 @@ get_feature_stability = function(data_matrix,
                                                              .noexport = all_vars[!(all_vars %in% needed_vars)]) %dopar% {
                                                                # calculate the PCA embedding
                                                                set.seed(seed)
-                                                               pca_embedding = irlba::irlba(A = trimmed_matrix, nv = npcs)
+                                                               pca_embedding = irlba::irlba(A = trimmed_matrix, nv = actual_npcs)
                                                                pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
                                                                colnames(pca_embedding) = paste0("PC_", 1:ncol(pca_embedding))
                                                                rownames(pca_embedding) = rownames(trimmed_matrix)
@@ -271,7 +272,7 @@ get_feature_stability = function(data_matrix,
 
     # generate an UMAP embedding that will be stored in the returned list
     set.seed(seed_sequence[1])
-    pca_embedding = irlba::irlba(A = trimmed_matrix, nv = npcs)
+    pca_embedding = irlba::irlba(A = trimmed_matrix, nv = actual_npcs)
     pca_embedding = pca_embedding$u %*% diag(pca_embedding$d)
     colnames(pca_embedding) = paste0("PC_", 1:ncol(pca_embedding))
     rownames(pca_embedding) = rownames(trimmed_matrix)
