@@ -361,7 +361,8 @@ plot_feature_stability_boxplot = function(feature_object_list,
     melt_object[["feature_set"]] = rep(config_name, nrow(melt_object))
 
     temp_steps_df = data.frame(step = levels(melt_object$L1),
-                               index = 1:nlevels(melt_object$L1))
+                               index = 1:nlevels(melt_object$L1),
+                               stringsAsFactors = FALSE)
     temp_steps_df$feature_set = rep(config_name, nrow(temp_steps_df))
 
     levels(melt_object$L1) = 1:nlevels(melt_object$L1)
@@ -667,7 +668,8 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
             sep = '-'
           ),
           index = i,
-          feature_set = config_name
+          feature_set = config_name,
+          stringsAsFactors = FALSE
         )
 
         ecs_df = temp_df
