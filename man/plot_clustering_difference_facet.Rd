@@ -17,7 +17,7 @@ plot_clustering_difference_facet(
 `get_clustering_difference_object` method.}
 
 \item{embedding}{An embedding (only the first two dimensions will be used for
-visualisation).}
+visualization).}
 
 \item{low_limit}{The lowest value of ECC that will be displayed on the embedding.}
 

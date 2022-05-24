@@ -54,8 +54,9 @@ A list having two fields:
 the user, the number of neighbors, the graph type and the clustering method
 \item the resolution value \eqn{\gamma}
 \item the number of clusters \emph{k} that can be obtained using the specified resolution
-\item the partitions obtained with resolution \eqn{\gamma} and have \emph{k} clusters
-\item the structure of a partitions, which consists in having a \code{mb} field with
+\item a \code{partitions} field containing the partitions obtained with resolution \eqn{\gamma} and have \emph{k} clusters
+along with a \code{ecc} field that contains the Element-Centric Consistency of the partition list
+\item the structure of a partition, which consists in having a \code{mb} field with
 the flat membership vector, \code{freq} denoting its frequency and \code{seed}, that is
 the seed used to obtain this partition in this configuration.
 }

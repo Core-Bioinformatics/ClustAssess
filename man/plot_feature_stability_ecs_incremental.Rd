@@ -7,7 +7,8 @@
 plot_feature_stability_ecs_incremental(
   feature_object_list,
   dodge_width = 0.7,
-  text_size = 4
+  text_size = 4,
+  boxplot_width = 0.4
 )
 }
 \arguments{
@@ -15,9 +16,12 @@ plot_feature_stability_ecs_incremental(
 `get_feature_stability` method.}
 
 \item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
-will be passed in the `width` argument of the `ggplot2::position_dodge` method.}
+will be passed to the `width` argument of the `ggplot2::position_dodge` method.}
 
 \item{text_size}{The size of the labels above boxplots.}
+
+\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
+be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
 }
 \value{
 A ggplot2 object with ECS distribution will be displayed as a

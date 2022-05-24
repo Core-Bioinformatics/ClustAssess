@@ -4,13 +4,24 @@
 \alias{plot_feature_stability_boxplot}
 \title{Feature Stability Boxplot}
 \usage{
-plot_feature_stability_boxplot(feature_object_list, text_size = 4)
+plot_feature_stability_boxplot(
+  feature_object_list,
+  text_size = 4,
+  boxplot_width = 0.4,
+  dodge_width = 0.7
+)
 }
 \arguments{
 \item{feature_object_list}{An object or a concatenation of objects returned by the
 `get_feature_stability` method}
 
-\item{text_size}{The size of the labels above boxplots.}
+\item{text_size}{The size of the labels above boxplots}
+
+\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
+be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
+
+\item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
+will be passed to the `width` argument of the `ggplot2::position_dodge` method.}
 }
 \value{
 A ggplot2 object.

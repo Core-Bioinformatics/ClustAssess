@@ -4,13 +4,24 @@
 \alias{plot_clustering_difference_boxplot}
 \title{Clustering Method Stability Boxplot}
 \usage{
-plot_clustering_difference_boxplot(clustering_difference_object, text_size = 3)
+plot_clustering_difference_boxplot(
+  clustering_difference_object,
+  text_size = 3,
+  dodge_width = 0.9,
+  boxplot_width = 0.4
+)
 }
 \arguments{
 \item{clustering_difference_object}{An object returned by the
 `get_clustering_difference_object` method.}
 
 \item{text_size}{The size of the labels above boxplots.}
+
+\item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
+will be passed to the `width` argument of the `ggplot2::position_dodge` method.}
+
+\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
+be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
 }
 \value{
 A ggplot2 object with the EC consistency distributions. Higher

@@ -7,7 +7,9 @@
 plot_k_resolution_corresp(
   res_object_list,
   res_object_names = NULL,
-  given_height = 0.7
+  colour_information = c("ecc", "freq_k"),
+  given_height = 0.7,
+  pt_size_range = c(1.5, 4)
 )
 }
 \arguments{
@@ -18,15 +20,26 @@ plot_k_resolution_corresp(
 configuration; if not specified, the plot will use the generated configuration
 names.}
 
+\item{colour_information}{String that specifies the information type that will be
+illustrated using gradient colour: either `freq_k` for the frequency of the number
+of clusters or `ecc` for the Element-Centric Consistency
+of the partitions obtained when the resolution is fixed.}
+
 \item{given_height}{Used for adjusting the vertical position of the boxplot; the value
 will be passed in the `width` argument of the `ggplot::position_dodge` method.}
+
+\item{pt_size_range}{Indicates the minimum and the maximum size a point on the plot can have.}
 }
 \value{
 A ggplot2 object. Different shapes of points indicate different
 parameter configuration, while the color
-illustrates the frequency of the most common partition. The frequency is calculated
-as the fraction between the number of total appearances and the number of
-runs.
+illustrates the frequency of the most common partition or the Element-Centric Consistency
+of the partitions. The frequency is calculated
+as the fraction between the number of total appearances of partitions with a specific
+number of clusters and resolution value and the number of
+runs. The size
+illustrates the frequency of the most common partition with *k* clusters relative to the
+partitions obtained with the same resolution value and have *k* clusters.
 }
 \description{
 For each configuration provided in the res_object_list, display what

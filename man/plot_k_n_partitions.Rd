@@ -4,7 +4,12 @@
 \alias{plot_k_n_partitions}
 \title{Relationship Between the Number of Clusters and the Number of Unique Partitions}
 \usage{
-plot_k_n_partitions(partition_obj_list, object_names = NULL)
+plot_k_n_partitions(
+  partition_obj_list,
+  object_names = NULL,
+  pt_size_range = c(1.5, 4),
+  colour_information = c("ecc", "frequency_partition")
+)
 }
 \arguments{
 \item{partition_obj_list}{An object or a concatenation of objects returned by the
@@ -13,11 +18,20 @@ plot_k_n_partitions(partition_obj_list, object_names = NULL)
 \item{object_names}{Custom names that the user could assing to each
 configuration; if not specified, the plot will use the generated configuration
 names.}
+
+\item{pt_size_range}{Indicates the minimum and the maximum size a point on the plot can have.}
+
+\item{colour_information}{String that specifies the information type that will be
+illustrated using gradient colour: either `frequency_partition` for the frequency of the
+most common partition or `ecc` for the Element-Centric Consistency
+of the partitions obtained when the the number of clusters is fixed.}
 }
 \value{
 A ggplot2 object. The color gradient suggests the frequency of the most
 common partition relative to the total number of appearances of that specific
-number of clusters.
+number of clusters or the Element-Centric Consistency of the partitions. The size
+illustrates the frequency of the partitions with *k* clusters relative to the
+total number of partitions.
 }
 \description{
 For each configuration provided in partition_obj_list, display how

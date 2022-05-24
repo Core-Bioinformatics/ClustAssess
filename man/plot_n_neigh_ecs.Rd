@@ -4,11 +4,14 @@
 \alias{plot_n_neigh_ecs}
 \title{Graph construction parameters - ECC facet}
 \usage{
-plot_n_neigh_ecs(nn_ecs_object)
+plot_n_neigh_ecs(nn_ecs_object, boxplot_width = 0.5)
 }
 \arguments{
 \item{nn_ecs_object}{An object or a concatenation of objects returned by the
 `get_nn_importance` method.}
+
+\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
+be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
 }
 \value{
 A ggplot2 object.
