@@ -321,8 +321,11 @@ get_feature_stability = function(data_matrix,
 #'
 #' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability` method
-#' @param text_size The size of the labels above boxplots.
-#'
+#' @param text_size The size of the labels above boxplots
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
+#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
 #'
 #' @return A ggplot2 object.
 #' @export
@@ -349,7 +352,9 @@ get_feature_stability = function(data_matrix,
 #'    min_dist = 0.3)
 #' plot_feature_stability_boxplot(feature_stability_result)
 plot_feature_stability_boxplot = function(feature_object_list,
-                                          text_size = 4) {
+                                          text_size = 4,
+                                          boxplot_width = 0.4,
+                                          dodge_width = 0.7) {
   min_index = -1 # indicates the number of steps that will be displayed on the plot
 
   # create a dataframe based on the object returned by `get_feature_stability`
@@ -393,6 +398,7 @@ plot_feature_stability_boxplot = function(feature_object_list,
   # generate the coordinates where the sizes of the steps will be displayed
   text_position <-
     stats::aggregate(value ~ L1 + feature_set , final_melt_df, max)
+  text_position$value = max(text_position$value) + 0.02
 
   # return the ggplot object
   ggplot2::ggplot(final_melt_df,
@@ -401,13 +407,12 @@ plot_feature_stability_boxplot = function(feature_object_list,
                     y = .data$value,
                     fill = .data$feature_set
                   )) +
-    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = 0.7),
-                          width = 0.5) +
+    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width),
+                          width = boxplot_width) +
     ggplot2::geom_text(
       data = text_position,
       ggplot2::aes(label = final_steps_df$step),
-      position = ggplot2::position_dodge(width = 0.7),
-      vjust = -0.5,
+      position = ggplot2::position_dodge(width = dodge_width),
       size = text_size
     ) +
     ggplot2::theme_classic() +
@@ -427,7 +432,6 @@ plot_feature_stability_boxplot = function(feature_object_list,
 #' @param text_size The size of the cluster label
 #' @param n_facet_cols The number of facet's columns.
 #' @param point_size The size of the points displayed on the plot.
-#'
 #'
 #' @return A ggplot2 object.
 #' @export
@@ -606,8 +610,10 @@ plot_feature_stability_ecs_facet = function(feature_object_list,
 #' @param feature_object_list An object or a concatenation of objects returned by the
 #' `get_feature_stability` method.
 #' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
-#' will be passed in the `width` argument of the `ggplot2::position_dodge` method.
+#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
 #' @param text_size The size of the labels above boxplots.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
 #'
 #' @return A ggplot2 object with ECS distribution will be displayed as a
 #' boxplot. Above each boxplot there will be a pair of numbers representing the
@@ -637,7 +643,8 @@ plot_feature_stability_ecs_facet = function(feature_object_list,
 #' plot_feature_stability_ecs_incremental(feature_stability_result)
 plot_feature_stability_ecs_incremental = function(feature_object_list,
                                                   dodge_width = 0.7,
-                                                  text_size = 4) {
+                                                  text_size = 4,
+                                                  boxplot_width = 0.4) {
   if(!is.numeric(dodge_width) || length(dodge_width) > 1)
     stop("dodge_width parameter should be numeric")
 
@@ -665,7 +672,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
           step = paste(
             names(feature_object_list[[config_name]])[i],
             names(feature_object_list[[config_name]])[i+1],
-            sep = '-'
+            sep = '-\n'
           ),
           index = i,
           feature_set = config_name,
@@ -679,7 +686,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
         steps_df = rbind(steps_df, c(paste(
           names(feature_object_list[[config_name]])[i],
           names(feature_object_list[[config_name]])[i+1],
-          sep = '-'
+          sep = '-\n'
         ),
         i,
         config_name))
@@ -701,6 +708,7 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
 
   text_position <-
     stats::aggregate(ecs ~ index + feature_set , ecs_df, max)
+  text_position$ecs = max(text_position$ecs) + 0.05
 
   ggplot2::ggplot(ecs_df,
                   ggplot2::aes(
@@ -708,12 +716,11 @@ plot_feature_stability_ecs_incremental = function(feature_object_list,
                     y = .data$ecs,
                     fill = .data$feature_set
                   )) +
-    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width)) +
+    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width) , width = boxplot_width)+
     ggplot2::geom_text(
       data = text_position,
       ggplot2::aes(label = steps_df$step),
       position = ggplot2::position_dodge(width = dodge_width),
-      vjust = -0.5,
       size = text_size
     ) +
     ggplot2::theme_classic() +
@@ -1332,7 +1339,8 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #'
 #' @param nn_ecs_object An object or a concatenation of objects returned by the
 #' `get_nn_importance` method.
-#'
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
 #'
 #' @return A ggplot2 object.
 #' @export
@@ -1353,7 +1361,8 @@ plot_n_neigh_k_correspondence = function(nn_object_n_clusters) {
 #'     # the following parameter is used by the irlba function and is not mandatory
 #'     nv = 2)
 #' plot_n_neigh_ecs(nn_importance_obj)
-plot_n_neigh_ecs = function(nn_ecs_object) {
+plot_n_neigh_ecs = function(nn_ecs_object,
+                            boxplot_width = 0.5) {
   melted_obj = reshape2::melt(nn_ecs_object$n_neigh_ec_consistency)
   colnames(melted_obj) = c("ECC", "n_neigh", "config_name")
 
@@ -1366,7 +1375,7 @@ plot_n_neigh_ecs = function(nn_ecs_object) {
                     y = .data$ECC,
                     fill = .data$config_name
                   )) +
-    ggplot2::geom_boxplot() +
+    ggplot2::geom_boxplot(width = boxplot_width) +
     ggplot2::theme_classic() +
     ggplot2::labs(x = "# of nearest neighbors",
                   y = "EC consistency",
@@ -1513,19 +1522,19 @@ get_clustering_difference = function(graph_adjacency_matrix,
   filtered_result = lapply(result_object, function(config_object) {
     lapply(config_object, function(res) {
       corresp_k = names(which.max(unlist(lapply(res, function(res_cluster) {
-        sum(sapply(res_cluster, function(partition) {
+        sum(sapply(res_cluster$partitions, function(partition) {
           partition$freq
         }))
       }))))[1]
 
-      list(ec_consistency = weighted_element_consistency(lapply(res[[corresp_k]], function(x) {
-        x$mb
-      }),
-      sapply(res[[corresp_k]], function(x) {
-        x$freq
-      }),
-      ncores = ncores),
-      k = corresp_k)
+      # list(ec_consistency = weighted_element_consistency(lapply(res[[corresp_k]]$partitions, function(x) {
+      #   x$mb
+      # }),
+      # sapply(res[[corresp_k]]$partitions, function(x) {
+      #   x$freq
+      # }),
+      # ncores = ncores),
+      list(ec_consistency = res[[corresp_k]]$ecc, k = corresp_k)
     })
   })
 
@@ -1535,7 +1544,7 @@ get_clustering_difference = function(graph_adjacency_matrix,
       k_names = names(res)
       partition_list = list()
       for (k in k_names) {
-        partition_list = c(partition_list, res[[k]])
+        partition_list = c(partition_list, res[[k]]$partitions)
       }
 
       weighted_element_consistency(lapply(partition_list, function(x) {
@@ -1562,11 +1571,14 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #' @param clustering_difference_object An object returned by the
 #' `get_clustering_difference_object` method.
 #' @param text_size The size of the labels above boxplots.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
+#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
 #'
 #' @return A ggplot2 object with the EC consistency distributions. Higher
 #' consistency indicates a more stable clustering.
 #' @export
-#'
 #'
 #' @examples
 #' set.seed(2021)
@@ -1586,7 +1598,9 @@ get_clustering_difference = function(graph_adjacency_matrix,
 #'     verbose = FALSE)
 #' plot_clustering_difference_boxplot(clust_diff_obj)
 plot_clustering_difference_boxplot = function(clustering_difference_object,
-                                              text_size = 3) {
+                                              text_size = 3,
+                                              dodge_width = 0.9,
+                                              boxplot_width = 0.4) {
   # get the labels representing the number of clusters
   k_labels = reshape2::melt(lapply(clustering_difference_object$filtered, function(config_object) {
     lapply(config_object, function(res) {
@@ -1607,6 +1621,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
     stats::aggregate(EC_consistency ~ resolution + clustering_method ,
                      melted_obj,
                      max)
+  text_position$EC_consistency  = max(text_position$EC_consistency) + 0.02
 
   ggplot2::ggplot(
     melted_obj,
@@ -1616,15 +1631,14 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
       fill = .data$clustering_method
     )
   ) +
-    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = 0.9)) +
+    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width), width = boxplot_width) +
     ggplot2::theme_classic() +
     ggplot2::labs(y = "EC Consistency",
                   fill = "clustering method") +
     ggplot2::geom_text(
       data = text_position,
       ggplot2::aes(label = k_labels$value),
-      position = ggplot2::position_dodge(width = 0.9),
-      vjust = -0.5,
+      position = ggplot2::position_dodge(width = dodge_width),
       size = text_size
     )
 }
@@ -1638,7 +1652,7 @@ plot_clustering_difference_boxplot = function(clustering_difference_object,
 #' @param clustering_difference_object An object returned by the
 #' `get_clustering_difference_object` method.
 #' @param embedding An embedding (only the first two dimensions will be used for
-#' visualisation).
+#' visualization).
 #' @param low_limit The lowest value of ECC that will be displayed on the embedding.
 #' @param high_limit The highest value of ECC that will be displayed on the embedding.
 #' @param grid Boolean value indicating whether the facet should be a grid (where each
@@ -1803,10 +1817,21 @@ get_resolution_partitions = function(clustered_object,
 
   # merge the partitions using the ecs threshold
   for(k in names(different_partitions)) {
-    different_partitions[[k]] = merge_partitions(different_partitions[[k]],
-                                                 ecs_thresh = ecs_thresh,
-                                                 ncores = ncores,
-                                                 order = TRUE)
+    different_partitions[[k]] = list(partitions = merge_partitions(different_partitions[[k]],
+                                                                   ecs_thresh = ecs_thresh,
+                                                                   ncores = ncores,
+                                                                   order = TRUE))
+
+    # compute the EC-consistency of the partition list
+    ec_consistency = weighted_element_consistency(lapply(different_partitions[[k]]$partitions, function(x) {
+      x$mb
+    }),
+    sapply(different_partitions[[k]]$partitions, function(x) {
+      x$freq
+    }),
+    ncores = ncores)
+
+    different_partitions[[k]][["ecc"]] = ec_consistency
   }
 
   different_partitions
@@ -1845,8 +1870,9 @@ get_resolution_partitions = function(clustered_object,
 #' the user, the number of neighbors, the graph type and the clustering method
 #'     * the resolution value \eqn{\gamma}
 #'     * the number of clusters *k* that can be obtained using the specified resolution
-#'     * the partitions obtained with resolution \eqn{\gamma} and have *k* clusters
-#'     * the structure of a partitions, which consists in having a `mb` field with
+#'     * a `partitions` field containing the partitions obtained with resolution \eqn{\gamma} and have *k* clusters
+#'     along with a `ecc` field that contains the Element-Centric Consistency of the partition list
+#'     * the structure of a partition, which consists in having a `mb` field with
 #' the flat membership vector, `freq` denoting its frequency and `seed`, that is
 #' the seed used to obtain this partition in this configuration.
 #'
@@ -2188,9 +2214,9 @@ merge_resolutions = function(res_obj,
   for (res.val in names(res_obj)) {
     for (k in names(res_obj[[res.val]])) {
       if (!(k %in% names(clusters_obj))) {
-        clusters_obj[[k]] = res_obj[[res.val]][[k]]
+        clusters_obj[[k]] = res_obj[[res.val]][[k]]$partitions
       } else {
-        clusters_obj[[k]] = c(clusters_obj[[k]], res_obj[[res.val]][[k]])
+        clusters_obj[[k]] = c(clusters_obj[[k]], res_obj[[res.val]][[k]]$partitions)
       }
     }
   }
@@ -2229,6 +2255,21 @@ merge_resolutions = function(res_obj,
   if(ncores > 1)
     parallel::stopCluster(cl = my_cluster)
 
+  for(k in names(clusters_obj)) {
+    clusters_obj[[k]] = list(partitions = clusters_obj[[k]])
+
+    # compute the EC-consistency of the partition list
+    ec_consistency = weighted_element_consistency(lapply(clusters_obj[[k]]$partitions, function(x) {
+      x$mb
+    }),
+    sapply(clusters_obj[[k]]$partitions, function(x) {
+      x$freq
+    }),
+    ncores = ncores)
+
+    clusters_obj[[k]][["ecc"]] = ec_consistency
+  }
+
   return_object = list()
   return_object[[object_name]] = clusters_obj
   return_object
@@ -2247,13 +2288,21 @@ merge_resolutions = function(res_obj,
 #' names.
 #' @param given_height Used for adjusting the vertical position of the boxplot; the value
 #' will be passed in the `width` argument of the `ggplot::position_dodge` method.
-#'
+#' @param colour_information String that specifies the information type that will be
+#' illustrated using gradient colour: either `freq_k` for the frequency of the number
+#' of clusters or `ecc` for the Element-Centric Consistency
+#' of the partitions obtained when the resolution is fixed.
+#' @param pt_size_range Indicates the minimum and the maximum size a point on the plot can have.
 #'
 #' @return A ggplot2 object. Different shapes of points indicate different
 #' parameter configuration, while the color
-#' illustrates the frequency of the most common partition. The frequency is calculated
-#' as the fraction between the number of total appearances and the number of
-#' runs.
+#' illustrates the frequency of the most common partition or the Element-Centric Consistency
+#' of the partitions. The frequency is calculated
+#' as the fraction between the number of total appearances of partitions with a specific
+#' number of clusters and resolution value and the number of
+#' runs. The size
+#' illustrates the frequency of the most common partition with *k* clusters relative to the
+#' partitions obtained with the same resolution value and have *k* clusters.
 #' @export
 #'
 #'
@@ -2279,8 +2328,18 @@ merge_resolutions = function(res_obj,
 #' plot_k_resolution_corresp(resolution_result)
 plot_k_resolution_corresp = function(res_object_list,
                                      res_object_names = NULL,
-                                     given_height = 0.7) {
-  res_object_list = res_object_list$split_by_resolution
+                                     colour_information = c("ecc", "freq_k"),
+                                     given_height = 0.7,
+                                     pt_size_range = c(1.5, 4)) {
+  if (length(colour_information) > 1) {
+    colour_information = colour_information[1]
+  }
+
+   if (!(colour_information %in% c("ecc", "freq_k"))) {
+    stop("colour_information can be either `ecc` or `freq_k`")
+  }
+
+   res_object_list = res_object_list$split_by_resolution
 
   # use the names of the fields from the list
   if (is.null(res_object_names))
@@ -2294,21 +2353,29 @@ plot_k_resolution_corresp = function(res_object_list,
     res_object = res_object_list[[i]]
 
     n.runs = sum(sapply(res_object[[names(res_object)[1]]], function(x) {
-      sum(sapply(x, function(y) {
+      sum(sapply(x$partitions, function(y) {
         y$freq
       }))
     }))
 
     list.appereances = lapply(res_object, function(x) {
       lapply(x, function(y) {
-        y[[1]]$freq
+        y$partitions[[1]]$freq
       })
     })
     temp.df.appereances = reshape2::melt(list.appereances)
-    colnames(temp.df.appereances) = c("freq", "number_clusters", "resolution_value")
+    colnames(temp.df.appereances) = c("freq_partition", "number_clusters", "resolution_value")
+
+    temp.df.appereances[["freq_k"]] = unlist(lapply(res_object, function(x) {
+      lapply(x, function(y) {
+        sum(sapply(y$partitions, function(z) { z$freq}))
+      })
+    }))
 
     temp.df.appereances[["configuration"]] = rep(res_object_names[i], nrow(temp.df.appereances))
-    temp.df.appereances$freq = temp.df.appereances$freq / n.runs
+    temp.df.appereances$freq_partition = temp.df.appereances$freq_partition / temp.df.appereances$freq_k
+    temp.df.appereances$freq_k = temp.df.appereances$freq_k / n.runs
+    temp.df.appereances$ecc = unlist(lapply(res_object, function(x) { sapply(x, function(k) { mean(k$ecc)}) }))
 
     if (i == 1) {
       final.df = temp.df.appereances
@@ -2320,12 +2387,50 @@ plot_k_resolution_corresp = function(res_object_list,
   final.df[["configuration"]] = factor(final.df[["configuration"]])
   final.df[["number_clusters"]] = factor(as.numeric(final.df[["number_clusters"]]))
 
-  ggplot2::ggplot(
+  p1 = ggplot2::ggplot(
     final.df,
     ggplot2::aes(
       y = .data$number_clusters,
       x = .data$resolution_value,
-      color = .data$freq,
+      shape = .data$configuration,
+      group = interaction(.data$number_clusters, .data$configuration)
+    )) + ggplot2::geom_point() + ggplot2::theme_bw()
+
+  p2 = ggplot2::ggplot(
+    final.df,
+    ggplot2::aes(
+      y = .data$number_clusters,
+      x = .data$resolution_value,
+      size = .data$freq_partition,
+      group = interaction(.data$number_clusters, .data$configuration)
+    )) + ggplot2::geom_point() + ggplot2::theme_bw() +
+    ggplot2::labs(size = "partition\nfrequency")
+
+  p3 = ggplot2::ggplot(
+    final.df,
+    ggplot2::aes(
+      y = .data$number_clusters,
+      x = .data$resolution_value,
+      color = .data$freq_k,
+      group = interaction(.data$number_clusters, .data$configuration)
+    )) + ggplot2::geom_point() +
+    ggplot2::scale_color_viridis_c(name = ifelse(colour_information == "ecc", "ECC", "frequency_k")) +
+    ggplot2::theme_bw()
+
+  l1 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p1)), "guide-box")
+  l2 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p2)), "guide-box")
+  l3 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p3)), "guide-box")
+  legends_width = max(as.numeric(l1$widths), as.numeric(l2$widths) + as.numeric(l3$widths))
+  design = "AA\nBC"
+  legends_plot = patchwork::wrap_plots(l1, l2, l3, design = design)
+
+  main_plot = ggplot2::ggplot(
+    final.df,
+    ggplot2::aes(
+      y = .data$number_clusters,
+      x = .data$resolution_value,
+      size = .data$freq_partition,
+      color = .data[[colour_information]],
       shape = .data$configuration,
       group = interaction(.data$number_clusters, .data$configuration)
     )
@@ -2340,18 +2445,19 @@ plot_k_resolution_corresp = function(res_object_list,
       linetype = "dashed",
       color = "#e3e3e3"
     ) +
-    ggplot2::geom_point(position = ggplot2::position_dodge(width = given_height),  #ggstance::position_dodgev(height = given.height),
-                        size = 2.5) + #position_jitterdodge(jitter.width=0.85))
+    ggplot2::geom_point(position = ggplot2::position_dodge(width = given_height)) +  #ggstance::position_dodgev(height = given.height),
     ggplot2::theme_classic() +
     ggplot2::scale_color_viridis_c() +
     ggplot2::labs(x = "resolution",
-                  y = "k",
-                  color = "frequency") +
+                  y = "k") +
+    ggplot2::scale_size_continuous(range = pt_size_range) +
     ggplot2::theme(axis.text.x = ggplot2::element_text(
       angle = 90,
       vjust = 0.5,
       hjust = 1
-    ))
+    ), legend.position = "none")
+
+  return(patchwork::wrap_plots(main_plot, legends_plot, widths = ggplot2::unit(c(1, legends_width), c("null", "cm"))))
 }
 
 #' Relationship Between the Number of Clusters and the Number of Unique Partitions
@@ -2365,10 +2471,17 @@ plot_k_resolution_corresp = function(res_object_list,
 #' @param object_names Custom names that the user could assing to each
 #' configuration; if not specified, the plot will use the generated configuration
 #' names.
+#' @param colour_information String that specifies the information type that will be
+#' illustrated using gradient colour: either `frequency_partition` for the frequency of the
+#' most common partition or `ecc` for the Element-Centric Consistency
+#' of the partitions obtained when the the number of clusters is fixed.
+#' @param pt_size_range Indicates the minimum and the maximum size a point on the plot can have.
 #'
 #' @return A ggplot2 object. The color gradient suggests the frequency of the most
 #' common partition relative to the total number of appearances of that specific
-#' number of clusters.
+#' number of clusters or the Element-Centric Consistency of the partitions. The size
+#' illustrates the frequency of the partitions with *k* clusters relative to the
+#' total number of partitions.
 #' @export
 #'
 #'
@@ -2393,7 +2506,17 @@ plot_k_resolution_corresp = function(res_object_list,
 #'
 #' plot_k_n_partitions(resolution_result)
 plot_k_n_partitions = function(partition_obj_list,
-                               object_names = NULL) {
+                               object_names = NULL,
+                               pt_size_range = c(1.5, 4),
+                               colour_information = c("ecc", "frequency_partition")) {
+  if (length(colour_information) > 1) {
+    colour_information = colour_information[1]
+  }
+
+  if (!(colour_information %in% c("ecc", "frequency_partition"))) {
+    stop("colour_information can be either `ecc` or `frequency_partition`")
+  }
+
   partition_obj_list = partition_obj_list$split_by_k
 
   # use the names of the fields from the list
@@ -2410,23 +2533,26 @@ plot_k_n_partitions = function(partition_obj_list,
     partition_object = partition_obj_list[[i]]
 
     unique.partitions.temp.df = reshape2::melt(lapply(partition_object, function(x) {
-      length(x)
+      length(x$partitions)
     }))
     colnames(unique.partitions.temp.df) = c("n.partitions", "n.clusters")
 
     unique.partitions.temp.df[["configuration"]] = rep(object_names[i], nrow(unique.partitions.temp.df))
 
     unique.partitions.temp.df[["first.occ"]] = as.numeric(lapply(partition_object, function(x) {
-      max(sapply(x, function(y) {
+      max(sapply(x$partitions, function(y) {
         y$freq
       }))
     }))
     unique.partitions.temp.df[["total.occ"]] = as.numeric(lapply(partition_object, function(x) {
-      sum(sapply(x, function(y) {
+      sum(sapply(x$partitions, function(y) {
         y$freq
       }))
     }))
-    unique.partitions.temp.df[["frequency"]] = unique.partitions.temp.df$first.occ / unique.partitions.temp.df$total.occ
+    unique.partitions.temp.df[["frequency_partition"]] = unique.partitions.temp.df$first.occ / unique.partitions.temp.df$total.occ
+    unique.partitions.temp.df[["ecc"]] = sapply(partition_object, function(x) {mean(x$ecc)})
+    overall_total_occ = sum(unique.partitions.temp.df$total.occ)
+    unique.partitions.temp.df[["frequency_k"]] = unique.partitions.temp.df$total.occ / overall_total_occ
 
     max_n_part = max(c(max(
       unique.partitions.temp.df$n.partitions
@@ -2444,18 +2570,52 @@ plot_k_n_partitions = function(partition_obj_list,
                                                  levels = stringr::str_sort(unique(
                                                    unique.partitions.final.df$n.clusters
                                                  ), numeric = T))
-
-  ggplot2::ggplot(
+  p1 = ggplot2::ggplot(
     unique.partitions.final.df,
     ggplot2::aes(
       x = .data$n.clusters,
       y = .data$n.partitions,
       shape = .data$configuration,
-      color = .data$frequency
+    )) + ggplot2::geom_point() + ggplot2::theme_bw()
+
+  p2 = ggplot2::ggplot(
+    unique.partitions.final.df,
+    ggplot2::aes(
+      x = .data$n.clusters,
+      y = .data$n.partitions,
+      size = .data$frequency_k
+    )) + ggplot2::geom_point() + ggplot2::theme_bw()
+
+  p3 = ggplot2::ggplot(
+    unique.partitions.final.df,
+    ggplot2::aes(
+      x = .data$n.clusters,
+      y = .data$n.partitions,
+      color = .data[[colour_information]]
+    )) + ggplot2::geom_point() +
+    ggplot2::scale_color_viridis_c(name = ifelse(colour_information == "ecc", "ECC", "partition\nfrequency")) +
+    ggplot2::theme_bw()
+
+  l1 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p1)), "guide-box")
+  l2 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p2)), "guide-box")
+  l3 = gtable::gtable_filter(ggplot2::ggplot_gtable(ggplot2::ggplot_build(p3)), "guide-box")
+  legends_width = max(as.numeric(l1$widths), as.numeric(l2$widths) + as.numeric(l3$widths))
+  design = "AA\nBC"
+  legends_plot = patchwork::wrap_plots(l1, l2, l3, design = design)
+
+  main_plot = ggplot2::ggplot(
+    unique.partitions.final.df,
+    ggplot2::aes(
+      x = .data$n.clusters,
+      y = .data$n.partitions,
+      shape = .data$configuration,
+      size = .data$frequency_k,
+      color = .data[[colour_information]]
     ),
     group = interaction(.data$n.clusters, .data$precision)
   ) +
     ggplot2::scale_y_continuous(breaks = seq(from = 0, to = max_n_part, by = 2)) +
+    ggplot2::scale_size_continuous(range = pt_size_range) +
     ggplot2::geom_hline(
       yintercept = seq(from = 0, to = max_n_part, by = 2),
       linetype = "dashed",
@@ -2466,9 +2626,13 @@ plot_k_n_partitions = function(partition_obj_list,
       linetype = "dashed",
       color = "#e3e3e3"
     ) +
-    ggplot2::geom_point(position = ggplot2::position_dodge(0.9), size = 2.5) +
+    ggplot2::geom_point(position = ggplot2::position_dodge(0.9)) +
     ggplot2::theme_classic() +
-    ggplot2::scale_color_viridis_c() +
+    ggplot2::scale_color_viridis_c(name = ifelse(colour_information == "ecc", "ECC", "partition\nfrequency")) +
+    #ggplot2::theme()
     ggplot2::xlab("k") +
-    ggplot2::ylab("# partitions")
+    ggplot2::ylab("# partitions") +
+    ggplot2::theme(legend.position = "none")
+
+  return(patchwork::wrap_plots(main_plot, legends_plot, widths = ggplot2::unit(c(1, legends_width), c("null", "cm"))))
 }
