@@ -107,7 +107,7 @@ sets, we use `get_feature_stability_object`, and plot the results with
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png width=80%/>
 
 where the higher element-centric consistency (ECC) indicates more stable
-clustering results across random seeds. For more details, please see [this 
+clustering results across random seeds. For more details, please see [this
 vignette](https://core-bioinformatics.github.io/ClustAssess/articles/stability-based-parameter-assessment.html).
 
 
@@ -158,7 +158,7 @@ The following packages are required for ClustAssess:
 * uwot
 * gtable
 
-To use all stability-based assessment methods, and run all examples and 
+To use all stability-based assessment methods, and run all examples and
 vignettes, the following packages are also needed:
 
 * knitr
@@ -175,14 +175,14 @@ vignettes, the following packages are also needed:
 If you have used ClustAssess in your work, please cite [Shahsavari et al. 2022](https://doi.org/10.1101/2022.01.31.478592):
 
 ```
-Shahsavari, A., Munteanu, A., & Mohorianu, I. (2022). ClustAssess: Tools for Assessing Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592
+Shahsavari, A., Munteanu, A., & Mohorianu, I. (2022). ClustAssess: Tools for Assessing the Robustness of Single-Cell Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592
 ```
 
 or in BibTex:
 
 ```
 @ARTICLE{clustassess,
-  title     = "ClustAssess: Tools for Assessing Clustering",
+  title     = "ClustAssess: Tools for Assessing the Robustness of Single-Cell Clustering",
   author    = "Shahsavari, Arash and Munteanu, Andi and Mohorianu, Irina",
   journal   = "bioRxiv",
   year      =  2022,
