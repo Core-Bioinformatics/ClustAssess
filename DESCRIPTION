@@ -33,6 +33,7 @@ Imports:
     progress,
     reshape2,
     stringr,
+    gtable,
     uwot
 RoxygenNote: 7.1.2
 LinkingTo: 

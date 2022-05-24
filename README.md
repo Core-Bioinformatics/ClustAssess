@@ -156,6 +156,7 @@ The following packages are required for ClustAssess:
 * reshape2
 * stringr
 * uwot
+* gtable
 
 To use all stability-based assessment methods, and run all examples and 
 vignettes, the following packages are also needed:
