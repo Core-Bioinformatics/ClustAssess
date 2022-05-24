@@ -119,7 +119,7 @@ wrap_plots(lapply(c(DimPlot(cuomo, group.by=c('day.ident', 'donor.ident'), combi
 *Note*: The following sections provide an example of applying the ClustAssess summary assessment methods. The values of the parameters should be varied and critically assessed for each individual dataset. Also, we recommend increasing the number of repetitions used for stability inference, to ensure reliable and robust conclusions.
 
 ```{r nrep}
-n_repetitions = 30
+n_repetitions = 30 
 ```
 
 The following analysis is performed by varying the seed multiple times. The `n_cores` user-defined parameter indicates the number of parallel threads used to run the pipeline. Setting the value of 1 will result in a sequential run of all iterations. We encourage the usage of a higher number of cores when possible, as it will decrease the runtime of the assessment pipeline. Please note that the number of cores should be chosen carefully, as each newly created process will add to the memory usage.
@@ -140,8 +140,9 @@ To showcase the importance of this parameter, we assess three different sets of 
 
 ```{r feature_sets}
 steps = seq(from = 500, to = 3000, by = 500)
-ma_hv_genes_intersection = intersect(most_abundant_genes[1:3000], var_features[1:3000])
-ma_hv_steps = sapply(steps, function(step) { length(intersect(most_abundant_genes[1:step], var_features[1:step])) })
+ma_hv_genes_intersection_sets = sapply(steps, function(x) intersect(most_abundant_genes[1:x], var_features[1:x]))
+ma_hv_genes_intersection = Reduce(union, ma_hv_genes_intersection_sets)
+ma_hv_steps = sapply(ma_hv_genes_intersection_sets, length)
 ```
 
 `get_feature_stability` is a function that explores the stability of a feature set. The input consists of a normalized expression matrix, that is summarized using either PCA or UMAP. The obtained embedding is then processed using the Leiden community detection method (on default values as described in the Seurat pipeline). This process is iterated across random seeds. The method outputs a list containing an UMAP embedding, the cell assignment corresponding to the most frequent partition and the Element-Centric Consistency (ECC) across all communities obtained throughout the iterations. The higher the Element-Centric Consistency, the more stable the clustering.
@@ -196,7 +197,7 @@ pca_feature_stability_object = c(get_feature_stability(data_matrix = cuomo@assay
 The function `get_feature_stability` outputs the stability of different feature sets and concatenates the results to ease cross-comparisons. The plot illustrates the stability assessment, across 30 runs, each with different random seeds, on the three gene sets described above. We assessed the stability of each set on incremental number of selected genes. Thus, the boxplots are arranged in groups of three (the number of evaluated feature sets); above each boxplot we specify the number of elements per subset. For the Cuomo case study, a conclusion that is supported based on this plot is that the most abundant set is more stable than the other two options, since it has higher Element-Centric Consistency scores.
 
 ```{r stab_boxplot, fig.width=7, fig.height=5}
-plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) +
+plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5, boxplot_width = 0.4, dodge_width = 0.7) +
   theme(legend.position = c(1,0),
         legend.justification = c(1,0))
 ```
@@ -204,9 +205,9 @@ plot_feature_stability_boxplot(pca_feature_stability_object, text_size  = 2.5) +
 Another angle for assessing the stability is centered on the comparison between consecutive steps, for each feature set, performed using the Element-Centric Similarity on the most frequent partitions from each step. The aim is evaluating the effect of increasing the number of genes on the final partitions, and, indirectly, determining the transition from the signal to the noise zone. For the Cuomo case study, we observe an increase in similarity between consecutive steps for the most abundant and highly variable genes, suggesting that selecting more genes would lead to a more robust partitioning.
 
 ```{r stab_ecs_inc, fig.width=7, fig.height=5}
-plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width = 1, text_size = 2) +
+plot_feature_stability_ecs_incremental(pca_feature_stability_object, dodge_width = 0.6, text_size = 2) +
     theme(legend.position = c(1,0),
-        legend.justification = c(1,0))
+        legend.justification = c(1,0))  # + geom_boxplot(width = 0.1)
 ```
 
 To enhance the summarized information presented as boxplots, we use `plot_feature_stability_mb_facet` to visualize the corresponding facet plot displaying the most frequent partitions for each feature set and step on an UMAP embedding. This plot reveals additional insights i.e. the stability of the most abundant genes might be explained in part by the scattered distribution of the cells across multiple islands. The highly variable and the intersection gene sets tend to produce more compact partitions, that may be linked to biologically relevant cell types.
@@ -340,7 +341,7 @@ stop_time_nn_importance = Sys.time()
 
 The final step in a standard single-cell analysis pipeline is applying a graph-based clustering method. Choosing a community detection algorithm has a significant impact on the partitioning results. Using the `get_clustering_difference` we assess the stability and reproducibility of results obtained using various graph clustering methods available in the Seurat package: Louvain, Louvain refined, SLM and Leiden.
 
-```{r clustering_diff}
+```{r clustering_diff, warning=FALSE}
 cuomo = RunPCA(cuomo,
                npcs = 30,
                approx = F,
@@ -351,7 +352,7 @@ cuomo = RunUMAP(cuomo,reduction = "pca",
                 min.dist = 0.3,
                 metric = "cosine",
                 verbose = F)
-adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
+adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 30, nn.method = "rann", verbose = F)$snn
 
 start_time_clustering_method = Sys.time()
 clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
@@ -396,17 +397,20 @@ resolution_gridsearch = get_resolution_importance(embedding = cuomo@reductions$u
                                                   ncores = n_cores)
 ```
 
-The resulting object can be visualized with `plot_k_resolution_corresp` as shown in the code below; we showcase the relationship between the number of clusters and the resolution value. This plot also provides information on suitable resolution values for predefined number of clusters. The colour gradient is proportional to the number of occurrences of the most frequent partition. It can also be used as proxy to describe the co-variation between (k, resolution). Lighter (higher) values indicate that little variation is observed, on changes of the random seed, between the number of clusters and the resolution value.
+The resulting object can be visualized with `plot_k_resolution_corresp` as shown in the code below; we showcase the relationship between the number of clusters and the resolution value. This plot also provides information on suitable resolution values for predefined number of clusters. The colour gradient represents either the frequency of the partitions having *k* clusters or the ECC of them. It can also be used as proxy to describe the co-variation between (k, resolution). Lighter (higher) values indicate that little variation is observed, on changes of the random seed, between the number of clusters and the resolution value. The size illustrates the frequency of the most common partition when the resolution and the number of clusters values are fixed.
 
 ```{r k_res_corr_1, fig.width=7, fig.height=5}
 plot_k_resolution_corresp(resolution_gridsearch) +
   ggtitle("resolution - k correspondence with ecs threshold = 1")
+plot_k_resolution_corresp(resolution_gridsearch, colour_information = "freq_k") +
+  ggtitle("resolution - k correspondence with ecs threshold = 1")
 ```
 
-The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of the most common partition with a given number of clusters. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
+The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of most common partition having a fixed number of clusters or their ECC as an indicator of robustness. The size indicates the frequency of the partition having *k* clusters relative to the total number of runs and should provide additional information whether the behaviour described by the colour is replicated in multiple instances or not. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
 
 ```{r k_n_part_1, fig.width=7, fig.height=5}
 plot_k_n_partitions(resolution_gridsearch) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
+plot_k_n_partitions(resolution_gridsearch, colour_information = "frequency_partition") + ggtitle("k - # partitions correspondence with ecs threshold = 1")
 ```
 
 By default, the `get_resolution_importance` function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score.
