@@ -979,12 +979,24 @@ merge_partitions = function(partition_list,
     stop("order parameter should be logical")
 
   # check the type of object that is provided in the list
-  if(class(partition_list[[1]]) != "list") {
+  if(class(partition_list[[1]]) != "list") { # the elements should be membership vectors
     partition_list = lapply(partition_list, function(x) {
       list(mb = x,
            freq = 1)
     })
   } else {
+    if("partitions" %in% names(partition_list)) { # the list contains the partition field, created by `get_resolution_importance` method
+      part_list = merge_partitions(partition_list$partitions, ecs_thresh, ncores, order)
+      ec_consistency = weighted_element_consistency(lapply(part_list, function(x) {
+        x$mb
+      }),
+      sapply(part_list, function(x) {
+        x$freq
+      }),
+      ncores = ncores)
+
+      return(list(partitions = part_list, ecc = ec_consistency))
+    }
     if(!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
       return(lapply(partition_list, function(sublist) {
         merge_partitions(sublist, ecs_thresh, ncores, order)

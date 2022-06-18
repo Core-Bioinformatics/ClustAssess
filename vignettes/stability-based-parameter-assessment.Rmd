@@ -352,7 +352,7 @@ cuomo = RunUMAP(cuomo,reduction = "pca",
                 min.dist = 0.3,
                 metric = "cosine",
                 verbose = F)
-adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 30, nn.method = "rann", verbose = F)$snn
+adj_matrix = FindNeighbors(cuomo@reductions$umap@cell.embeddings, k.param = 25, nn.method = "rann", verbose = F)$snn
 
 start_time_clustering_method = Sys.time()
 clustering_diff_obj = get_clustering_difference(graph_adjacency_matrix = adj_matrix,
@@ -401,16 +401,16 @@ The resulting object can be visualized with `plot_k_resolution_corresp` as shown
 
 ```{r k_res_corr_1, fig.width=7, fig.height=5}
 plot_k_resolution_corresp(resolution_gridsearch) +
-  ggtitle("resolution - k correspondence with ecs threshold = 1")
+  plot_annotation(title = "resolution - k correspondence with ecs threshold = 1")
 plot_k_resolution_corresp(resolution_gridsearch, colour_information = "freq_k") +
-  ggtitle("resolution - k correspondence with ecs threshold = 1")
+  plot_annotation(title = "resolution - k correspondence with ecs threshold = 1")
 ```
 
 The following plot showcases the co-variation between the stability of the number of clusters and the number of different partitions resulting from changes on the seed or the resolution parameter. A high number of different partitions indicates a lower stability for a given number of clusters. The colour gradient is proportional to the frequency of most common partition having a fixed number of clusters or their ECC as an indicator of robustness. The size indicates the frequency of the partition having *k* clusters relative to the total number of runs and should provide additional information whether the behaviour described by the colour is replicated in multiple instances or not. We note that, even if we obtain a high number of different partitions, if the frequency of the most common one is close to 1, then the overall stability is high. Observing a high number of partitions, each with low frequency, indicates high instability.
 
 ```{r k_n_part_1, fig.width=7, fig.height=5}
-plot_k_n_partitions(resolution_gridsearch) + ggtitle("k - # partitions correspondence with ecs threshold = 1")
-plot_k_n_partitions(resolution_gridsearch, colour_information = "frequency_partition") + ggtitle("k - # partitions correspondence with ecs threshold = 1")
+plot_k_n_partitions(resolution_gridsearch) + plot_annotation(title = "k - # partitions correspondence with ecs threshold = 1")
+plot_k_n_partitions(resolution_gridsearch, colour_information = "frequency_partition") + plot_annotation(title = "k - # partitions correspondence with ecs threshold = 1")
 ```
 
 By default, the `get_resolution_importance` function (as well as the previous functions part of the assessment pipeline) relies on the merging of identical partitions. Two partitions are identical if their contingency table form a square diagonal matrix. Merging is also applied to reduce the object size and to minimize the runtime for calculating the Element-Centric Consistency score.
@@ -426,12 +426,16 @@ Lowering the ECS threshold leads, in general, to higher number of occurences for
 
 ```{r k_res_corr_99, fig.width=7, fig.height=5}
 plot_k_resolution_corresp(resolution_gridsearch_thresh_99) +
-  ggtitle("resolution - k correspondence with ecs threshold = 0.99")
+  plot_annotation(title = "resolution - k correspondence with ecs threshold = 0.99")
+plot_k_resolution_corresp(resolution_gridsearch_thresh_99, colour_information = "freq_k") +
+  plot_annotation(title = "resolution - k correspondence with ecs threshold = 0.99")
 ```
 
 ```{r k_n_part_99, fig.width=7, fig.height=5}
 plot_k_n_partitions(resolution_gridsearch_thresh_99) +
-  ggtitle("k - # partitions correspondence with ecs threshold = 0.99")
+  plot_annotation(title = "k - # partitions correspondence with ecs threshold = 0.99")
+plot_k_n_partitions(resolution_gridsearch_thresh_99, colour_information = "frequency_partition") + 
+  plot_annotation(title = "k - # partitions correspondence with ecs threshold = 0.99")
 ```
 
 ```{r, include = F}
