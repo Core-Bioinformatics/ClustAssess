@@ -39,7 +39,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -52,7 +52,7 @@
   <a href="reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -94,8 +94,7 @@
 <p>This repo contains the ClustAssess R package, which provides a set of tools for evaluating clustering robustness.</p>
 <ul>
 <li>
-<a href="#the-tools">The Tools</a>
-<ul>
+<a href="#the-tools">The Tools</a><ul>
 <li><a href="#proportion-of-ambiguously-clustered-pairs-pac">Proportion of Ambiguously Clustered Pairs (PAC)</a></li>
 <li><a href="#element-centric-clustering-similarity-ecs">Element Centric Clustering Similarity (ECS)</a></li>
 <li><a href="#marker-gene-overlap">Marker Gene Overlap</a></li>
@@ -186,6 +185,7 @@
 <li>reshape2</li>
 <li>stringr</li>
 <li>uwot</li>
+<li>gtable</li>
 </ul>
 <p>To use all stability-based assessment methods, and run all examples and vignettes, the following packages are also needed:</p>
 <ul>
@@ -203,10 +203,10 @@
 <h1 id="citing-clustassess">Citing ClustAssess<a class="anchor" aria-label="anchor" href="#citing-clustassess"></a>
 </h1>
 <p>If you have used ClustAssess in your work, please cite <a href="https://doi.org/10.1101/2022.01.31.478592" class="external-link">Shahsavari et al. 2022</a>:</p>
-<pre><code>Shahsavari, A., Munteanu, A., &amp; Mohorianu, I. (2022). ClustAssess: Tools for Assessing Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592</code></pre>
+<pre><code>Shahsavari, A., Munteanu, A., &amp; Mohorianu, I. (2022). ClustAssess: Tools for Assessing the Robustness of Single-Cell Clustering. bioRxiv. https://doi.org/10.1101/2022.01.31.478592</code></pre>
 <p>or in BibTex:</p>
 <pre><code>@ARTICLE{clustassess,
-  title     = "ClustAssess: Tools for Assessing Clustering",
+  title     = "ClustAssess: Tools for Assessing the Robustness of Single-Cell Clustering",
   author    = "Shahsavari, Arash and Munteanu, Andi and Mohorianu, Irina",
   journal   = "bioRxiv",
   year      =  2022,
@@ -279,7 +279,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer>

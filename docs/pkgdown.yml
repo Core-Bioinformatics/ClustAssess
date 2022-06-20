@@ -1,9 +1,9 @@
-pandoc: 2.9.2
-pkgdown: 2.0.2
+pandoc: '2.11'
+pkgdown: 2.0.4
 pkgdown_sha: ~
 articles:
   ClustAssess: ClustAssess.html
   comparing-soft-and-hierarchical: comparing-soft-and-hierarchical.html
   stability-based-parameter-assessment: stability-based-parameter-assessment.html
-last_built: 2022-02-07T17:25Z
+last_built: 2022-06-20T08:25Z
 

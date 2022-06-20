@@ -18,7 +18,7 @@ a reference clustering by calculating their element-wise average agreement."><!-
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ a reference clustering by calculating their element-wise average agreement."><!-
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -89,40 +89,59 @@ clustering_list is compared to. It can be either:</p><ul><li><p>A numeric/charac
 <li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
 <li><p>An hclust object.</p></li>
 </ul></dd>
+
+
 <dt>clustering_list</dt>
 <dd><p>The list of clustering results, each of which is either:</p><ul><li><p>A numeric/character/factor vector of cluster labels for each element.</p></li>
 <li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
 <li><p>An hclust object.</p></li>
 </ul></dd>
+
+
 <dt>alpha</dt>
 <dd><p>A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.</p></dd>
+
+
 <dt>r</dt>
 <dd><p>A numeric hierarchical scaling parameter.</p></dd>
+
+
 <dt>rescale_path_type</dt>
 <dd><p>A string; rescale the hierarchical height by:</p><ul><li><p>"max" : the maximum path from the root.</p></li>
 <li><p>"min" : the minimum path form the root.</p></li>
 <li><p>"linkage" : use the linkage distances in the clustering.</p></li>
 </ul></dd>
+
+
 <dt>ppr_implementation</dt>
 <dd><p>Choose a implementation for personalized
 page-rank calculation:</p><ul><li><p>"prpack": use PPR algorithms in igraph.</p></li>
 <li><p>"power_iteration": use power_iteration method.</p></li>
 </ul></dd>
+
+
 <dt>dist_rescaled</dt>
 <dd><p>A logical: if TRUE, the linkage distances are linearly
 rescaled to be in-between 0 and 1.</p></dd>
+
+
 <dt>row_normalize</dt>
 <dd><p>Whether to normalize all rows in clustering_result
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
+
+
 <dt>ncores</dt>
 <dd><p>the number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A vector containing the element-wise average agreement.</p>
+    
+
+<p>A vector containing the element-wise average agreement.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -137,28 +156,28 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 <span class="r-in"><span class="va">reference.clustering</span> <span class="op">=</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span></span>
 <span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
 <span class="r-in"><span class="fu">element_agreement</span><span class="op">(</span><span class="va">reference.clustering</span>, <span class="va">clustering.list</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [1] 0.8640000 0.7360000 0.7360000 0.7360000 0.8640000 0.8640000 0.8640000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [8] 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000 0.7360000 0.7360000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [15] 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000 0.8640000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [22] 0.8640000 0.8640000 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [29] 0.8640000 0.7360000 0.7360000 0.8640000 0.8640000 0.8640000 0.7360000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [36] 0.8640000 0.8640000 0.8640000 0.7360000 0.8640000 0.8640000 0.7360000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [43] 0.7360000 0.8640000 0.8640000 0.7360000 0.8640000 0.7360000 0.8640000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [50] 0.8640000 0.6561828 0.6561828 0.2156667 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [57] 0.6561828 0.4965161 0.6561828 0.6561828 0.4965161 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [64] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [71] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [78] 0.2156667 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [85] 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [92] 0.6561828 0.6561828 0.4965161 0.6561828 0.6561828 0.6561828 0.6561828</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [99] 0.4965161 0.6561828 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [106] 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [113] 0.6403333 0.3438172 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [120] 0.3438172 0.6403333 0.3438172 0.6403333 0.3438172 0.6403333 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [127] 0.3438172 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [134] 0.3438172 0.6403333 0.6403333 0.6403333 0.6403333 0.3438172 0.6403333</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [141] 0.6403333 0.6403333 0.3438172 0.6403333 0.6403333 0.6403333 0.3438172</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [148] 0.6403333 0.6403333 0.3438172</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [1] 0.9320000 0.8680000 0.8680000 0.8680000 0.9320000 0.9320000 0.9320000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [8] 0.9320000 0.8680000 0.8680000 0.9320000 0.9320000 0.8680000 0.8680000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [15] 0.9320000 0.9320000 0.9320000 0.9320000 0.9320000 0.9320000 0.9320000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [22] 0.9320000 0.9320000 0.9320000 0.8680000 0.8680000 0.9320000 0.9320000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [29] 0.9320000 0.8680000 0.8680000 0.9320000 0.9320000 0.9320000 0.8680000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [36] 0.9320000 0.9320000 0.9320000 0.8680000 0.9320000 0.9320000 0.8680000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [43] 0.8680000 0.9320000 0.9320000 0.8680000 0.9320000 0.8680000 0.9320000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [50] 0.9320000 0.7151882 0.7151882 0.1278333 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [57] 0.7151882 0.6353548 0.7151882 0.7151882 0.6353548 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [64] 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [71] 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [78] 0.1278333 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [85] 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [92] 0.7151882 0.7151882 0.6353548 0.7151882 0.7151882 0.7151882 0.7151882</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [99] 0.6353548 0.7151882 0.6801667 0.2848118 0.6801667 0.6801667 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [106] 0.6801667 0.2848118 0.6801667 0.6801667 0.6801667 0.6801667 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [113] 0.6801667 0.2848118 0.2848118 0.6801667 0.6801667 0.6801667 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [120] 0.2848118 0.6801667 0.2848118 0.6801667 0.2848118 0.6801667 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [127] 0.2848118 0.2848118 0.6801667 0.6801667 0.6801667 0.6801667 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [134] 0.2848118 0.6801667 0.6801667 0.6801667 0.6801667 0.2848118 0.6801667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [141] 0.6801667 0.6801667 0.2848118 0.6801667 0.6801667 0.6801667 0.2848118</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [148] 0.6801667 0.6801667 0.2848118</span>
 </code></pre></div>
     </div>
   </div>
@@ -173,7 +192,7 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

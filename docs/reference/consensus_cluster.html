@@ -18,7 +18,7 @@ clustered pairs (PAC) with hierarchical clustering."><!-- mathjax --><script src
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ clustered pairs (PAC) with hierarchical clustering."><!-- mathjax --><script src
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -88,40 +88,65 @@ clustered pairs (PAC) with hierarchical clustering.</p>
     <h2>Arguments</h2>
     <dl><dt>x</dt>
 <dd><p>A samples x features normalized data matrix.</p></dd>
+
+
 <dt>k_min</dt>
 <dd><p>The minimum number of clusters calculated.</p></dd>
+
+
 <dt>k_max</dt>
 <dd><p>The maximum number of clusters calculated.</p></dd>
+
+
 <dt>n_reps</dt>
 <dd><p>The total number of subsamplings and reclusterings of the data;
 this value needs to be high enough to ensure PAC converges; convergence can
 be assessed with pac_convergence.</p></dd>
+
+
 <dt>p_sample</dt>
 <dd><p>The proportion of samples included in each subsample.</p></dd>
+
+
 <dt>p_feature</dt>
 <dd><p>The proportion of features included in each subsample.</p></dd>
+
+
 <dt>p_minkowski</dt>
 <dd><p>The power of the Minkowski distance.</p></dd>
+
+
 <dt>dist_method</dt>
 <dd><p>The distance measure for the distance matrix used in
 hclust; must be one of "euclidean", "maximum", "manhattan", "canberra",
 "binary" or "minkowski".</p></dd>
+
+
 <dt>linkage</dt>
 <dd><p>The linkage method used in hclust; must be one of "ward.D",
 "ward.D2", "single", "complete", "average", "mcquitty", "median" or
 "centroid"</p></dd>
+
+
 <dt>lower_lim</dt>
 <dd><p>The lower limit for determining whether a pair is
 clustered ambiguously; the lower this value, the higher the PAC.</p></dd>
+
+
 <dt>upper_lim</dt>
 <dd><p>The upper limit for determining whether a pair is
 clustered ambiguously; the higher this value, the higher the PAC.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>Logical value used for choosing to display a progress bar or not.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data.frame with PAC values across iterations, as well as parameter
+    
+
+<p>A data.frame with PAC values across iterations, as well as parameter
 values used when calling the method.</p>
     </div>
     <div id="references">
@@ -155,7 +180,7 @@ Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

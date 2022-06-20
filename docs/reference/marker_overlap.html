@@ -18,7 +18,7 @@ marker genes."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/li
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ marker genes."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/li
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -85,35 +85,52 @@ marker genes.</p>
     <dl><dt>markers1</dt>
 <dd><p>The first data frame of marker genes, must contain columns
 called 'gene' and 'cluster'.</p></dd>
+
+
 <dt>markers2</dt>
 <dd><p>The second data frame of marker genes, must contain columns
 called 'gene' and 'cluster'.</p></dd>
+
+
 <dt>clustering1</dt>
 <dd><p>The first vector of cluster assignments.</p></dd>
+
+
 <dt>clustering2</dt>
 <dd><p>The second vector of cluster assignments.</p></dd>
+
+
 <dt>n</dt>
 <dd><p>The number of top n markers (ranked by rank_by) to use when
 calculating the overlap.</p></dd>
+
+
 <dt>overlap_type</dt>
 <dd><p>The type of overlap to calculated: must be one of 'jsi'
 for Jaccard similarity index and 'intersect' for intersect size.</p></dd>
+
+
 <dt>rank_by</dt>
 <dd><p>A character string giving the name of the column to rank
 marker genes by. Note the sign here: to rank by lowest p-value, preface
 the column name with a minus sign; to rank by highest value, where higher
 value indicates more discriminative genes (for example power in the ROC
 test), no sign is needed.</p></dd>
+
+
 <dt>use_sign</dt>
 <dd><p>A logical: should the sign of markers match for overlap
 calculations? So a gene must be a positive or a negative marker in both
 clusters being compared. If TRUE, markers1 and markers2 must have a
 'avg_logFC' or 'avg_log2FC' column, from which the sign of the DE will be
 extracted.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A vector of the marker gene overlap per cell.</p>
+    
+
+<p>A vector of the marker gene overlap per cell.</p>
     </div>
 
     <div id="ref-examples">
@@ -150,6 +167,7 @@ extracted.</p></dd>
 <span class="r-in"><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">'jsi'</span><span class="op">)</span></span>
 <span class="r-in"><span class="op">}</span><span class="op">)</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching SeuratObject</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching sp</span>
 <span class="r-plt img"><img src="marker_overlap-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
@@ -165,7 +183,7 @@ extracted.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

@@ -18,7 +18,7 @@ method."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mat
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ method."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mat
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -116,34 +116,51 @@ method.</p>
 <li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
 <li><p>An hclust object.</p></li>
 </ul></dd>
+
+
 <dt>...</dt>
 <dd><p>This argument is not used.</p></dd>
+
+
 <dt>alpha</dt>
 <dd><p>A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.</p></dd>
+
+
 <dt>ppr_implementation</dt>
 <dd><p>Choose a implementation for personalized
 page-rank calculation:</p><ul><li><p>"prpack": use PPR algorithms in igraph.</p></li>
 <li><p>"power_iteration": use power_iteration method.</p></li>
 </ul></dd>
+
+
 <dt>row_normalize</dt>
 <dd><p>Whether to normalize all rows in clustering_result
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
+
+
 <dt>r</dt>
 <dd><p>A numeric hierarchical scaling parameter.</p></dd>
+
+
 <dt>rescale_path_type</dt>
 <dd><p>A string; rescale the hierarchical height by:</p><ul><li><p>"max" : the maximum path from the root.</p></li>
 <li><p>"min" : the minimum path form the root.</p></li>
 <li><p>"linkage" : use the linkage distances in the clustering.</p></li>
 </ul></dd>
+
+
 <dt>dist_rescaled</dt>
 <dd><p>A logical: if TRUE, the linkage distances are linearly
 rescaled to be in-between 0 and 1.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A Clustering object.</p>
+    
+
+<p>A Clustering object.</p>
     </div>
     <div id="methods-by-class-">
     <h2>Methods (by class)</h2>
@@ -169,7 +186,7 @@ rescaled to be in-between 0 and 1.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

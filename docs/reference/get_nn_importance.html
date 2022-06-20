@@ -19,7 +19,7 @@ namely the base embedding, the graph type and the number of neighbours."><!-- ma
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -31,7 +31,7 @@ namely the base embedding, the graph type and the number of neighbours."><!-- ma
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -92,40 +92,63 @@ namely the base embedding, the graph type and the number of neighbours.</p>
 should be an expression matrix, with features on rows and observations on columns;
 in the case of UMAP, the user could also provide a matrix associated to a PCA embedding.
 See also the transpose argument.</p></dd>
+
+
 <dt>n_neigh_sequence</dt>
 <dd><p>A sequence of the number of nearest neighbours.</p></dd>
+
+
 <dt>n_repetitions</dt>
 <dd><p>The number of repetitions of applying the pipeline with
 different seeds; ignored if seed_sequence is provided by the user.</p></dd>
+
+
 <dt>seed_sequence</dt>
 <dd><p>A custom seed sequence; if the value is NULL,
 the sequence will be built starting from 1 with a step of 100.</p></dd>
+
+
 <dt>graph_reduction_type</dt>
 <dd><p>The graph reduction type, denoting if the graph
 should be built on either the PCA or the UMAP embedding.</p></dd>
+
+
 <dt>ecs_thresh</dt>
 <dd><p>The ECS threshold used for merging similar clusterings.</p></dd>
+
+
 <dt>ncores</dt>
 <dd><p>The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.</p></dd>
+
+
 <dt>transpose</dt>
 <dd><p>Logical: whether the input object will be transposed or not.
 Set to FALSE if the input is an observations X features matrix, and set to TRUE
 if the input is a features X observations matrix.</p></dd>
+
+
 <dt>graph_type</dt>
 <dd><p>Argument indicating whether the graph should be
 unweighted (0), weighted (1) or both (2).</p></dd>
+
+
 <dt>algorithm</dt>
 <dd><p>An index indicating which community detection algorithm will
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
 can be found in the Seurat's <code>FindClusters</code> function.</p></dd>
+
+
 <dt>...</dt>
 <dd><p>Additional arguments passed to the <code><a href="https://rdrr.io/pkg/irlba/man/irlba.html" class="external-link">irlba::irlba</a></code> or the <code><a href="https://rdrr.io/pkg/uwot/man/umap.html" class="external-link">uwot::umap</a></code>
 method, depending on the value of graph_reduction_type.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list having three fields:</p><ul><li><p>n_neigh_k_corresp - list containing the number of the clusters obtained by running
+    
+
+<p>A list having three fields:</p><ul><li><p>n_neigh_k_corresp - list containing the number of the clusters obtained by running
 the pipeline multiple times with different seed, number of neighbors and graph type (weighted vs unweigted)</p></li>
 <li><p>n_neigh_ec_consistency - list containing the EC consistency of the partitions obtained
 at multiple runs when changing the number of neighbors or the graph type</p></li>
@@ -164,7 +187,7 @@ number of neighbors</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

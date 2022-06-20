@@ -18,7 +18,7 @@ clustering results"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ clustering results"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -92,58 +92,85 @@ clustering results</p>
 <li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
 <li><p>An hclust object.</p></li>
 </ul></dd>
+
+
 <dt>clustering2</dt>
 <dd><p>The second clustering result, which can be one of:</p><ul><li><p>A numeric/character/factor vector of cluster labels for each element.</p></li>
 <li><p>A samples x clusters matrix/Matrix::Matrix of nonzero membership values.</p></li>
 <li><p>An hclust object.</p></li>
 </ul></dd>
+
+
 <dt>alpha</dt>
 <dd><p>A numeric giving the personalized PageRank damping factor;
 1 - alpha is the restart probability for the PPR random walk.</p></dd>
+
+
 <dt>r_cl1</dt>
 <dd><p>A numeric hierarchical scaling parameter for the first clustering.</p></dd>
+
+
 <dt>rescale_path_type_cl1</dt>
 <dd><p>A string; rescale the hierarchical height of
 the first clustering by:</p><ul><li><p>"max" : the maximum path from the root.</p></li>
 <li><p>"min" : the minimum path form the root.</p></li>
 <li><p>"linkage" : use the linkage distances in the clustering.</p></li>
 </ul></dd>
+
+
 <dt>ppr_implementation_cl1</dt>
 <dd><p>Choose a implementation for personalized
 page-rank calculation for the first clustering:</p><ul><li><p>"prpack": use PPR algorithms in igraph.</p></li>
 <li><p>"power_iteration": use power_iteration method.</p></li>
 </ul></dd>
+
+
 <dt>dist_rescaled_cl1</dt>
 <dd><p>A logical: if TRUE, the linkage distances of the first
 clustering are linearly rescaled to be in-between 0 and 1.</p></dd>
+
+
 <dt>row_normalize_cl1</dt>
 <dd><p>Whether to normalize all rows in the first clustering
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
+
+
 <dt>r_cl2</dt>
 <dd><p>A numeric hierarchical scaling parameter for the second clustering.</p></dd>
+
+
 <dt>rescale_path_type_cl2</dt>
 <dd><p>A string; rescale the hierarchical height of
 the second clustering by:</p><ul><li><p>"max" : the maximum path from the root.</p></li>
 <li><p>"min" : the minimum path form the root.</p></li>
 <li><p>"linkage" : use the linkage distances in the clustering.</p></li>
 </ul></dd>
+
+
 <dt>ppr_implementation_cl2</dt>
 <dd><p>Choose a implementation for personalized
 page-rank calculation for the second clustering:</p><ul><li><p>"prpack": use PPR algorithms in igraph.</p></li>
 <li><p>"power_iteration": use power_iteration method.</p></li>
 </ul></dd>
+
+
 <dt>dist_rescaled_cl2</dt>
 <dd><p>A logical: if TRUE, the linkage distances of the second
 clustering are linearly rescaled to be in-between 0 and 1.</p></dd>
+
+
 <dt>row_normalize_cl2</dt>
 <dd><p>Whether to normalize all rows in the second clustering
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>The average element-wise similarity between the two Clusterings.</p>
+    
+
+<p>The average element-wise similarity between the two Clusterings.</p>
     </div>
 
     <div id="ref-examples">
@@ -166,7 +193,7 @@ TRUE, which will lead to slightly different ECS values compared to clusim.</p></
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

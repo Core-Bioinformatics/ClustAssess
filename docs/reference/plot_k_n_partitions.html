@@ -19,7 +19,7 @@ by changing the seed."><!-- mathjax --><script src="https://cdnjs.cloudflare.com
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -31,7 +31,7 @@ by changing the seed."><!-- mathjax --><script src="https://cdnjs.cloudflare.com
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -70,7 +70,12 @@ by changing the seed.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_k_n_partitions</span><span class="op">(</span><span class="va">partition_obj_list</span>, object_names <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_k_n_partitions</span><span class="op">(</span>
+  <span class="va">partition_obj_list</span>,
+  object_names <span class="op">=</span> <span class="cn">NULL</span>,
+  pt_size_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">4</span><span class="op">)</span>,
+  colour_information <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ecc"</span>, <span class="st">"frequency_partition"</span><span class="op">)</span>
+<span class="op">)</span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -78,16 +83,34 @@ by changing the seed.</p>
     <dl><dt>partition_obj_list</dt>
 <dd><p>An object or a concatenation of objects returned by the
 `merge_resolutions` method.</p></dd>
+
+
 <dt>object_names</dt>
 <dd><p>Custom names that the user could assing to each
 configuration; if not specified, the plot will use the generated configuration
 names.</p></dd>
+
+
+<dt>pt_size_range</dt>
+<dd><p>Indicates the minimum and the maximum size a point on the plot can have.</p></dd>
+
+
+<dt>colour_information</dt>
+<dd><p>String that specifies the information type that will be
+illustrated using gradient colour: either `frequency_partition` for the frequency of the
+most common partition or `ecc` for the Element-Centric Consistency
+of the partitions obtained when the the number of clusters is fixed.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A ggplot2 object. The color gradient suggests the frequency of the most
+    
+
+<p>A ggplot2 object. The color gradient suggests the frequency of the most
 common partition relative to the total number of appearances of that specific
-number of clusters.</p>
+number of clusters or the Element-Centric Consistency of the partitions. The size
+illustrates the frequency of the partitions with *k* clusters relative to the
+total number of partitions.</p>
     </div>
 
     <div id="ref-examples">
@@ -126,7 +149,7 @@ number of clusters.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

@@ -20,7 +20,7 @@ partitions obtained at different seeds."><!-- mathjax --><script src="https://cd
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -32,7 +32,7 @@ partitions obtained at different seeds."><!-- mathjax --><script src="https://cd
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -89,29 +89,46 @@ partitions obtained at different seeds.</p>
     <dl><dt>graph_adjacency_matrix</dt>
 <dd><p>A square adjacency matrix based on which an igraph
 object will be built.</p></dd>
+
+
 <dt>resolution</dt>
 <dd><p>A sequence of resolution values.</p></dd>
+
+
 <dt>n_repetitions</dt>
 <dd><p>The number of repetitions of applying the pipeline with
 different seeds; ignored if seed_sequence is provided by the user.</p></dd>
+
+
 <dt>seed_sequence</dt>
 <dd><p>A custom seed sequence; if the value is NULL, the
 sequence will be built starting from 1 with a step of 100.</p></dd>
+
+
 <dt>ecs_thresh</dt>
 <dd><p>The ECS threshold used for merging similar clusterings.</p></dd>
+
+
 <dt>ncores</dt>
 <dd><p>The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.</p></dd>
+
+
 <dt>algorithm</dt>
 <dd><p>An index or a list of indexes indicating which community detection
 algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
 More details can be found in the Seurat's <code>FindClusters</code> function.</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p>Boolean value used for displaying the progress bar.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list having two fields:</p><ul><li><p>all - a list that contains, for each clustering method and each resolution
+    
+
+<p>A list having two fields:</p><ul><li><p>all - a list that contains, for each clustering method and each resolution
 value, the EC consistency between the partitions obtained by changing the seed</p></li>
 <li><p>filtered - similar to <code>all</code>, but for each configuration, we determine the
 number of clusters that appears the most and use only the partitions with this
@@ -130,9 +147,6 @@ size</p></li>
 <span class="r-in">    nn.method <span class="op">=</span> <span class="st">"rann"</span>,</span>
 <span class="r-in">    verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span class="r-in">    compute.SNN <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">nn</span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Registered S3 method overwritten by 'spatstat.geom':</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   method     from</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   print.boxx cli </span>
 <span class="r-in"><span class="va">clust_diff_obj</span> <span class="op">=</span> <span class="fu">get_clustering_difference</span><span class="op">(</span>graph_adjacency_matrix <span class="op">=</span> <span class="va">adj_matrix</span>,</span>
 <span class="r-in">    resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span>
 <span class="r-in">    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span>
@@ -154,7 +168,7 @@ size</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

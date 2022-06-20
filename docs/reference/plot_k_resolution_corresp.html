@@ -18,7 +18,7 @@ number of clusters appear for different values of the resolution parameters."><!
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ number of clusters appear for different values of the resolution parameters."><!
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -71,7 +71,9 @@ number of clusters appear for different values of the resolution parameters.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">plot_k_resolution_corresp</span><span class="op">(</span>
   <span class="va">res_object_list</span>,
   res_object_names <span class="op">=</span> <span class="cn">NULL</span>,
-  given_height <span class="op">=</span> <span class="fl">0.7</span>
+  colour_information <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ecc"</span>, <span class="st">"freq_k"</span><span class="op">)</span>,
+  given_height <span class="op">=</span> <span class="fl">0.7</span>,
+  pt_size_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">4</span><span class="op">)</span>
 <span class="op">)</span></code></pre></div>
     </div>
 
@@ -80,21 +82,43 @@ number of clusters appear for different values of the resolution parameters.</p>
     <dl><dt>res_object_list</dt>
 <dd><p>An object returned by the
 `get_resolution_importance` method.</p></dd>
+
+
 <dt>res_object_names</dt>
 <dd><p>Custom names that the user could assing to each
 configuration; if not specified, the plot will use the generated configuration
 names.</p></dd>
+
+
+<dt>colour_information</dt>
+<dd><p>String that specifies the information type that will be
+illustrated using gradient colour: either `freq_k` for the frequency of the number
+of clusters or `ecc` for the Element-Centric Consistency
+of the partitions obtained when the resolution is fixed.</p></dd>
+
+
 <dt>given_height</dt>
 <dd><p>Used for adjusting the vertical position of the boxplot; the value
 will be passed in the `width` argument of the `ggplot::position_dodge` method.</p></dd>
+
+
+<dt>pt_size_range</dt>
+<dd><p>Indicates the minimum and the maximum size a point on the plot can have.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A ggplot2 object. Different shapes of points indicate different
+    
+
+<p>A ggplot2 object. Different shapes of points indicate different
 parameter configuration, while the color
-illustrates the frequency of the most common partition. The frequency is calculated
-as the fraction between the number of total appearances and the number of
-runs.</p>
+illustrates the frequency of the most common partition or the Element-Centric Consistency
+of the partitions. The frequency is calculated
+as the fraction between the number of total appearances of partitions with a specific
+number of clusters and resolution value and the number of
+runs. The size
+illustrates the frequency of the most common partition with *k* clusters relative to the
+partitions obtained with the same resolution value and have *k* clusters.</p>
     </div>
 
     <div id="ref-examples">
@@ -133,7 +157,7 @@ runs.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>

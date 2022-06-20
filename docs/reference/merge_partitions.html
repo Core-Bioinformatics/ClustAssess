@@ -18,7 +18,7 @@ above a given threshold. The merging is done using a complete linkage approach."
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
       </span>
     </div>
 
@@ -30,7 +30,7 @@ above a given threshold. The merging is done using a complete linkage approach."
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -75,17 +75,26 @@ above a given threshold. The merging is done using a complete linkage approach.<
     <h2>Arguments</h2>
     <dl><dt>partition_list</dt>
 <dd><p>A list of flat disjoint membership vectors.</p></dd>
+
+
 <dt>ecs_thresh</dt>
 <dd><p>A numeric: the ecs threshold.</p></dd>
+
+
 <dt>ncores</dt>
 <dd><p>The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.</p></dd>
+
+
 <dt>order</dt>
 <dd><p>A logical: if TRUE, order the partitions based on their frequencies.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>a list of the merged partitions</p>
+    
+
+<p>a list of the merged partitions</p>
     </div>
 
     <div id="ref-examples">
@@ -122,7 +131,7 @@ If the value is set to 1, the code will be run sequentially.</p></dd>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
 </div>
 
       </footer></div>
