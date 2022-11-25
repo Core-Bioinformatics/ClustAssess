@@ -294,7 +294,7 @@ corrected_L1 = function(x, y, alpha){
 }
 
 # corrected L1 distance for two membership vectors
-corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
+corrected_l1_mb_very_old = function(mb1, mb2, alpha = 0.9) {
   n = length(mb1)
 
   if(!is.character(mb1))
@@ -352,6 +352,114 @@ corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
 
   # perform the last calculations to obtain the ECS at each point
   return(1 - 1 / (2 * alpha) * ecs)
+}
+
+corrected_l1_mb_ = function(mb1, mb2, alpha = 0.9) {
+  n = length(mb1)
+
+  if(!is.character(mb1))
+    mb1 = as.character(mb1)
+
+  if(!is.character(mb2))
+    mb2 = as.character(mb2)
+
+  clu2elm_dict_1 = create_clu2elm_dict(mb1)
+  clu2elm_dict_2 = create_clu2elm_dict(mb2)
+
+  # the possible number of different ecs values is n x m
+  # where n is the number of clusters of the first partition
+  # and n the number of clusters of the second partition
+  nclust1 = length(clu2elm_dict_1)
+  nclust2 = length(clu2elm_dict_2)
+  # unique_ecs_vals = matrix(NA, nrow = nclust1, ncol = nclust2)
+  # rownames(unique_ecs_vals) = names(clu2elm_dict_1)
+  # colnames(unique_ecs_vals) = names(clu2elm_dict_2)
+
+  # cont_table = table(mb1, mb2)
+  # order_clust1 = rownames(cont_table)
+  # order_clust2 = colnames(cont_table)
+
+  # ecs = vector(mode = "double", length = n)
+  ecs = rep(0, n)
+
+  for(i in 1:nclust1) {
+    cluster1 = clu2elm_dict_1[[i]]
+    size_cluster1 = length(cluster1)
+    for(j in 1:nclust2) {
+      cluster2 = clu2elm_dict_2[[j]]
+      size_cluster2 = length(cluster2)
+      cluster_intersection = match(cluster1, cluster2, nomatch = 0) > 0
+      intersection_points = cluster1[cluster_intersection]
+      # cluster_intersection2 = match(cluster2, intersection_points, nomatch = 0) > 0
+      # clu2elm_dict_2[[j]] = cluster2[!cluster_intersection2]
+
+      # cluster_intersection = intersect(cluster1, cluster2)
+
+      # cluster_points = cluster1[cluster_intersection]
+      cluster1 = cluster1[!cluster_intersection]
+      # print(length(cluster1))
+
+      intersection_size = length(intersection_points)
+
+      ecs_val = intersection_size * (1 / size_cluster1 - 1 / size_cluster2)
+
+      if(ecs_val < 0) {
+        ecs_val = -ecs_val
+      }
+
+      ecs_val = ecs_val +
+        (size_cluster1 - intersection_size) * 1 / size_cluster1 +
+        (size_cluster2 - intersection_size) * 1 / size_cluster2
+
+      ecs_val = 1 - 1 / 2 * ecs_val
+
+      ecs[intersection_points] = ecs_val
+    }
+  }
+
+  # iterate through each point of the membership vector
+  # for(i in 1:n) {
+    # ecs[i] = 1#unique_ecs_vals[mb1[i], mb2[i]]
+  # }
+
+  # ecs = vapply(1:n, function(i) { unique_ecs_vals[mb1[i], mb2[i]]}, double(1L))
+
+  return(ecs)
+}
+
+corrected_l1_mb = function(mb1, mb2, alpha = 0.9) {
+  n = length(mb1)
+  ecs = rep(0, n)
+
+  cont_table = table(mb1, mb2)
+  c1_sizes = rowSums(cont_table)
+  c2_sizes = colSums(cont_table)
+  unique_ecs_vals = matrix(NA, nrow = length(c1_sizes), ncol = length(c2_sizes))
+
+  # iterate through each point of the membership vector
+  for(i in 1:n) {
+    # check if the similarity between of this pair of clusters was already calculated
+    if(is.na(unique_ecs_vals[mb1[i], mb2[i]])) {
+      Csize1 = c1_sizes[mb1[i]]
+      Csize2 = c2_sizes[mb2[i]]
+
+      intersect_size = cont_table[mb1[i], mb2[i]]
+      temp_ecs = (1 / Csize1 - 1 / Csize2) * intersect_size
+      if (temp_ecs < 0) {
+        temp_ecs = -temp_ecs
+      }
+      # calculate the sum of the difference between the affinity matrices
+      ecs[i] = 1 - 0.5*(temp_ecs + (Csize1 - intersect_size) / Csize1 + (Csize2 - intersect_size) / Csize2)
+
+      # store the similarity between the pair of clusters
+      unique_ecs_vals[mb1[i], mb2[i]] = ecs[i]
+    } else {
+      # if yes, just copy the value
+      ecs[i] = unique_ecs_vals[mb1[i], mb2[i]]
+    }
+  }
+
+  return(ecs)
 }
 
 # PPR calculation for partition
