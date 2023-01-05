@@ -87,21 +87,21 @@ A Clustering object.
 Creates a Clustering object from the output of a clustering
 method.
 }
-\section{Methods (by class)}{
+\section{Functions}{
 \itemize{
-\item \code{numeric}: Create Clustering Object from Numeric Vector
+\item \code{create_clustering(numeric)}: Create Clustering Object from Numeric Vector
 
-\item \code{integer}: Create Clustering Object from Integer Vector
+\item \code{create_clustering(integer)}: Create Clustering Object from Integer Vector
 
-\item \code{character}: Create Clustering Object from Character Vector
+\item \code{create_clustering(character)}: Create Clustering Object from Character Vector
 
-\item \code{factor}: Create Clustering Object from Factor Vector
+\item \code{create_clustering(factor)}: Create Clustering Object from Factor Vector
 
-\item \code{matrix}: Create Clustering Object from base matrix
+\item \code{create_clustering(matrix)}: Create Clustering Object from base matrix
 
-\item \code{Matrix}: Create Clustering Object from Matrix::Matrix
+\item \code{create_clustering(Matrix)}: Create Clustering Object from Matrix::Matrix
 
-\item \code{hclust}: Create Clustering Object from hclust
+\item \code{create_clustering(hclust)}: Create Clustering Object from hclust
+
 }}
-
 \keyword{internal}

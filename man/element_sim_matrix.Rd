@@ -65,8 +65,8 @@ average element-centric clustering similarities.
 }
 \examples{
 # cluster across 20 random seeds
-clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
-element_sim_matrix(clustering.list, output_type="matrix")
+clustering.list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)
+element_sim_matrix(clustering.list, output_type = "matrix")
 }
 \references{
 Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).

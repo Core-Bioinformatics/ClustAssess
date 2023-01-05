@@ -70,8 +70,8 @@ a reference clustering by calculating their element-wise average agreement.
 }
 \examples{
 # perform k-means clustering across 20 random seeds
-reference.clustering = iris$Species
-clustering.list = lapply(1:20, function(x) kmeans(iris[,1:4], centers=3)$cluster)
+reference.clustering <- iris$Species
+clustering.list <- lapply(1:20, function(x) kmeans(iris[, 1:4], centers = 3)$cluster)
 element_agreement(reference.clustering, clustering.list)
 }
 \references{

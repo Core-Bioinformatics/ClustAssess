@@ -20,6 +20,6 @@ out across
 Plot PAC across iterations for a set of k to assess convergence.
 }
 \examples{
-pac.res = consensus_cluster(iris[,1:4], k_max=20)
-pac_convergence(pac.res, k_plot=c(3,5,7,9))
+pac.res <- consensus_cluster(iris[, 1:4], k_max = 20)
+pac_convergence(pac.res, k_plot = c(3, 5, 7, 9))
 }

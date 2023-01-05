@@ -21,6 +21,6 @@ Plot final PAC values across range of k to find optimal number
 of clusters.
 }
 \examples{
-pac.res = consensus_cluster(iris[,1:4], k_max=20)
+pac.res <- consensus_cluster(iris[, 1:4], k_max = 20)
 pac_landscape(pac.res)
 }

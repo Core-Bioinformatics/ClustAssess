@@ -61,7 +61,7 @@ their element-wise clustering consistency (also known as element-wise frustratio
 }
 \examples{
 # cluster across 20 random seeds
-clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
+clustering.list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)
 element_consistency(clustering.list)
 }
 \references{
