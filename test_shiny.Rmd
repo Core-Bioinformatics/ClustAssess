@@ -1,0 +1,166 @@
+```{r}
+rr <- readRDS("test_obj_autom.rds")
+```
+
+
+```{r}
+plot_feature_stability_boxplot(rr$feature_importance)
+plot_feature_stability_ecs_incremental(rr$feature_importance)
+plot_feature_stability_mb_facet(rr$feature_importance)
+plot_feature_stability_ecs_facet(rr$feature_importance)
+
+
+plot_connected_comps_evolution(rr$HV_PCA_1[[1]]$nn_conn_comps)
+plot_n_neigh_k_correspondence(rr$MA_PCA_1[[1]]$nn_importance)
+plot_n_neigh_ecs(rr$MA_PCA_1[[1]]$nn_importance)
+
+
+plot_clustering_per_value_stability(rr$MA_PCA_1[[1]]$clustering_importance)
+plot_clustering_overall_stability(rr$MA_PCA_1[[1]]$clustering_importance)
+plot_k_resolution_corresp(rr$MA_PCA_1[[1]]$clustering_importance)
+plot_k_n_partitions(rr$MA_PCA_1[[1]]$clustering_importance)
+```
+
+
+```{r}
+library(shiny)
+library(foreach)
+library(dplyr)
+
+
+rr_feature_config <- names(rr$feature_importance$steps_stability)
+rr_steps <- lapply(rr_feature_config, function(x) {
+  names(rr$feature_importance$steps_stability[[x]])
+})
+names(rr_steps) <- rr_feature_config
+rr_feature_config_display <- sapply(rr_feature_config, function(x) {
+  strsplit(x, "_")[[1]]
+})
+
+rr_feature_config_display
+strsplit(rr_feature_config[1], "_")[[1]]
+```
+
+
+
+```{r}
+ui_dim_red_boxplot <- fluidRow(
+  h2("Feature stability boxplot"),
+  uiOutput("stepchoosing"),
+  textOutput("con_name"),
+  selectInput("feature_configs", "Feature names", rr_feature_config, selected = rr_feature_config, multiple = TRUE),
+  sliderInput("boxplot_width", "Boxplot width", min = 0.00, max = 1.00, value = 0.40),
+  sliderInput("dodge_width", "Dodge width", min = 0.00, max = 1.00, value = 0.70),
+  sliderInput("text_size", "Text size", min = 0.10, max = 25.00, value = 4.00),
+  plotOutput("feature_plot")
+)
+ui_dimensionality_reduction <- tabPanel(
+  "Dimensionality Reduction",
+  ui_dim_red_boxplot
+)
+```
+
+```{r}
+
+ui_graph_construction <- tabPanel(
+  "Graph Construction",
+  selectInput("sel_fset", "Select feature - set", choices = rr_feature_config, selected = rr_feature_config[1], multiple = FALSE),
+  selectInput("sel_steps", "Select steps:", choices = names(rr[[rr_feature_config[1]]]), selected = names(rr[[rr_feature_config[1]]])[1], multiple = FALSE),
+  h1("Relationship between the number of neighbours and then number of connected components"),
+  plotOutput("plot_conn_comps"),
+  h1("Relationship between the number of neighbours and then number of clusters"),
+  plotOutput("plot_neigh_k"),
+  h1("Stability"),
+  plotOutput("plot_neigh_stability")
+)
+
+ui_graph_clustering_method <- tabPanel(
+  "Clustering Method"
+)
+
+ui_graph_resolution <- tabPanel(
+  "Resolution Importance"
+)
+
+ui_graph_clustering <- tabPanel(
+  "Graph Clustering",
+  tabsetPanel(
+    ui_graph_clustering_method,
+    ui_graph_resolution
+  )
+)
+```
+
+```{r}
+ui <- fluidPage(
+ tabsetPanel(
+   ui_dimensionality_reduction,
+   ui_graph_construction,
+   ui_graph_clustering
+ ) 
+)
+```
+
+```{r}
+
+```
+
+
+```{r}
+server <- function(input, output, session) {
+  selected_configs <- reactive(input$feature_configs)
+
+  output$stepchoosing <- renderUI({
+    i <- 1
+    ret_list <- list()
+    for (c in input$feature_configs) {
+      ret_list[[i]] <- selectInput(paste0("nsteps_", i), paste("Nsteps for", c), choices = names(rr$feature_importance$steps_stability[[c]]), selected = names(rr$feature_importance$steps_stability[[c]]), multiple = TRUE)
+      i <- i + 1
+    }
+    ret_list
+  })
+
+  current_plot <- reactive({
+    steps_stability <- lapply(1:length(selected_configs()), function(i) {
+      rr$feature_importance$steps_stability[[i]][input[[paste0("nsteps_", i)]]]
+    })
+    names(steps_stability) <- selected_configs()
+    incremental_stability <- lapply(selected_configs(), function(x) {
+      rr$feature_importance$incremental_stability[[x]]
+    })
+    names(incremental_stability) <- selected_configs()
+
+    list(
+      steps_stability = steps_stability, # lapply(selected_configs(), function(x) {rr$feature_importance$steps_stability[[x]]}),
+      incremental_stability = incremental_stability # lapply(selected_configs(), function(x) {rr$feature_importance$incremental_stability[[x]]}),
+    )
+  })
+
+
+
+  output$feature_plot <- renderPlot({
+    if (length(selected_configs()) == 0) {
+      return(ggplot2::ggplot() +
+        ggplot2::theme_void())
+    }
+    plot_feature_stability_boxplot(current_plot(), text_size = input$text_size, boxplot_width = input$boxplot_width, dodge_width = input$dodge_width)
+  })
+
+  output$con_name <- renderText(paste("test", paste(names(current_plot()$steps_stability), collapse = " ")))
+
+
+  observeEvent(input$sel_fset, {
+    updateSelectInput(inputId = "sel_steps", choices = names(rr[[input$sel_fset]]), selected = names(rr[[input$sel_fset]])[1])
+  })
+
+  output$nnPlot <- renderPlot({
+    plot_n_neigh_ecs(rr[[input$sel_fset]][[input$sel_steps]]$nn_importance)
+  })
+}
+```
+
+
+
+```{r}
+shinyApp(ui, server)
+```
