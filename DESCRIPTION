@@ -16,6 +16,7 @@ Description: A set of tools for evaluating clustering robustness using
     pipelines typical in single-cell data analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
+biocViews:
 Imports: 
     ggplot2,
     dplyr,
