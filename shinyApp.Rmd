@@ -1,0 +1,318 @@
+
+```{r}
+library(shiny)
+library(ClustAssess)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+devtools::load_all()
+
+```
+
+```{r}
+load("expression_matrix.rda")
+load("stab_obj.rda")
+```
+
+```{r}
+
+```
+
+```{r}
+feature_config <- names(stab_obj$feature_importance$steps_stability)
+steps <- lapply(feature_config, function(x) {
+  names(stab_obj$feature_importance$steps_stability[[x]])
+})
+names(steps) <- feature_config
+feature_config_display <- sapply(feature_config, function(x) {
+  strsplit(x, "_")[[1]]
+})
+
+feature_config_display
+strsplit(feature_config[1], "_")[[1]]
+```
+
+```{r}
+
+
+# ui_dimensionality_reduction_inputs <- function(id) {
+#   ns <- NS(id)
+#   
+#   tagList(
+#     selectInput(ns("feature_configs"), "Feature names", feature_config, selected = feature_config, multiple = TRUE),
+#     sliderInput(ns("boxplot_width"), "Boxplot width", min = 0.00, max = 1.00, value = 0.40),
+#     sliderInput(ns("dodge_width"), "Dodge width", min = 0.00, max = 1.00, value = 0.70),
+#     sliderInput(ns("text_size"), "Text size", min = 0.10, max = 25.00, value = 4.00),
+#   )
+# }
+# 
+# ui_dimensionali
+# 
+
+ui_dimensionality_stability <- function(id) {
+  ns <- NS(id)
+  
+  tagList(
+    selectInput(ns("feature_configs"), "Feature names", feature_config, selected = feature_config, multiple = TRUE),
+    uiOutput(ns("stepchoosing")),
+    sliderInput(ns("boxplot_width"), "Boxplot width", min = 0.00, max = 1.00, value = 0.40),
+    sliderInput(ns("dodge_width"), "Dodge width", min = 0.00, max = 1.00, value = 0.70),
+    sliderInput(ns("text_size"), "Text size", min = 0.10, max = 25.00, value = 4.00),
+    textOutput(ns("boxplot_ecc_info")),
+    plotOutput(ns("boxplot_ecc"),
+               hover = hoverOpts(id = ns("ecc_hover"), delayType = "throttle"),
+               click = ns("ecc_click")),
+    plotOutput(ns("boxplot_incr")),
+    plotOutput(ns("umap_ecc")),
+    
+  )
+}
+
+ui_dimensionality_distribution_plots <- function(id) {
+  ns <- NS(id)
+  
+  tagList(
+    plotOutput(ns("umap_gene")),
+    plotOutput(ns("umap_metadata"))
+  )
+}
+```
+
+```{r}
+ui_dimensionality_reduction <- function(id) {
+  ns <- NS(id)
+  
+  tabPanel(
+    "Dimensionality Reduction",
+    ui_dimensionality_stability(ns("stability")),
+    ui_dimensionality_distribution_plots(ns("distribution"))
+  )
+}
+
+ui_graph_construction <- function(id) {
+  ns <- NS(id)
+  
+  tabPanel(
+    "Graph Construction",
+    h2("asdf")
+  )
+}
+```
+
+```{r, fig.width=10, fig.height = 6}
+```
+```{r}
+
+```
+
+
+```{r}
+server_dimensionality_stability <- function(id, panel_id) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      selected_configs <- reactive(input$feature_configs)
+      
+      ecc_mouse_hover <- reactiveVal(c(NA, NA))
+      observeEvent(input$ecc_hover, {
+        if(is.null(input$ecc_hover)) {
+          return()
+        }
+        x <- input$ecc_hover$x
+        y <- input$ecc_hover$y
+        min_step <- min(as.numeric(boxplot_ecc_df()$step_index))
+        max_step <- min(as.numeric(boxplot_ecc_df()$step_index))
+        nconfigs  <- length(selected_configs())
+        chosen_step <- NULL
+        chosen_config <- NULL
+
+        for (steps_intervals in seq(from = min_step - 0.5, to = max_step + 0.5, by = 1)) {
+          if (x < steps_intervals + 1) {
+            chosen_step <- steps_intervals + 0.5
+
+            for (i in seq_len(nconfigs)) {
+              if (x < (steps_intervals + i / nconfigs)) {
+                chosen_config  <- i
+                break
+              }
+                
+              
+            }
+
+            break
+          }
+        }
+
+        if (is.null(chosen_step)) {
+          chosen_step <- max_step
+        }
+
+        if (is.null(chosen_config)) {
+          chosen_config <- nconfigs
+        }
+        
+        ecc_mouse_hover(c(chosen_step, chosen_config))
+      })
+
+      ecc_mouse_click <- reactiveVal(c(NA, NA))
+
+      observeEvent(input$ecc_click, {
+        if (!is.null(input$ecc_click)) {
+          ecc_mouse_click(ecc_mouse_hover())
+        }
+      })
+
+      output$boxplot_ecc_info <- renderText({
+        fivenum(current_feature_obj()$steps_stability[[ecc_mouse_hover()[2]]][[ecc_mouse_hover()[1]]]$ecc)
+
+      })
+
+      output$stepchoosing <- renderUI({
+        ns <- session$ns
+        i <-1
+        ret_list <- list()
+        for (conf in input$feature_configs) {
+          ret_list[[i]] <- selectInput(ns(paste0("nsteps_", i)), #paste(panel_id, id, paste0("nsteps_", i), sep = "-"),
+                                       paste("Nsteps for", conf),
+                                       choices = names(stab_obj$feature_importance$steps_stability[[conf]]),
+                                       selected = names(stab_obj$feature_importance$steps_stability[[conf]]),
+                                       multiple = TRUE)
+          i <- i + 1
+        }
+        ret_list
+      })
+
+      current_feature_obj <- reactive({
+        steps_stability <- lapply(1:length(selected_configs()), function(i) {
+          stab_obj$feature_importance$steps_stability[[i]][input[[paste0("nsteps_", i)]]]
+        })
+        names(steps_stability) <- selected_configs()
+        
+        incremental_stability <- lapply(1:length(selected_configs()), function(i) {
+          kept_steps <- c()
+          chosen_steps <- input[[paste0("nsteps_", i)]]
+          
+          for(j in seq_len(length(chosen_steps) -1)) {
+            checked_steps <- paste(chosen_steps[j], chosen_steps[j+1], sep = "-") 
+            if(checked_steps %in% names(stab_obj$feature_importance$incremental_stability[[i]])) {
+              kept_steps <- c(kept_steps, checked_steps) 
+            }
+          }
+          
+          stab_obj$feature_importance$incremental_stability[[i]][kept_steps]
+        })
+        names(incremental_stability) <- selected_configs()
+
+        list(
+          steps_stability = steps_stability, 
+          incremental_stability = incremental_stability 
+        )
+      })
+      
+      boxplot_ecc_df <- reactive({
+        plot_feature_stability_boxplot(current_feature_obj(), return_df = TRUE)
+      })
+      
+      output$boxplot_ecc <- renderPlot({
+        if (length(selected_configs()) == 0) {
+          return(ggplot2::ggplot() +
+            ggplot2::theme_void())
+        }
+        plot_feature_stability_boxplot(current_feature_obj(), 
+                                       text_size = input$text_size,
+                                       boxplot_width = input$boxplot_width, 
+                                       dodge_width = input$dodge_width)
+      })
+      
+      output$boxplot_incr <- renderPlot({
+        if (length(selected_configs()) == 0) {
+          return(ggplot2::ggplot() +
+            ggplot2::theme_void())
+        }
+        
+        for(conf in selected_configs()) {
+          if(length(names(current_feature_obj()$incremental_stability[[conf]])) == 0) {
+             return(ggplot2::ggplot() +
+               ggplot2::theme_void())
+          }
+        }
+        plot_feature_stability_ecs_incremental(current_feature_obj(), 
+                                       text_size = input$text_size,
+                                       boxplot_width = input$boxplot_width, 
+                                       dodge_width = input$dodge_width)
+      })
+
+      output$umap_ecc <- renderPlot({
+        if (is.na(ecc_mouse_click()[1])) {
+             return(ggplot2::ggplot() +
+               ggplot2::theme_void())
+        }
+
+        config_name <- selected_configs()[ecc_mouse_click()[2]]
+        step_index <- ecc_mouse_click()[1]
+        ecc <- current_feature_obj()$steps_stability[[config_name]][[step_index]]$ecc
+        
+        ggplot2::ggplot(data.frame(
+          stab_obj[[config_name]][[step_index]]$umap),
+                       aes(x = .data$UMAP_1,
+                       y = .data$UMAP_2,
+                       color = ecc)) +
+                       ggplot2::geom_point() +
+                       ggplot2::scale_color_viridis_c() +
+                       ggplot2::theme_bw()
+
+      })
+      
+      output$con_name <- renderText(paste("test", paste(names(current_feature_obj()$steps_stability), collapse = " ")))
+    }
+  )
+}
+
+server_dimensionality_distribution <- function(id) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      
+    }
+  )
+}
+```
+
+```{r}
+server_dimensionality_reduction <- function(id) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      server_dimensionality_stability("stability", "dim_reduc")
+      server_dimensionality_distribution("distribution")
+    }
+  )
+}
+```
+
+
+```{r}
+shiny_app <- function() {
+  ui <- fluidPage(
+    tabsetPanel(
+    #   tabPanel("Dim red",
+    #   ui_dimensionality_stability("dim_reduc2")),
+      ui_dimensionality_reduction("dim_reduc"),
+      ui_graph_construction("graph_constr")
+    )
+  )
+  
+  server <- function(input, output, session) {
+    # server_dimensionality_stability("dim_reduc2")
+    server_dimensionality_reduction("dim_reduc")
+  }
+  
+  shinyApp(ui, server)
+  
+}
+```
+
+```{r}
+shiny_app()
+```
+
