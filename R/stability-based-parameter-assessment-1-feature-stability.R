@@ -70,6 +70,7 @@ assess_feature_stability <- function(data_matrix,
                                      feature_set,
                                      steps,
                                      feature_type,
+                                     resolution,
                                      n_repetitions = 100,
                                      seed_sequence = NULL,
                                      graph_reduction_type = "PCA",
@@ -137,7 +138,7 @@ assess_feature_stability <- function(data_matrix,
 
   partitions_list <- list()
 
-  object_name <- paste(feature_type, graph_reduction_type, ecs_thresh, sep = "_")
+  object_name <- paste(feature_type, graph_reduction_type, sep = "_")
   steps_ecc_list <- list()
   steps_ecc_list[[object_name]] <- list()
 
@@ -177,9 +178,10 @@ assess_feature_stability <- function(data_matrix,
     print(step)
     used_features <- feature_set[1:step]
     actual_npcs <- min(npcs, step %/% 2)
+    step <- as.character(step)
 
-    partitions_list[[as.character(step)]] <- list()
-    steps_ecc_list[[object_name]][[as.character(step)]] <- list()
+    partitions_list[[step]] <- list()
+    steps_ecc_list[[object_name]][[step]] <- list()
 
     # keep only the features that we are using
     trimmed_matrix <- data_matrix[, used_features]
@@ -234,7 +236,7 @@ assess_feature_stability <- function(data_matrix,
     seed <- 0
 
     # send the name of the umap arguments
-    partitions_list[[as.character(step)]] <- foreach::foreach(
+    partitions_list[[step]] <- foreach::foreach(
       seed = seed_sequence,
       .noexport = all_vars[!(all_vars %in% needed_vars)]
     ) %dopar% {
@@ -262,20 +264,27 @@ assess_feature_stability <- function(data_matrix,
       }
 
       # apply graph clustering to the snn graph
-      cluster_results <- Seurat::FindClusters(
-        shared_neigh_matrix,
-        random.seed = seed,
-        algorithm = algorithm,
-        verbose = FALSE
-      )
-      cluster_results <- cluster_results[, names(cluster_results)[1]]
+      cluster_results <- lapply(resolution, function(r) {
+        cl_res <- Seurat::FindClusters(
+          shared_neigh_matrix,
+          random.seed = seed,
+          algorithm = algorithm,
+          resolution = r,
+          verbose = FALSE
+        )
 
-      # return the clustering
-      list(
-        mb = cluster_results,
-        freq = 1,
-        seed = seed
-      )
+        cl_res <- cl_res[, names(cl_res)[1]]
+
+        # return the clustering
+        list(
+          mb = cl_res,
+          freq = 1,
+          seed = seed
+        )
+      })
+
+      names(cluster_results) <- as.character(resolution)
+      cluster_results
     }
 
     # if a parallel backend was created, terminate the processes
@@ -289,58 +298,59 @@ assess_feature_stability <- function(data_matrix,
       shared_embedding <- SharedObject::unshare(embedding)
     }
 
-    set.seed(seed_sequence[1])
-    embedding <- uwot::umap(
-      X = embedding,
-      n_threads = 1,
-      n_sgd_threads = 1,
-      ...
-    )
-    colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
-    rownames(embedding) <- rownames(data_matrix)
-    gc()
-
     # merge the identical partitions into the same object
-    partitions_list[[as.character(step)]] <- merge_partitions(
-      partitions_list[[as.character(step)]],
+    partitions_list[[step]] <- lapply(as.character(resolution), function(r) {
+      merge_partitions(
+      lapply(partitions_list[[step]], function(x) { x[[r]] }),
       ecs_thresh = ecs_thresh,
       ncores = ncores,
       order = TRUE
-    )
+     )
+    })
+
+    names(partitions_list[[step]]) <- as.character(resolution)
 
     print(Sys.time())
     print("Calculating ecc")
 
-    # compute the EC-consistency of the partition list
-    ec_consistency <- weighted_element_consistency(
-      lapply(partitions_list[[as.character(step)]], function(x) {
+    # update the returned object with a list containing the ecc, 
+    # the most frequent partition and the number of different partitions
+    steps_ecc_list[[object_name]][[step]] <- lapply(as.character(resolution), function(r) {
+    list(
+      ecc = weighted_element_consistency(
+      lapply(partitions_list[[step]][[r]], function(x) {
         x$mb
       }),
-      sapply(partitions_list[[as.character(step)]], function(x) {
+      sapply(partitions_list[[step]][[r]], function(x) {
         x$freq
       }),
       ncores = 1 # NOTE ECS should be fast enough without parallelization
+    ),
+      most_frequent_partition = partitions_list[[step]][[r]][[1]],
+      n_different_partitions = length(partitions_list[[step]][[r]])
     )
+    })
 
-    # update the returned object with a list containing the ecc, an UMAP embedding,
-    # the most frequent partition and the number of different partitions
-    steps_ecc_list[[object_name]][[as.character(step)]] <- list(
-      ecc = ec_consistency,
-      embedding = embedding,
-      most_frequent_partition = partitions_list[[as.character(step)]][[1]],
-      n_different_partitions = length(partitions_list[[as.character(step)]])
-    )
+    names(steps_ecc_list[[object_name]][[step]]) <- as.character(resolution)
+     
   }
+
+  steps <- as.character(steps)
+  resolution <- as.character(resolution)
 
   incremental_ecs_list <- list()
   incremental_ecs_list[[object_name]] <- list()
 
   if (length(steps) > 1) {
     for (i in 2:length(steps)) {
-      incremental_ecs_list[[object_name]][[paste(steps[i - 1], steps[i], sep = "-")]] <- element_sim_elscore(
-        steps_ecc_list[[object_name]][[as.character(steps[i - 1])]]$most_frequent_partition$mb,
-        steps_ecc_list[[object_name]][[as.character(steps[i])]]$most_frequent_partition$mb
-      )
+      temp_list <- lapply(resolution, function(r) {
+        element_sim_elscore(
+          steps_ecc_list[[object_name]][[steps[i-1]]][[r]]$most_frequent_partition$mb,
+          steps_ecc_list[[object_name]][[steps[i]]][[r]]$most_frequent_partition$mb
+          )
+      })
+      names(temp_list) <- resolution
+      incremental_ecs_list[[object_name]][[paste(steps[i - 1], steps[i], sep = "-")]] <- temp_list
     }
   }
 
@@ -393,7 +403,8 @@ assess_feature_stability <- function(data_matrix,
 plot_feature_stability_boxplot <- function(feature_object_list,
                                            text_size = 4,
                                            boxplot_width = 0.4,
-                                           dodge_width = 0.7) {
+                                           dodge_width = 0.7,
+                                           return_df = FALSE) {
   min_index <- -1 # number of steps that will be displayed on the plot
   feature_object_list <- feature_object_list$steps_stability
 
@@ -440,17 +451,22 @@ plot_feature_stability_boxplot <- function(feature_object_list,
   final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
   final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
 
+  names(final_melt_df)  <- c("ecc", "step_index", "feature_set")
+  if (return_df) {
+    return(final_melt_df)
+  }
+
   # generate the coordinates where the sizes of the steps will be displayed
   text_position <-
-    stats::aggregate(value ~ L1 + feature_set, final_melt_df, max)
-  text_position$value <- max(text_position$value) + 0.02
+    stats::aggregate(ecc ~ step_index + feature_set, final_melt_df, max)
+  text_position$ecc <- max(text_position$ecc) + 0.02
 
   # return the ggplot object
   ggplot2::ggplot(
     final_melt_df,
     ggplot2::aes(
-      x = .data$L1,
-      y = .data$value,
+      x = .data$step_index,
+      y = .data$ecc,
       fill = .data$feature_set
     )
   ) +
