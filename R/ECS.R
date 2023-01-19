@@ -169,7 +169,7 @@ element_sim_elscore <- function(clustering1,
       stop("Not all elements of clustering1 and clustering2 are the same.")
     }
 
-    if (class(clustering1) == "character" || class(clustering1) == "character") {
+    if (class(clustering1) == "character" || class(clustering2) == "character") {
       node.scores <- corrected_l1_mb(clustering1, clustering2, alpha)
     } else {
       node.scores <- disjointECS(
@@ -1334,10 +1334,10 @@ weighted_element_consistency <- function(clustering_list,
     weights <- rep(1, n_clusterings)
   }
 
-  first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
+  first_index <- unlist(sapply(seq_len(n_clusterings - 1), function(i) {
     rep(i, n_clusterings - i)
   }))
-  second_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
+  second_index <- unlist(sapply(seq_len(n_clusterings - 1), function(i) {
     (i + 1):n_clusterings
   }))
   n_combinations <- n_clusterings * (n_clusterings - 1) / 2
