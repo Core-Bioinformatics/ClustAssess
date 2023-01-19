@@ -141,6 +141,8 @@ assess_feature_stability <- function(data_matrix,
   object_name <- paste(feature_type, graph_reduction_type, sep = "_")
   steps_ecc_list <- list()
   steps_ecc_list[[object_name]] <- list()
+  embedding_list <- list()
+  embedding_list[[object_name]] <- list()
 
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
@@ -298,14 +300,28 @@ assess_feature_stability <- function(data_matrix,
       shared_embedding <- SharedObject::unshare(embedding)
     }
 
+    set.seed(42) # to match Seurat's default
+    embedding <- uwot::umap(
+      X = embedding,
+      n_threads = 1,
+      n_sgd_threads = 1,
+      ...
+    )
+    colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
+    rownames(embedding) <- rownames(data_matrix)
+    gc()
+    embedding_list[[object_name]][[step]] <- embedding
+
     # merge the identical partitions into the same object
     partitions_list[[step]] <- lapply(as.character(resolution), function(r) {
       merge_partitions(
-      lapply(partitions_list[[step]], function(x) { x[[r]] }),
-      ecs_thresh = ecs_thresh,
-      ncores = ncores,
-      order = TRUE
-     )
+        lapply(partitions_list[[step]], function(x) {
+          x[[r]]
+        }),
+        ecs_thresh = ecs_thresh,
+        ncores = ncores,
+        order = TRUE
+      )
     })
 
     names(partitions_list[[step]]) <- as.character(resolution)
@@ -313,26 +329,25 @@ assess_feature_stability <- function(data_matrix,
     print(Sys.time())
     print("Calculating ecc")
 
-    # update the returned object with a list containing the ecc, 
+    # update the returned object with a list containing the ecc,
     # the most frequent partition and the number of different partitions
     steps_ecc_list[[object_name]][[step]] <- lapply(as.character(resolution), function(r) {
-    list(
-      ecc = weighted_element_consistency(
-      lapply(partitions_list[[step]][[r]], function(x) {
-        x$mb
-      }),
-      sapply(partitions_list[[step]][[r]], function(x) {
-        x$freq
-      }),
-      ncores = 1 # NOTE ECS should be fast enough without parallelization
-    ),
-      most_frequent_partition = partitions_list[[step]][[r]][[1]],
-      n_different_partitions = length(partitions_list[[step]][[r]])
-    )
+      list(
+        ecc = weighted_element_consistency(
+          lapply(partitions_list[[step]][[r]], function(x) {
+            x$mb
+          }),
+          sapply(partitions_list[[step]][[r]], function(x) {
+            x$freq
+          }),
+          ncores = 1 # NOTE ECS should be fast enough without parallelization
+        ),
+        most_frequent_partition = partitions_list[[step]][[r]][[1]],
+        n_different_partitions = length(partitions_list[[step]][[r]])
+      )
     })
 
     names(steps_ecc_list[[object_name]][[step]]) <- as.character(resolution)
-     
   }
 
   steps <- as.character(steps)
@@ -345,9 +360,9 @@ assess_feature_stability <- function(data_matrix,
     for (i in 2:length(steps)) {
       temp_list <- lapply(resolution, function(r) {
         element_sim_elscore(
-          steps_ecc_list[[object_name]][[steps[i-1]]][[r]]$most_frequent_partition$mb,
+          steps_ecc_list[[object_name]][[steps[i - 1]]][[r]]$most_frequent_partition$mb,
           steps_ecc_list[[object_name]][[steps[i]]][[r]]$most_frequent_partition$mb
-          )
+        )
       })
       names(temp_list) <- resolution
       incremental_ecs_list[[object_name]][[paste(steps[i - 1], steps[i], sep = "-")]] <- temp_list
@@ -356,7 +371,8 @@ assess_feature_stability <- function(data_matrix,
 
   list(
     steps_stability = steps_ecc_list,
-    incremental_stability = incremental_ecs_list
+    incremental_stability = incremental_ecs_list,
+    embedding_list = embedding_list
   )
 }
 
@@ -400,18 +416,20 @@ assess_feature_stability <- function(data_matrix,
 #'   min_dist = 0.3
 #' )
 #' plot_feature_stability_boxplot(feature_stability_result)
-plot_feature_stability_boxplot <- function(feature_object_list,
-                                           text_size = 4,
-                                           boxplot_width = 0.4,
-                                           dodge_width = 0.7,
-                                           return_df = FALSE) {
+plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
+                                                          resolution,
+                                                          text_size = 4,
+                                                          boxplot_width = 0.4,
+                                                          dodge_width = 0.7,
+                                                          return_df = FALSE) {
+  resolution <- as.character(resolution)
   min_index <- -1 # number of steps that will be displayed on the plot
   feature_object_list <- feature_object_list$steps_stability
 
   # create a dataframe based on the object returned by `get_feature_stability`
   for (config_name in names(feature_object_list)) {
     melt_object <- reshape2::melt(lapply(feature_object_list[[config_name]], function(x) {
-      x$ecc
+      x[[resolution]]$ecc
     }))
     melt_object$L1 <- factor(
       melt_object$L1,
@@ -451,7 +469,8 @@ plot_feature_stability_boxplot <- function(feature_object_list,
   final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
   final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
 
-  names(final_melt_df)  <- c("ecc", "step_index", "feature_set")
+  names(final_melt_df) <- c("ecc", "step_index", "feature_set")
+
   if (return_df) {
     return(final_melt_df)
   }
@@ -459,7 +478,96 @@ plot_feature_stability_boxplot <- function(feature_object_list,
   # generate the coordinates where the sizes of the steps will be displayed
   text_position <-
     stats::aggregate(ecc ~ step_index + feature_set, final_melt_df, max)
-  text_position$ecc <- max(text_position$ecc) + 0.02
+  text_position$ecc <- max(text_position$ecc) + (max(final_melt_df$ecc) - min(final_melt_df$ecc)) / 100
+  # return the ggplot object
+  ggplot2::ggplot(
+    final_melt_df,
+    ggplot2::aes(
+      x = .data$step_index,
+      y = .data$ecc,
+      fill = .data$feature_set
+    )
+  ) +
+    ggplot2::geom_boxplot(
+      position = ggplot2::position_dodge(width = dodge_width),
+      width = boxplot_width
+    ) +
+    ggplot2::geom_text(
+      data = text_position,
+      ggplot2::aes(label = final_steps_df$step),
+      position = ggplot2::position_dodge(width = dodge_width),
+      size = text_size
+    ) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+    ggplot2::xlab("# features") +
+    ggplot2::ylab("EC consistency")
+}
+
+plot_feature_overall_stability_boxplot <- function(feature_object_list,
+                                                   summary_function = median,
+                                                   text_size = 4,
+                                                   boxplot_width = 0.4,
+                                                   dodge_width = 0.7,
+                                                   return_df = FALSE) {
+  min_index <- -1 # number of steps that will be displayed on the plot
+  feature_object_list <- feature_object_list$steps_stability
+
+  # create a dataframe based on the object returned by `get_feature_stability`
+  for (config_name in names(feature_object_list)) {
+    melt_object <- reshape2::melt(lapply(feature_object_list[[config_name]], function(by_step) {
+      sapply(by_step, function(by_res) {
+        summary_function(by_res$ecc)
+      })
+    }))
+    melt_object$L1 <- factor(
+      melt_object$L1,
+      levels = stringr::str_sort(unique(melt_object$L1), numeric = TRUE)
+    )
+    melt_object[["feature_set"]] <- rep(config_name, nrow(melt_object))
+
+    temp_steps_df <- data.frame(
+      step = levels(melt_object$L1),
+      index = 1:nlevels(melt_object$L1),
+      stringsAsFactors = FALSE
+    )
+    temp_steps_df$feature_set <- rep(config_name, nrow(temp_steps_df))
+
+    levels(melt_object$L1) <- 1:nlevels(melt_object$L1)
+
+    if (min_index == -1) {
+      final_steps_df <- temp_steps_df
+      final_melt_df <- melt_object
+
+      min_index <- nrow(temp_steps_df)
+    } else {
+      if (nrow(temp_steps_df) < min_index) {
+        min_index <- nrow(temp_steps_df)
+      }
+
+      final_steps_df <- rbind(final_steps_df, temp_steps_df)
+      final_melt_df <- rbind(final_melt_df, melt_object)
+    }
+  }
+
+  # given that the input object can have multiple configurations with different
+  # number of steps, we will use only the first `min_index` steps
+  final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
+  final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
+
+  final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
+  final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
+
+  names(final_melt_df) <- c("ecc", "step_index", "feature_set")
+
+  if (return_df) {
+    return(final_melt_df)
+  }
+
+  # generate the coordinates where the sizes of the steps will be displayed
+  text_position <-
+    stats::aggregate(ecc ~ step_index + feature_set, final_melt_df, max)
+  text_position$ecc <- max(text_position$ecc) + (max(final_melt_df$ecc) - min(final_melt_df$ecc)) / 100
 
   # return the ggplot object
   ggplot2::ggplot(
@@ -525,9 +633,13 @@ plot_feature_stability_boxplot <- function(feature_object_list,
 #' )
 #' plot_feature_stability_mb_facet(feature_stability_result)
 plot_feature_stability_mb_facet <- function(feature_object_list,
+embedding,
+resolution,
                                             text_size = 5,
                                             n_facet_cols = 3,
                                             point_size = 0.3) {
+
+  resolution <- as.character(resolution)
   if (!is.numeric(text_size) || length(text_size) > 1) {
     stop("text_size parameter should be numeric")
   }
@@ -538,9 +650,9 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
   for (config_name in names(feature_object_list)) {
     for (steps in names(feature_object_list[[config_name]])) {
       temp_df <- data.frame(
-        x = feature_object_list[[config_name]][[steps]]$embedding[, 1],
-        y = feature_object_list[[config_name]][[steps]]$embedding[, 2],
-        mb = feature_object_list[[config_name]][[steps]]$most_frequent_partition$mb
+        x = embedding[, 1],
+        y = embedding[, 2],
+        mb = feature_object_list[[config_name]][[steps]][[resolution]]$most_frequent_partition$mb
       )
 
       temp_df[["config_name"]] <- rep(config_name, nrow(temp_df))
@@ -632,17 +744,20 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
 #' )
 #' plot_feature_stability_ecs_facet(feature_stability_result)
 plot_feature_stability_ecs_facet <- function(feature_object_list,
+  embedding,
+  resolution,
                                              n_facet_cols = 3,
                                              point_size = 0.3) {
+  resolution <- as.character(resolution)
   first_temp <- TRUE
   feature_object_list <- feature_object_list$steps_stability
 
   for (config_name in names(feature_object_list)) {
     for (steps in names(feature_object_list[[config_name]])) {
       temp_df <- data.frame(
-        x = feature_object_list[[config_name]][[steps]]$embedding[, 1],
-        y = feature_object_list[[config_name]][[steps]]$embedding[, 2],
-        ecc = feature_object_list[[config_name]][[steps]]$ecc
+        x = embedding[, 1],
+        y = embedding[, 2],
+        ecc = feature_object_list[[config_name]][[steps]][[resolution]]$ecc
       )
 
       temp_df[["config_name"]] <- rep(config_name, nrow(temp_df))
@@ -723,10 +838,15 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
 #'   min_dist = 0.3
 #' )
 #' plot_feature_stability_ecs_incremental(feature_stability_result)
-plot_feature_stability_ecs_incremental <- function(feature_object_list,
+plot_feature_per_resolution_stability_incremental <- function(
+  feature_object_list,
+  resolution,
                                                    dodge_width = 0.7,
                                                    text_size = 4,
-                                                   boxplot_width = 0.4) {
+                                                   boxplot_width = 0.4,
+                                                   return_df = FALSE) {
+
+  resolution <- as.character(resolution)
   if (!is.numeric(dodge_width) || length(dodge_width) > 1) {
     stop("dodge_width parameter should be numeric")
   }
@@ -746,7 +866,7 @@ plot_feature_stability_ecs_incremental <- function(feature_object_list,
       second.n.steps <- strsplit(pairs.names[i], "-")[[1]][2]
 
       temp_df <- data.frame(
-        ecs = feature_object_list[[config_name]][[i]],
+        ecs = feature_object_list[[config_name]][[i]][[resolution]],
         index = i,
         feature_set = config_name
       )
@@ -801,7 +921,120 @@ plot_feature_stability_ecs_incremental <- function(feature_object_list,
 
   text_position <-
     stats::aggregate(ecs ~ index + feature_set, ecs_df, max)
-  text_position$ecs <- max(text_position$ecs) + 0.05
+  text_position$ecs <- max(text_position$ecs) + (max(ecs_df$ecs) - min(ecs_df$ecs)) / 25
+
+  if (return_df) {
+    return(ecs_df)
+  }
+
+  ggplot2::ggplot(
+    ecs_df,
+    ggplot2::aes(
+      x = .data$index,
+      y = .data$ecs,
+      fill = .data$feature_set
+    )
+  ) +
+    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width), width = boxplot_width) +
+    ggplot2::geom_text(
+      data = text_position,
+      ggplot2::aes(label = steps_df$step),
+      position = ggplot2::position_dodge(width = dodge_width),
+      size = text_size
+    ) +
+    ggplot2::theme_classic() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+    ggplot2::xlab("# features") +
+    ggplot2::ylab("EC similiarity")
+}
+
+plot_feature_overall_stability_incremental <- function(
+  feature_object_list,
+  summary_function = median,
+                                                   dodge_width = 0.7,
+                                                   text_size = 4,
+                                                   boxplot_width = 0.4,
+                                                   return_df = FALSE) {
+
+  if (!is.numeric(dodge_width) || length(dodge_width) > 1) {
+    stop("dodge_width parameter should be numeric")
+  }
+
+  min_index <- -1
+  feature_object_list <- feature_object_list$incremental_stability
+  first_df <- TRUE
+  ecs_df <- NULL
+
+  for (config_name in names(feature_object_list)) {
+    n.pairs <- length(feature_object_list[[config_name]])
+    pairs.names <- names(feature_object_list[[config_name]])
+
+    # treat the case with only one step
+    for (i in seq_len(n.pairs)) {
+      first.n.steps <- strsplit(pairs.names[i], "-")[[1]][1]
+      second.n.steps <- strsplit(pairs.names[i], "-")[[1]][2]
+
+      temp_df <- data.frame(
+        ecs = sapply(feature_object_list[[config_name]][[i]], summary_function),
+        index = i,
+        feature_set = config_name
+      )
+
+      if (first_df) {
+        first_df <- FALSE
+
+        steps_df <- data.frame(
+          step = paste(
+            first.n.steps,
+            second.n.steps,
+            sep = "-\n"
+          ),
+          index = i,
+          feature_set = config_name,
+          stringsAsFactors = FALSE
+        )
+
+        ecs_df <- temp_df
+      } else {
+        ecs_df <- rbind(ecs_df, temp_df)
+
+        steps_df <- rbind(steps_df, c(
+          paste(
+            first.n.steps,
+            second.n.steps,
+            sep = "-\n"
+          ),
+          i,
+          config_name
+        ))
+      }
+    }
+
+    if (min_index == -1 || n.pairs < min_index) {
+      min_index <- n.pairs
+    }
+  }
+
+  if (is.null(ecs_df)) {
+    return(ggplot2::ggplot() +
+      ggplot2::theme_void())
+  }
+
+  ecs_df <- ecs_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
+  steps_df <- steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
+
+  ecs_df$feature_set <- factor(ecs_df$feature_set, levels = names(feature_object_list))
+  steps_df$feature_set <- factor(steps_df$feature_set, levels = names(feature_object_list))
+
+  ecs_df$index <- factor(ecs_df$index)
+
+  text_position <-
+    stats::aggregate(ecs ~ index + feature_set, ecs_df, max)
+  text_position$ecs <- max(text_position$ecs) + (max(ecs_df$ecs) - min(ecs_df$ecs)) / 25
+
+  if (return_df) {
+    return(ecs_df)
+  }
 
   ggplot2::ggplot(
     ecs_df,
