@@ -1,3 +1,4 @@
+# TODO check user interrupt
 #' @importFrom foreach %dopar%
 NULL
 
@@ -62,24 +63,24 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 
 
 automatic_stability_assessment <- function(expression_matrix, # expr matrix
-                                  n_cores,
-                                  n_repetitions,
-                                  n_neigh_sequence,
-                                  resolution_sequence,
-                                  seed_sequence = NULL,
-                                  features_sets, # list with the names of the feature sets (HV, MA etc) and the list of top x genes
-                                  steps, # list with the names of the feature sets (HV, mA) and the list of steps
-                                  graph_reduction_embedding = "PCA",
-                                  n_top_configs = 3,
-                                  ranking_criterion = "median",
-                                  npcs = 30,
-                                  ecs_threshold = 1, # do we really need it?,
-                                  ...) {
+                                           n_cores,
+                                           n_repetitions,
+                                           n_neigh_sequence,
+                                           resolution_sequence,
+                                           seed_sequence = NULL,
+                                           features_sets, # list with the names of the feature sets (HV, MA etc) and the list of top x genes
+                                           steps, # list with the names of the feature sets (HV, mA) and the list of steps
+                                           graph_reduction_embedding = "PCA",
+                                           n_top_configs = 3,
+                                           ranking_criterion = "median",
+                                           npcs = 30,
+                                           ecs_threshold = 1, # do we really need it?,
+                                           ...) {
   # store the additional arguments used by umap in a list
   suppl_args <- list(...)
 
   feature_set_names <- names(steps)
-  config_names <- paste(names(steps), graph_reduction_embedding, ecs_threshold, sep = "_")
+  config_names <- paste(names(steps), graph_reduction_embedding, sep = "_")
   n_configs <- length(config_names)
   # TODO: check if the name of the feature sets are the same with the steps
 
@@ -94,7 +95,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
 
   feature_stability_object <- list(
     steps_stability = list(),
-    incremental_stability = list()
+    incremental_stability = list(),
+    embedding_list = list()
   )
 
   for (set_name in feature_set_names) {
@@ -102,6 +104,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     temp_object <- assess_feature_stability(
       data_matrix = expression_matrix,
       feature_set = features_sets[[set_name]],
+      resolution = resolution_sequence,
       steps = steps[[set_name]],
       feature_type = set_name,
       graph_reduction_type = graph_reduction_embedding,
@@ -118,6 +121,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     config_name <- names(temp_object$steps_stability)[1]
     feature_stability_object$steps_stability[[config_name]] <- temp_object$steps_stability[[1]]
     feature_stability_object$incremental_stability[[config_name]] <- temp_object$incremental_stability[[1]]
+    feature_stability_object$embedding_list[[config_name]] <- temp_object$embedding_list[[1]]
+
   }
 
   names(steps) <- config_names
@@ -127,15 +132,30 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
 
   for (i in 1:length(config_names)) {
     set_name <- config_names[i]
-    ecc_list <- lapply(feature_stability_object$steps_stability[[set_name]], function(x) {
-      x$ecc
+    ecc_list <- lapply(feature_stability_object$steps_stability[[set_name]], function(by_step) {
+      sapply(by_step, function(by_res) {
+        ranking_functions[[ranking_criterion]](by_res$ecc)
+      })
     })
+
     ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
-    incremetal_list <- c(
-      feature_stability_object$incremental_stability[[set_name]][1],
-      feature_stability_object$incremental_stability[[set_name]]
+    incremental_list <- c(
+      list(sapply(
+        feature_stability_object$incremental_stability[[set_name]][[1]],
+        function(by_res) {
+          ranking_functions[[ranking_criterion]](by_res)
+        }
+      )),
+      lapply(
+        feature_stability_object$incremental_stability[[set_name]],
+        function(by_step) {
+          sapply(by_step, function(by_res) {
+            ranking_functions[[ranking_criterion]](by_res)
+          })
+        }
+      )
     )
-    incremental_ranking <- rank_configs(incremetal_list, rank_by = ranking_criterion, return_type = "rank")
+    incremental_ranking <- rank_configs(incremental_list, rank_by = ranking_criterion, return_type = "rank")
     feature_stability_ranking <- order(incremental_ranking + ecc_ranking)
 
     current_n_top <- min(n_top_configs, length(incremental_ranking))
@@ -167,25 +187,25 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
   }
 
   # GRAPH CONSTRUCTION: CONNECTED COMPS
-  print("Assessing the stability of the connected components")
+  print(paste("Assessing the stability of the connected components", Sys.time()))
 
   for (config_name in config_names) {
     print(config_name)
     for (n_steps in names(feature_configs[[config_name]])) {
       feature_configs[[config_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
-          embedding = feature_configs[[config_name]][[n_steps]]$pca,
-          n_neigh_sequence = n_neigh_sequence,
-          n_repetitions = n_repetitions,
-          ncores = n_cores,
-          seed_sequence = seed_sequence,
-          # config_name = paste(config_name, n_steps, sep = "_"),
-          ...
-        )
+        embedding = feature_configs[[config_name]][[n_steps]]$pca,
+        n_neigh_sequence = n_neigh_sequence,
+        n_repetitions = n_repetitions,
+        ncores = n_cores,
+        seed_sequence = seed_sequence,
+        # config_name = paste(config_name, n_steps, sep = "_"),
+        ...
+      )
     }
   }
 
   # GRAPH CONSTRUCTION: NN IMPORTANCE
-  print("Assessing the stability of the graph construction parameters")
+  print(paste("Assessing the stability of the graph construction parameters", Sys.time()))
 
   for (config_name in config_names) {
     print(config_name)
@@ -226,6 +246,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       for (config_name in names(feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency)) {
         for (n_neigh in names(feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency[[config_name]])) {
           current_ecc <- ranking_functions[[ranking_criterion]](feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency[[config_name]][[n_neigh]])
+          print(current_ecc)
           if (current_ecc > best_ecc) {
             best_ecc <- current_ecc
             best_config <- config_name
@@ -253,7 +274,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
 
 
   # GRAPH CLUSTERING: CLUSTERING METHOD
-  print("Assessing the stability of the graph clustering method")
+  print(paste("Assessing the stability of the graph clustering method", Sys.time()))
 
   for (config_name in config_names) {
     print(config_name)
@@ -265,7 +286,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         n_repetitions = n_repetitions,
         ecs_thresh = ecs_threshold,
         ncores = n_cores,
-        algorithm = 1:4
+        algorithm = 1:3
       )
 
       # ecc_clustering_methods <- lapply(
