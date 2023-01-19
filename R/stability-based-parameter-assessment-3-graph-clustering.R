@@ -433,7 +433,8 @@ plot_clustering_per_value_stability <- function(clust_object,
     ggplot2::aes(x = .data[[value_type]], y = .data$ecc, fill = .data$method)
   ) +
     ggplot2::geom_boxplot() +
-    ggplot2::theme_bw()
+    ggplot2::theme_bw() +
+    ggplot2::ggtitle(paste0("Clustering stability per ", value_type))
 }
 
 
@@ -510,7 +511,8 @@ plot_clustering_overall_stability <- function(clust_object,
     ggplot2::aes(x = .data$method, y = .data$ecc, fill = .data$method)
   ) +
     ggplot2::geom_boxplot() +
-    ggplot2::theme_bw()
+    ggplot2::theme_bw() +
+    ggplot2::ggtitle(paste0("Overall clustering stability grouped by ", value_type))
 }
 
 #' Clustering Method Stability Facet Plot
