@@ -31,9 +31,77 @@ names(cList) <- c("White-Red", "Blue-Yellow-Red", "Yellow-Green-Purple")
 ```{r}
 load("expression_matrix.rda")
 load("stab_obj.rda")
+load("metadata.rda")
 ```
 
 ```{r}
+empty_ggplot <- function() {
+  ggplot2::ggplot() +
+    ggplot2::theme_void()
+}
+
+expression_ggplot <- function(embedding, expression) {
+  ggplot2::ggplot(
+    data.frame(embedding),
+    aes(x = .data$UMAP_1, y = .data$UMAP_2, color = expression)
+  ) +
+    ggplot2::geom_point() +
+    ggplot2::theme_bw() +
+    ggplot2::scale_color_gradientn("", colors = cList[[1]]) +
+    ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15)) +
+    ggplot2::theme(legend.position = "bottom")
+}
+
+color_ggplot <- function(embedding, color_info) {
+   ggplot2::ggplot(
+    data.frame(embedding),
+    aes(
+      x = .data$UMAP_1,
+      y = .data$UMAP_2,
+      color = color_info
+    )
+  ) +
+    ggplot2::geom_point() +
+    ggplot2::theme_bw()
+}
+
+voting_scheme_ggplot <- function(embedding,
+                                 selected_genes,
+                                 expression_threshold) {
+  umap_df <- data.frame(embedding)
+  n_expressed_genes <- rep(0, ncol(expression_matrix))
+  expression_threshold <- as.numeric(expression_threshold)
+  for (gene in selected_genes) {
+    n_expressed_genes <- n_expressed_genes + (expression_matrix[gene, ] > expression_threshold)
+  }
+
+  mask <- (n_expressed_genes >= length(selected_genes))
+
+  ggplot2::ggplot() +
+    ggplot2::geom_point(
+      data = umap_df[!mask, ],
+      mapping = aes(x = .data$UMAP_1, .data$UMAP_2),
+      color = "#C3C3C3"
+    ) +
+    ggplot2::geom_point(
+      data = umap_df[mask, ],
+      mapping = aes(x = .data$UMAP_1, .data$UMAP_2),
+      color = "red"
+    ) +
+    ggplot2::theme_bw()
+}
+
+metadata_ggplot <- function(embedding,
+                            metadata_value) {
+  color_info <- metadata[[metadata_value]]
+  if (length(unique(color_info)) > 50) {
+    color_info <- as.numeric(factor(color_info))
+  } else {
+    color_info <- factor(color_info)
+  }
+
+  color_ggplot(embedding, color_info)
+}
 ```
 
 ```{r}
@@ -79,10 +147,9 @@ ui_dimensionality_stability <- function(id) {
       column(
         8,
         plotOutput(ns("boxplot_ecc"),
-          #   height = "40%",
-          #   width = "50%",
           hover = hoverOpts(id = ns("ecc_hover"), delayType = "throttle"),
-          click = ns("ecc_click")
+          click = ns("ecc_click"),
+          height = "500px",
         ),
       ),
       column(
@@ -138,7 +205,30 @@ ui_dimensionality_distribution_plots <- function(id) {
       )
     ),
     plotOutput(ns("umap_gene")),
+    selectInput(ns("metadata"), "Metadata", choices = colnames(metadata), selected = colnames(metadata)[1]),
     plotOutput(ns("umap_metadata"))
+  )
+}
+
+ui_dimensionality_recommendation <- function(id) {
+  ns <- NS(id)
+
+  tagList(
+    radioButtons(
+      ns("radio_feature_type"),
+    label = "Choose the feature type for the downstream analysis:",
+    choices = feature_config,
+    selected = feature_config[1],
+    width = "100%"),
+    radioButtons(
+      inputId = ns("radio_feature_size"),
+      label = "Choose the size of the feature set for the downstream analysis:",
+      choices = names(stab_obj[[feature_config[1]]]),
+      selected = NULL,
+      width = "100%"
+    ),
+    uiOutput(ns("recommendation")),
+    actionButton(ns("fix_feature_button"), "Choose this combination")
   )
 }
 ```
@@ -160,7 +250,8 @@ ui_dimensionality_reduction <- function(id) {
         6,
         ui_dimensionality_distribution_plots(ns("distribution_right"))
       )
-    )
+    ),
+    ui_dimensionality_recommendation(ns("recommend"))
   )
 }
 
@@ -192,11 +283,13 @@ ui_graph_clustering <- function(id) {
     ),
     h3("Boxplot distribution of the overall stability"),
     fluidRow(
-      column(6,
+      column(
+        6,
         plotOutput(ns("boxplot_overall_resolution"))
       ),
-      column(6,
-      plotOutput(ns("boxplot_overall_k"))
+      column(
+        6,
+        plotOutput(ns("boxplot_overall_k"))
       )
     ),
     h3("Correspondence between the resolution value and the number of clusters"),
@@ -234,7 +327,7 @@ server_dimensionality_stability <- function(id, panel_id) {
         chosen_step <- NULL
         chosen_config <- NULL
 
-        for (steps_intervals in seq(from = min_step - 0.5, to = max_step + 0.5, by = 1)) {
+        for (steps_intervals in seq(from = min_step - 0.5, to = max_step - 0.5, by = 1)) {
           if (x < steps_intervals + 1) {
             chosen_step <- steps_intervals + 0.5
             break
@@ -269,12 +362,12 @@ server_dimensionality_stability <- function(id, panel_id) {
 
       output$boxplot_ecc_info <- renderText({
         if (is.na(ecc_mouse_hover()[1])) {
-          return()
+          return("")
         }
 
         feature_type <- names(current_feature_obj()$steps_stability)[ecc_mouse_hover()[2]]
         nfeatures <- names(current_feature_obj()$steps_stability[[ecc_mouse_hover()[2]]])[ecc_mouse_hover()[1]]
-        glue::glue("The ECC summary for {feature_type} - {nfeatures} and resolution {input$resolution}.
+        glue::glue("The ECC summary for {feature_type} - {nfeatures} and resolution {input$resolution}.\n
         Click if you want to visualise the UMAP distribution.")
       })
 
@@ -297,7 +390,7 @@ server_dimensionality_stability <- function(id, panel_id) {
         i <- 1
         ret_list <- list()
         for (conf in input$feature_configs) {
-          ret_list[[i]] <- selectInput(ns(paste0("nsteps_", i)), # paste(panel_id, id, paste0("nsteps_", i), sep = "-"),
+          ret_list[[i]] <- selectInput(ns(paste0("nsteps_", i)),
             paste("Nsteps for", conf),
             choices = names(stab_obj$feature_importance$steps_stability[[conf]]),
             selected = names(stab_obj$feature_importance$steps_stability[[conf]]),
@@ -309,6 +402,16 @@ server_dimensionality_stability <- function(id, panel_id) {
       })
 
       current_feature_obj <- reactive({
+        if (is.null(selected_configs())[1]) {
+          return(NULL)
+        }
+
+        for (i in seq_along(selected_configs())) {
+          if (is.null(input[[glue::glue("nsteps_{i}")]])[1]) {
+            return(NULL)
+          }
+        }
+
         steps_stability <- lapply(seq_along(selected_configs()), function(i) {
           steps_names <- names(stab_obj$feature_importance$steps_stability[[i]])
           chosen_steps <- steps_names %in% input[[paste0("nsteps_", i)]]
@@ -320,6 +423,10 @@ server_dimensionality_stability <- function(id, panel_id) {
         incremental_stability <- lapply(seq_along(selected_configs()), function(i) {
           kept_steps <- c()
           chosen_steps <- input[[paste0("nsteps_", i)]]
+
+          if (length(chosen_steps) == 0) {
+            return(list())
+          }
 
           for (j in seq_len(length(chosen_steps) - 1)) {
             checked_steps <- paste(chosen_steps[j], chosen_steps[j + 1], sep = "-")
@@ -347,27 +454,33 @@ server_dimensionality_stability <- function(id, panel_id) {
 
       output$boxplot_ecc <- renderPlot({
         if (length(selected_configs()) == 0) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
         }
+
+        if (is.null(current_feature_obj())) {
+          return(empty_ggplot())
+        }
+
         plot_feature_per_resolution_stability_boxplot(current_feature_obj(),
           resolution = input$resolution,
           text_size = input$text_size,
           boxplot_width = input$boxplot_width,
           dodge_width = input$dodge_width
-        )
+        ) + ggplot2::theme(legend.position = "bottom")
       })
 
       output$boxplot_incr <- renderPlot({
         if (length(selected_configs()) == 0) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
+        }
+
+        if (is.null(current_feature_obj())) {
+          return(empty_ggplot())
         }
 
         for (conf in selected_configs()) {
           if (length(names(current_feature_obj()$incremental_stability[[conf]])) == 0) {
-            return(ggplot2::ggplot() +
-              ggplot2::theme_void())
+            return(empty_ggplot())
           }
         }
         plot_feature_per_resolution_stability_incremental(current_feature_obj(),
@@ -380,38 +493,32 @@ server_dimensionality_stability <- function(id, panel_id) {
 
       output$umap_ecc <- renderPlot({
         if (is.na(ecc_mouse_click()[1])) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
+        }
+
+        if (is.null(current_feature_obj())) {
+          return(empty_ggplot())
         }
 
         config_name <- selected_configs()[ecc_mouse_click()[2]]
         step_index <- names(current_feature_obj()$steps_stability[[config_name]])[ecc_mouse_click()[1]]
         ecc <- current_feature_obj()$steps_stability[[config_name]][[step_index]][[input$resolution]]$ecc
 
-        print(config_name)
-        print(step_index)
-
-        ggplot2::ggplot(
-          data.frame(
-            stab_obj[[1]]$embedding_list[[config_name]][[step_index]]
-          ),
-          aes(
-            x = .data$UMAP_1,
-            y = .data$UMAP_2,
-            color = ecc
-          )
-        ) +
-          ggplot2::geom_point() +
-          ggplot2::scale_color_viridis_c() +
-          ggplot2::theme_bw() +
+        color_ggplot(stab_obj[[1]]$embedding_list[[config_name]][[step_index]], ecc) +
+          # ggplot2::guides(color = ggplot2::guide_legend(title = "ecc")) +
+          ggplot2::scale_color_viridis_c(name = "ECC") +
           ggplot2::ggtitle(glue::glue("ECC distribution {config_name} - {step_index} for resolution {input$resolution}"))
       })
 
       output$overall_boxplot_ecc <- renderPlot({
         if (length(selected_configs()) == 0) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
         }
+
+        if (is.null(current_feature_obj())) {
+          return(empty_ggplot())
+        }
+
         plot_feature_overall_stability_boxplot(current_feature_obj(),
           text_size = input$text_size,
           boxplot_width = input$boxplot_width,
@@ -421,9 +528,13 @@ server_dimensionality_stability <- function(id, panel_id) {
 
       output$overall_boxplot_incremental <- renderPlot({
         if (length(selected_configs()) == 0) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
         }
+        
+        if (is.null(current_feature_obj())) {
+          return(empty_ggplot())
+        }
+
         plot_feature_overall_stability_incremental(current_feature_obj(),
           text_size = input$text_size,
           boxplot_width = input$boxplot_width,
@@ -431,7 +542,6 @@ server_dimensionality_stability <- function(id, panel_id) {
         )
       })
 
-      output$con_name <- renderText(paste("test", paste(names(current_feature_obj()$steps_stability), collapse = " ")))
     }
   )
 }
@@ -455,66 +565,73 @@ server_dimensionality_distribution <- function(id) {
       })
 
       output$umap_gene <- renderPlot({
+        if (is.null(input$feature_type) || is.null(input$feature_steps)) {
+          return(empty_ggplot())
+        }
+
         embedding <- stab_obj$feature_importance$embedding_list[[input$feature_type]][[input$feature_steps]]
 
         if (length(input$gene_expr) == 0) {
-          return(ggplot2::ggplot() +
-            ggplot2::theme_void())
+          return(empty_ggplot())
+        }
+
+        if (is.null(embedding)) {
+          return(empty_ggplot())
         }
 
         if (length(input$gene_expr) == 1) {
           expr_val <- expression_matrix[input$gene_expr, ]
-          return(
-            ggplot2::ggplot(
-              data.frame(embedding),
-              aes(x = .data$UMAP_1, y = .data$UMAP_2, color = expr_val)
-            ) +
-              ggplot2::geom_point() +
-              ggplot2::theme_bw() +
-              ggplot2::scale_color_gradientn("", colors = cList[[1]]) +
-              ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15)) +
-              ggplot2::theme(legend.position = "bottom")
-          )
+
+          return(expression_ggplot(embedding, expr_val))
         }
 
-        n_expressed_genes <- rep(0, ncol(expression_matrix))
-        threshold <- as.numeric(input$expr_threshold)
-        for (gene in input$gene_expr) {
-          n_expressed_genes <- n_expressed_genes + (expression_matrix[gene, ] > threshold)
-        }
-
-        mask <- (n_expressed_genes >= length(input$gene_expr))
-        # print(input$gene_expr)
-        # print(summary(mask))
-        umap_df <- data.frame(embedding)
-        print(colnames(umap_df))
-
-        ggplot2::ggplot() +
-          ggplot2::geom_point(
-            data = umap_df[!mask, ],
-            mapping = aes(x = .data$UMAP_1, .data$UMAP_2),
-            color = "#C3C3C3"
-          ) +
-          ggplot2::geom_point(
-            data = umap_df[mask, ],
-            mapping = aes(x = .data$UMAP_1, .data$UMAP_2),
-            color = "red"
-          ) +
-          ggplot2::theme_bw()
+        voting_scheme_ggplot(embedding, input$gene_expr, input$expr_threshold)
       })
-      # output$stepchoosing <- renderUI({
-      #   ns <- session$ns
 
-      #   selectInput(ns(), # paste(panel_id, id, paste0("nsteps_", i), sep = "-"),
-      #       paste("Nsteps for", conf),
-      #       choices = names(stab_obj$feature_importance$steps_stability[[conf]]),
-      #       selected = names(stab_obj$feature_importance$steps_stability[[conf]]),
-      #       multiple = TRUE
-      #     )
-      #     i <- i + 1
-      #   }
-      #   ret_list
-      # })
+      output$umap_metadata <- renderPlot({
+        if (is.null(input$feature_type) || is.null(input$feature_steps)) {
+          return(empty_ggplot())
+        }
+
+        embedding <- stab_obj$feature_importance$embedding_list[[input$feature_type]][[input$feature_steps]]
+
+        if (is.null(embedding)) {
+          return(empty_ggplot())
+        }
+
+        metadata_ggplot(embedding, input$metadata)
+      })
+    }
+  )
+}
+
+
+server_dimensionality_recommendation <- function(id) {
+  moduleServer(
+    id,
+    function(input, output, session) {
+      observeEvent(input$radio_feature_type, {
+        updateRadioButtons(
+          session,
+          label = "ASDA", #glue::glue("Choose the size of the feature set {input$radion_feature_type} for the downstream analysis: (We recommend {names(stab_obj[[input$radio_feature_type]])[1]}"),
+          inputId = "radio_feature_size",
+          choices = names(stab_obj[[input$radio_feature_type]]),
+          selected = names(stab_obj[[input$radio_feature_type]])[1]
+        )
+      })
+
+
+      v <- reactiveValues(
+        chosen_feature_type = NULL,
+        chosen_set_size = NULL
+      )
+
+      observeEvent(input$fix_feature_button, {
+        v$chosen_feature_type <- input$radio_feature_type
+        v$chosen_set_size <- input$radio_feature_size
+      })
+
+      return(v)
     }
   )
 }
@@ -528,6 +645,7 @@ server_dimensionality_reduction <- function(id) {
       server_dimensionality_stability("stability", "dim_reduc")
       server_dimensionality_distribution("distribution_left")
       server_dimensionality_distribution("distribution_right")
+      server_dimensionality_recommendation("recommend")
     }
   )
 }
@@ -535,15 +653,20 @@ server_dimensionality_reduction <- function(id) {
 
 
 ```{r}
-server_graph_clustering <- function(id) {
+server_graph_clustering <- function(id, recommendation) {
   moduleServer(
     id,
     function(input, output, session) {
+      print("In graph clustering server")
+      observeEvent(recommendation, {
+        print(recommendation)
+      })
       output$boxplot_per_value <- renderPlot({
         plot_clustering_per_value_stability(stab_obj[[2]][[1]]$clustering_importance,
-        value_type = "resolution")
+          value_type = "resolution"
+        )
       })
-      
+
       output$boxplot_overall_resolution <- renderPlot({
         plot_clustering_overall_stability(stab_obj[[2]][[1]]$clustering_importance,
           value_type = "resolution"
@@ -555,28 +678,29 @@ server_graph_clustering <- function(id) {
           value_type = "k"
         )
       })
-      
+
       output$k_resolution <- renderPlot({
         plot_k_resolution_corresp(stab_obj[[2]][[1]]$clustering_importance,
-        colour_information = "ecc")
+          colour_information = "ecc"
+        )
       })
 
       output$k_stability <- renderPlot({
         plot_k_n_partitions(stab_obj[[2]][[1]]$clustering_importance,
-         colour_information = "ecc")
+          colour_information = "ecc"
+        )
       })
     }
   )
 }
-
 ```
 
 ```{r}
 shiny_app <- function() {
   ui <- fluidPage(
     tags$head(
-    tags$style(
-      "#tabset_id {
+      tags$style(
+        "#tabset_id {
         position: fixed;
         width: 100%;
         background-color: white;
@@ -584,11 +708,11 @@ shiny_app <- function() {
         z-index: 999;
         font-size: 25px;
         }",
-      ".tab-content  {
+        ".tab-content  {
         margin-top: 72px;
       }"
-    )
-  ),
+      )
+    ),
     tabsetPanel(
       id = "tabset_id",
       ui_dimensionality_reduction("dim_reduc"),
@@ -598,8 +722,8 @@ shiny_app <- function() {
   )
 
   server <- function(input, output, session) {
-    server_dimensionality_reduction("dim_reduc")
-    server_graph_clustering("graph_clust")
+    recommendation <- server_dimensionality_reduction("dim_reduc")
+     server_graph_clustering("graph_clust", recommendation)
   }
 
   shinyApp(ui, server)
