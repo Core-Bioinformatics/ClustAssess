@@ -53,7 +53,7 @@ expression_ggplot <- function(embedding, expression) {
 }
 
 color_ggplot <- function(embedding, color_info) {
-   ggplot2::ggplot(
+  ggplot2::ggplot(
     data.frame(embedding),
     aes(
       x = .data$UMAP_1,
@@ -216,10 +216,11 @@ ui_dimensionality_recommendation <- function(id) {
   tagList(
     radioButtons(
       ns("radio_feature_type"),
-    label = "Choose the feature type for the downstream analysis:",
-    choices = feature_config,
-    selected = feature_config[1],
-    width = "100%"),
+      label = "Choose the feature type for the downstream analysis:",
+      choices = feature_config,
+      selected = feature_config[1],
+      width = "100%"
+    ),
     radioButtons(
       inputId = ns("radio_feature_size"),
       label = "Choose the size of the feature set for the downstream analysis:",
@@ -269,8 +270,8 @@ ui_graph_clustering <- function(id) {
 
   tabPanel(
     "Graph Clustering",
-    h2("Assessing the stability of the graph clustering"),
-    h3("Boxplot distribution of the resolution-wise stability of the clustering methods"),
+    uiOutput(ns("selected_conf")),
+    uiOutput(ns("header1")),
     fluidRow(
       column(
         8,
@@ -281,7 +282,7 @@ ui_graph_clustering <- function(id) {
         plotOutput(ns("umap_config"))
       )
     ),
-    h3("Boxplot distribution of the overall stability"),
+    uiOutput(ns("header2")),
     fluidRow(
       column(
         6,
@@ -292,9 +293,9 @@ ui_graph_clustering <- function(id) {
         plotOutput(ns("boxplot_overall_k"))
       )
     ),
-    h3("Correspondence between the resolution value and the number of clusters"),
+    uiOutput(ns("header3")),
     plotOutput(ns("k_resolution")),
-    h3("The stability of the number of clusters"),
+    uiOutput(ns("header4")),
     plotOutput(ns("k_stability"))
   )
 }
@@ -530,7 +531,7 @@ server_dimensionality_stability <- function(id, panel_id) {
         if (length(selected_configs()) == 0) {
           return(empty_ggplot())
         }
-        
+
         if (is.null(current_feature_obj())) {
           return(empty_ggplot())
         }
@@ -541,7 +542,6 @@ server_dimensionality_stability <- function(id, panel_id) {
           dodge_width = input$dodge_width
         )
       })
-
     }
   )
 }
@@ -613,7 +613,7 @@ server_dimensionality_recommendation <- function(id) {
       observeEvent(input$radio_feature_type, {
         updateRadioButtons(
           session,
-          label = "ASDA", #glue::glue("Choose the size of the feature set {input$radion_feature_type} for the downstream analysis: (We recommend {names(stab_obj[[input$radio_feature_type]])[1]}"),
+          label = "ASDA", # glue::glue("Choose the size of the feature set {input$radion_feature_type} for the downstream analysis: (We recommend {names(stab_obj[[input$radio_feature_type]])[1]}"),
           inputId = "radio_feature_size",
           choices = names(stab_obj[[input$radio_feature_type]]),
           selected = names(stab_obj[[input$radio_feature_type]])[1]
@@ -621,15 +621,19 @@ server_dimensionality_recommendation <- function(id) {
       })
 
 
-      v <- reactiveValues(
-        chosen_feature_type = NULL,
-        chosen_set_size = NULL
-      )
+      v <- reactive(list(
+        chosen_feature_type = input$radio_feature_type,
+        chosen_set_size = input$radio_feature_size
+      )) %>% bindEvent(input$fix_feature_button)
 
-      observeEvent(input$fix_feature_button, {
-        v$chosen_feature_type <- input$radio_feature_type
-        v$chosen_set_size <- input$radio_feature_size
-      })
+      # observeEvent(input$fix_feature_button, {
+      #   v$chosen_feature_type <- input$radio_feature_type
+      #   v$chosen_set_size <- input$radio_feature_size
+
+      #   # print(v)
+      #   # print(v$chosen_feature_type)
+      #   # print(v$chosen_set_size)
+      # })
 
       return(v)
     }
@@ -645,7 +649,9 @@ server_dimensionality_reduction <- function(id) {
       server_dimensionality_stability("stability", "dim_reduc")
       server_dimensionality_distribution("distribution_left")
       server_dimensionality_distribution("distribution_right")
-      server_dimensionality_recommendation("recommend")
+      recommendation <- server_dimensionality_recommendation("recommend")
+
+      recommendation
     }
   )
 }
@@ -657,36 +663,82 @@ server_graph_clustering <- function(id, recommendation) {
   moduleServer(
     id,
     function(input, output, session) {
-      print("In graph clustering server")
-      observeEvent(recommendation, {
-        print(recommendation)
+      chosen_object <- reactive(
+        stab_obj[[recommendation()[[1]]]][[recommendation()[[2]]]]
+      )
+
+      stable_config <- reactive(
+        chosen_object()$stable_config
+      )
+
+      clustering_importance <- reactive(
+        chosen_object()$clustering_importance
+      )
+
+      output$selected_conf <- renderUI({
+        h2("Please fix your choice of feature type and the size of the set from the 'Dimensionality reduction' tab!")
       })
+
+      observe({
+        output$selected_conf <- renderUI({
+          fluidRow(
+        div(glue::glue("Feature type: {stable_config()[[1]]}")),
+        div(glue::glue("Feature set size: {stable_config()[[2]]}")),
+        div(glue::glue("Base embedding: {stable_config()[[3]]}")),
+        div(glue::glue("Graph type: {stable_config()[[4]]}")),
+        div(glue::glue("Number of neighbours: {stable_config()[[5]]}"))
+        )
+      })
+
+        output$header1 <- renderUI({
+          h3("Boxplot distribution of the resolution-wise stability of the clustering methods")
+        })
+
+        output$header2 <- renderUI({
+          h3("Boxplot distribution of the overall stability")
+        })
+
+        output$header3 <- renderUI({
+          h3("Correspondence between the resolution value and the number of clusters")
+        })
+
+        output$header4 <- renderUI({
+          h3("The stability of the number of clusters")
+        })
+      }) %>% bindEvent(recommendation())
+
+      
+
+
+
+
+
       output$boxplot_per_value <- renderPlot({
-        plot_clustering_per_value_stability(stab_obj[[2]][[1]]$clustering_importance,
+        plot_clustering_per_value_stability(clustering_importance(),
           value_type = "resolution"
         )
       })
 
       output$boxplot_overall_resolution <- renderPlot({
-        plot_clustering_overall_stability(stab_obj[[2]][[1]]$clustering_importance,
+        plot_clustering_overall_stability(clustering_importance(),
           value_type = "resolution"
         )
       })
 
       output$boxplot_overall_k <- renderPlot({
-        plot_clustering_overall_stability(stab_obj[[2]][[1]]$clustering_importance,
+        plot_clustering_overall_stability(clustering_importance(),
           value_type = "k"
         )
       })
 
       output$k_resolution <- renderPlot({
-        plot_k_resolution_corresp(stab_obj[[2]][[1]]$clustering_importance,
+        plot_k_resolution_corresp(clustering_importance(),
           colour_information = "ecc"
         )
       })
 
       output$k_stability <- renderPlot({
-        plot_k_n_partitions(stab_obj[[2]][[1]]$clustering_importance,
+        plot_k_n_partitions(clustering_importance(),
           colour_information = "ecc"
         )
       })
@@ -723,7 +775,7 @@ shiny_app <- function() {
 
   server <- function(input, output, session) {
     recommendation <- server_dimensionality_reduction("dim_reduc")
-     server_graph_clustering("graph_clust", recommendation)
+    server_graph_clustering("graph_clust", recommendation)
   }
 
   shinyApp(ui, server)
