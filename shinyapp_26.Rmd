@@ -1,0 +1,71 @@
+
+```{r}
+library(ClustAssess)
+library(ggplot2)
+library(shiny)
+library(reactlog)
+
+devtools::load_all()
+```
+
+```{r}
+stab_obj <- readRDS("stability_object.rds")
+expression_matrix <- readRDS("expression_matrix.rds")
+metadata <- readRDS("metadata.rds")
+genes <- readRDS("genes.rds")
+
+feature_types <- names(stab_obj$feature_importance$steps_stability)
+steps <- lapply(feature_types, function(x) {
+  names(stab_obj$feature_importance$steps_stability[[x]])
+})
+names(steps) <- feature_types
+
+feature_used_resolution_vals <- names(stab_obj$feature_importance[[1]][[1]][[1]])
+```
+
+```{r}
+plot_feature_per_resolution_stability_boxplot(stab_obj$feature_importance, 0.3, boxplot_width = 0.3, violin_plot = FALSE)
+```
+```{r}
+
+devtools::load_all()
+```
+```{r}
+devtools::load_all()
+
+ui <- fluidPage(
+  tags$head(
+    tags$style(
+      "#tabset_id {
+        position: fixed;
+        width: 100%;
+        background-color: white;
+        top: 0;
+        z-index: 999;
+        font-size: 25px;
+        }",
+      ".tab-content  {
+        margin-top: 72px;
+        }"
+    )
+  ),
+  tabsetPanel(
+    id = "tabset_id",
+    ui_dimensionality_reduction("dim_reduc"),
+    # ui_graph_construction("graph_constr"),
+    ui_graph_clustering("graph_clust") # ,
+    # ui_comparison("comparison")
+  )
+)
+
+server <- function(input, output, session) {
+  recommendation <- server_dimensionality_reduction("dim_reduc")
+  server_graph_clustering("graph_clust", recommendation)
+  # server_comparison("comparison", recommendation)
+}
+shinyApp(ui, server)
+```
+
+```{r}
+shinyApp(ui, server)
+```
