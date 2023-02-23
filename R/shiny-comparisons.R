@@ -311,7 +311,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
           }
         }
         
-        df_mat <- reshape2::melt(mat)
+        df_mat <- reshape::melt(mat)
         
         ggplot2::ggplot(df_mat, ggplot2::aes(df_mat$X1, df_mat$X2)) + 
           ggplot2::geom_tile(ggplot2::aes(fill = value)) + 
