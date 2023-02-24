@@ -1,4 +1,5 @@
 
+
 ui_graph_construction <- function(id) {
   ns <- shiny::NS(id)
   shiny::tabPanel(
@@ -10,7 +11,7 @@ ui_graph_construction <- function(id) {
              shiny::h5('This plot describes the covariation between the number neighbours and the number of connected components obtained using both PCA and UMAP reductions as base for graph building. As the number of neighbours increases, the number of connected components decreases (this is an expected result, as increasing the number of neighbours result in a better connected graph). Please note that the number of connected components provides a lower bound on the number of clusters we can obtain by downstream community detection algorithms such as Louvain and Leiden.'),
              shiny::h1('\n'),
              shiny::h5('For more information please go to:'),
-             shiny::tagList("", github),
+             shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
              placement = "right",
              arrow = F,
              maxWidth = '700px'),
@@ -44,7 +45,7 @@ ui_graph_construction <- function(id) {
                            shiny::h5('- You can click anywhere in the plot to obtain a UMAP representation coloured with the stability (ECC) across different seeds for a specific number of nearest neighbours.'),
                            shiny::h1('\n'),
                            shiny::h5('For more information please go to:'),
-             shiny::tagList("", github),
+             shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
              placement = "right",
              arrow = F,
              maxWidth = '700px'),
@@ -63,7 +64,7 @@ ui_graph_construction <- function(id) {
     ),
     shiny::fluidRow(shiny::tags$head(shiny::tags$style(shiny::HTML("pre { white-space: pre-wrap; word-break: keep-all; }"))),
                     shiny::splitLayout(cellWidths = c("15%", "55%","30%"),
-                                       shiny::div(style="width:90%;",shiny::verticalLayout(shiny::checkboxGroupInput(ns('sel_conn_comps'),'Select configurations',choices=config_choices,selected=config_choices, width='50%'),
+                                       shiny::div(style="width:90%;",shiny::verticalLayout(shiny::checkboxGroupInput(ns('sel_conn_comps'),'Select configurations',choices=names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency),selected=names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency), width='50%'),
                                                                                            shiny::selectInput(ns("palette_plot_neigh_k"), "Colour scheme:",
                                                                            c("Colour scheme 1" = "col_1",
                                                                              "Colour scheme 2" = "col_2",
@@ -85,7 +86,7 @@ ui_graph_construction <- function(id) {
                     shiny::h5('- You can click anywhere in the plot to obtain a UMAP representation coloured with the stability (ECC) across different seeds for a specific number of nearest neighbours.'),
                     shiny::h1('\n'),
                     shiny::h5('For more information please go to:'),
-                    shiny::tagList("", github),
+                    shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
              placement = "right",
              arrow = F,
              maxWidth = '700px'),
@@ -104,7 +105,7 @@ ui_graph_construction <- function(id) {
     ),
     shiny::fluidRow(
       shiny::splitLayout(cellWidths = c("15%", "55%","30%"),
-                         shiny::verticalLayout(shiny::div(style="width:90%;",shiny::checkboxGroupInput(ns('sel_stab'),'Select configurations',choices=config_choices,selected=config_choices)),
+                         shiny::verticalLayout(shiny::div(style="width:90%;",shiny::checkboxGroupInput(ns('sel_stab'),'Select configurations',choices=names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency),selected=names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))),
                                                shiny::selectInput(ns("palette_neigh_stability"), "Colour scheme:",
                                              c("Colour scheme 1" = "col_1",
                                                "Colour scheme 2" = "col_2",
@@ -116,7 +117,6 @@ ui_graph_construction <- function(id) {
     ),style="margin-left:10px "
   )
 }
-
 
 ##### SERVER #####
 
@@ -270,7 +270,7 @@ server_graph_construction <- function(id,chosen_config){
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
-          selection <- sort(config_choices)[1]
+          selection <- sort(names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$ecc_click$x - (0.5+(col-1)))*steps
@@ -290,12 +290,12 @@ server_graph_construction <- function(id,chosen_config){
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
-          selection <- sort(config_choices)[1]
+          selection <- sort(names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$ecc_click$x - (0.5+(col-1)))*steps
           selected_config <- ceiling(input_steps)
-          selection <- sort(config_choices)[selected_config]
+          selection <- sort(names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))[selected_config]
         }
         ecc <- chosen_config$nn_importance$n_neigh_ec_consistency[input$sel_stab]
         ecc <- ecc[[selection]][[col]]
@@ -387,7 +387,7 @@ server_graph_construction <- function(id,chosen_config){
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
-          selection <- sort(config_choices)[1]
+          selection <- sort(names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$neigh_stability_click$x - (0.5+(col-1)))*steps
@@ -407,7 +407,7 @@ server_graph_construction <- function(id,chosen_config){
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
-          selection <- sort(config_choices)[1]
+          selection <- sort(names(stab_obj[[2]][[1]]$nn_importance$n_neigh_ec_consistency))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$neigh_stability_click$x - (0.5+(col-1)))*steps
