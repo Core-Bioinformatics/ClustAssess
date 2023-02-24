@@ -17,9 +17,9 @@ ui_comparisons <- function(id){
                                                                                                                             style = "margin: 25px;")))),
                                                           shiny::plotOutput(ns("umap_fixed_2"))),style="border-right:5px solid;"),
                          shiny::div(style="width:90%;",shiny::verticalLayout(shiny::splitLayout(cellWidths = c("50%","50%"),
-                                                                                                shiny::verticalLayout(shiny::selectInput(ns("compare_sel_fset"), "Select feature - set", choices = stab_obj_feature_config, selected = stab_obj_feature_config[1], multiple = FALSE),
-                                                                                                                      shiny::selectInput(ns("compare_sel_steps"), "Select feature - size:", choices = names(stab_obj[[stab_obj_feature_config[1]]]), selected = names(stab_obj[[stab_obj_feature_config[1]]])[1], multiple = FALSE)),
-                                                                                                shiny::verticalLayout(shiny::radioButtons(ns('clustering_method_choice'),'Select clustering Method',choices=stab_obj_clustering_methods,selected=stab_obj_clustering_methods[1], width='50%'),
+                                                                                                shiny::verticalLayout(shiny::selectInput(ns("compare_sel_fset"), "Select feature - set", choices = names(stab_obj$feature_importance$steps_stability), selected = names(stab_obj$feature_importance$steps_stability)[1], multiple = FALSE),
+                                                                                                                      shiny::selectInput(ns("compare_sel_steps"), "Select feature - size:", choices = names(stab_obj[[names(stab_obj$feature_importance$steps_stability)[1]]]), selected = names(stab_obj[[names(stab_obj$feature_importance$steps_stability)[1]]])[1], multiple = FALSE)),
+                                                                                                shiny::verticalLayout(shiny::radioButtons(ns('clustering_method_choice'),'Select clustering Method',choices=names(stab_obj[[2]][[1]]$clustering_importance$split_by_resolution),selected=names(stab_obj[[2]][[1]]$clustering_importance$split_by_resolution)[1], width='50%'),
                                                                                                                       shiny::uiOutput(ns('k_selection')))),
                                                                              shiny::h1('Configuration 2'),
                                                                              shiny::plotOutput(ns("umap_choice")),
@@ -41,7 +41,7 @@ ui_comparisons <- function(id){
                              shiny::h5('This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner.'),
                              shiny::h1('\n'),
                              shiny::h5('For more information please go to:'),
-                             shiny::tagList("", github),
+                             shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
                placement = "right",
                arrow = F,
                maxWidth = '700px'),
@@ -59,7 +59,6 @@ ui_comparisons <- function(id){
                               }
                               "))))
 }
-
 
 
 
@@ -124,7 +123,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         if (input$col_by_choice=='ECC'){
           ECC <- stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$nn_importance$n_neigh_ec_consistency[[2]][[1]]
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = ECC)) +
@@ -134,7 +133,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         }else if(input$col_by_choice=='Clusters'){
           Clusters <- as.matrix(stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_importance$split_by_k[[input$clustering_method_choice]][[input$k]]$partitions[[1]]$mb)
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = Clusters)) +
@@ -143,7 +142,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         }else{
           Feat <- metadata_feats[[input$col_by_choice]]
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = Feat)) +
@@ -189,7 +188,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         if (input$col_by_choice_2=='ECC'){
           ECC <- stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$nn_importance$n_neigh_ec_consistency[[2]][[1]]
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = ECC)) +
@@ -199,7 +198,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         }else if(input$col_by_choice_2=='Clusters'){
           Clusters <- as.matrix(stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_importance$split_by_k[[input$clustering_method_choice]][[input$k]]$partitions[[1]]$mb)
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = Clusters)) +
@@ -208,7 +207,7 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         }else{
           Feat <- metadata_feats[[input$col_by_choice_2]]
           ggplot2::ggplot(data.frame(
-            choice()[1]),
+            stab_obj[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
             ggplot2::aes(x = .data$UMAP_1,
                 y = .data$UMAP_2,
                 color = Feat)) +
@@ -317,9 +316,9 @@ server_comparisons <- function(id,chosen_config,chosen_method){
           ggplot2::geom_tile(ggplot2::aes(fill = value)) + 
           ggplot2::geom_text(ggplot2::aes(fill = df_mat$value, label = round(df_mat$value, 2))) +
           ggplot2::scale_fill_gradient2(low = muted("darkred"), 
-                               mid = "white", 
-                               high = muted("midnightblue"), 
-                               midpoint = 0) + 
+                                        mid = "white", 
+                                        high = muted("midnightblue"), 
+                                        midpoint = 0) + 
           ggplot2::scale_x_continuous(breaks = pretty(df_mat$X1, n = length(all_clusters_2))) +
           ggplot2::scale_y_continuous(breaks = pretty(df_mat$X2, n = length(all_clusters_1))) +
           ggplot2::theme(
@@ -352,12 +351,10 @@ server_comparisons <- function(id,chosen_config,chosen_method){
         filename = function() {heatmap_filetype()},
         content = function(file) {
           ggplot2::ggsave(file,barcode_heatmap(),width = 30,
-                 height = 20,
-                 units = "cm")
+                          height = 20,
+                          units = "cm")
         }
       )
     }
   )
 }
-
-
