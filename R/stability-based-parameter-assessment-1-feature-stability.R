@@ -54,6 +54,7 @@
 #'   data_matrix = t(expr_matrix),
 #'   feature_set = colnames(expr_matrix),
 #'   feature_type = "feature_name",
+#'   resolution = c(0.1, 0.5, 1),
 #'   steps = 5,
 #'   npcs = 2,
 #'   n_repetitions = 10,
@@ -65,7 +66,7 @@
 #'   init = "random",
 #'   min_dist = 0.3
 #' )
-#' plot_feature_stability_boxplot(feature_stability_result)
+#' plot_feature_overall_stability_boxplot(feature_stability_result)
 assess_feature_stability <- function(data_matrix,
                                      feature_set,
                                      steps,
@@ -78,8 +79,10 @@ assess_feature_stability <- function(data_matrix,
                                      ecs_thresh = 1,
                                      ncores = 1,
                                      algorithm = 1,
+                                     verbose = FALSE,
                                      ...) {
-  # TODO vary by resolution
+  # TODO create a function that does checks of the parameters
+  # TODO while doing the assessment, prune the graph
   # check parameters
   if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix")) {
     stop("the data matrix parameter should be a matrix")
@@ -138,7 +141,7 @@ assess_feature_stability <- function(data_matrix,
 
   partitions_list <- list()
 
-  object_name <- paste(feature_type, graph_reduction_type, sep = "_")
+  object_name <- feature_type
   steps_ecc_list <- list()
   steps_ecc_list[[object_name]] <- list()
   embedding_list <- list()
@@ -175,9 +178,20 @@ assess_feature_stability <- function(data_matrix,
     suppl_args[["n_sgd_threads"]] <- 1
   }
 
+  if (verbose) {
+    pb <- progress::progress_bar$new(
+      format = glue::glue("{feature_type} - :featuresize [:bar] eta: :eta  total elapsed: :elapsed"),
+      total = length(steps),
+      show_after = 0,
+      clear = FALSE,
+      width = 80
+    )
+  }
+
   for (step in steps) {
-    print(Sys.time())
-    print(step)
+    if (verbose) {
+      pb$tick(0, tokens = list(featuresize = step))
+    }
     used_features <- feature_set[1:step]
     actual_npcs <- min(npcs, step %/% 2)
     step <- as.character(step)
@@ -203,13 +217,11 @@ assess_feature_stability <- function(data_matrix,
       )$snn
     }
 
-    print("\tStart parallel")
-    print(Sys.time())
-
     # the variables needed in each PSOCK process
     needed_vars <- c(
       "graph_reduction_type",
       "suppl_args",
+      "resolution",
       "algorithm"
     )
 
@@ -326,9 +338,6 @@ assess_feature_stability <- function(data_matrix,
 
     names(partitions_list[[step]]) <- as.character(resolution)
 
-    print(Sys.time())
-    print("Calculating ecc")
-
     # update the returned object with a list containing the ecc,
     # the most frequent partition and the number of different partitions
     steps_ecc_list[[object_name]][[step]] <- lapply(as.character(resolution), function(r) {
@@ -348,6 +357,8 @@ assess_feature_stability <- function(data_matrix,
     })
 
     names(steps_ecc_list[[object_name]][[step]]) <- as.character(resolution)
+
+    pb$tick(tokens = list(featuresize = step))
   }
 
   steps <- as.character(steps)
@@ -370,8 +381,8 @@ assess_feature_stability <- function(data_matrix,
   }
 
   list(
-    steps_stability = steps_ecc_list,
-    incremental_stability = incremental_ecs_list,
+    by_steps = steps_ecc_list,
+    incremental = incremental_ecs_list,
     embedding_list = embedding_list
   )
 }
@@ -404,6 +415,7 @@ assess_feature_stability <- function(data_matrix,
 #'   data_matrix = t(expr_matrix),
 #'   feature_set = colnames(expr_matrix),
 #'   feature_type = "feature_name",
+#'   resolution = c(0.1, 0.5, 1),
 #'   steps = 5,
 #'   npcs = 2,
 #'   n_repetitions = 10,
@@ -415,9 +427,10 @@ assess_feature_stability <- function(data_matrix,
 #'   init = "random",
 #'   min_dist = 0.3
 #' )
-#' plot_feature_stability_boxplot(feature_stability_result)
+#' plot_feature_per_resolution_stability_boxplot(feature_stability_result, 0.1)
 plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
                                                           resolution,
+                                                          violin_plot = FALSE,
                                                           text_size = 4,
                                                           boxplot_width = 0.4,
                                                           dodge_width = 0.7,
@@ -425,6 +438,7 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
   resolution <- as.character(resolution)
   min_index <- -1 # number of steps that will be displayed on the plot
   feature_object_list <- feature_object_list$steps_stability
+  final_melt_df <- NULL
 
   # create a dataframe based on the object returned by `get_feature_stability`
   for (config_name in names(feature_object_list)) {
@@ -479,6 +493,8 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
   text_position <-
     stats::aggregate(ecc ~ step_index + feature_set, final_melt_df, max)
   text_position$ecc <- max(text_position$ecc) + (max(final_melt_df$ecc) - min(final_melt_df$ecc)) / 100
+
+  geom_function <- ifelse(violin_plot, ggplot2::geom_violin, ggplot2::geom_boxplot)
   # return the ggplot object
   ggplot2::ggplot(
     final_melt_df,
@@ -488,7 +504,7 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
       fill = .data$feature_set
     )
   ) +
-    ggplot2::geom_boxplot(
+    geom_function(
       position = ggplot2::position_dodge(width = dodge_width),
       width = boxplot_width
     ) +
@@ -501,9 +517,51 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
-    ggplot2::ylab("EC consistency")
+    ggplot2::ylab("EC consistency") +
+    ggplot2::ggtitle(glue::glue("Stability for resolution = {resolution}"))
 }
 
+#' Feature Stability Boxplot
+#'
+#' @description Display EC consistency for each feature set and for each step.
+#' Above each boxplot there is a number representing
+#' the step (or the size of the subset)
+#'
+#' @param feature_object_list An object or a concatenation of objects returned by the
+#' `get_feature_stability` method
+#' @param text_size The size of the labels above boxplots
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
+#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#'
+#' @return A ggplot2 object.
+#' @export
+#'
+#' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix <- matrix(c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' rownames(expr_matrix) <- as.character(1:200)
+#' colnames(expr_matrix) <- paste("feature", 1:10)
+#'
+#' feature_stability_result <- assess_feature_stability(
+#'   data_matrix = t(expr_matrix),
+#'   feature_set = colnames(expr_matrix),
+#'   feature_type = "feature_name",
+#'   resolution = c(0.1, 0.5, 1),
+#'   steps = 5,
+#'   npcs = 2,
+#'   n_repetitions = 10,
+#'   algorithm = 1,
+#'   # the following parameters are used by the umap function and are not mandatory
+#'   n_neighbors = 3,
+#'   approx_pow = TRUE,
+#'   n_epochs = 0,
+#'   init = "random",
+#'   min_dist = 0.3
+#' )
+#' plot_feature_overall_stability_boxplot(feature_stability_result)
 plot_feature_overall_stability_boxplot <- function(feature_object_list,
                                                    summary_function = median,
                                                    text_size = 4,
@@ -512,6 +570,7 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
                                                    return_df = FALSE) {
   min_index <- -1 # number of steps that will be displayed on the plot
   feature_object_list <- feature_object_list$steps_stability
+  final_melt_df <- NULL
 
   # create a dataframe based on the object returned by `get_feature_stability`
   for (config_name in names(feature_object_list)) {
@@ -591,7 +650,8 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
-    ggplot2::ylab("EC consistency")
+    ggplot2::ylab("EC consistency") +
+    ggplot2::ggtitle("Overall stability")
 }
 
 #' Feature Stability - Cluster Membership Facet Plot
@@ -616,10 +676,14 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #' rownames(expr_matrix) <- as.character(1:150)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
+#' umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
+#' rownames(umap_embedding) <- rownames(expr_matrix)
+#'
 #' feature_stability_result <- assess_feature_stability(
 #'   data_matrix = t(expr_matrix),
 #'   feature_set = colnames(expr_matrix),
 #'   feature_type = "feature_name",
+#'   resolution = c(0.1, 0.5, 1),
 #'   steps = c(5, 10),
 #'   npcs = 2,
 #'   n_repetitions = 3,
@@ -631,14 +695,17 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #'   init = "random",
 #'   min_dist = 0.3
 #' )
-#' plot_feature_stability_mb_facet(feature_stability_result)
+#' plot_feature_stability_mb_facet(
+#'    feature_stability_result,
+#'    umap_embedding,
+#'    0.1
+#' )
 plot_feature_stability_mb_facet <- function(feature_object_list,
-embedding,
-resolution,
+                                            embedding,
+                                            resolution,
                                             text_size = 5,
                                             n_facet_cols = 3,
                                             point_size = 0.3) {
-
   resolution <- as.character(resolution)
   if (!is.numeric(text_size) || length(text_size) > 1) {
     stop("text_size parameter should be numeric")
@@ -727,10 +794,14 @@ resolution,
 #' rownames(expr_matrix) <- as.character(1:150)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
+#' umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
+#' rownames(umap_embedding) <- rownames(expr_matrix)
+#'
 #' feature_stability_result <- assess_feature_stability(
 #'   data_matrix = t(expr_matrix),
 #'   feature_set = colnames(expr_matrix),
 #'   feature_type = "feature_name",
+#'   resolution = c(0.1, 0.5, 1),
 #'   steps = c(5, 10),
 #'   npcs = 2,
 #'   n_repetitions = 3,
@@ -742,10 +813,14 @@ resolution,
 #'   init = "random",
 #'   min_dist = 0.3
 #' )
-#' plot_feature_stability_ecs_facet(feature_stability_result)
+#' plot_feature_stability_ecs_facet(
+#'    feature_stability_result,
+#'    umap_embedding,
+#'    0.1
+#' )
 plot_feature_stability_ecs_facet <- function(feature_object_list,
-  embedding,
-  resolution,
+                                             embedding,
+                                             resolution,
                                              n_facet_cols = 3,
                                              point_size = 0.3) {
   resolution <- as.character(resolution)
@@ -827,6 +902,7 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
 #'   feature_set = colnames(expr_matrix),
 #'   feature_type = "feature_name",
 #'   steps = c(5, 10),
+#'   resolution = c(0.1, 0.5, 1),
 #'   npcs = 2,
 #'   n_repetitions = 3,
 #'   algorithm = 1,
@@ -837,15 +913,13 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
 #'   init = "random",
 #'   min_dist = 0.3
 #' )
-#' plot_feature_stability_ecs_incremental(feature_stability_result)
-plot_feature_per_resolution_stability_incremental <- function(
-  feature_object_list,
-  resolution,
-                                                   dodge_width = 0.7,
-                                                   text_size = 4,
-                                                   boxplot_width = 0.4,
-                                                   return_df = FALSE) {
-
+#' plot_feature_per_resolution_stability_incremental(feature_stability_result, 0.1)
+plot_feature_per_resolution_stability_incremental <- function(feature_object_list,
+                                                              resolution,
+                                                              dodge_width = 0.7,
+                                                              text_size = 4,
+                                                              boxplot_width = 0.4,
+                                                              return_df = FALSE) {
   resolution <- as.character(resolution)
   if (!is.numeric(dodge_width) || length(dodge_width) > 1) {
     stop("dodge_width parameter should be numeric")
@@ -857,13 +931,13 @@ plot_feature_per_resolution_stability_incremental <- function(
   ecs_df <- NULL
 
   for (config_name in names(feature_object_list)) {
-    n.pairs <- length(feature_object_list[[config_name]])
+    n_pairs <- length(feature_object_list[[config_name]])
     pairs.names <- names(feature_object_list[[config_name]])
 
     # treat the case with only one step
-    for (i in seq_len(n.pairs)) {
-      first.n.steps <- strsplit(pairs.names[i], "-")[[1]][1]
-      second.n.steps <- strsplit(pairs.names[i], "-")[[1]][2]
+    for (i in seq_len(n_pairs)) {
+      first_n_steps <- strsplit(pairs.names[i], "-")[[1]][1]
+      second_n_steps <- strsplit(pairs.names[i], "-")[[1]][2]
 
       temp_df <- data.frame(
         ecs = feature_object_list[[config_name]][[i]][[resolution]],
@@ -876,8 +950,8 @@ plot_feature_per_resolution_stability_incremental <- function(
 
         steps_df <- data.frame(
           step = paste(
-            first.n.steps,
-            second.n.steps,
+            first_n_steps,
+            second_n_steps,
             sep = "-\n"
           ),
           index = i,
@@ -891,8 +965,8 @@ plot_feature_per_resolution_stability_incremental <- function(
 
         steps_df <- rbind(steps_df, c(
           paste(
-            first.n.steps,
-            second.n.steps,
+            first_n_steps,
+            second_n_steps,
             sep = "-\n"
           ),
           i,
@@ -901,8 +975,8 @@ plot_feature_per_resolution_stability_incremental <- function(
       }
     }
 
-    if (min_index == -1 || n.pairs < min_index) {
-      min_index <- n.pairs
+    if (min_index == -1 || n_pairs < min_index) {
+      min_index <- n_pairs
     }
   }
 
@@ -945,17 +1019,58 @@ plot_feature_per_resolution_stability_incremental <- function(
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
-    ggplot2::ylab("EC similiarity")
+    ggplot2::ylab("EC similiarity") +
+    ggplot2::ggtitle(glue::glue("Incremental stability for resolution = {resolution}"))
 }
 
-plot_feature_overall_stability_incremental <- function(
-  feature_object_list,
-  summary_function = median,
-                                                   dodge_width = 0.7,
-                                                   text_size = 4,
-                                                   boxplot_width = 0.4,
-                                                   return_df = FALSE) {
-
+#' Feature Stability Incremental Boxplot
+#'
+#' @description Perform an incremental ECS between two consecutive feature steps.
+#'
+#'
+#' @param feature_object_list An object or a concatenation of objects returned by the
+#' `get_feature_stability` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
+#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#' @param text_size The size of the labels above boxplots.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
+#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#'
+#' @return A ggplot2 object with ECS distribution will be displayed as a
+#' boxplot. Above each boxplot there will be a pair of numbers representing the
+#' two steps that are compared.
+#' @export
+#'
+#' @examples
+#' set.seed(2021)
+#' # create an artificial expression matrix
+#' expr_matrix <- matrix(c(runif(25 * 10), runif(75 * 10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+#' rownames(expr_matrix) <- as.character(1:100)
+#' colnames(expr_matrix) <- paste("feature", 1:10)
+#'
+#' feature_stability_result <- assess_feature_stability(
+#'   data_matrix = t(expr_matrix),
+#'   feature_set = colnames(expr_matrix),
+#'   feature_type = "feature_name",
+#'   steps = c(5, 10),
+#'   resolution = c(0.1, 0.5, 1),
+#'   npcs = 2,
+#'   n_repetitions = 3,
+#'   algorithm = 1,
+#'   # the following parameters are used by the umap function and are not mandatory
+#'   n_neighbors = 3,
+#'   approx_pow = TRUE,
+#'   n_epochs = 0,
+#'   init = "random",
+#'   min_dist = 0.3
+#' )
+#' plot_feature_overall_stability_incremental(feature_stability_result)
+plot_feature_overall_stability_incremental <- function(feature_object_list,
+                                                       summary_function = median,
+                                                       dodge_width = 0.7,
+                                                       text_size = 4,
+                                                       boxplot_width = 0.4,
+                                                       return_df = FALSE) {
   if (!is.numeric(dodge_width) || length(dodge_width) > 1) {
     stop("dodge_width parameter should be numeric")
   }
@@ -966,13 +1081,13 @@ plot_feature_overall_stability_incremental <- function(
   ecs_df <- NULL
 
   for (config_name in names(feature_object_list)) {
-    n.pairs <- length(feature_object_list[[config_name]])
+    n_pairs <- length(feature_object_list[[config_name]])
     pairs.names <- names(feature_object_list[[config_name]])
 
     # treat the case with only one step
-    for (i in seq_len(n.pairs)) {
-      first.n.steps <- strsplit(pairs.names[i], "-")[[1]][1]
-      second.n.steps <- strsplit(pairs.names[i], "-")[[1]][2]
+    for (i in seq_len(n_pairs)) {
+      first_n_steps <- strsplit(pairs.names[i], "-")[[1]][1]
+      second_n_steps <- strsplit(pairs.names[i], "-")[[1]][2]
 
       temp_df <- data.frame(
         ecs = sapply(feature_object_list[[config_name]][[i]], summary_function),
@@ -985,8 +1100,8 @@ plot_feature_overall_stability_incremental <- function(
 
         steps_df <- data.frame(
           step = paste(
-            first.n.steps,
-            second.n.steps,
+            first_n_steps,
+            second_n_steps,
             sep = "-\n"
           ),
           index = i,
@@ -1000,8 +1115,8 @@ plot_feature_overall_stability_incremental <- function(
 
         steps_df <- rbind(steps_df, c(
           paste(
-            first.n.steps,
-            second.n.steps,
+            first_n_steps,
+            second_n_steps,
             sep = "-\n"
           ),
           i,
@@ -1010,8 +1125,8 @@ plot_feature_overall_stability_incremental <- function(
       }
     }
 
-    if (min_index == -1 || n.pairs < min_index) {
-      min_index <- n.pairs
+    if (min_index == -1 || n_pairs < min_index) {
+      min_index <- n_pairs
     }
   }
 
@@ -1054,5 +1169,6 @@ plot_feature_overall_stability_incremental <- function(
     ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
-    ggplot2::ylab("EC similiarity")
+    ggplot2::ylab("EC similiarity") +
+    ggplot2::ggtitle("Overall incremental stability")
 }

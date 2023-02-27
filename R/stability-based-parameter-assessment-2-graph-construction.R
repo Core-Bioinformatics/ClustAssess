@@ -41,6 +41,7 @@ get_nn_conn_comps_umap <- function(embedding,
     "graph_reduction_type",
     "suppl_args"
   )
+  seed <- NA
 
   # send the name of the dim reduction arguments
   nn_conn_comps_list_temp <- foreach::foreach(
@@ -195,7 +196,6 @@ get_nn_conn_comps_pca <- function(embedding,
 #' nn_conn_comps_obj <- get_nn_conn_comps(
 #'   embedding = pca_emb,
 #'   n_neigh_sequence = c(2, 5),
-#'   config_name = "example_config",
 #'   n_repetitions = 3,
 #'   # arguments that are passed to the uwot function
 #'   min_dist = 0.3,
@@ -287,7 +287,6 @@ get_nn_conn_comps <- function(embedding,
 #' nn_conn_comps_obj <- get_nn_conn_comps(
 #'   embedding = pca_emb,
 #'   n_neigh_sequence = c(2, 5),
-#'   config_name = "example_config",
 #'   n_repetitions = 3,
 #'   # arguments that are passed to the uwot function
 #'   min_dist = 0.3,
@@ -385,8 +384,6 @@ get_highest_prune_param <- function(embedding,
   )
 
   target_n_conn_comps <- length(unique(igraph::clusters(g)$membership))
-  print(target_n_conn_comps)
-
 
   possible_values <- sapply(0:n_neigh, function(i) {
     i / (2 * n_neigh - i)
@@ -405,6 +402,10 @@ get_highest_prune_param <- function(embedding,
 
     if (current_n_conn_comps > target_n_conn_comps) {
       stop_n <- middle
+
+      if (start_n == stop_n) {
+        start_n <- middle - 1
+      }
     } else {
       start_n <- middle + 1
 
@@ -413,8 +414,6 @@ get_highest_prune_param <- function(embedding,
       }
     }
   }
-
-  print(current_n_conn_comps)
 
   return(possible_values[middle])
 }
@@ -433,12 +432,10 @@ assess_nn_stability_pca <- function(embedding,
   if (graph_type != 0) {
     partitions_list[[paste("PCA", "snn", ecs_thresh, sep = "_")]] <- list()
   }
-  
+
   if (graph_type != 1) {
     partitions_list[[paste("PCA", "nn", ecs_thresh, sep = "_")]] <- list()
   }
-
-  print(paste(Sys.time(), "Start PCA nn2"))
 
   ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
   nn2_res <- RANN::nn2(
@@ -446,24 +443,16 @@ assess_nn_stability_pca <- function(embedding,
     k = max(n_neigh_sequence)
   )$nn.idx
 
-  print(paste(Sys.time(), "start PCA"))
-
   for (n_neigh in n_neigh_sequence) {
-    # print(Sys.time())
-    # print(n_neigh)
     partitions_list[[paste("PCA", "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] <- list()
 
     # build the nn and snn graphs
     neigh_matrix <- getNNmatrix(nn2_res, n_neigh, 0)
     rownames(neigh_matrix$nn) <- rownames(embedding)
     colnames(neigh_matrix$nn) <- rownames(embedding)
-    # neigh_matrix$nn <- Seurat::as.Graph(neigh_matrix$nn)
 
     rownames(neigh_matrix$snn) <- rownames(embedding)
     colnames(neigh_matrix$snn) <- rownames(embedding)
-    # neigh_matrix$snn <- Seurat::as.Graph(neigh_matrix$snn)
-
-    # print(Sys.time())
 
     shared_neigh_matrix <- SharedObject::share(neigh_matrix)
 
@@ -481,6 +470,7 @@ assess_nn_stability_pca <- function(embedding,
     }
 
     # the variables needed in the PSOCK processes
+    seed <- NA
     needed_vars <- c(
       "n_neigh",
       "graph_type",
@@ -531,7 +521,6 @@ assess_nn_stability_pca <- function(embedding,
 
       return(list(cluster_results_snn, cluster_results_nn))
     }
-    # print(Sys.time())
 
     # if a parallel backend was created, terminate the processes
     if (ncores > 1) {
@@ -540,7 +529,6 @@ assess_nn_stability_pca <- function(embedding,
 
     shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
 
-    # print("merge partitions")
     # merge the partitions that are considered similar by a given ecs threshold
     for (i in seq_along(partitions_list)) {
       partitions_list[[i]][[as.character((n_neigh))]] <- merge_partitions(
@@ -552,9 +540,6 @@ assess_nn_stability_pca <- function(embedding,
       )
     }
   }
-
-  print(paste(Sys.time(), "stop PCA"))
-  # names(partitions_list) <- paste(config_name, names(partitions_list), sep = "_")
 
   # create an object showing the number of clusters obtained for each number of
   # neighbours
@@ -568,8 +553,6 @@ assess_nn_stability_pca <- function(embedding,
     }
   }
 
-  print("calculating weighted ecc")
-
   # create an object that contains the ecc of the partitions obtained for each
   # number of neighbours
   nn_ecs_object <- lapply(partitions_list, function(config) {
@@ -581,12 +564,10 @@ assess_nn_stability_pca <- function(embedding,
         sapply(n_neigh, function(x) {
           x$freq
         }),
-        ncores = ncores
+        ncores = 1
       )
     })
   })
-
-  print(paste(Sys.time(), "stop PCA ecc"))
 
   list(
     n_neigh_k_corresp = nn_object_n_clusters,
@@ -627,8 +608,6 @@ assess_nn_stability_umap <- function(embedding,
   suppl_args[["n_threads"]] <- 1
   suppl_args[["n_sgd_threads"]] <- 1
 
-  print(suppl_args)
-
   shared_embedding <- SharedObject::share(embedding)
 
   if (ncores > 1) {
@@ -655,10 +634,8 @@ assess_nn_stability_umap <- function(embedding,
     "prune_SNN"
   )
 
+  seed <- NA
   all_vars <- ls()
-
-
-  print(paste(Sys.time(), "start UMAP"))
 
   seed_list <- foreach::foreach(
     seed = seed_sequence,
@@ -723,9 +700,6 @@ assess_nn_stability_umap <- function(embedding,
     return(seed_result)
   }
 
-  print(Sys.time())
-  print("done")
-
   # if a parallel backend was created, terminate the processes
   if (ncores > 1) {
     parallel::stopCluster(cl = my_cluster)
@@ -747,7 +721,6 @@ assess_nn_stability_umap <- function(embedding,
 
   names(partitions_list) <- paste0("UMAP_", object_names)
 
-  print("merge partitions")
   # merge the partitions that are considered similar by a given ecs threshold
   for (i in seq_along(partitions_list)) {
     for (n_neigh in as.character(n_neigh_sequence)) {
@@ -770,8 +743,6 @@ assess_nn_stability_umap <- function(embedding,
       }))
     }
   }
-
-  print("calculating weighted ecc")
 
   # create an object that contains the ecc of the partitions obtained for each
   # number of neighbours
@@ -867,8 +838,9 @@ assess_nn_stability <- function(embedding,
                                 algorithm = 1,
                                 ...) {
   # TODO vary by resolution
+  # TODO add option to use pruning
   # TODO add UMAP variant
-  # BUG check for performance 
+  # BUG check the performance
   # [ ] optimise the way the nn matrices are built
   # check parameters
   if (!is.numeric(n_neigh_sequence)) {
@@ -954,11 +926,7 @@ assess_nn_stability <- function(embedding,
     suppl_args[["n_sgd_threads"]] <- 1
   }
 
-  suppl_arg_names <- names(suppl_args)
-
   for (n_neigh in n_neigh_sequence) {
-    print(Sys.time())
-    print(n_neigh)
     partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] <- list()
 
     # build the nn and snn graphs
@@ -1059,9 +1027,8 @@ assess_nn_stability <- function(embedding,
       parallel::stopCluster(cl = my_cluster)
     }
 
-    print("merge partitions")
     # merge the partitions that are considered similar by a given ecs threshold
-    for (i in 1:length(partitions_list)) {
+    for (i in seq_along(partitions_list)) {
       partitions_list[[i]][[as.character((n_neigh))]] <- merge_partitions(
         lapply(partitions_list_temp, function(x) {
           x[[i]]
@@ -1085,8 +1052,6 @@ assess_nn_stability <- function(embedding,
       }))
     }
   }
-
-  print("calculating weighted ecc")
 
   # create an object that contains the ecc of the partitions obtained for each
   # number of neighbours

@@ -1,4 +1,5 @@
 # TODO check user interrupt
+# TODO add logging options to files - maybe verbose lvels
 #' @importFrom foreach %dopar%
 NULL
 
@@ -31,20 +32,6 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 4, ...) {
 leiden_clustering <- function(object, resolution, seed, ...) {
 }
 
-
-
-#### PCA ####
-
-
-
-######################## Graph construction ######################################
-
-
-
-############################## Clustering ########################################
-
-
-
 #### Automatic ####
 rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order") {
   if (!(rank_by %in% names(ranking_functions))) {
@@ -62,6 +49,37 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 }
 
 
+#' Assessment of Stability for Graph Clustering
+#' @description Evaluates the stability of different graph clustering methods
+#' in the clustering pipeline. The method will iterate through different values of
+#' the resolution parameter and compare, using the EC Consistency score, the
+#' partitions obtained at different seeds.
+#'
+#' @param graph_adjacency_matrix A square adjacency matrix based on which an igraph
+#' object will be built.
+#' @param resolution A sequence of resolution values.
+#' @param n_repetitions The number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user.
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the
+#' sequence will be built starting from 1 with a step of 100.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
+#' @param ncores The number of parallel R instances that will run the code.
+#' If the value is set to 1, the code will be run sequentially.
+#' @param verbose Boolean value used for displaying the progress bar.
+#' @param algorithm An index or a list of indexes indicating which community detection
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
+#' More details can be found in the Seurat's `FindClusters` function.
+#'
+#' @return A list having two fields:
+#'
+#' * all - a list that contains, for each clustering method and each resolution
+#' value, the EC consistency between the partitions obtained by changing the seed
+#' * filtered - similar to `all`, but for each configuration, we determine the
+#' number of clusters that appears the most and use only the partitions with this
+#' size
+#'
+#' @md
+#' @export
 automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            n_cores,
                                            n_repetitions,
@@ -74,16 +92,15 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            n_top_configs = 3,
                                            ranking_criterion = "median",
                                            npcs = 30,
+                                           verbose = TRUE,
                                            ecs_threshold = 1, # do we really need it?,
                                            ...) {
   # store the additional arguments used by umap in a list
   suppl_args <- list(...)
 
   feature_set_names <- names(steps)
-  config_names <- paste(names(steps), graph_reduction_embedding, sep = "_")
-  n_configs <- length(config_names)
+  n_configs <- length(feature_set_names)
   # TODO: check if the name of the feature sets are the same with the steps
-
 
   # FEATURE STABILITY
   # sort the steps in an increasing order
@@ -94,13 +111,19 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
   }
 
   feature_stability_object <- list(
-    steps_stability = list(),
-    incremental_stability = list(),
+    by_steps = list(),
+    incremental = list(),
     embedding_list = list()
   )
 
+  if (verbose) {
+    print(glue::glue("[{Sys.time()}] Assessing the stability of the dimensionality reduction"))
+  }
+
   for (set_name in feature_set_names) {
-    print(set_name)
+    if (verbose) {
+      print(set_name)
+    }
     temp_object <- assess_feature_stability(
       data_matrix = expression_matrix,
       feature_set = features_sets[[set_name]],
@@ -114,25 +137,22 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       ecs_thresh = ecs_threshold,
       ncores = n_cores,
       algorithm = 1,
+      verbose = verbose,
       ...
       # min_dist = 0.3, n_neighbors = 30, metric = "cosine"
     )
 
-    config_name <- names(temp_object$steps_stability)[1]
-    feature_stability_object$steps_stability[[config_name]] <- temp_object$steps_stability[[1]]
-    feature_stability_object$incremental_stability[[config_name]] <- temp_object$incremental_stability[[1]]
-    feature_stability_object$embedding_list[[config_name]] <- temp_object$embedding_list[[1]]
-
+    feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
+    feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
+    feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
   }
 
-  names(steps) <- config_names
-  names(features_sets) <- config_names
+  feature_configs <- list(feature_stability = feature_stability_object)
 
-  feature_configs <- list(feature_importance = feature_stability_object)
-
-  for (i in 1:length(config_names)) {
-    set_name <- config_names[i]
-    ecc_list <- lapply(feature_stability_object$steps_stability[[set_name]], function(by_step) {
+  for (i in seq_along(feature_set_names)) {
+    set_name <- feature_set_names[i]
+    # rank the sizes based on the consistency and incremental stability
+    ecc_list <- lapply(feature_stability_object$by_steps[[set_name]], function(by_step) {
       sapply(by_step, function(by_res) {
         ranking_functions[[ranking_criterion]](by_res$ecc)
       })
@@ -141,13 +161,13 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
     incremental_list <- c(
       list(sapply(
-        feature_stability_object$incremental_stability[[set_name]][[1]],
+        feature_stability_object$incremental[[set_name]][[1]],
         function(by_res) {
           ranking_functions[[ranking_criterion]](by_res)
         }
       )),
       lapply(
-        feature_stability_object$incremental_stability[[set_name]],
+        feature_stability_object$incremental[[set_name]],
         function(by_step) {
           sapply(by_step, function(by_res) {
             ranking_functions[[ranking_criterion]](by_res)
@@ -172,7 +192,12 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         verbose = FALSE
       )@cell.embeddings)
 
-      suppressWarnings(umap_emb <- do.call(RunUMAP, c(list(object = pca_emb, verbose = FALSE), suppl_args))@cell.embeddings)
+      suppressWarnings(
+        umap_emb <- do.call(
+          Seurat::RunUMAP,
+          c(list(object = pca_emb, verbose = FALSE), suppl_args)
+        )@cell.embeddings
+      )
 
       feature_configs[[set_name]][[as.character(n_steps)]] <-
         list(
@@ -180,40 +205,69 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
           umap = umap_emb,
           stable_config = list(
             feature_set = feature_set_names[i],
-            n_features = n_steps
+            n_features = n_steps,
+            n_pcs = min(npcs, n_steps %/% 2)
           )
         )
     }
+    feature_configs[[set_name]]$feature_list <- features_sets[[set_name]][seq_len(max(steps[[set_name]]))]
   }
-
+ 
   # GRAPH CONSTRUCTION: CONNECTED COMPS
-  print(paste("Assessing the stability of the connected components", Sys.time()))
+  if (verbose) {
+    print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
+    pb <- progress::progress_bar$new(
+      format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+      total = n_configs * n_top_configs,
+      show_after = 0,
+      clear = FALSE,
+      width = 80
+    )
+  }
+  
+  for (set_name in feature_set_names) {
+    n_names <- length(feature_configs[[set_name]])
+    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+      if (verbose) {
+        pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+      }
 
-  for (config_name in config_names) {
-    print(config_name)
-    for (n_steps in names(feature_configs[[config_name]])) {
-      feature_configs[[config_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
-        embedding = feature_configs[[config_name]][[n_steps]]$pca,
+      feature_configs[[set_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
+        embedding = feature_configs[[set_name]][[n_steps]]$pca,
         n_neigh_sequence = n_neigh_sequence,
         n_repetitions = n_repetitions,
         ncores = n_cores,
         seed_sequence = seed_sequence,
-        # config_name = paste(config_name, n_steps, sep = "_"),
         ...
       )
+      if (verbose) {
+        pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+      }
     }
   }
 
-  # GRAPH CONSTRUCTION: NN IMPORTANCE
-  print(paste("Assessing the stability of the graph construction parameters", Sys.time()))
+  # GRAPH CONSTRUCTION: NN STABILITY
+  if (verbose) {
+    print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
+    pb <- progress::progress_bar$new(
+      format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+      total = n_configs * n_top_configs,
+      show_after = 0,
+      clear = FALSE,
+      width = 80
+    )
+  }
 
-  for (config_name in config_names) {
-    print(config_name)
-    for (n_steps in names(feature_configs[[config_name]])) {
-      print(n_steps)
-      feature_configs[[config_name]][[n_steps]][["nn_importance"]] <- mapply(c,
+  for (set_name in feature_set_names) {
+    n_names <- length(feature_configs[[set_name]])
+    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+      if (verbose) {
+        pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+      }
+
+      feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- mapply(c,
         assess_nn_stability(
-          embedding = feature_configs[[config_name]][[n_steps]]$pca,
+          embedding = feature_configs[[set_name]][[n_steps]]$pca,
           n_neigh_sequence = n_neigh_sequence,
           n_repetitions = n_repetitions,
           graph_reduction_type = "PCA",
@@ -222,7 +276,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
           algorithm = 1,
         ),
         assess_nn_stability(
-          embedding = feature_configs[[config_name]][[n_steps]]$pca,
+          embedding = feature_configs[[set_name]][[n_steps]]$pca,
           n_neigh_sequence = n_neigh_sequence,
           n_repetitions = n_repetitions,
           graph_reduction_type = "UMAP",
@@ -233,20 +287,23 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         ),
         SIMPLIFY = FALSE
       )
+
+      if (verbose) {
+        pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+      }
     }
   }
 
-
   # choose best graph construction parameters for each config
-  for (feature_config_name in config_names) {
-    for (n_steps in names(feature_configs[[feature_config_name]])) {
+  for (set_name in feature_set_names) {
+    n_names <- length(feature_configs[[set_name]])
+    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
       best_ecc <- 0
       best_config <- NULL
       best_nn <- NULL
-      for (config_name in names(feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency)) {
-        for (n_neigh in names(feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency[[config_name]])) {
-          current_ecc <- ranking_functions[[ranking_criterion]](feature_configs[[feature_config_name]][[n_steps]]$nn_importance$n_neigh_ec_consistency[[config_name]][[n_neigh]])
-          print(current_ecc)
+      for (config_name in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency)) {
+        for (n_neigh in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]])) {
+          current_ecc <- ranking_functions[[ranking_criterion]](feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]][[n_neigh]])
           if (current_ecc > best_ecc) {
             best_ecc <- current_ecc
             best_config <- config_name
@@ -258,83 +315,45 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       split_configs <- strsplit(best_config, "_")[[1]]
       base_embedding <- tolower(split_configs[length(split_configs) - 2])
       graph_type <- split_configs[length(split_configs) - 1] # update if you decide to remove ecs thresh
-      # TODO add atuomatic prune param
-      feature_configs[[feature_config_name]][[n_steps]][["adj_matrix"]] <- FindNeighbors(
-        object = feature_configs[[feature_config_name]][[n_steps]][[base_embedding]],
+      # TODO add automatic prune param
+      highest_prune_param <- get_highest_prune_param(
+        feature_configs[[set_name]][[n_steps]][[base_embedding]],
+        best_nn
+      )
+      feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
+        object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
         k.param = best_nn,
-        verbose = F,
-        nn.method = "rann"
+        verbose = FALSE,
+        nn.method = "rann",
+        prune.SNN = highest_prune_param
       )[[graph_type]]
 
-      feature_configs[[feature_config_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
-      feature_configs[[feature_config_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
-      feature_configs[[feature_config_name]][[n_steps]]$stable_config[["n_neighbours"]] <- as.numeric(best_nn)
+      feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
+      feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
+      feature_configs[[set_name]][[n_steps]]$stable_config[["n_neighbours"]] <- as.numeric(best_nn)
+      feature_configs[[set_name]][[n_steps]]$stable_config[["prune_param"]] <- highest_prune_param
     }
   }
 
-
   # GRAPH CLUSTERING: CLUSTERING METHOD
-  print(paste("Assessing the stability of the graph clustering method", Sys.time()))
-
-  for (config_name in config_names) {
-    print(config_name)
-    for (n_steps in names(feature_configs[[config_name]])) {
-      print(n_steps)
-      feature_configs[[config_name]][[n_steps]][["clustering_importance"]] <- assess_clustering_stability(
-        graph_adjacency_matrix = feature_configs[[config_name]][[n_steps]]$adj_matrix,
+  if (verbose) {
+    print(glue::glue("[{Sys.time()}] Assessing the stability of the graph clustering method"))
+  }
+  for (set_name in feature_set_names) {
+    n_names <- length(feature_configs[[set_name]])
+    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+      if (verbose) {
+        print(paste(set_name, n_steps))
+      }
+      feature_configs[[set_name]][[n_steps]][["clustering_stability"]] <- assess_clustering_stability(
+        graph_adjacency_matrix = feature_configs[[set_name]][[n_steps]]$adj_matrix,
         resolution = resolution_sequence,
         n_repetitions = n_repetitions,
         ecs_thresh = ecs_threshold,
         ncores = n_cores,
-        algorithm = 1:3
+        algorithm = 1:3,
+        verbose = verbose
       )
-
-      # ecc_clustering_methods <- lapply(
-      #   feature_configs[[config_name]][[n_steps]]$clustering_importance$all,
-      #   function(clust_method) {
-      #     c(sapply(clust_method, c))
-      #   }
-      # )
-
-      # best_clustering_method <- rank_configs(ecc_clustering_methods, rank_by = ranking_criterion)[1]
-      # feature_configs[[config_name]][[n_steps]]$stable_config[["clustering_method"]] <- algorithm_names[best_clustering_method]
-    }
-  }
-
-  return(feature_configs)
-  # GRAPH CLUSTERING: RESOLUTION GRIDSEARCH
-  print("Assessing the stability of the number of clusters")
-  for (feature_config_name in config_names) {
-    print(feature_config_name)
-    for (n_steps in names(feature_configs[[feature_config_name]])) {
-      print(n_steps)
-      base_embedding <- feature_configs[[feature_config_name]][[n_steps]]$stable_config[["base_embedding"]]
-      graph_type <- as.numeric(feature_configs[[feature_config_name]][[n_steps]]$stable_config[["graph_type"]] == "snn")
-      n_neighbours <- as.numeric(feature_configs[[feature_config_name]][[n_steps]]$stable_config[["n_neighbours"]])
-      clustering_alg <- which(algorithm_names == feature_configs[[feature_config_name]][[n_steps]]$stable_config[["clustering_method"]])
-
-      feature_configs[[feature_config_name]][[n_steps]][["resolution_importance"]] <- get_resolution_importance(
-        embedding = feature_configs[[feature_config_name]][[n_steps]][[base_embedding]],
-        resolution = resolution_sequence,
-        n_neigh = n_neighbours,
-        n_repetitions = n_repetitions,
-        clustering_method = clustering_alg,
-        graph_type = graph_type,
-        ecs_thresh = ecs_threshold,
-        ncores = n_cores
-      )
-    }
-  }
-
-  for (feature_config_name in config_names) {
-    for (n_steps in names(feature_configs[[feature_config_name]])) {
-      temp_list <- list()
-
-      for (k in names(feature_configs[[feature_config_name]][[n_steps]]$resolution_importance$split_by_k[[1]])) {
-        temp_list[[k]] <- feature_configs[[feature_config_name]][[n_steps]]$resolution_importance$split_by_k[[1]][[k]]$partitions[[1]]$mb
-      }
-
-      feature_configs[[feature_config_name]][[n_steps]][["stable_partitions"]] <- temp_list
     }
   }
 

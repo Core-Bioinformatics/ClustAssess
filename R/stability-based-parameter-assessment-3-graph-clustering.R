@@ -165,7 +165,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                                         algorithm = 1:3,
                                         verbose = TRUE,
                                         ...) {
-  #BUG there are some performance issues, make sure the main runtime is caused by the clustering method
+  # BUG there are some performance issues, make sure the main runtime is caused by the clustering method
   # TODO add leidenbase implementation for the algorithm = 4
   # check the parameters
   if (!is.numeric(resolution)) {
@@ -223,6 +223,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     i <- i + 1
   }
 
+
   graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
 
   if (ncores > 1) {
@@ -252,9 +253,22 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
 
   for (alg_index in algorithm) {
     alg_name <- algorithm_names[alg_index]
+
+    if (verbose) {
+      pb <- progress::progress_bar$new(
+        format = glue::glue("{alg_name} - res :res [:bar] eta: :eta  total elapsed: :elapsed"),
+        total = length(resolution),
+        clear = FALSE,
+        width = 80
+      )
+      pb$tick(0)
+    }
+
     result_object[[alg_name]] <- list()
     for (res in resolution) {
-      print(paste(Sys.time(), alg_index, res))
+      if (verbose) {
+        pb$tick(0, tokens = list(res = res))
+      }
 
       different_partitions_temp <- foreach::foreach(
         seed = seed_sequence,
@@ -294,6 +308,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
             seed = seed_sequence[i]
           )
         }
+
       }
 
       different_partitions <- different_partitions[sort(names(different_partitions))]
@@ -340,6 +355,10 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
           ncores = 1
         )
       )
+
+      if (verbose) {
+        pb$tick(tokens = list(res = res))
+      }
     }
   }
 
@@ -699,7 +718,7 @@ plot_k_resolution_corresp <- function(clust_object,
   for (i in seq_along(clust_object)) {
     res_object <- clust_object[[i]]
 
-    n.runs <- sum(sapply(res_object[[names(res_object)[1]]]$clusters, function(x) {
+    n_runs <- sum(sapply(res_object[[names(res_object)[1]]]$clusters, function(x) {
       sum(sapply(x$partitions, function(y) {
         y$freq
       }))
@@ -727,7 +746,7 @@ plot_k_resolution_corresp <- function(clust_object,
 
     temp_appereances[["configuration"]] <- rep(res_object_names[i], nrow(temp_appereances))
     temp_appereances$freq_partition <- temp_appereances$freq_partition / temp_appereances$freq_k
-    temp_appereances$freq_k <- temp_appereances$freq_k / n.runs
+    temp_appereances$freq_k <- temp_appereances$freq_k / n_runs
     temp_appereances$ecc <- unlist(lapply(res_object, function(x) {
       sapply(x$clusters, function(k) {
         mean(k$ecc)
@@ -923,12 +942,13 @@ plot_k_n_partitions <- function(clust_object,
     ggplot2::geom_hline(
       yintercept = seq(from = 0, to = max_n_part, by = y_step),
       linetype = "dashed",
-      color = "#9b3535"
+      color = "#C3C3d3"
+
     ) +
     ggplot2::geom_vline(
       xintercept = unique(unique_parts$n.clusters),
       linetype = "dashed",
-      color = "#d3aeae"
+      color = "#c3c3c3d3"
     ) +
     ggplot2::geom_point(position = ggplot2::position_dodge(dodge_width)) +
     ggplot2::theme_classic() +
