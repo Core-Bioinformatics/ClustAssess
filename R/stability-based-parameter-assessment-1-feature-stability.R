@@ -358,7 +358,9 @@ assess_feature_stability <- function(data_matrix,
 
     names(steps_ecc_list[[object_name]][[step]]) <- as.character(resolution)
 
-    pb$tick(tokens = list(featuresize = step))
+    if (verbose) {
+      pb$tick(tokens = list(featuresize = step))
+    }
   }
 
   steps <- as.character(steps)
@@ -437,14 +439,16 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
                                                           return_df = FALSE) {
   resolution <- as.character(resolution)
   min_index <- -1 # number of steps that will be displayed on the plot
-  feature_object_list <- feature_object_list$steps_stability
+  feature_object_list <- feature_object_list$by_steps
   final_melt_df <- NULL
 
   # create a dataframe based on the object returned by `get_feature_stability`
   for (config_name in names(feature_object_list)) {
-    melt_object <- reshape2::melt(lapply(feature_object_list[[config_name]], function(x) {
-      x[[resolution]]$ecc
-    }))
+    list_ecc <- lapply(feature_object_list[[config_name]], function(x) {
+      as.numeric(x[[resolution]]$ecc) # NOTE as.numeric is necessary for the shiny app, which creates arrays, not numeric vectors
+    })
+
+    melt_object <- reshape2::melt(list_ecc)
     melt_object$L1 <- factor(
       melt_object$L1,
       levels = stringr::str_sort(unique(melt_object$L1), numeric = TRUE)
@@ -569,7 +573,7 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
                                                    dodge_width = 0.7,
                                                    return_df = FALSE) {
   min_index <- -1 # number of steps that will be displayed on the plot
-  feature_object_list <- feature_object_list$steps_stability
+  feature_object_list <- feature_object_list$by_steps
   final_melt_df <- NULL
 
   # create a dataframe based on the object returned by `get_feature_stability`
@@ -712,7 +716,7 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
   }
 
   first_temp <- TRUE
-  feature_object_list <- feature_object_list$steps_stability
+  feature_object_list <- feature_object_list$by_steps
 
   for (config_name in names(feature_object_list)) {
     for (steps in names(feature_object_list[[config_name]])) {
@@ -825,7 +829,7 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
                                              point_size = 0.3) {
   resolution <- as.character(resolution)
   first_temp <- TRUE
-  feature_object_list <- feature_object_list$steps_stability
+  feature_object_list <- feature_object_list$by_steps
 
   for (config_name in names(feature_object_list)) {
     for (steps in names(feature_object_list[[config_name]])) {
@@ -926,22 +930,30 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
   }
 
   min_index <- -1
-  feature_object_list <- feature_object_list$incremental_stability
+  feature_object_list <- feature_object_list$incremental
   first_df <- TRUE
   ecs_df <- NULL
 
   for (config_name in names(feature_object_list)) {
     n_pairs <- length(feature_object_list[[config_name]])
     pairs.names <- names(feature_object_list[[config_name]])
+    first_from_pair <- sapply(pairs.names, function(x) {
+      strsplit(x, "-")[[1]][1]
+    })
+    second_from_pair <- sapply(pairs.names, function(x) {
+      strsplit(x, "-")[[1]][2]
+    })
 
     # treat the case with only one step
-    for (i in seq_len(n_pairs)) {
-      first_n_steps <- strsplit(pairs.names[i], "-")[[1]][1]
-      second_n_steps <- strsplit(pairs.names[i], "-")[[1]][2]
+    index <- 0
+    for (i in stringr::str_order(first_from_pair, numeric = TRUE)) {
+      index <- index + 1
+      first_n_steps <- first_from_pair[i]
+      second_n_steps <- second_from_pair[i]
 
       temp_df <- data.frame(
         ecs = feature_object_list[[config_name]][[i]][[resolution]],
-        index = i,
+        index = index,
         feature_set = config_name
       )
 
@@ -954,7 +966,7 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
             second_n_steps,
             sep = "-\n"
           ),
-          index = i,
+          index = index,
           feature_set = config_name,
           stringsAsFactors = FALSE
         )
@@ -969,7 +981,7 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
             second_n_steps,
             sep = "-\n"
           ),
-          i,
+          index,
           config_name
         ))
       }
@@ -1076,22 +1088,30 @@ plot_feature_overall_stability_incremental <- function(feature_object_list,
   }
 
   min_index <- -1
-  feature_object_list <- feature_object_list$incremental_stability
+  feature_object_list <- feature_object_list$incremental
   first_df <- TRUE
   ecs_df <- NULL
 
   for (config_name in names(feature_object_list)) {
     n_pairs <- length(feature_object_list[[config_name]])
     pairs.names <- names(feature_object_list[[config_name]])
+    first_from_pair <- sapply(pairs.names, function(x) {
+      strsplit(x, "-")[[1]][1]
+    })
+    second_from_pair <- sapply(pairs.names, function(x) {
+      strsplit(x, "-")[[1]][2]
+    })
 
     # treat the case with only one step
-    for (i in seq_len(n_pairs)) {
-      first_n_steps <- strsplit(pairs.names[i], "-")[[1]][1]
-      second_n_steps <- strsplit(pairs.names[i], "-")[[1]][2]
+    index <- 0
+    for (i in stringr::str_order(first_from_pair, numeric = TRUE)) {
+      index <- index + 1
+      first_n_steps <- first_from_pair[i]
+      second_n_steps <- second_from_pair[i]
 
       temp_df <- data.frame(
         ecs = sapply(feature_object_list[[config_name]][[i]], summary_function),
-        index = i,
+        index = index,
         feature_set = config_name
       )
 
@@ -1104,7 +1124,7 @@ plot_feature_overall_stability_incremental <- function(feature_object_list,
             second_n_steps,
             sep = "-\n"
           ),
-          index = i,
+          index = index,
           feature_set = config_name,
           stringsAsFactors = FALSE
         )
@@ -1119,7 +1139,7 @@ plot_feature_overall_stability_incremental <- function(feature_object_list,
             second_n_steps,
             sep = "-\n"
           ),
-          i,
+          index,
           config_name
         ))
       }
