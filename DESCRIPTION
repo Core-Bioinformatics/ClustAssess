@@ -25,6 +25,7 @@ Imports:
     Matrix,
     igraph,
     magrittr,
+    matrixStats,
     Rcpp,
     RcppEigen,
     methods,
@@ -34,6 +35,8 @@ Imports:
     progress,
     reshape2,
     RANN,
+    rhdf5,
+    SeuratObject,
     SharedObject,
     stringr,
     gtable,
@@ -41,7 +44,7 @@ Imports:
     shiny,
     shinyWidgets,
     uwot
-RoxygenNote: 7.2.2
+RoxygenNote: 7.2.3
 LinkingTo: 
     Rcpp,
     RcppEigen
