@@ -2,18 +2,11 @@
 ui_dimensionality_stability <- function(id) {
   ns <- shiny::NS(id)
   plot_settings <- shinyWidgets::dropdownButton(
-    shiny::selectInput(
-      inputId = ns("feature_types"),
-      label = "Feature names",
-      choices = feature_types,
-      selected = feature_types,
-      multiple = TRUE
-    ),
+    shiny::uiOutput(ns("resolution_slider")),
     shinyWidgets::sliderTextInput(
       inputId = ns("resolution"),
       label = "Resolution",
-      choices = feature_used_resolution_vals,
-      selected = feature_used_resolution_vals[1]
+      choices = c("0.8")
     ),
     shiny::sliderInput(
       inputId = ns("boxplot_width"),
@@ -37,7 +30,6 @@ ui_dimensionality_stability <- function(id) {
   )
 
   shiny::tagList(
-
     shiny::uiOutput(ns("stepchoosing")),
     shiny::splitLayout(
       cellWidths = c("40px", "90%"),
@@ -50,17 +42,17 @@ ui_dimensionality_stability <- function(id) {
     ),
     plot_settings,
     shiny::splitLayout(
-      cellWidths = c("55%", "40%"),
+      cellWidths = c("52%", "45%"),
       shiny::plotOutput(ns("boxplot_ecc"),
         hover = shiny::hoverOpts(id = ns("ecc_hover"), delayType = "throttle"),
         click = ns("ecc_click"),
-        height = "500px",
+        height = "500px"
       ),
-      shiny::fluidRow(
+      shiny::div(
+        style = "width: 90%",
         shiny::textOutput(ns("boxplot_ecc_info")),
         shiny::tableOutput(ns("table_ecc_info")),
-        shiny::plotOutput(ns("umap_ecc"), height = "350px"),
-        width = "40%"
+        shiny::plotOutput(ns("umap_ecc"), height = "350px", width = "90%")
       )
     ),
     shiny::splitLayout(
@@ -105,51 +97,46 @@ ui_dimensionality_stability <- function(id) {
   )
 }
 
-ui_dimensionality_distribution_plots <- function(id) {
+ui_dimensionality_distribution_plots <- function(id, draw_line) {
   ns <- shiny::NS(id)
+  style <- ifelse(draw_line, "border-right:5px solid", "")
 
-  shiny::tagList(
-    shiny::selectInput(ns("feature_type"), "Feature names", feature_types),
-    shiny::selectInput(ns("feature_steps"), "Feature set size", NULL),
+  shiny::wellPanel(
+    style = style,
+    shiny::uiOutput(ns("test_output")),
+    shiny::selectizeInput(ns("feature_type"), "Feature names", NULL),
+    shiny::selectizeInput(ns("feature_steps"), "Feature set size", NULL),
     shiny::hr(),
-    shiny::fluidRow(
-      shiny::column(
-        6,
-        shiny::selectInput(
-          inputId = ns("gene_expr"),
-          label = "Gene name(s)",
-          choices = rownames(expression_matrix)[1:3000],
-          selected = rownames(expression_matrix)[1],
-          multiple = TRUE
-        )
+    shiny::verticalLayout(
+      shiny::selectizeInput(
+        inputId = ns("gene_expr"),
+        choices = NULL,
+        label = "Gene name(s)",
+        width = "95%",
+        multiple = TRUE
       ),
-      shiny::column(
-        6,
-        shiny::conditionalPanel(
-          condition = "input.gene_expr.length > 1",
-          shiny::sliderInput(
-            inputId = ns("expr_threshold"),
-            label = "Gene expression threshold",
-            min = 0, max = 10, value = 0.1
-          ),
-          ns = ns
-        )
+      shiny::sliderInput(
+        inputId = ns("expr_threshold"),
+        label = "Gene expression threshold",
+        min = 0, max = 10, value = 0.1,
+        width = "95%"
       )
     ),
     shiny::actionButton(ns("download_gene_action"), "Download", icon = shiny::icon("download")),
-    shiny::plotOutput(ns("umap_gene")),
-    shiny::selectInput(
+    shiny::uiOutput(ns("umap_gene_generator")),
+    # shiny::plotOutput(ns("umap_gene"), height = "1000px"),
+    shiny::selectizeInput(
       inputId = ns("metadata"),
       label = "Metadata",
-      choices = colnames(metadata),
-      selected = colnames(metadata)[1]
+      choices = NULL
     ),
     shiny::actionButton(ns("download_metadata_action"), "Download", icon = shiny::icon("download")),
-    shiny::plotOutput(ns("umap_metadata"))
+    shiny::uiOutput(ns("umap_metadata_generator"))
+    # shiny::plotOutput(ns("umap_metadata"), height = "auto")
   )
 }
 
-ui_dimensionality_recommendation <- function(id) {
+ui_dimensionality_choice <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::fluidRow(
@@ -162,21 +149,9 @@ ui_dimensionality_recommendation <- function(id) {
       ),
       shiny::h2("Fixing the feature configuration"),
     ),
-    shiny::radioButtons(
-      ns("radio_feature_type"),
-      label = "Choose the feature type for the downstream analysis:",
-      choices = feature_types,
-      selected = feature_types[1],
-      width = "80%",
-    ),
-    shiny::radioButtons(
-      inputId = ns("radio_feature_size"),
-      label = "Choose the size of the feature set for the downstream analysis:",
-      choices = names(stab_obj[[feature_types[1]]]),
-      selected = NULL,
-      width = "80%"
-    ),
-    shiny::uiOutput(ns("recommendation")),
+    shiny::uiOutput(ns("radio_ft")),
+    shiny::uiOutput(ns("radio_fs")),
+    shiny::uiOutput(ns("choice")),
     shiny::actionButton(ns("fix_feature_button"),
       "Fix the configuration!",
       style = "font-size:20px;",
@@ -186,7 +161,11 @@ ui_dimensionality_recommendation <- function(id) {
   )
 }
 
-
+#' Dimensionality reduction - ui side
+#'
+#' @description to be completed
+#'
+#' @export
 ui_dimensionality_reduction <- function(id) {
   ns <- shiny::NS(id)
 
@@ -201,6 +180,7 @@ ui_dimensionality_reduction <- function(id) {
       ),
       shiny::h2("Assessing the stability of the dimensionality reduction"),
     ),
+    shiny::uiOutput(ns("test")),
     ui_dimensionality_stability(ns("stability")),
     shiny::splitLayout(
       cellWidths = c("40px", "90%"),
@@ -211,19 +191,12 @@ ui_dimensionality_reduction <- function(id) {
       ),
       shiny::h2("Pairwise comparison of gene and metadata distribution"),
     ),
-    shiny::fluidRow(
-      shiny::column(
-        6,
-        ui_dimensionality_distribution_plots(ns("distribution_left")),
-        style = "margin-bottom:30px;border-right:5px solid;padding:10px;"
-      ),
-      shiny::column(
-        6,
-        ui_dimensionality_distribution_plots(ns("distribution_right")),
-        style = "margin-bottom:30px;padding:10px;"
-      )
+    shiny::splitLayout(
+      cellWidths = c("48%", "48%"),
+      ui_dimensionality_distribution_plots(ns("distribution_left"), TRUE),
+      ui_dimensionality_distribution_plots(ns("distribution_right"), FALSE),
     ),
-    ui_dimensionality_recommendation(ns("recommend")),
+    ui_dimensionality_choice(ns("feature_choice")),
     style = "margin-bottom:30px;"
   )
 }
@@ -231,23 +204,28 @@ ui_dimensionality_reduction <- function(id) {
 
 #### SERVER ####
 
-server_dimensionality_stability <- function(id, panel_id) {
+server_dimensionality_stability <- function(id) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      print(shiny::outputOptions(output))
-      selected_configs <- shiny::reactive(input$feature_types)
+      boxplot_ecc_df <- shiny::reactive(
+        plot_feature_per_resolution_stability_boxplot(
+          feature_object_list = pkg_env$stab_obj,
+          resolution = input$resolution,
+          return_df = TRUE
+        )
+      )
 
-      ecc_mouse_hover <- shiny::reactiveVal(c(NA, NA))
-      shiny::observeEvent(input$ecc_hover, {
+      # ecc_mouse_hover <- shiny::reactiveVal(c(NA, NA))
+      ecc_mouse_hover <- shiny::reactive({
         if (is.null(input$ecc_hover)) {
-          return()
+          return(c(NA, NA))
         }
         x <- input$ecc_hover$x
         # y <- input$ecc_hover$y
         min_step <- min(as.numeric(boxplot_ecc_df()$step_index))
         max_step <- max(as.numeric(boxplot_ecc_df()$step_index))
-        nconfigs <- length(selected_configs())
+        nconfigs <- length(pkg_env$feature_ordering$original)
         chosen_step <- NULL
         chosen_config <- NULL
 
@@ -273,25 +251,17 @@ server_dimensionality_stability <- function(id, panel_id) {
           chosen_config <- nconfigs
         }
 
-        ecc_mouse_hover(c(chosen_step, chosen_config))
-      })
+        return(c(chosen_step, chosen_config))
+      }) %>% shiny::bindEvent(input$ecc_hover)
 
-      # ecc_mouse_click <- shiny::reactiveVal(c(NA, NA))
-
-      ecc_mouse_click <- shiny::reactive({
-        if (is.null(input$ecc_click)) {
-          return(c(NA, NA))
-        }
-        ecc_mouse_hover()
-      })
 
       output$boxplot_ecc_info <- shiny::renderText({
         if (is.na(ecc_mouse_hover()[1])) {
           return("")
         }
 
-        feature_type <- names(current_feature_obj()$steps_stability)[ecc_mouse_hover()[2]]
-        nfeatures <- names(current_feature_obj()$steps_stability[[ecc_mouse_hover()[2]]])[ecc_mouse_hover()[1]]
+        feature_type <- pkg_env$feature_types[ecc_mouse_hover()[2]]
+        nfeatures <- pkg_env$feature_ordering$original[[feature_type]][ecc_mouse_hover()[1]]
         glue::glue("The ECC summary for {feature_type} - {nfeatures} and resolution {input$resolution}.")
         # Click if you want to visualise the UMAP distribution.")
       })
@@ -300,7 +270,7 @@ server_dimensionality_stability <- function(id, panel_id) {
         if (is.na(ecc_mouse_hover()[1])) {
           return()
         }
-        summary_ecc <- fivenum(current_feature_obj()$steps_stability[[ecc_mouse_hover()[2]]][[ecc_mouse_hover()[1]]][[input$resolution]]$ecc)
+        summary_ecc <- fivenum(pkg_env$stab_obj$by_steps[[ecc_mouse_hover()[2]]][[ecc_mouse_hover()[1]]][[input$resolution]]$ecc)
         data.frame(
           min = summary_ecc[1],
           Q1 = summary_ecc[2],
@@ -310,145 +280,51 @@ server_dimensionality_stability <- function(id, panel_id) {
         )
       })
 
-      # shiny::observe({
-        output$stepchoosing <- shiny::renderUI({
-          print("apelat pentru")
-          print(input$feature_types)
-          ns <- session$ns
-          i <- 1
-          ret_list <- list()
-          for (conf in input$feature_types) {
-            ret_list[[i]] <- shiny::selectInput(ns(paste0("nsteps_", i)),
-              paste("Nsteps for", conf),
-              choices = names(stab_obj$feature_importance$steps_stability[[conf]]),
-              selected = names(stab_obj$feature_importance$steps_stability[[conf]]),
-              multiple = TRUE
-            )
-            i <- i + 1
-          }
-          ret_list
+      shiny::observe({
+        output$boxplot_ecc <- shiny::renderPlot({
+          plot_feature_per_resolution_stability_boxplot(
+            feature_object_list = pkg_env$stab_obj,
+            resolution = input$resolution,
+            text_size = input$text_size,
+            boxplot_width = input$boxplot_width,
+            dodge_width = input$dodge_width
+          ) + ggplot2::theme(legend.position = "bottom")
         })
-      # })# %>% shiny::bindEvent(input$feature_types)
 
-      current_feature_obj <- shiny::reactive({
-        if (is.null(selected_configs())[1]) {
-          return(NULL)
-        }
-
-        for (i in seq_along(selected_configs())) {
-          if (is.null(input[[glue::glue("nsteps_{i}")]])[1]) {
-            return(NULL)
-          }
-        }
-
-        steps_stability <- lapply(seq_along(selected_configs()), function(i) {
-          steps_names <- names(stab_obj$feature_importance$steps_stability[[i]])
-          chosen_steps <- steps_names %in% input[[paste0("nsteps_", i)]]
-          chosen_steps <- steps_names[chosen_steps]
-          stab_obj$feature_importance$steps_stability[[i]][chosen_steps]
+        output$boxplot_incr <- shiny::renderPlot({
+          plot_feature_per_resolution_stability_incremental(
+            feature_object_list = pkg_env$stab_obj,
+            resolution = input$resolution,
+            text_size = input$text_size,
+            boxplot_width = input$boxplot_width,
+            dodge_width = input$dodge_width
+          )
         })
-        names(steps_stability) <- selected_configs()
+      }) %>% shiny::bindEvent(input$resolution)
 
-        incremental_stability <- lapply(seq_along(selected_configs()), function(i) {
-          kept_steps <- c()
-          chosen_steps <- input[[paste0("nsteps_", i)]]
 
-          if (length(chosen_steps) == 0) {
-            return(list())
-          }
+      shiny::observe({
+        hover_coords <- ecc_mouse_hover()
 
-          for (j in seq_len(length(chosen_steps) - 1)) {
-            checked_steps <- paste(chosen_steps[j], chosen_steps[j + 1], sep = "-")
-            if (checked_steps %in% names(stab_obj$feature_importance$incremental_stability[[i]])) {
-              kept_steps <- c(kept_steps, checked_steps)
-            }
-          }
+        output$umap_ecc <- shiny::renderPlot({
+          # if (is.na(hover_coords[1])) {
+          #   return(empty_ggplot())
+          # }
 
-          stab_obj$feature_importance$incremental_stability[[i]][kept_steps]
+          config_name <- pkg_env$feature_types[hover_coords[2]]
+          step_index <- pkg_env$feature_ordering$original[[config_name]][hover_coords[1]]
+          ecc <- pkg_env$stab_obj$by_steps[[config_name]][[step_index]][[input$resolution]]$ecc
+
+          color_ggplot(pkg_env$stab_obj$embedding_list[[config_name]][[step_index]], ecc) +
+            # ggplot2::guides(color = ggplot2::guide_legend(title = "ecc")) +
+            ggplot2::scale_color_viridis_c(name = "ECC") +
+            ggplot2::ggtitle(sprintf("ECC distribution\n%s - %s\nResolution %s", config_name, step_index, input$resolution))
         })
-        names(incremental_stability) <- selected_configs()
-
-        list(
-          steps_stability = steps_stability,
-          incremental_stability = incremental_stability
-        )
-      })
-
-      boxplot_ecc_df <- shiny::reactive({
-        plot_feature_per_resolution_stability_boxplot(current_feature_obj(),
-          resolution = input$resolution,
-          return_df = TRUE
-        )
-      })
-
-      output$boxplot_ecc <- shiny::renderPlot({
-        if (length(selected_configs()) == 0) {
-          return(empty_ggplot())
-        }
-
-        if (is.null(current_feature_obj())) {
-          return(empty_ggplot())
-        }
-
-        plot_feature_per_resolution_stability_boxplot(current_feature_obj(),
-          resolution = input$resolution,
-          text_size = input$text_size,
-          boxplot_width = input$boxplot_width,
-          dodge_width = input$dodge_width
-        ) + ggplot2::theme(legend.position = "bottom")
-      })
-
-      output$boxplot_incr <- shiny::renderPlot({
-        if (length(selected_configs()) == 0) {
-          return(empty_ggplot())
-        }
-
-        if (is.null(current_feature_obj())) {
-          return(empty_ggplot())
-        }
-
-        for (conf in selected_configs()) {
-          if (length(names(current_feature_obj()$incremental_stability[[conf]])) == 0) {
-            return(empty_ggplot())
-          }
-        }
-        plot_feature_per_resolution_stability_incremental(current_feature_obj(),
-          resolution = input$resolution,
-          text_size = input$text_size,
-          boxplot_width = input$boxplot_width,
-          dodge_width = input$dodge_width
-        )
-      })
-
-      output$umap_ecc <- shiny::renderPlot({
-        if (is.na(ecc_mouse_click()[1])) {
-          return(empty_ggplot())
-        }
-
-        if (is.null(current_feature_obj())) {
-          return(empty_ggplot())
-        }
-
-        config_name <- selected_configs()[ecc_mouse_click()[2]]
-        step_index <- names(current_feature_obj()$steps_stability[[config_name]])[ecc_mouse_click()[1]]
-        ecc <- current_feature_obj()$steps_stability[[config_name]][[step_index]][[input$resolution]]$ecc
-
-        color_ggplot(stab_obj[[1]]$embedding_list[[config_name]][[step_index]], ecc) +
-          # ggplot2::guides(color = ggplot2::guide_legend(title = "ecc")) +
-          ggplot2::scale_color_viridis_c(name = "ECC") +
-          ggplot2::ggtitle(glue::glue("ECC distribution {config_name} - {step_index} for resolution {input$resolution}"))
-      })
+      }) %>% shiny::bindEvent(input$ecc_click)
 
       output$overall_boxplot_ecc <- shiny::renderPlot({
-        if (length(selected_configs()) == 0) {
-          return(empty_ggplot())
-        }
-
-        if (is.null(current_feature_obj())) {
-          return(empty_ggplot())
-        }
-
-        plot_feature_overall_stability_boxplot(current_feature_obj(),
+        plot_feature_overall_stability_boxplot(
+          feature_object_list = pkg_env$stab_obj,
           text_size = input$text_size,
           boxplot_width = input$boxplot_width,
           dodge_width = input$dodge_width
@@ -456,15 +332,8 @@ server_dimensionality_stability <- function(id, panel_id) {
       })
 
       output$overall_boxplot_incremental <- shiny::renderPlot({
-        if (length(selected_configs()) == 0) {
-          return(empty_ggplot())
-        }
-
-        if (is.null(current_feature_obj())) {
-          return(empty_ggplot())
-        }
-
-        plot_feature_overall_stability_incremental(current_feature_obj(),
+        plot_feature_overall_stability_incremental(
+          feature_object_list = pkg_env$stab_obj,
           text_size = input$text_size,
           boxplot_width = input$boxplot_width,
           dodge_width = input$dodge_width
@@ -484,140 +353,297 @@ server_dimensionality_distribution <- function(id) {
     id,
     function(input, output, session) {
       shiny::observeEvent(input$feature_type, {
-        shiny::updateSelectInput(session,
+        shiny::updateSelectizeInput(session,
           inputId = "feature_steps",
-          choices = names(stab_obj[[1]]$steps_stability[[input$feature_type]])
+          choices = pkg_env$feature_ordering$stable[[input$feature_type]],
+          server = FALSE
         )
       })
 
-      shiny::observeEvent(input$gene_expr, {
+      shiny::observe({
+        height <- floor(input$dimension * pkg_env$height_ratio)
+        ns <- session$ns
+        output$umap_gene_generator <- shiny::renderUI(
+          shiny::plotOutput(ns("umap_gene"), height = paste0(height, "px"))
+        )
+
+        output$umap_metadata_generator <- shiny::renderUI(
+          shiny::plotOutput(ns("umap_metadata"), height = paste0(height, "px"))
+        )
+      }) %>% shiny::bindEvent(input$dimension)
+
+      expr_matrix <- shiny::reactive({
+        index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+        index_interest <- index_interest[!is.na(index_interest)]
+
+        index_others <- pkg_env$genes_others[input$gene_expr]
+        index_others <- index_others[!is.na(index_others)]
+
+        rbind(
+          rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+          rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+        )
+      }) %>% shiny::bindEvent(input$gene_expr)
+
+      max_level_expr <- shiny::reactive(max(expr_matrix()))
+
+      shiny::observe({
         shiny::updateSliderInput(session,
           inputId = "expr_threshold",
-          max = round(max(expression_matrix[input$gene_expr, ]), 3),
-          step = round(max(expression_matrix[input$gene_expr, ]) / 10, 3)
+          max = round(max_level_expr(), 3),
+          step = round(max_level_expr() / 10, 3)
         )
-      })
+      }) %>% shiny::bindEvent(input$gene_expr)
 
       umap_gene_plot <- shiny::reactive({
         if (is.null(input$feature_type) || is.null(input$feature_steps)) {
-          return(empty_ggplot())
+          Sys.sleep(0.5) # wait a little
         }
 
-        embedding <- stab_obj$feature_importance$embedding_list[[input$feature_type]][[input$feature_steps]]
+        embedding <- pkg_env$stab_obj$embedding_list[[input$feature_type]][[input$feature_steps]]
 
         if (length(input$gene_expr) == 0) {
           return(empty_ggplot())
         }
 
-        if (is.null(embedding)) {
-          return(empty_ggplot())
-        }
+        # if (is.null(embedding)) {
+        #   return(empty_ggplot())
+        # }
 
         if (length(input$gene_expr) == 1) {
-          expr_val <- expression_matrix[input$gene_expr, ]
-
-          return(expression_ggplot(embedding, expr_val))
+          return(expression_ggplot(embedding, expr_matrix(), input$expr_threshold) + ggplot2::theme(aspect.ratio = 1))
         }
 
-        voting_scheme_ggplot(embedding, input$gene_expr, input$expr_threshold)
+        voting_scheme_ggplot(
+          embedding,
+          matrixStats::colSums2(expr_matrix() >= input$expr_threshold),
+          nrow(expr_matrix())
+        ) + ggplot2::theme(aspect.ratio = 1)
       })
 
       umap_metadata_plot <- shiny::reactive({
         if (is.null(input$feature_type) || is.null(input$feature_steps)) {
-          return(empty_ggplot())
+          Sys.sleep(0.5) # wait a little
         }
 
-        embedding <- stab_obj$feature_importance$embedding_list[[input$feature_type]][[input$feature_steps]]
+        embedding <- pkg_env$stab_obj$embedding_list[[input$feature_type]][[input$feature_steps]]
 
-        if (is.null(embedding)) {
-          return(empty_ggplot())
-        }
+        # if (is.null(embedding)) {
+        #   return(empty_ggplot())
+        # }
 
-        metadata_ggplot(embedding, input$metadata)
+        metadata_ggplot(embedding, input$metadata) + ggplot2::theme(aspect.ratio = 1)
       })
 
-      output$umap_gene <- shiny::renderPlot({
-        umap_gene_plot()
-      })
-      output$umap_metadata <- shiny::renderPlot(umap_metadata_plot())
+      output$umap_gene <- shiny::renderCachedPlot(
+        {
+          umap_gene_plot()
+        },
+        cacheKeyExpr = {
+          list(input$feature_type, input$feature_steps, input$gene_expr, input$expr_threshold)
+        },
+        sizePolicy = shiny::sizeGrowthRatio(
+          height = 500, width = 500, growthRate = 1.2
+        )
+      )
+
+      output$umap_metadata <- shiny::renderCachedPlot(
+        {
+          umap_metadata_plot()
+        },
+        cacheKeyExpr = {
+          list(input$feature_type, input$feature_steps, input$metadata)
+        },
+        sizePolicy = shiny::sizeGrowthRatio(
+          height = 500, width = 500, growthRate = 1.2
+        )
+      )
+
 
       shiny::observe({
-        download_modal(
+        download_plot_modal(
           session,
+          output,
           paste0(paste("gene_plot", input$feature_type, input$feature_steps, paste(input$gene_expr, collapse = "_"), sep = "_"), ".pdf"),
           "download_gene"
         )
       }) %>% shiny::bindEvent(input$download_gene_action)
 
       shiny::observe({
-        download_modal(
+        if (input$feature_type == "" || is.null(input$feature_steps)) {
+          Sys.sleep(0.5) # wait a little
+        }
+
+        if (input$feature_steps == "" || is.null(input$feature_steps)) {
+          Sys.sleep(0.5)
+        }
+
+        download_plot_modal(
           session,
+          output,
           paste0(paste("metadata_plot", input$feature_type, input$feature_steps, input$metadata, sep = "_"), ".pdf"),
           "download_metadata"
         )
+
+
+
+        print("output creat")
       }) %>% shiny::bindEvent(input$download_metadata_action)
 
       shiny::observe(
-        output$download_gene <- download_handler(
-          session,
-          input$filename,
-          umap_gene_plot(),
-          input$width,
-          input$height
-        )
-      ) %>% shiny::bindEvent(input$filename)
+        {
+          output$download_gene <- download_plot_handler(
+            session,
+            input$filename,
+            umap_gene_plot(),
+            input$width,
+            input$height
+          )
 
-      shiny::observe(
-        output$download_metadata <- download_handler(
-          session,
-          input$filename,
-          umap_metadata_plot(),
-          input$width,
-          input$height
-        )
+          output$download_metadata <- download_plot_handler(
+            session,
+            input$filename,
+            umap_metadata_plot(),
+            input$width,
+            input$height
+          )
+        },
+        priority = 10
       ) %>% shiny::bindEvent(input$filename)
     }
   )
 }
 
-server_dimensionality_recommendation <- function(id) {
+server_dimensionality_choice <- function(id, parent_session) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+      output$radio_ft <- shiny::renderUI({
+        ns <- session$ns
+        shiny::radioButtons(
+          ns("radio_feature_type"),
+          label = "Choose the feature type for the downstream analysis:",
+          choices = names(pkg_env$feature_ordering$original),
+          selected = names(pkg_env$feature_ordering$original)[1],
+          width = "100%",
+        )
+      })
+
+      output$radio_fs <- shiny::renderUI({
+        ns <- session$ns
+        shiny::radioButtons(
+          ns("radio_feature_size"),
+          label = "Choose the feature type for the downstream analysis:",
+          choices = pkg_env$feature_ordering$stable[[1]],
+          selected = pkg_env$feature_ordering$stable[[1]][1],
+          width = "100%",
+        )
+      })
+
       shiny::observeEvent(input$radio_feature_type, {
+        ftype <- input$radio_feature_type
         shiny::updateRadioButtons(
           session,
-          label = glue::glue("Choose the size of the feature set {input$radio_feature_type} for the downstream analysis: (We recommend {names(stab_obj[[input$radio_feature_type]])[1]})"),
+          label = glue::glue("Choose the size of the feature set {ftype} for the downstream analysis: (We recommend {pkg_env$feature_ordering$stable[[ftype]][1]})"),
           inputId = "radio_feature_size",
-          choices = names(stab_obj[[input$radio_feature_type]]),
-          selected = names(stab_obj[[input$radio_feature_type]])[1]
+          choices = pkg_env$feature_ordering$stable[[ftype]],
+          selected = pkg_env$feature_ordering$stable[[ftype]][1]
         )
       })
 
       shiny::observe(dr_choice_info(session)) %>% shiny::bindEvent(input$info_choice)
 
-      v <- shiny::reactive(list(
+      user_choice <- shiny::reactive(list(
         chosen_feature_type = input$radio_feature_type,
         chosen_set_size = input$radio_feature_size
       )) %>% shiny::bindEvent(input$fix_feature_button)
 
-      return(v)
+      shiny::observe({
+        shiny::showTab("tabset_id", "Graph Clustering", select = TRUE, session = parent_session)
+      }) %>% shiny::bindEvent(input$fix_feature_button, ignoreInit = TRUE)
+
+      return(user_choice)
     }
   )
 }
 
-server_dimensionality_reduction <- function(id) {
+#' Dimensionality reduction - server side
+#'
+#' @description to be completed
+#'
+#' @export
+server_dimensionality_reduction <- function(id, parent_session) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+      update_sliders(session)
+      add_env_variable("stab_obj", rhdf5::h5read("stability.h5", "feature_stability"))
+
       shiny::observe(dr_title_info(session)) %>% shiny::bindEvent(input$info_title)
       shiny::observe(dr_comparison_info(session)) %>% shiny::bindEvent(input$info_comparison)
-      server_dimensionality_stability("stability", "dim_reduc")
-      server_dimensionality_distribution("distribution_left")
-      server_dimensionality_distribution("distribution_right")
-      recommendation <- server_dimensionality_recommendation("recommend")
+      shiny::observe(
+        server_dimensionality_stability("stability")
+      ) %>% shiny::bindEvent(input[["stability-resolution"]], ignoreInit = TRUE, once = TRUE)
 
-      recommendation
+      shiny::observe({
+        server_dimensionality_distribution("distribution_left")
+        server_dimensionality_distribution("distribution_right")
+      }) %>% shiny::bindEvent(input[["distribution_right-metadata"]], ignoreInit = TRUE, once = TRUE)
+      feature_choice <- server_dimensionality_choice("feature_choice", parent_session)
+
+      feature_choice
+    }
+  )
+}
+
+update_sliders <- function(session) {
+  shinyWidgets::updateSliderTextInput(
+    session,
+    "stability-resolution",
+    choices = pkg_env$feature_ordering$resolution[[1]][[1]], # NOTE might need an updated if there are different resolution values between feature types
+    selected = pkg_env$feature_ordering$resolution[[1]][[1]][1]
+  )
+
+  for (panels in c("left", "right")) {
+    shiny::updateSelectizeInput(
+      session,
+      inputId = glue::glue("distribution_{panels}-feature_type"),
+      choices = names(pkg_env$feature_ordering$stable),
+      selected = names(pkg_env$feature_ordering$stable)[1],
+      server = FALSE
+    )
+
+    shiny::updateSelectizeInput(
+      session,
+      inputId = glue::glue("distribution_{panels}-gene_expr"),
+      choices = c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others)),
+      # selected = NULL,
+      selected = names(pkg_env$genes_of_interest[1]),
+      server = TRUE,
+      options = list(
+        maxOptions = 7,
+        create = TRUE,
+        persist = TRUE
+      )
+    )
+
+    shiny::updateSelectizeInput(
+      session,
+      inputId = glue::glue("distribution_{panels}-metadata"),
+      server = FALSE,
+      choices = colnames(pkg_env$metadata),
+      selected = colnames(pkg_env$metadata)[1]
+    )
+  }
+}
+
+
+
+metadata_download_module <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+
     }
   )
 }

@@ -1,3 +1,8 @@
+#' Landing page - ui side
+#'
+#' @description to be completed
+#'
+#' @export
 ui_landing_page <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel("Home",
@@ -94,4 +99,36 @@ ui_landing_page <- function(id){
            
   )
   
+}
+
+
+#' Landing page - server side
+#'
+#' @description to be completed
+#'
+#' @export
+server_landing_page <- function(id, height_ratio) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+        if (is.null(pkg_env$feature_ordering)) {
+          add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
+          add_env_variable("metadata", readRDS("metadata.rds"))
+          genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes_of_interest", index)
+          genes <- rhdf5::h5read("expression.h5", "genes_others")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes_others", index)
+          rm(genes)
+          rm(index)
+          gc()
+          add_env_variable("cells", rhdf5::h5read("expression.h5", "cells"))
+          add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
+          add_env_variable("height_ratio", height_ratio)
+        }
+    }
+  )
 }
