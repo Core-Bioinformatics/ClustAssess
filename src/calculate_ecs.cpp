@@ -3,13 +3,10 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-IntegerMatrix myContTable(IntegerVector &a, IntegerVector &b) {
-	int minim_mb1 = min(a), minim_mb2 = min(b);
+IntegerMatrix myContTable(IntegerVector &a, IntegerVector &b, int minim_mb1, int minim_mb2) {
 	int maxim_mb1 = max(a), maxim_mb2 = max(b);
     int nClustersA = maxim_mb1 - minim_mb1 + 1;
 	int nClustersB = maxim_mb2 - minim_mb2 + 1, n = a.size();
-
-	// Rprintf("The value of foo is %i %i %i %i %i %i\n", minim_mb1, minim_mb2, maxim_mb1, maxim_mb2, nClustersA, nClustersB);
 
     IntegerMatrix result(nClustersA, nClustersB);
 
@@ -27,7 +24,7 @@ NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
 	int cluster1, cluster2;
 	double c1, c2, pointECS, intersectSize;
 	
-	IntegerMatrix contTable = myContTable(mb1, mb2);
+	IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
     int n = mb1.size(), nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
 
 	NumericMatrix uniqueECSvals(nClusters1, nClusters2);

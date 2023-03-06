@@ -12,14 +12,16 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // myContTable
-IntegerMatrix myContTable(IntegerVector& a, IntegerVector& b);
-RcppExport SEXP _ClustAssess_myContTable(SEXP aSEXP, SEXP bSEXP) {
+IntegerMatrix myContTable(IntegerVector& a, IntegerVector& b, int minim_mb1, int minim_mb2);
+RcppExport SEXP _ClustAssess_myContTable(SEXP aSEXP, SEXP bSEXP, SEXP minim_mb1SEXP, SEXP minim_mb2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector& >::type a(aSEXP);
     Rcpp::traits::input_parameter< IntegerVector& >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(myContTable(a, b));
+    Rcpp::traits::input_parameter< int >::type minim_mb1(minim_mb1SEXP);
+    Rcpp::traits::input_parameter< int >::type minim_mb2(minim_mb2SEXP);
+    rcpp_result_gen = Rcpp::wrap(myContTable(a, b, minim_mb1, minim_mb2));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -102,7 +104,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 2},
+    {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 4},
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_filterNNmatrix", (DL_FUNC) &_ClustAssess_filterNNmatrix, 5},
