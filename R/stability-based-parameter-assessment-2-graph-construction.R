@@ -294,6 +294,14 @@ get_nn_conn_comps <- function(embedding,
 #' )
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution <- function(nn_conn_comps_object) {
+  for (n_neighbours in names(nn_conn_comps_object$PCA)) {
+    nn_conn_comps_object$PCA[[n_neighbours]] <- as.numeric(nn_conn_comps_object$PCA[[n_neighbours]])
+  }
+  
+  for (n_neighbours in names(nn_conn_comps_object$UMAP)) {
+    nn_conn_comps_object$UMAP[[n_neighbours]] <- as.numeric(nn_conn_comps_object$UMAP[[n_neighbours]])
+  }
+
   final_comps_df <- reshape2::melt(nn_conn_comps_object)
   colnames(final_comps_df) <- c("n_comps", "n_neigh", "config_name")
 
