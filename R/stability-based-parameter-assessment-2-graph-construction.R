@@ -295,11 +295,11 @@ get_nn_conn_comps <- function(embedding,
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution <- function(nn_conn_comps_object) {
   for (n_neighbours in names(nn_conn_comps_object$PCA)) {
-    nn_conn_comps_object$PCA[[n_neighbours]] <- as.numeric(nn_conn_comps_object$PCA[[n_neighbours]])
+    nn_conn_comps_object$PCA[[n_neighbours]] <- as.integer(nn_conn_comps_object$PCA[[n_neighbours]])
   }
   
   for (n_neighbours in names(nn_conn_comps_object$UMAP)) {
-    nn_conn_comps_object$UMAP[[n_neighbours]] <- as.numeric(nn_conn_comps_object$UMAP[[n_neighbours]])
+    nn_conn_comps_object$UMAP[[n_neighbours]] <- as.integer(nn_conn_comps_object$UMAP[[n_neighbours]])
   }
 
   final_comps_df <- reshape2::melt(nn_conn_comps_object)
@@ -1120,7 +1120,13 @@ assess_nn_stability <- function(embedding,
 #' )
 #' plot_n_neigh_k_correspondence(nn_stability_obj)
 plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
-  melted_obj <- reshape2::melt(nn_object_n_clusters$n_neigh_k_corresp)
+  nn_object_n_clusters <- nn_object_n_clusters$n_neigh_k_corresp
+  for (config_name in names(nn_object_n_clusters)) {
+    for (n_neighbours in names(nn_object_n_clusters[[config_name]])) {
+      nn_object_n_clusters[[config_name]][[n_neighbours]] <- as.integer(nn_object_n_clusters[[config_name]][[n_neighbours]])
+    }
+ }
+  melted_obj <- reshape2::melt(nn_object_n_clusters)
   colnames(melted_obj) <- c("k", "n_neigh", "config_name")
 
   melted_obj$n_neigh <- factor(melted_obj$n_neigh)
@@ -1191,7 +1197,13 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
 #' plot_n_neigh_ecs(nn_stability_obj)
 plot_n_neigh_ecs <- function(nn_ecs_object,
                              boxplot_width = 0.5) {
-  melted_obj <- reshape2::melt(nn_ecs_object$n_neigh_ec_consistency)
+  nn_ecs_object <- nn_ecs_object$n_neigh_ec_consistency
+  for (config_name in names(nn_ecs_object)) {
+    for (n_neighbours in names(nn_ecs_object[[config_name]])) {
+      nn_ecs_object[[config_name]][[n_neighbours]] <- as.numeric(nn_ecs_object[[config_name]][[n_neighbours]])
+    }
+ }
+  melted_obj <- reshape2::melt(nn_ecs_object)
   colnames(melted_obj) <- c("ECC", "n_neigh", "config_name")
 
   melted_obj$n_neigh <- factor(melted_obj$n_neigh)
