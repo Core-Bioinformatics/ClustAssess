@@ -149,7 +149,7 @@ server_graph_construction <- function(id,chosen_config){
     id,
     function(input, output, session) {
       #Reactive for first plot 
-      temp_list <- rhdf5::h5read("/sutherland-scratch/andi/projects/1-ClustAssess/v0.4.0/ClustAssess/stability.h5", paste(unlist(chosen_config[1]), unlist(chosen_config[2]), sep = "/"))
+      temp_list <- rhdf5::h5read("stability.h5", paste(unlist(chosen_config[1]), unlist(chosen_config[2]), sep = "/"))
       temp_list$pca <- NULL
       temp_list$stable_config <- NULL
       temp_list$clustering_stability <- NULL
@@ -258,16 +258,10 @@ server_graph_construction <- function(id,chosen_config){
         }
         if (length(input$sel_conn_comps)==0){
           return(ggplot2::ggplot() + ggplot2::theme_void())
-        }else if (input$sel_conn_comps==NULL){
-          obj <- pkg_env$stab_obj
-          plot_n_neigh_k_correspondence(obj$nn_stability) +
-            #ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
-            ggplot2::scale_fill_brewer(palette = option)
         }else{
           obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
-          plot_n_neigh_k_correspondence(obj$nn_stability) +
-            #ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
+          ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
             ggplot2::scale_fill_brewer(palette = option)
         }
       })
@@ -360,8 +354,7 @@ server_graph_construction <- function(id,chosen_config){
         }else{
           obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
-          plot_n_neigh_ecs(obj$nn_stability) +
-            #ClustAssess::plot_n_neigh_ecs(obj$nn_stability) +
+          ClustAssess::plot_n_neigh_ecs(obj$nn_stability) +
             ggplot2::scale_fill_brewer(palette = option)
         }
       })
