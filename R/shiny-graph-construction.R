@@ -80,7 +80,7 @@ ui_graph_construction <- function(id) {
                          c("Colour scheme 1" = "col_1",
                            "Colour scheme 2" = "col_2",
                            "Colour scheme 3" = "col_3"),size=3,selectize=F),
-      shiny::checkboxGroupInput(ns('sel_conn_comps'),'Select configurations',choices=names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions),selected=names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions), width='50%')
+      shiny::uiOutput(ns("sel_conn_comps_render"))
       
     ),
     shiny::fluidRow(shiny::tags$head(shiny::tags$style(shiny::HTML("pre { white-space: pre-wrap; word-break: keep-all; }"))),
@@ -129,7 +129,7 @@ ui_graph_construction <- function(id) {
                          c("Colour scheme 1" = "col_1",
                            "Colour scheme 2" = "col_2",
                            "Colour scheme 3" = "col_3"),size=3,selectize=F),
-      shiny::checkboxGroupInput(ns('sel_stab'),'Select configurations',choices=names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions),selected=names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions), width='50%')
+      shiny::uiOutput(ns("sel_stab_render"))
       
     ),
     shiny::fluidRow(
@@ -142,15 +142,47 @@ ui_graph_construction <- function(id) {
     ),style="margin-left:10px "
   )
 }
-
 ####### SERVER #######
 
 server_graph_construction <- function(id,chosen_config){
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      #Reactive for first plot
-      chosen_config <- stab_obj[[unlist(chosen_config[1])]][[unlist(chosen_config[2])]]
+      #Reactive for first plot 
+      temp_list <- rhdf5::h5read("/sutherland-scratch/andi/projects/1-ClustAssess/v0.4.0/ClustAssess/stability.h5", paste(unlist(chosen_config[1]), unlist(chosen_config[2]), sep = "/"))
+      temp_list$pca <- NULL
+      temp_list$stable_config <- NULL
+      temp_list$clustering_stability <- NULL
+      add_env_variable("stab_obj", temp_list)
+      rm(temp_list)
+      gc()
+      
+      options <- names(pkg_env$stab_obj$nn_stability$n_different_partitions)
+      output$sel_conn_comps_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::checkboxGroupInput(
+          inputId = ns("sel_conn_comps"),
+          label = "Select configurations:",
+          choices = options,
+          selected = options,
+          width = "50%"
+        )
+      })
+      outputOptions(output, "sel_conn_comps_render", suspendWhenHidden=FALSE)
+      
+      options <- names(pkg_env$stab_obj$nn_stability$n_different_partitions)
+      output$sel_stab_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::checkboxGroupInput(
+          inputId = ns("sel_stab"),
+          label = "Select configurations:",
+          choices = options,
+          selected = options,
+          width = "50%"
+        )
+      })
+      outputOptions(output, "sel_stab_render", suspendWhenHidden=FALSE)
+      
       plot_conn_comps_Input <- shiny::reactive({
         if (input$palette_plot_conn_comps=='col_1'){
           option <- 'RdBu'
@@ -159,8 +191,7 @@ server_graph_construction <- function(id,chosen_config){
         }else{
           option <-'Greys'
         }
-        plot_connected_comps_evolution(chosen_config$nn_conn_comps) +
-          #ClustAssess::plot_connected_comps_evolution(chosen_config$nn_conn_comps) +
+        ClustAssess::plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
           ggplot2::scale_fill_brewer(palette = option)
       })
       #1 Plot Relationship between the number of neighbours and then number of connected components
@@ -198,7 +229,7 @@ server_graph_construction <- function(id,chosen_config){
         }
         x <- input$nn_hover$x
         col <- round(x)
-        obj <- chosen_config$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
@@ -227,8 +258,13 @@ server_graph_construction <- function(id,chosen_config){
         }
         if (length(input$sel_conn_comps)==0){
           return(ggplot2::ggplot() + ggplot2::theme_void())
+        }else if (input$sel_conn_comps==NULL){
+          obj <- pkg_env$stab_obj
+          plot_n_neigh_k_correspondence(obj$nn_stability) +
+            #ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
+            ggplot2::scale_fill_brewer(palette = option)
         }else{
-          obj <- chosen_config
+          obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
           plot_n_neigh_k_correspondence(obj$nn_stability) +
             #ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
@@ -260,19 +296,18 @@ server_graph_construction <- function(id,chosen_config){
                           units = "in")
         }
       )
-      #Modify the function for the third plot
       #Plot the UMAP + add some text on the chosen selection
       output$click_info<- shiny::renderPrint({
         if(is.null(input$ecc_click)) {
           return(cat('Click the plot to see more'))
         }
         col <- round(input$ecc_click$x)
-        obj <- chosen_config$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
-          selection <- sort(names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions))[1]
+          selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$ecc_click$x - (0.5+(col-1)))*steps
@@ -287,23 +322,23 @@ server_graph_construction <- function(id,chosen_config){
         }
         #get click info for ecc
         col <- round(input$ecc_click$x)
-        obj <- chosen_config$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
-          selection <- sort(names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions))[1]
+          selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$ecc_click$x - (0.5+(col-1)))*steps
           selected_config <- ceiling(input_steps)
-          selection <- sort(names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions))[selected_config]
+          selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[selected_config]
         }
-        ecc <- chosen_config$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+        ecc <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         ecc <- ecc[[selection]][[col]]
         
         ggplot2::ggplot(data.frame(
-          chosen_config$umap),
+          pkg_env$stab_obj$umap),
           aes(x = .data$X1,
               y = .data$X2,
               color = ecc)) +
@@ -323,7 +358,7 @@ server_graph_construction <- function(id,chosen_config){
         if (length(input$sel_stab)==0){
           return(ggplot2:ggplot() + ggplot2::theme_void())
         }else{
-          obj <- chosen_config
+          obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
           plot_n_neigh_ecs(obj$nn_stability) +
             #ClustAssess::plot_n_neigh_ecs(obj$nn_stability) +
@@ -363,7 +398,7 @@ server_graph_construction <- function(id,chosen_config){
         }
         x <- input$nn_stability_hover$x
         col <- round(x)
-        obj <- chosen_config$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
@@ -387,12 +422,12 @@ server_graph_construction <- function(id,chosen_config){
           return(cat('Click the plot to see more'))
         }
         col <- round(input$neigh_stability_click$x)
-        obj <- chosen_config$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
-          selection <- sort(names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions))[1]
+          selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$neigh_stability_click$x - (0.5+(col-1)))*steps
@@ -407,23 +442,23 @@ server_graph_construction <- function(id,chosen_config){
         }
         #get click info for ecc
         col <- round(input$neigh_stability_click$x)
-        obj <- chosen_config$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+        obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         obj <- reshape2::melt(obj)
         val <- sort(unique(obj$L2))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
-          selection <- sort(names(stab_obj[[1]][[1]]$nn_stability$n_different_partitions))[1]
+          selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
         }else{
           steps <- length(configs)
           input_steps <- (input$neigh_stability_click$x - (0.5+(col-1)))*steps
           selected_config <- ceiling(input_steps)
           selection <- sort(configs)[selected_config]
         }
-        ecc <- chosen_config$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+        ecc <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         ecc <- ecc[[selection]][[col]]
         
         ggplot2::ggplot(data.frame(
-          chosen_config$umap),
+          pkg_env$stab_obj$umap),
           aes(x = .data$X1,
               y = .data$X2,
               color = ecc)) +
