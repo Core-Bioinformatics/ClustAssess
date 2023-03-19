@@ -438,11 +438,11 @@ assess_nn_stability_pca <- function(embedding,
   partitions_list <- list()
 
   if (graph_type != 0) {
-    partitions_list[[paste("PCA", "snn", ecs_thresh, sep = "_")]] <- list()
+    partitions_list[[paste("PCA", "snn", sep = "_")]] <- list()
   }
 
   if (graph_type != 1) {
-    partitions_list[[paste("PCA", "nn", ecs_thresh, sep = "_")]] <- list()
+    partitions_list[[paste("PCA", "nn", sep = "_")]] <- list()
   }
 
   ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
@@ -452,7 +452,7 @@ assess_nn_stability_pca <- function(embedding,
   )$nn.idx
 
   for (n_neigh in n_neigh_sequence) {
-    partitions_list[[paste("PCA", "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] <- list()
+    partitions_list[[paste("PCA", "snn", sep = "_")]][[as.character(n_neigh)]] <- list()
 
     # build the nn and snn graphs
     neigh_matrix <- getNNmatrix(nn2_res, n_neigh, 0)
@@ -935,7 +935,7 @@ assess_nn_stability <- function(embedding,
   }
 
   for (n_neigh in n_neigh_sequence) {
-    partitions_list[[paste(graph_reduction_type, "snn", ecs_thresh, sep = "_")]][[as.character(n_neigh)]] <- list()
+    partitions_list[[paste(graph_reduction_type, "snn", sep = "_")]][[as.character(n_neigh)]] <- list()
 
     # build the nn and snn graphs
     if (graph_reduction_type == "PCA") {

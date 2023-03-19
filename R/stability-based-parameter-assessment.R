@@ -313,8 +313,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       }
 
       split_configs <- strsplit(best_config, "_")[[1]]
-      base_embedding <- tolower(split_configs[length(split_configs) - 2])
-      graph_type <- split_configs[length(split_configs) - 1] # update if you decide to remove ecs thresh
+      base_embedding <- tolower(split_configs[length(split_configs) - 1])
+      graph_type <- split_configs[length(split_configs)] # update if you decide to remove ecs thresh
       # TODO add automatic prune param
       highest_prune_param <- get_highest_prune_param(
         feature_configs[[set_name]][[n_steps]][[base_embedding]],
