@@ -29,3 +29,7 @@ update_connectivity_cpp <- function(connectivity, sampling_indices, cluster_assi
     .Call('_ClustAssess_update_connectivity_cpp', PACKAGE = 'ClustAssess', connectivity, sampling_indices, cluster_assignments)
 }
 
+wilcox_test_new <- function(rank_values, n1, max_rank) {
+    .Call('_ClustAssess_wilcox_test_new', PACKAGE = 'ClustAssess', rank_values, n1, max_rank)
+}
+
