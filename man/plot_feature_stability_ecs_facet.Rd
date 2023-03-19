@@ -7,6 +7,8 @@
 \usage{
 plot_feature_stability_ecs_facet(
   feature_object_list,
+  embedding,
+  resolution,
   n_facet_cols = 3,
   point_size = 0.3
 )
@@ -34,10 +36,14 @@ expr_matrix <- matrix(c(runif(100 * 10), runif(50 * 10, min = 5, max = 7)), nrow
 rownames(expr_matrix) <- as.character(1:150)
 colnames(expr_matrix) <- paste("feature", 1:10)
 
+umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
+rownames(umap_embedding) <- rownames(expr_matrix)
+
 feature_stability_result <- assess_feature_stability(
   data_matrix = t(expr_matrix),
   feature_set = colnames(expr_matrix),
   feature_type = "feature_name",
+  resolution = c(0.1, 0.5, 1),
   steps = c(5, 10),
   npcs = 2,
   n_repetitions = 3,
@@ -49,5 +55,9 @@ feature_stability_result <- assess_feature_stability(
   init = "random",
   min_dist = 0.3
 )
-plot_feature_stability_ecs_facet(feature_stability_result)
+plot_feature_stability_ecs_facet(
+   feature_stability_result,
+   umap_embedding,
+   0.1
+)
 }

@@ -31,7 +31,6 @@ colnames(pca_emb) <- paste0("PCA_", 1:30)
 nn_conn_comps_obj <- get_nn_conn_comps(
   embedding = pca_emb,
   n_neigh_sequence = c(2, 5),
-  config_name = "example_config",
   n_repetitions = 3,
   # arguments that are passed to the uwot function
   min_dist = 0.3,

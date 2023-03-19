@@ -10,6 +10,7 @@ assess_feature_stability(
   feature_set,
   steps,
   feature_type,
+  resolution,
   n_repetitions = 100,
   seed_sequence = NULL,
   graph_reduction_type = "PCA",
@@ -17,6 +18,7 @@ assess_feature_stability(
   ecs_thresh = 1,
   ncores = 1,
   algorithm = 1,
+  verbose = FALSE,
   ...
 )
 }
@@ -83,6 +85,7 @@ feature_stability_result <- assess_feature_stability(
   data_matrix = t(expr_matrix),
   feature_set = colnames(expr_matrix),
   feature_type = "feature_name",
+  resolution = c(0.1, 0.5, 1),
   steps = 5,
   npcs = 2,
   n_repetitions = 10,
@@ -94,5 +97,5 @@ feature_stability_result <- assess_feature_stability(
   init = "random",
   min_dist = 0.3
 )
-plot_feature_stability_boxplot(feature_stability_result)
+plot_feature_overall_stability_boxplot(feature_stability_result)
 }

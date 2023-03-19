@@ -8,7 +8,6 @@
 get_nn_conn_comps(
   embedding,
   n_neigh_sequence,
-  config_name = "",
   n_repetitions = 100,
   seed_sequence = NULL,
   ncores = 1,
@@ -21,9 +20,6 @@ other dimensionality reduction techniques (such as LSI) can be used.}
 
 \item{n_neigh_sequence}{A sequence of the number of nearest neighbors.}
 
-\item{config_name}{User specified string that uniquely describes the
-embedding characteristics.}
-
 \item{n_repetitions}{The number of repetitions of applying the pipeline with
 different seeds; ignored if seed_sequence is provided by the user.}
 
@@ -34,6 +30,9 @@ sequence will be built starting from 1 with a step of 100.}
 If the value is set to 1, the code will be run sequentially.}
 
 \item{...}{Additional arguments passed to the the `uwot::umap` method.}
+
+\item{config_name}{User specified string that uniquely describes the
+embedding characteristics.}
 }
 \value{
 A list having one field associated with a number of nearest neighbors.
@@ -59,7 +58,6 @@ colnames(pca_emb) <- paste0("PCA_", 1:30)
 nn_conn_comps_obj <- get_nn_conn_comps(
   embedding = pca_emb,
   n_neigh_sequence = c(2, 5),
-  config_name = "example_config",
   n_repetitions = 3,
   # arguments that are passed to the uwot function
   min_dist = 0.3,
