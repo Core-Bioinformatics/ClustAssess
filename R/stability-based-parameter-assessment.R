@@ -1,6 +1,7 @@
 # TODO check user interrupt
 # TODO add logging options to files - maybe verbose lvels
 #' @importFrom foreach %dopar%
+#' @importFrom doRNG %dorng%
 NULL
 
 ranking_functions <- list(
@@ -85,9 +86,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            n_repetitions,
                                            n_neigh_sequence,
                                            resolution_sequence,
-                                           seed_sequence = NULL,
                                            features_sets, # list with the names of the feature sets (HV, MA etc) and the list of top x genes
                                            steps, # list with the names of the feature sets (HV, mA) and the list of steps
+                                           temp_file = NULL,
+                                           seed_sequence = NULL,
                                            graph_reduction_embedding = "PCA",
                                            n_top_configs = 3,
                                            ranking_criterion = "median",
@@ -97,6 +99,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            ...) {
   # store the additional arguments used by umap in a list
   suppl_args <- list(...)
+  file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
 
   feature_set_names <- names(steps)
   n_configs <- length(feature_set_names)
@@ -145,9 +148,16 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
     feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
     feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
+
+    if (!file_already_exists) {
+      saveRDS(feature_stability_object, temp_file)
+    }
   }
 
   feature_configs <- list(feature_stability = feature_stability_object)
+  if (!file_already_exists) {
+    saveRDS(feature_configs, temp_file)
+  }
 
   for (i in seq_along(feature_set_names)) {
     set_name <- feature_set_names[i]
@@ -212,7 +222,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     }
     feature_configs[[set_name]]$feature_list <- features_sets[[set_name]][seq_len(max(steps[[set_name]]))]
   }
- 
+
   # GRAPH CONSTRUCTION: CONNECTED COMPS
   if (verbose) {
     print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
@@ -224,7 +234,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       width = 80
     )
   }
-  
+
   for (set_name in feature_set_names) {
     n_names <- length(feature_configs[[set_name]])
     for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
@@ -242,6 +252,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       )
       if (verbose) {
         pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+      }
+      
+      if (!file_already_exists) {
+        saveRDS(feature_configs, temp_file)
       }
     }
   }
@@ -291,6 +305,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       if (verbose) {
         pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
       }
+
+      if (!file_already_exists) {
+        saveRDS(feature_configs, temp_file)
+      }
     }
   }
 
@@ -332,6 +350,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
       feature_configs[[set_name]][[n_steps]]$stable_config[["n_neighbours"]] <- as.numeric(best_nn)
       feature_configs[[set_name]][[n_steps]]$stable_config[["prune_param"]] <- highest_prune_param
+
+      if (!file_already_exists) {
+        saveRDS(feature_configs, temp_file)
+      }
     }
   }
 
@@ -354,7 +376,16 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         algorithm = 1:3,
         verbose = verbose
       )
+
+      if (!file_already_exists) {
+        saveRDS(feature_configs, temp_file)
+      }
     }
+  }
+
+
+  if (!file_already_exists) {
+    saveRDS(feature_configs, temp_file)
   }
 
   return(feature_configs)
