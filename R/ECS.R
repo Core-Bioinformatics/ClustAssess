@@ -929,17 +929,17 @@ element_sim_matrix_flat_disjoint <- function(mb_list, ncores = 1, alpha = 0.9, o
   n_combinations <- n_clusterings * (n_clusterings - 1) / 2
   ncores <- min(ncores, n_combinations, parallel::detectCores())
 
-  if (ncores > 1) {
-    # create a parallel backend
-    sim_matrix_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
-    doParallel::registerDoParallel(cl = sim_matrix_cluster)
-  } else {
-    # create a sequential backend
-    foreach::registerDoSEQ()
-  }
+  # if (ncores > 1) {
+  #   # create a parallel backend
+  #   sim_matrix_cluster <- parallel::makeCluster(
+  #     ncores,
+  #     type = "PSOCK"
+  #   )
+  #   doParallel::registerDoParallel(cl = sim_matrix_cluster)
+  # } else {
+  #   # create a sequential backend
+  #   foreach::registerDoSEQ()
+  # }
 
   i <- NA
 
@@ -952,10 +952,10 @@ element_sim_matrix_flat_disjoint <- function(mb_list, ncores = 1, alpha = 0.9, o
     ))
   }
 
-  if (ncores > 1) {
-    # terminate the processes if a parallel backend was created
-    parallel::stopCluster(cl = sim_matrix_cluster)
-  }
+  # if (ncores > 1) {
+  #   # terminate the processes if a parallel backend was created
+  #   parallel::stopCluster(cl = sim_matrix_cluster)
+  # }
 
   sim_matrix <- matrix(NA, nrow = n_clusterings, ncol = n_clusterings)
   sim_matrix[lower.tri(sim_matrix, diag = FALSE)] <- ecs_values
@@ -1345,18 +1345,18 @@ weighted_element_consistency <- function(clustering_list,
 
   ncores <- min(ncores, n_combinations, parallel::detectCores())
 
-  if (ncores > 1) {
-    # create a parallel backend
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
+  # if (ncores > 1) {
+  #   # create a parallel backend
+  #   my_cluster <- parallel::makeCluster(
+  #     ncores,
+  #     type = "PSOCK"
+  #   )
 
-    doParallel::registerDoParallel(cl = my_cluster)
-  } else {
-    # create a sequential backend
-    foreach::registerDoSEQ()
-  }
+  #   doParallel::registerDoParallel(cl = my_cluster)
+  # } else {
+  #   # create a sequential backend
+  #   foreach::registerDoSEQ()
+  # }
 
   all_vars <- ls()
   # calculate the ecs between each pair of distinct partitions and multiply the
@@ -1364,6 +1364,8 @@ weighted_element_consistency <- function(clustering_list,
   consistency <- foreach::foreach(
     i = 1:n_combinations,
     .noexport = all_vars[!(all_vars %in% needed_vars)],
+    .export = needed_vars,
+    .inorder = FALSE,
     .packages = c("ClustAssess"),
     .combine = "+"
   ) %dopar% {
@@ -1373,10 +1375,10 @@ weighted_element_consistency <- function(clustering_list,
     ) * weights[first_index[i]] * weights[second_index[i]]
   }
 
-  if (ncores > 1) {
-    # delete the parallel processes if the backend was created
-    parallel::stopCluster(cl = my_cluster)
-  }
+  # if (ncores > 1) {
+  #   # delete the parallel processes if the backend was created
+  #   parallel::stopCluster(cl = my_cluster)
+  # }
 
   # if the weight of a partition is bigger than one, that means we would have
   # comparison between a partition and itself
@@ -1535,18 +1537,18 @@ element_agreement_flat_disjoint <- function(reference_clustering,
   }
 
   ncores <- min(ncores, length(clustering_list), parallel::detectCores())
-  if (ncores > 1) {
-    # create a parallel backend
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
+  # if (ncores > 1) {
+  #   # create a parallel backend
+  #   my_cluster <- parallel::makeCluster(
+  #     ncores,
+  #     type = "PSOCK"
+  #   )
 
-    doParallel::registerDoParallel(cl = my_cluster)
-  } else {
-    # create a sequential backend
-    foreach::registerDoSEQ()
-  }
+  #   doParallel::registerDoParallel(cl = my_cluster)
+  # } else {
+  #   # create a sequential backend
+  #   foreach::registerDoSEQ()
+  # }
 
   obj <- NA
 
@@ -1560,10 +1562,10 @@ element_agreement_flat_disjoint <- function(reference_clustering,
     corrected_l1_mb(reference_clustering, obj, alpha)
   }
 
-  if (ncores > 1) {
-    # terminate the processes if a parallel backend was created
-    parallel::stopCluster(cl = my_cluster)
-  }
+  # if (ncores > 1) {
+  #   # terminate the processes if a parallel backend was created
+  #   parallel::stopCluster(cl = my_cluster)
+  # }
 
   return(avg_agreement / length(clustering_list))
 }
@@ -1579,18 +1581,18 @@ create_clustering_list <- function(object_list,
                                    row_normalize = TRUE) {
   ncores <- min(ncores, length(object_list), parallel::detectCores())
 
-  if (ncores > 1) {
-    # create a parallel backend
-    my_cluster <- parallel::makeCluster(
-      ncores,
-      type = "PSOCK"
-    )
+  # if (ncores > 1) {
+  #   # create a parallel backend
+  #   my_cluster <- parallel::makeCluster(
+  #     ncores,
+  #     type = "PSOCK"
+  #   )
 
-    doParallel::registerDoParallel(cl = my_cluster)
-  } else {
-    # create a sequential backend
-    foreach::registerDoSEQ()
-  }
+  #   doParallel::registerDoParallel(cl = my_cluster)
+  # } else {
+  #   # create a sequential backend
+  #   foreach::registerDoSEQ()
+  # }
 
   obj <- NA
   clustering_list <- foreach::foreach(
@@ -1624,10 +1626,10 @@ create_clustering_list <- function(object_list,
     )
   }
 
-  if (ncores > 1) {
-    # terminate the processes if a parallel backend was created
-    parallel::stopCluster(cl = my_cluster)
-  }
+  # if (ncores > 1) {
+  #   # terminate the processes if a parallel backend was created
+  #   parallel::stopCluster(cl = my_cluster)
+  # }
 
   return(clustering_list)
 }
