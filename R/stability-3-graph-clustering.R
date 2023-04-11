@@ -301,7 +301,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
       }
       different_partitions <- list()
 
-      print("gata paralelq")
+      # print("gata paralelq")
 
       # group the partitions by the number of clusters
       for (i in seq_along(seed_sequence)) {
@@ -328,7 +328,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
       different_partitions <- different_partitions[sort(names(different_partitions))]
 
       # merge the partitions using the ecs threshold
-      print("merge partitions")
+      # print("merge partitions")
       unique_partitions <- list()
       for (k in names(different_partitions)) {
         different_partitions[[k]] <- list(
@@ -380,7 +380,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
   # if (ncores > 1) {
   #   parallel::stopCluster(cl = my_cluster)
   # }
-  print("merge resoutions")
+  # print("merge resoutions")
   graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
   rm(graph_adjacency_matrix_shared)
   # rm(graph_adjacency_matrix)
