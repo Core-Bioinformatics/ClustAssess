@@ -511,7 +511,8 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
   ) +
     geom_function(
       position = ggplot2::position_dodge(width = dodge_width),
-      width = boxplot_width
+      width = boxplot_width,
+      outlier.shape = NA
     ) +
     ggplot2::geom_text(
       data = text_position,
@@ -519,7 +520,7 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
       position = ggplot2::position_dodge(width = dodge_width),
       size = text_size
     ) +
-    ggplot2::theme_classic() +
+    # ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
     ggplot2::ylab("EC consistency") +
@@ -644,7 +645,8 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
   ) +
     ggplot2::geom_boxplot(
       position = ggplot2::position_dodge(width = dodge_width),
-      width = boxplot_width
+      width = boxplot_width,
+      outlier.shape = NA
     ) +
     ggplot2::geom_text(
       data = text_position,
@@ -1022,7 +1024,11 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
       fill = .data$feature_set
     )
   ) +
-    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width), width = boxplot_width) +
+    ggplot2::geom_boxplot(
+      position = ggplot2::position_dodge(width = dodge_width),
+      width = boxplot_width,
+      outlier.shape = NA
+    ) +
     ggplot2::geom_text(
       data = text_position,
       ggplot2::aes(label = steps_df$step),
@@ -1180,7 +1186,11 @@ plot_feature_overall_stability_incremental <- function(feature_object_list,
       fill = .data$feature_set
     )
   ) +
-    ggplot2::geom_boxplot(position = ggplot2::position_dodge(width = dodge_width), width = boxplot_width) +
+    ggplot2::geom_boxplot(
+      position = ggplot2::position_dodge(width = dodge_width),
+      width = boxplot_width,
+      outlier.shape = NA
+    ) +
     ggplot2::geom_text(
       data = text_position,
       ggplot2::aes(label = steps_df$step),
