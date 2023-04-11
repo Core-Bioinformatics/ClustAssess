@@ -102,16 +102,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// wilcox_test_new
-NumericVector wilcox_test_new(IntegerMatrix rank_values, int n1, int max_rank);
-RcppExport SEXP _ClustAssess_wilcox_test_new(SEXP rank_valuesSEXP, SEXP n1SEXP, SEXP max_rankSEXP) {
+// wilcox_test
+NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank);
+RcppExport SEXP _ClustAssess_wilcox_test(SEXP rank_valuesSEXP, SEXP n1SEXP, SEXP max_rankSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type rank_values(rank_valuesSEXP);
     Rcpp::traits::input_parameter< int >::type n1(n1SEXP);
     Rcpp::traits::input_parameter< int >::type max_rank(max_rankSEXP);
-    rcpp_result_gen = Rcpp::wrap(wilcox_test_new(rank_values, n1, max_rank));
+    rcpp_result_gen = Rcpp::wrap(wilcox_test(rank_values, n1, max_rank));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -124,7 +124,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},
     {"_ClustAssess_getNNmatrix", (DL_FUNC) &_ClustAssess_getNNmatrix, 3},
     {"_ClustAssess_update_connectivity_cpp", (DL_FUNC) &_ClustAssess_update_connectivity_cpp, 3},
-    {"_ClustAssess_wilcox_test_new", (DL_FUNC) &_ClustAssess_wilcox_test_new, 3},
+    {"_ClustAssess_wilcox_test", (DL_FUNC) &_ClustAssess_wilcox_test, 3},
     {NULL, NULL, 0}
 };
 

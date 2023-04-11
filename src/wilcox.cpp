@@ -11,7 +11,7 @@ using namespace Rcpp;
 using namespace std::chrono;
 
 // [[Rcpp::export]]
-NumericVector wilcox_test_new(IntegerMatrix rank_values, int n1, int max_rank) {
+NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
     double n = rank_values.ncol(), m = rank_values.nrow();
     double n2 = n - n1;
     long long value, n_unique;
