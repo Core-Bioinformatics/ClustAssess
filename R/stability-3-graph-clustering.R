@@ -2,6 +2,12 @@
 # (such as clustering method, number of clusters)
 
 algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
+algorithm_names_mapping <- list(
+  Louvain = 1,
+  Louvain.refined = 2,
+  SLM = 3,
+  Leiden = 4
+)
 
 #' Merge Resolutions
 #'
