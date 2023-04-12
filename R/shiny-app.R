@@ -20,6 +20,7 @@
 
 # # write_objects(stab_obj, expression_matrix, metadata, compression_level = 6)
 # write_objects(stab_obj, se_obj@assays$SCT@data, se_obj@meta.data, compression_level = 6)
+# write_objects(stab_obj, matrix(NA), se_obj@meta.data, compression_level = 6)
 # write_objects(stab_obj, matrix(NA), metadata$metadata, compression_level = 6)
 
 #' Writing objects
@@ -51,28 +52,28 @@ write_objects <- function(clustassess_object,
     # }
 
     # metadata file
-    metadata_columns <- colnames(metadata)
-    metadata_colors <- list()
-    metadata_unique <- list()
-    for (mtd_col in metadata_columns) {
-        if (is.factor(metadata[,mtd_col])) {
-            metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
-            metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
-        } else if (is.character(metadata[,mtd_col])) {
-            metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
-            metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
-        } else if (is.logical(metadata[,mtd_col])) {
-            metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
-            metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
+    # metadata_columns <- colnames(metadata)
+    # metadata_colors <- list()
+    # metadata_unique <- list()
+    # for (mtd_col in metadata_columns) {
+    #     if (is.factor(metadata[,mtd_col])) {
+    #         metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
+    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
+    #     } else if (is.character(metadata[,mtd_col])) {
+    #         metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
+    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
+    #     } else if (is.logical(metadata[,mtd_col])) {
+    #         metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
+    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
 
-        }
-    }
-    saveRDS(list(
-        metadata = metadata,
-        metadata_colors = metadata_colors,
-        metadata_unique = metadata_unique),
-        metadata_file_name
-    )
+    #     }
+    # }
+    # saveRDS(list(
+    #     metadata = metadata,
+    #     metadata_colors = metadata_colors,
+    #     metadata_unique = metadata_unique),
+    #     metadata_file_name
+    # )
 
     # establish the feature ordering (original and stable) and convert to data.table
     feature_ordering <- list(original = list(), stable = list(), original_incremental = list())
@@ -111,16 +112,16 @@ write_objects <- function(clustassess_object,
 
                 if (fsize_index <= upper_limit) {
                     ecc_incremental <- clustassess_object$feature_stability$incremental[[ftype]][[fsize_index]][[resval]]
+
                     summary_values_incremental[res_index] <- summary_function(ecc_incremental)
-                    
                     res_dt_incremental <- data.table::data.table(ecc = ecc_incremental, res = resval) #  mb = mb if you want to also include the mb vector
                     if (res_index == 1) {
-                        size_dt_incremental <- res_dt_incremental 
+                        size_dt_incremental <- res_dt_incremental
                     } else {
                         size_dt_incremental <- rbind(size_dt_incremental, res_dt_incremental)
                     }
                 }
-                
+
                 res_index <- res_index + 1
             }
 
@@ -153,16 +154,11 @@ write_objects <- function(clustassess_object,
             fsize_index <- fsize_index + 1
         }
 
-        ftype_dt_by_step[,"ftype"] <- ftype
-        # ftype_dt_by_step[,"colour"] <- qual_colors[ftype_index] 
-        ftype_dt_incremental[,"ftype"] <- ftype
-        # ftype_dt_incremental[,"colour"] <- qual_colors[ftype_index] 
-        # ftype_dt[,"fsize"] <- factor(ftype_dt[,"fsize"], levels = names(original_stab_obj$feature_stability$by_steps[[ftype]]))
-        
-        ftype_summary_dt_by_step[,"ftype"] <- ftype
-        # ftype_summary_dt_by_step[,"colour"] <- qual_colors[ftype_index] 
-        ftype_summary_dt_incremental[,"ftype"] <- ftype
-        # ftype_summary_dt_incremental[,"colour"] <- qual_colors[ftype_index] 
+        ftype_dt_by_step[, "ftype"] <- ftype
+        ftype_dt_incremental[, "ftype"] <- ftype
+
+        ftype_summary_dt_by_step[, "ftype"] <- ftype
+        ftype_summary_dt_incremental[, "ftype"] <- ftype
         if (ftype_index == 1) {
             overall_dtable_by_step <- ftype_dt_by_step
             overall_dtable_incremental <- ftype_dt_incremental
@@ -179,6 +175,7 @@ write_objects <- function(clustassess_object,
     }
 
     feature_ordering$resolution <- stringr::str_sort(resolution_values, numeric = TRUE)
+    # split the data tables by resolution
     clustassess_object$feature_stability$by_steps <- lapply(resolution_values, function(resval) {
         subdt <- overall_dtable_by_step[res == resval][order(ecc)]
         subdt$fsize <- factor(subdt$fsize)
@@ -200,7 +197,7 @@ write_objects <- function(clustassess_object,
         incremental = overall_summary_dt_incremental
     )
 
-
+    # store the names and ordering of the stable feature sizes
     for (ftype in names(feature_ordering$original)) {
         nsteps <- length(clustassess_object[[ftype]]) - 1
         feature_ordering$stable[[ftype]] <- names(clustassess_object[[ftype]])[seq_len(nsteps)]
@@ -214,53 +211,154 @@ write_objects <- function(clustassess_object,
                 sep = "-"
             )
         }
-
     }
 
     # ---
+    # create the clustering data tables
+    # ecc_by_k_dt - columns: clustering method, k and ecc
+    # ecc_by_res_dt - columns: clustering method, res and ecc
     for (ftype in names(feature_ordering$stable)) {
         for (fsize in feature_ordering$stable[[ftype]]) {
             # remove the adjacency matrix, not needed for the shiny app
             clustassess_object[[ftype]][[fsize]]$adj_matrix <- NULL
+            mbs_list <- list()
+            ecc_list <- list()
+            ecc_list_by_res <- list()
+            ecc_order_list <- list()
+            ecc_order_list_by_res <- list()
+            structure_list <- list()
 
             # remove the list of unecessary partitions
             cl_methods <- names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k)
+            first_dt_by_k <- TRUE
+            first_dt_by_res <- TRUE
+            # algorithm_names_mapping
 
             for (cl_method in cl_methods) {
-                # split by resolution
+                # mbs_list[[cl_method]] <- list()
+                # ecc_list[[cl_method]] <- list()
+                # ecc_order_list[[cl_method]] <- list()
+                # ecc_order_list_by_res[[cl_method]] <- list()
+                # ecc_list_by_res[[cl_method]] <- list()
+
+                cl_method_index <- algorithm_names_mapping[[cl_method]]
+                # --- split by resolution ---
                 for (res in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]])) {
+                    # update the ecc lists for the boxplots
+                    ecc <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$ecc
+                    ecc_order <- order(ecc)
+                    res_format <- sprintf("%.6f", as.numeric(res))
+                    ecc_list_by_res[[paste(res_format, cl_method, sep = ";")]] <- ecc[ecc_order]
+                    ecc_order_list_by_res[[paste(res_format, cl_method, sep = ";")]] <- ecc_order
+
+                    # create the summary table for the complex plot
                     for (n_clusters in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters)) {
-                        clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$mb <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$mb)
-                        clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$freq
-                        clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$total_freq <- sum(
-                            sapply(
-                                clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions,
-                                function(x) { x$freq }
-                            )
+                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$freq
+                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$total_freq <- sum(
+                        #     sapply(
+                        #         clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions,
+                        #         function(x) { x$freq }
+                        #     )
+                        # )
+                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions <- NULL
+
+                        temp_by_res_summary <- data.table::data.table(
+                            k = as.integer(n_clusters),
+                            res = as.numeric(res),
+                            cl_method = cl_method,
+                            first_freq = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$freq,
+                            total_freq =  sum(
+                                sapply(
+                                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions,
+                                    function(x) { x$freq }
+                                )
+                            ),
+                            ecc = summary_function(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$ecc)
                         )
-                        clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions <- NULL
+
+                        if (first_dt_by_res) {
+                            first_dt_by_res <- FALSE
+                            by_res_summary <- temp_by_res_summary
+                        } else {
+                            by_res_summary <- rbind(by_res_summary, temp_by_res_summary)
+                        }
                     }
                 }
 
-                # split by k
-                for (n_clusters in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]])) {
+                # --- split by k ---
+                structure_list[[cl_method]] <- names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]])
+                for (n_clusters in structure_list[[cl_method]]) {
                     unique_n_colors <- union(unique_n_colors, n_clusters)
-                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$mb <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$mb)
-                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq
-                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$total_freq <- sum(
-                        sapply(
-                            clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions,
-                            function(x) { x$freq }
-                        )
+                    mbs_list[[cl_method]][[n_clusters]] <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$mb)
+
+                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$mb <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$mb)
+                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq
+                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$total_freq <- sum(
+                    #     sapply(
+                    #         clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions,
+                    #         function(x) { x$freq }
+                    #     )
+                    # )
+                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$n_partitions <- length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions)
+                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions <- NULL
+
+                    # temp_n_cl_ecc_dt <- data.table::data.table(
+                    #     ecc = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$ecc,
+                    #     k = n_clusters,
+                    #     cl_method = cl_method_index
+                    # )
+                    ecc <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$ecc
+                    ecc_order <- order(ecc)
+                    n_clusters_format <- sprintf("%06d", as.integer(n_clusters))
+                    ecc_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc[ecc_order]
+                    ecc_order_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc_order
+
+                    temp_by_k_summary <- data.table::data.table(
+                        k = as.integer(n_clusters),
+                        cl_method = cl_method,
+                        n_partitions = length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions),
+                        total_freq =  sum(
+                            sapply(
+                                clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions,
+                                function(x) { x$freq }
+                            )
+                        ),
+                        first_freq = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq,
+                        ecc = summary_function(ecc)
                     )
-                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$n_partitions <- length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions)
-                    clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions <- NULL
+
+
+                    if (first_dt_by_k) {
+                        first_dt_by_k <- FALSE
+                        by_k_summary <- temp_by_k_summary
+                    } else {
+                        by_k_summary <- rbind(by_k_summary, temp_by_k_summary)
+                    }
+
                 }
             }
+
+            clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k <- list(
+                mbs = mbs_list,
+                summary = by_k_summary[order(k, cl_method)],
+                ecc = ecc_list,
+                ecc_order = ecc_order_list,
+                structure_list = structure_list
+            )
+
+            clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution <- list(
+                summary = by_res_summary[order(res, cl_method)],
+                ecc = ecc_list_by_res,
+                ecc_order = ecc_order_list_by_res
+            )
         }
     }
     unique_n_colors <- union(unique_n_colors, 1:4)
     unique_colors <- lapply(unique_n_colors, function(n) {
+        n <- as.integer(n)
+        if (n == 1) {
+            return("#92521d")
+        }
         qualpalr::qualpal(n, colorspace = qualpalr_colorspace)$hex
     })
     names(unique_colors) <- as.character(unique_n_colors)
@@ -304,21 +402,21 @@ write_objects <- function(clustassess_object,
     print("Done writing genes")
 
     # the object for stability
-    # rhdf5::h5createFile(stability_file_name)
-    # rhdf5::h5write(
-    #     clustassess_object$feature_stability,
-    #     stability_file_name,
-    #     "feature_stability",
-    #     level = compression_level
-    # )
-    # print("Done writing feature stability")
-    # rhdf5::h5write(clustassess_object$feature_ordering, stability_file_name, "feature_ordering", level = compression_level)
-    # print("Done writing feature ordering")
+    rhdf5::h5createFile(stability_file_name)
+    rhdf5::h5write(
+        clustassess_object$feature_stability,
+        stability_file_name,
+        "feature_stability",
+        level = compression_level
+    )
+    print("Done writing feature stability")
+    rhdf5::h5write(clustassess_object$feature_ordering, stability_file_name, "feature_ordering", level = compression_level)
+    print("Done writing feature ordering")
 
-    # for (feature_type in names(clustassess_object$feature_ordering[[1]])) {
-    #     rhdf5::h5write(clustassess_object[[feature_type]], stability_file_name, feature_type, level = compression_level)
-    # }
-    # rhdf5::h5write(unique_colors, stability_file_name, "colors", level = compression_level)
+    for (feature_type in names(clustassess_object$feature_ordering[[1]])) {
+        rhdf5::h5write(clustassess_object[[feature_type]], stability_file_name, feature_type, level = compression_level)
+    }
+    rhdf5::h5write(unique_colors, stability_file_name, "colors", level = compression_level)
 
-    # rhdf5::h5closeAll()
+    rhdf5::h5closeAll()
 }
