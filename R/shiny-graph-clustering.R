@@ -14,13 +14,114 @@ ui_graph_clustering_choice <- function(id) {
       ),
       shiny::h2("Fixing the clustering method"),
     ),
-    shiny::uiOutput(ns("clustering_options")),
+    # shiny::uiOutput(ns("clustering_options")),
+    shiny::radioButtons(
+        inputId = ns("radio_cluster_method"),
+        label = "Choose the clustering method for the downstream analysis:",
+        choices = "",
+        # selected = clustering_options[1],
+        width = "100%"
+      ),
     shiny::actionButton(ns("fix_cluster_button"),
       "Fix the method!",
       style = "font-size:20px;",
       class = "btn-danger"
     ),
     style = "padding:50px; font-size:20px;"
+  )
+}
+
+
+ui_graph_clustering_per_value_boxplot <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::h3("Boxplot distribution of the resolution and ncluster-wise stability of the clustering methods"),
+    shiny::tabsetPanel(
+      id = ns("boxplot_tabset"),
+      boxplot_settings(ns),
+      shiny::tabPanel(
+        "Vary by resolution",
+        shiny::plotOutput(ns("boxplot_per_res"), height = "auto")
+      ),
+      shiny::tabPanel(
+        "Vary by k",
+        shiny::plotOutput(ns("boxplot_per_k"), height = "auto")
+      )
+    )
+  )
+}
+
+ui_graph_clustering_per_value_umap <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    # shiny::uiOutput(ns("select_cluster_method_generator")),
+    shiny::selectInput(
+      inputId = ns("select_method"),
+      label = "Select the clustering method",
+      choices = ""
+    ),
+    # shiny::uiOutput(ns("select_n_clusters_generator")),
+    shiny::selectInput(
+      inputId = ns("select_k"),
+      label = "Select the number of clusters (k)",
+      choices = ""
+    ),
+    shiny::fluidRow(
+      shiny::column(1, gear_umaps(ns, "clustering_umap")),
+      shiny::column(11,
+        shinyWidgets::pickerInput(
+          inputId = ns("select_clusters"),
+          choices = "",
+          inline = FALSE,
+          # width = "100%",
+          # width = "30%",
+          options = list(
+            `actions-box` = TRUE,
+            title = "Select/deselect clusters",
+            # actionsBox = TRUE,
+            size = 10,
+            width = "90%",
+            `selected-text-format` = "count > 3"
+          ), 
+          multiple = TRUE
+        )
+      ),
+    ),
+    shiny::fluidRow(
+      # shiny::uiOutput(ns("umap_k_generator")),
+      shiny::column(
+        6,
+        shiny::plotOutput(ns("umap_k"), height = "auto"),
+        shiny::plotOutput(ns("umap_k_legend"), height = "auto"),
+      ),
+      shiny::column(
+        6,
+        shiny::plotOutput(ns("umap_ecc"), height = "auto"),
+        shiny::plotOutput(ns("umap_ecc_legend"), height = "auto")
+      )
+      # shiny::uiOutput(ns("umap_ecc_generator"))
+    )
+  )
+}
+
+ui_graph_clustering_overall_boxplot <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::h3("Boxplot distribution of the overall stability"),
+    shiny::splitLayout(
+      shiny::plotOutput(ns("boxplot_overall_resolution"), height = "auto"),
+      shiny::plotOutput(ns("boxplot_overall_k"), height = "auto")
+    )
+  )
+}
+
+ui_graph_clustering_k_stab <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::h3("Correspondence between the resolution value and the number of clusters"),
+    shiny::uiOutput(ns("k_resolution_generator")),
+    shiny::h3("The stability of the number of clusters"),
+    shiny::uiOutput(ns("k_stability_generator")),
   )
 }
 
@@ -34,44 +135,11 @@ ui_graph_clustering <- function(id) {
 
   shiny::tabPanel(
     "Graph Clustering",
-    shiny::uiOutput(ns("selected_conf")),
-    shiny::uiOutput(ns("test_output")),
-    shiny::uiOutput(ns("header1")),
-    shiny::fluidRow(
-      shiny::column(
-        8,
-        shiny::tabsetPanel(
-          id = ns("boxplot_tabset"),
-          shiny::tabPanel(
-            "Vary by k",
-            shiny::plotOutput(ns("boxplot_per_k"))
-          ),
-          shiny::tabPanel(
-            "Vary by resolution",
-            shiny::plotOutput(ns("boxplot_per_res"))
-          ),
-        )
-      ),
-      shiny::column(
-        4,
-        shiny::plotOutput(ns("umap_config"))
-      )
-    ),
-    shiny::uiOutput(ns("header2")),
-    shiny::fluidRow(
-      shiny::column(
-        6,
-        shiny::plotOutput(ns("boxplot_overall_resolution"))
-      ),
-      shiny::column(
-        6,
-        shiny::plotOutput(ns("boxplot_overall_k"))
-      )
-    ),
-    shiny::uiOutput(ns("header3")),
-    shiny::plotOutput(ns("k_resolution")),
-    shiny::uiOutput(ns("header4")),
-    shiny::plotOutput(ns("k_stability")),
+    shiny::actionButton(ns("show_config"), "Show config", type = "info", class = "btn-info", disabled = TRUE),
+    ui_graph_clustering_per_value_boxplot(ns("per_value_boxplot")),
+    ui_graph_clustering_per_value_umap(ns("per_value_umap")),
+    ui_graph_clustering_overall_boxplot(ns("overall_boxplot")),
+    ui_graph_clustering_k_stab(ns("k_stab")),
     ui_graph_clustering_choice(ns("cluster_method_choice"))
   )
 }
@@ -81,30 +149,254 @@ server_graph_clustering_choice <- function(id) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      clustering_options <- names(pkg_env$stab_obj$clustering_stability[[1]])
-      output$clustering_options <- shiny::renderUI({
-        ns <- session$ns
-        shiny::radioButtons(
-          inputId = ns("radio_cluster_method"),
-          label = "Choose the clustering method for the downstream analysis:",
-          choices = clustering_options,
-          selected = clustering_options[1],
-          width = "100%"
+      # clustering_options <- names(pkg_env$stab_obj$clustering_stability[[1]])
+      clustering_options <- names(pkg_env$stab_obj$structure_list)
+      # print(names(pkg_env$stab_ob()))
+      shiny::updateRadioButtons(
+        session = session,
+        inputId = "radio_cluster_method",
+        choices = clustering_options,
+        selected = clustering_options[1],
+      )
+
+      user_choice <- shiny::reactive(input$radio_cluster_method) %>% shiny::bindEvent(input$fix_cluster_button)
+      return(user_choice)
+    }
+  )
+}
+
+server_graph_clustering_per_value_boxplot <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      output$boxplot_per_res <- shiny::renderPlot(
+        height = function() {
+          floor(pkg_env$height_ratio * pkg_env$dimension()[2])
+        },
+        {
+          # shiny::req(pkg_env$lock_k())
+          shiny_plot_clustering_per_value_stability(pkg_env$stab_obj$ecc_by_res,
+            value_type = "resolution",
+            width = input$boxplot_width,
+            space_inter_groups = input$space_inter_groups,
+            space_intra_groups = input$space_intra_groups,
+            text_size = input$text_size
+          )
+        }
+      )
+
+      output$boxplot_per_k <- shiny::renderPlot(
+        height = function() {
+          floor(pkg_env$height_ratio * pkg_env$dimension()[2])
+        },
+        {
+          shiny_plot_clustering_per_value_stability(pkg_env$stab_obj$ecc_by_k,
+            value_type = "k",
+            width = input$boxplot_width,
+            space_inter_groups = input$space_inter_groups,
+            space_intra_groups = input$space_intra_groups,
+            text_size = input$text_size
+          )
+        }
+      )
+
+      shiny::outputOptions(output, "boxplot_per_k", suspendWhenHidden = FALSE)
+      shiny::outputOptions(output, "boxplot_per_res", suspendWhenHidden = FALSE)
+    }
+  )
+}
+
+server_graph_clustering_overall_boxplot <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+
+      output$boxplot_overall_resolution <- shiny::renderPlot(
+        height = function() {
+          floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2))
+        },
+        {
+        # shiny::req(pkg_env$lock_k())
+        shiny_plot_clustering_overall_stability(pkg_env$stab_obj$clustering_stability,
+          value_type = "resolution"
         )
       })
 
-      # shiny::observe(dr_choice_info(session)) %>% shiny::bindEvent(input$info_choice)
-      # shiny::observe({
-      #   print(names(input))
-      # }) %>% shiny::bindEvent(input)
+      output$boxplot_overall_k <- shiny::renderPlot(
+        height = function() {
+          floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2))
+        },
+        {
+        # shiny::req(pkg_env$lock_k())
+        
+        shiny_plot_clustering_overall_stability(pkg_env$stab_obj$clustering_stability,
+          value_type = "k"
+        )
+      })
+    }
+  )
+}
 
-      user_choice <- shiny::reactive(input$radio_cluster_method) %>% shiny::bindEvent(input$fix_cluster_button)
+server_graph_clustering_per_value_umap <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      # output$select_cluster_method_generator <- shiny::renderUI(
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "select_method",
+        choices = names(pkg_env$stab_obj$structure_list),
+        selected = names(pkg_env$stab_obj$structure_list)[1],
+      )
+      # )
 
-      # shiny::observe({
-      #   print(paste("Schimbat user_choice la", user_choice()))
-      # }) %>% shiny::bindEvent(user_choice())
+      shiny::observe({
+        shiny::req(input$select_method != "")
+        # print(input$select_method)
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_k",
+          choices = pkg_env$stab_obj$structure_list[[input$select_method]],
+          selected = pkg_env$stab_obj$structure_list[[input$select_method]][1]
+        )
+      })
 
-      return(user_choice)
+      shiny::observe({
+        shiny::req(input$select_k != "")
+        shinyWidgets::updatePickerInput(
+          session = session,
+          inputId = "select_clusters",
+          choices = seq_len(as.integer(input$select_k))
+        )
+      }) %>% shiny::bindEvent(input$select_k)
+
+      # output$select_n_clusters_generator <- shiny::renderUI({
+      #   shiny::req(input$select_method)
+      #   sorted_k <- stringr::str_sort(names(pkg_env$stab_obj$clustering_stability$split_by_k[[input$select_method]]), numeric = TRUE)
+      #   shiny::selectInput(
+      #     inputId = session$ns("select_k"),
+      #     label = "Select the number of clusters (k)",
+      #     choices = sorted_k,
+      #     selected = sorted_k[1]
+      #   )
+      # })
+
+      # render_plot_by_height("umap_k", session)
+      # render_plot_by_height("umap_ecc", session)
+      plt_height <- shiny::reactive(
+        floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.5))
+      )
+
+      k_legend_height <- shiny::reactive({
+        shiny::req(input$select_k != "")
+        unique_values <- seq_len(as.integer(input$select_k))
+
+        predicted_width <- strwidth(unique_values, units = "inches", cex = input$clustering_umap_text_size) * 96
+        predicted_height <- strheight(unique_values[1], units = "inches", cex = input$clustering_umap_text_size) * 96
+        space_width <- strwidth(" ", units = "inches", cex = input$clustering_umap_text_size) * 96
+        number_columns <- plt_height() %/% (4 * space_width + max(predicted_width))
+        number_rows <- ceiling(length(unique_values) / number_columns)
+
+        2 * predicted_height * number_rows
+      })
+
+      output$umap_k <- shiny::renderPlot(
+        height = function() {
+          plt_height()
+        },
+        width = function() {
+          plt_height()
+        },
+        {
+        # shiny::req(pkg_env$lock_choice(), pkg_env$lock_k(), pkg_env$lock_stable)
+        shiny::req(input$select_k != "")
+
+        color_plot2(
+          embedding = pkg_env$stab_obj$umap,
+          color_info = factor(rhdf5::h5read("stability.h5", paste(
+            # input$
+            pkg_env$lock_stable$feature_set,
+            pkg_env$lock_stable$n_features,
+            "clustering_stability",
+            "split_by_k",
+            "mbs",
+            input$select_method,
+            input$select_k,
+            sep = "/"
+          ))),
+          color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k)),
+          unique_values = seq_len(as.integer(input$select_k)),
+          plt_height = plt_height(),
+          plt_width = plt_height(),
+          pch = ifelse(input$clustering_umap_pt_type == "Pixel", ".", 19),
+          pt_size = input$clustering_umap_pt_size,
+          text_size = input$clustering_umap_text_size,
+          labels = input$clustering_umap_labels,
+          groups_highlight = input$select_clusters
+
+          # factor(pkg_env$stab_obj$clustering_stability$split_by_k[[input$select_method]][[input$select_k]]$mb, levels = as.character(seq_len(as.numeric(input$select_k))))
+        ) #+ ggplot2::theme(legend.position = "bottom", aspect.ratio = 1) +
+          # ggplot2::guides(color = ggplot2::guide_legend(title = "clusters"))
+      })
+
+         output$umap_k_legend <- shiny::renderPlot(
+          height = function() {
+            k_legend_height()
+          },
+          width = function() {
+            plt_height()
+          },
+          {
+            shiny::req(k_legend_height())
+            only_legend_plot(
+              unique_values = seq_len(as.integer(input$select_k)),
+              color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k)),
+              color_info = NULL,
+              plt_width = plt_height(),
+              text_size = input$clustering_umap_text_size 
+            )
+
+          }
+        )
+
+      # output$umap_ecc <- shiny::renderPlot({
+      #   shiny::req(pkg_env$lock_choice(), pkg_env$lock_k())
+      #   color_plot(
+      #     pkg_env$stab_obj$umap,
+      #     as.numeric(pkg_env$stab_obj$clustering_stability$split_by_k[[input$select_method]][[input$select_k]]$ecc),
+      #     # color_palette = "viridis::viridis",
+      #     ncolors = 50
+      #   ) # + ggplot2::theme(
+      #   #   legend.position = "bottom",
+      #   #   # aspect.ratio = 1,
+      #   #   legend.key.width = ggplot2::unit(floor(pkg_env$dimension()[1] / 16), "points")
+      #   # ) +
+      #   #   ggplot2::scale_color_viridis_c("ECC")
+      # })
+    }
+  )
+}
+
+server_graph_clustering_k_stab <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      render_plot_by_height("k_resolution", session)
+      render_plot_by_height("k_stability", session)
+
+      output$k_resolution <- shiny::renderPlot({
+        # shiny::req(pkg_env$lock_k())
+        shiny_plot_k_resolution_corresp(pkg_env$stab_obj$clustering_stability,
+          colour_information = "ecc"
+        )
+      })
+
+      output$k_stability <- shiny::renderPlot({
+        # shiny::req(pkg_env$lock_k())
+        shiny_plot_k_n_partitions(pkg_env$stab_obj$clustering_stability,
+          colour_information = "ecc"
+        )
+      })
     }
   )
 }
@@ -114,113 +406,120 @@ server_graph_clustering_choice <- function(id) {
 #' @description to be completed
 #'
 #' @export
-server_graph_clustering <- function(id, feature_choice) {
+server_graph_clustering <- function(id, feature_choice, window_height) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       isolated_fchoice <- shiny::isolate(feature_choice())
-      # print(isolated_fchoice)
       ftype <- isolated_fchoice$chosen_feature_type
       fsize <- isolated_fchoice$chosen_set_size
 
-      output$test_output <- shiny::renderText(isolated_fchoice[[1]])
+      # add_env_variable("dimension", window_height)
+
+      print(paste(Sys.time(), "Loading the stability object"))
+      if (exists("stable_config")) {
+        stable_config <- NULL
+      }
+      add_env_variable("stab_obj", list(
+        ecc_by_k = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc", sep = "/")),
+        ecc_by_res = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_resolution", "ecc", sep = "/")),
+        structure_list = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "structure_list", sep = "/")),
+        umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
+      ))
+      stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
+      add_env_variable("lock_choice", shiny::reactive(input$"cluster_method_choice-radio_cluster_method"))
+      add_env_variable("lock_k", shiny::reactive(input$"per_value_umap-select_k"))
+      add_env_variable("lock_stable", stable_config)
+      print(paste(Sys.time(), "Finished loading"))
+
+      shiny::observe(
+        shinyjs::enable("show_config")
+      ) %>% shiny::bindEvent(input$"cluster_method_choice-radio_cluster_method", ignoreInit = TRUE, once = TRUE)
+
+      clustering_choice <- server_graph_clustering_choice("cluster_method_choice")
+
+
       
-      # print(rhdf5::h5ls("stability.h5", recursive = 2))
-      # print(paste(ftype, fsize, sep = "/"))
 
-      temp_list <- rhdf5::h5read("stability.h5", paste(ftype, fsize, sep = "/"))
-      temp_list$pca <- NULL
-      temp_list$nn_stability <- NULL
-      temp_list$nn_conn_comps <- NULL
-      add_env_variable("stab_obj", temp_list)
-      rm(temp_list)
-      gc()
-
-      # print(names(temp_list))
-      
-
-      stable_config <- pkg_env$stab_obj$stable_config
-      # print(stable_config)
-      # print(names(pkg_env))
-      # print(names(pkg_env$stab_obj))
 
       # shiny::observe({
-        output$selected_conf <- shiny::renderUI({
-          shiny::fluidRow(
-            shiny::div(glue::glue("Feature type: {stable_config[[1]]}")),
-            div(glue::glue("Feature set size: {stable_config[[2]]}")),
-            div(glue::glue("Base embedding: {stable_config[[3]]}")),
-            div(glue::glue("Graph type: {stable_config[[4]]}")),
-            div(glue::glue("Number of neighbours: {stable_config[[5]]}"))
-          )
-        })
+      server_graph_clustering_per_value_umap("per_value_umap")
+      # }) %>% shiny::bindEvent(input$"cluster_method_choice-radio_cluster_method", ignoreInit = TRUE, once = TRUE)
 
-        output$header1 <- shiny::renderUI({
-          shiny::h3("Boxplot distribution of the resolution-wise stability of the clustering methods")
-        })
+      # shiny::observe({
+      # shiny::req(input$"per_value_umap-select_k")
+      server_graph_clustering_per_value_boxplot("per_value_boxplot")
+      # server_graph_clustering_overall_boxplot("overall_boxplot")
+      # server_graph_clustering_k_stab("k_stab")
+      # }) %>% shiny::bindEvent(input$"per_value_umap-select_k", ignoreInit = TRUE, once = TRUE)
 
-        output$header2 <- shiny::renderUI({
-          shiny::h3("Boxplot distribution of the overall stability")
-        })
-
-        output$header3 <- shiny::renderUI({
-          shiny::h3("Correspondence between the resolution value and the number of clusters")
-        })
-
-        output$header4 <- shiny::renderUI({
-          shiny::h3("The stability of the number of clusters")
-        })
-      # }) %>% shiny::bindEvent(feature_choice)
-
-      output$boxplot_per_res <- shiny::renderPlot({
-        shiny_plot_clustering_per_value_stability(pkg_env$stab_obj$clustering_stability,
-          value_type = "resolution"
+      shiny::observe({
+        # shiny::req(input$"cluster_method_choice-radio_cluster_method")
+        shiny::showModal(
+          stable_config_info(stable_config),
+          session = session
         )
-      })
-
-      output$boxplot_per_k <- shiny::renderPlot({
-        shiny_plot_clustering_per_value_stability(pkg_env$stab_obj$clustering_stability,
-          value_type = "k"
-        )
-      })
-
-      output$boxplot_overall_resolution <- shiny::renderPlot({
-        shiny_plot_clustering_overall_stability(pkg_env$stab_obj$clustering_stability,
-          value_type = "resolution"
-        )
-      })
-
-      output$boxplot_overall_k <- shiny::renderPlot({
-        shiny_plot_clustering_overall_stability(pkg_env$stab_obj$clustering_stability,
-          value_type = "k"
-        )
-      })
-
-      output$k_resolution <- shiny::renderPlot({
-        shiny_plot_k_resolution_corresp(pkg_env$stab_obj$clustering_stability,
-          colour_information = "ecc"
-        )
-      })
-
-      output$k_stability <- shiny::renderPlot({
-        shiny_plot_k_n_partitions(pkg_env$stab_obj$clustering_stability,
-          colour_information = "ecc"
-        )
-      })
-
-      clustering_choice <- server_graph_clustering_choice("cluster_method_choice") #, clustering_importance)
-
-
-
-
+      }) %>% shiny::bindEvent(input$show_config)
+      gc()
       return(clustering_choice)
-
     }
   )
 }
 
-shiny_plot_clustering_per_value_stability <- function(clust_object,
-                                                value_type = c("k", "resolution")) {
+
+boxplot_settings <- function(ns) {
+  shinyWidgets::dropdownButton(
+    shiny::sliderInput(
+      inputId = ns("boxplot_width"),
+      label = "Boxplot width",
+      min = 0.00, max = 1.00, value = 0.50
+    ),
+    shiny::sliderInput(
+      inputId = ns("space_inter_groups"),
+      label = "Space between groups",
+      min = 1, max = 20, value = 1, step = 1
+    ),
+    shiny::sliderInput(
+      inputId = ns("space_intra_groups"),
+      label = "Space between boxplots inside group",
+      min = 1, max = 20, value = 1, step = 1
+    ),
+    shiny::sliderInput(
+      inputId = ns("text_size"),
+      label = "Text size",
+      min = 0.50, max = 10.00, value = 1
+    ),
+    circle = TRUE,
+    status = "info",
+    size = "sm",
+    icon = shiny::icon("gear")
+  )
+}
+
+stable_config_info <- function(stable_config) {
+  shiny::modalDialog(
+    shiny::HTML(paste0("<div><b>Feature type:</b> ", stable_config$feature_set, "</div>")),
+    shiny::HTML(paste0("<div><b>Feature set size:</b> ", stable_config$n_features, "</div>")),
+    shiny::HTML(paste0("<div><b>Number of PCs:</b> ", stable_config$n_pcs, "</div>")),
+    shiny::HTML(paste0("<div><b>Graph base embedding:</b> ", stable_config$base_embedding, "</div>")),
+    shiny::HTML(paste0("<div><b>Graph type:</b> ", stable_config$graph_type, "</div>")),
+    shiny::HTML(paste0("<div><b>Graph pruning value:</b> ", round(stable_config$prune_param, 6), "</div>")),
+    shiny::HTML(paste0("<div><b>Number of neighbours:</b> ", stable_config$n_neighbours, "</div>")),
+    shiny::br(),
+    shiny::em("Note: The stable configuration will be updated when changing the choices from the previous tabs."),
+    title = "Current stable configuration",
+    easyClose = TRUE
+  )
+}
+
+##### GGPLOTS #####
+
+shiny_ggplot_clustering_per_value_stability <- function(clust_object,
+                                                        value_type = c("k", "resolution"),
+                                                        width = 0.2,
+                                                        dodge_width = 0.3,
+                                                        text_size = 5) {
+  print(Sys.time(), "Start shiny plot per value clust")
   value_type <- value_type[value_type %in% c("k", "resolution")]
   # TODO add empty boxplots for the missing values for k at least to help differentiate
 
@@ -245,20 +544,37 @@ shiny_plot_clustering_per_value_stability <- function(clust_object,
   colnames(melted_df) <- c("ecc", value_type, "method")
   melted_df$method <- factor(melted_df$method)
   unique_vals <- stringr::str_sort(unique(melted_df[[value_type]]), numeric = TRUE)
+  lims <- as.numeric(c(unique_vals[1], unique_vals[length(unique_vals)]))
+  lims <- lims - min(lims)
   melted_df[[value_type]] <- factor(melted_df[[value_type]], levels = unique_vals)
 
+  print(Sys.time(), "Stop shiny plot per value clust")
   ggplot2::ggplot(
     melted_df,
     ggplot2::aes(x = .data[[value_type]], y = .data$ecc, fill = .data$method)
   ) +
-    ggplot2::geom_boxplot() +
+    ggplot2::coord_cartesian(ylim = c(0, 1), xlim = lims) +
+    ggplot2::geom_boxplot(
+      position = ggplot2::position_dodge(width = dodge_width),
+      width = width,
+      outlier.shape = NA,
+      outlier.size = 0.1
+    ) +
+    # ggplot2::geom_violin(
+    #   position = ggplot2::position_dodge(width = dodge_width),
+    #   width = width
+    # ) +
     ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste0("Clustering stability per ", value_type))
+    ggplot2::ggtitle(paste0("Clustering stability per ", value_type)) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      text = ggplot2::element_text(size = text_size)
+    )
 }
 
-shiny_plot_clustering_overall_stability <- function(clust_object,
-                                              value_type = c("k", "resolution"),
-                                              summary_function = median) {
+shiny_ggplot_clustering_overall_stability <- function(clust_object,
+                                                    value_type = c("k", "resolution"),
+                                                    summary_function = median) {
   value_type <- value_type[value_type %in% c("k", "resolution")]
 
   if (length(value_type) > 1) {
@@ -289,13 +605,199 @@ shiny_plot_clustering_overall_stability <- function(clust_object,
   ) +
     ggplot2::geom_boxplot() +
     ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste0("Overall clustering stability grouped by ", value_type))
+    ggplot2::ggtitle(paste0("Overall clustering stability grouped by ", value_type)) +
+    ggplot2::theme(legend.position = "bottom")
 }
 
+##### PLOTS ######
+shiny_plot_clustering_per_value_stability <- function(ecc_list,
+                                                      value_type = c("k", "resolution"),
+                                                      width = 0.5,
+                                                      space_inter_groups = 1,
+                                                      space_intra_groups = 1,
+                                                      text_size = 1) {
+  split_names <- lapply(names(ecc_list), function(x) { strsplit(x, ";")[[1]]})
+  k_or_res_values <- sapply(split_names, function(x) { x[1] })
+  unique_values <- as.numeric(unique(k_or_res_values))
+  cl_method <- sapply(split_names, function(x) { x[2] })
+  unique_cl_methods <- unique(cl_method)
+  n_methods <- length(unique_cl_methods)
+  cl_method <- match(cl_method, unique_cl_methods)
+  
+  at_values <- rep(0, length(cl_method))
+  text_coords <- rep(0, length(unique_values))
+  abline_coords <- rep(0, length(unique_values)-1)
+  
+  count_diff <- -1
+  prev_value <- -1
+  updated_count <- FALSE
+  start_index <- 1
+  
+  for (i in seq_along(cl_method)) {
+    if (k_or_res_values[i] != prev_value) {
+      if (prev_value != -1) {
+        updated_count <- TRUE
+      }
+      prev_value <- k_or_res_values[i]
+      count_diff <- count_diff + 1
+      # abline_coords[count_diff+1] <- n_methods * space_intra + (n_methods * space_intra + space_inter) * count_diff + (space_inter) / 2
+    }
+  
+    at_values[i] <- count_diff * (n_methods * space_intra_groups + space_inter_groups) + cl_method[i] + (cl_method[i] - 1) * (space_intra_groups - 1)
+    
+    if (updated_count) {
+      abline_coords[count_diff] <- (at_values[i] + at_values[i-1]) / 2
+      updated_count <- FALSE
+      text_coords[count_diff] <- mean(at_values[start_index:(i-1)])
+      start_index <- i
+    }
+  }
+  
+  text_coords[count_diff+1] <- mean(at_values[start_index:length(cl_method)])
+  
+  
+  boxplot(
+    ecc_list,
+    outline = FALSE,
+    at = at_values,
+    col = rhdf5::h5read("stability.h5", paste0("colors/", n_methods))[cl_method],
+    boxwex = width * (n_methods + (space_intra_groups - 1) * (n_methods -1)) / n_methods,
+    xaxt = "n",
+    xlab = NA,
+    cex.axis = text_size,
+    cex.lab = text_size
+  )
+  abline(v = abline_coords, lty = "dashed", col = "grey")
+  title(xlab = "k", ylab = "ecc", cex.lab = text_size)
+  axis(side = 1, at = text_coords, labels = unique_values, las = 2, cex.axis = text_size)
+
+}
+
+shiny_plot_clustering_per_value_stability_old <- function(clust_object,
+                                                      value_type = c("k", "resolution"),
+                                                      width = 0.5,
+                                                      space_inter_groups = 1,
+                                                      space_intra_groups = 1,
+                                                      text_size = 5) {
+  value_type <- value_type[value_type %in% c("k", "resolution")]
+
+  if (length(value_type) > 1) {
+    value_type <- value_type[1]
+  }
+
+  if (length(value_type) == 0) {
+    stop("`value_type` should contain either `k` or `resolution`")
+  }
+
+  clust_object <- clust_object[[paste0("split_by_", value_type)]]
+
+
+  ecc_vals <- lapply(clust_object, function(by_alg) {
+    lapply(by_alg, function(by_res_value) {
+      as.numeric(by_res_value$ecc)
+    })
+  })
+
+  melted_df <- reshape2::melt(ecc_vals)
+  colnames(melted_df) <- c("ecc", "x_value", "method")
+  melted_df$method <- factor(melted_df$method)
+  unique_vals <- stringr::str_sort(unique(melted_df[["x_value"]]), numeric = TRUE)
+  lims <- as.numeric(c(unique_vals[1], unique_vals[length(unique_vals)]))
+  lims <- lims - min(lims)
+  melted_df[["x_value"]] <- factor(melted_df[["x_value"]], levels = unique_vals)
+
+  method_k_df <- reshape2::melt(lapply(clust_object, function(by_alg) {
+    names(by_alg)
+  })) %>% dplyr::arrange(.data$value)
+  method_k_df$L1 <- as.numeric(factor(method_k_df$L1))
+  max_levels <- max(method_k_df$L1)
+  offset <- floor(max_levels / 2) + max_levels %/% 2
+  cluster_values <- unique(method_k_df$value)
+
+  at_values <- c()
+  name_values <- rep("", length(cluster_values) * max_levels)
+  abline_coords <- rep(0, length(cluster_values) - 1)
+
+  for (i in seq_along(cluster_values)) {
+    name_values[(i - 1) * max_levels + offset] <- cluster_values[i]
+    at_values <- c(at_values, seq_len(max_levels) * space_intra_groups + (max_levels * space_intra_groups + space_inter_groups) * (i - 1))
+
+    if (i == 1) {
+      next
+    }
+
+    abline_coords[i - 1] <- max_levels * space_intra_groups + (max_levels * space_intra_groups + space_inter_groups) * (i - 2) + (space_inter_groups + space_intra_groups) / 2
+  }
+  middle_values <- at_values[seq(from = offset, by = max_levels, to = length(name_values))]
+
+  colorsi <- rainbow(max_levels, s = 0.5)
+
+
+  return({
+    boxplot(
+      ecc ~ method + x_value,
+      data = melted_df,
+      col = colorsi,
+      pch = ".",
+      outline = FALSE,
+      at = at_values,
+      xaxt = "n",
+      boxwex = width * (max_levels + (space_intra_groups - 1) * (max_levels-1)) / max_levels,
+      xlab = NA,
+      cex.axis = text_size,
+      cex.lab = text_size
+    )
+    axis(side = 1, at = middle_values, labels = cluster_values, las = 2, cex.axis = text_size)
+    title(xlab = value_type, cex.lab = text_size)
+    abline(v = abline_coords, lty = "dashed", col = "grey")
+  })
+}
+
+shiny_plot_clustering_overall_stability <- function(clust_object,
+                                                    value_type = c("k", "resolution"),
+                                                    summary_function = median) {
+  value_type <- value_type[value_type %in% c("k", "resolution")]
+
+  if (length(value_type) > 1) {
+    value_type <- value_type[1]
+  }
+
+  if (length(value_type) == 0) {
+    stop("`value_type` should contain either `k` or `resolution`")
+  }
+
+  ecc_vals <- lapply(
+    clust_object[[paste0("split_by_", value_type)]],
+    function(by_alg) {
+      lapply(by_alg, function(by_value) {
+        summary_function(by_value$ecc)
+      })
+    }
+  )
+
+  melted_df <- reshape2::melt(ecc_vals)
+  colnames(melted_df) <- c("ecc", value_type, "method")
+  melted_df$method <- factor(melted_df$method)
+  melted_df[[value_type]] <- factor(melted_df[[value_type]])
+
+  colorsi <- rainbow(nlevels(melted_df$method), s = 0.5)
+  return({
+    boxplot(
+      ecc ~ method,
+      data = melted_df,
+      col = colorsi,
+      pch = "."
+    )
+  })
+
+}
+
+
+
 shiny_plot_k_resolution_corresp <- function(clust_object,
-                                      colour_information = c("ecc", "freq_k"),
-                                      dodge_width = 0.3,
-                                      pt_size_range = c(1.5, 4)) {
+                                            colour_information = c("ecc", "freq_k"),
+                                            dodge_width = 0.3,
+                                            pt_size_range = c(1.5, 4)) {
   # TODO check the colors and the vertical lines, try to help the user
   if (length(colour_information) > 1) {
     colour_information <- colour_information[1]
@@ -397,16 +899,17 @@ shiny_plot_k_resolution_corresp <- function(clust_object,
     )) +
     ggplot2::guides(
       shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
-    )
+    ) +
+    ggplot2::theme(legend.position = "bottom")
 
   return(main_plot)
 }
 
 shiny_plot_k_n_partitions <- function(clust_object,
-                                colour_information = c("ecc", "freq_part"),
-                                dodge_width = 0.3,
-                                pt_size_range = c(1.5, 4),
-                                y_step = 5) {
+                                      colour_information = c("ecc", "freq_part"),
+                                      dodge_width = 0.3,
+                                      pt_size_range = c(1.5, 4),
+                                      y_step = 5) {
   if (length(colour_information) > 1) {
     colour_information <- colour_information[1]
   }
@@ -486,7 +989,6 @@ shiny_plot_k_n_partitions <- function(clust_object,
       yintercept = seq(from = 0, to = max_n_part, by = y_step),
       linetype = "dashed",
       color = "#C3C3d3"
-
     ) +
     ggplot2::geom_vline(
       xintercept = unique(unique_parts$n.clusters),
@@ -508,7 +1010,9 @@ shiny_plot_k_n_partitions <- function(clust_object,
     ggplot2::ylab("# partitions") +
     ggplot2::guides(
       shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
-    )
+    ) +
+    ggplot2::theme(legend.position = "bottom")
+
 
 
   return(main_plot)
