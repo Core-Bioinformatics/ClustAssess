@@ -4,7 +4,7 @@
 \alias{server_landing_page}
 \title{Landing page - server side}
 \usage{
-server_landing_page(id, height_ratio)
+server_landing_page(id, height_ratio, dimension)
 }
 \description{
 to be completed
