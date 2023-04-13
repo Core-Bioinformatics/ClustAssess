@@ -2,11 +2,11 @@
 
 # stab_obj <- readRDS("stability_object2.rds")
 # stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/clustassess_obj.rds")
-# stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/clustassess_obj.rds")
+# stab_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/clustassess_obj.rds")
 # # # expression_matrix <- readRDS("expression_matrix.rds")
 # # expression_matrix <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/expression_matrix.rds")
 
-# se_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/aggregated/HV/aggr_filtered_coding_highrp.rds")
+# se_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/aggregated/HV/aggr_filtered_coding_highrp.rds")
 # se_obj$orig.ident <- NULL
 # se_obj$library <- factor(se_obj$library)
 # se_obj$age <- factor(se_obj$age)
@@ -52,28 +52,36 @@ write_objects <- function(clustassess_object,
     # }
 
     # metadata file
-    # metadata_columns <- colnames(metadata)
-    # metadata_colors <- list()
-    # metadata_unique <- list()
-    # for (mtd_col in metadata_columns) {
-    #     if (is.factor(metadata[,mtd_col])) {
-    #         metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
-    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
-    #     } else if (is.character(metadata[,mtd_col])) {
-    #         metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
-    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
-    #     } else if (is.logical(metadata[,mtd_col])) {
-    #         metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
-    #         metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
+    metadata_columns <- colnames(metadata)
+    metadata_colors <- list()
+    metadata_unique <- list()
+    for (mtd_col in metadata_columns) {
+        if (is.factor(metadata[,mtd_col])) {
+            metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
+            metadata_colors[[mtd_col]] <- ifelse(
+                length(metadata_unique[[mtd_col]]) > 1,
+                qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex,
+                "#92521d"
+            )
+        } else if (is.character(metadata[,mtd_col])) {
+            metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
+            metadata_colors[[mtd_col]] <- ifelse(
+                length(metadata_unique[[mtd_col]]) > 1,
+                qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex,
+                "#92521d"
+            )
+        } else if (is.logical(metadata[,mtd_col])) {
+            metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
+            metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
 
-    #     }
-    # }
-    # saveRDS(list(
-    #     metadata = metadata,
-    #     metadata_colors = metadata_colors,
-    #     metadata_unique = metadata_unique),
-    #     metadata_file_name
-    # )
+        }
+    }
+    saveRDS(list(
+        metadata = metadata,
+        metadata_colors = metadata_colors,
+        metadata_unique = metadata_unique),
+        metadata_file_name
+    )
 
     # establish the feature ordering (original and stable) and convert to data.table
     feature_ordering <- list(original = list(), stable = list(), original_incremental = list())
@@ -370,34 +378,51 @@ write_objects <- function(clustassess_object,
         genes_of_interest <- union(genes_of_interest, clustassess_object[[feature_name]]$feature_list)
     }
 
-    # others_sorted <- sort(rownames(expression_matrix)[!(rownames(expression_matrix) %in% genes_of_interest)])
-    # genes <- c(genes_of_interest, others_sorted)
-    # cells <- colnames(expression_matrix)
+    #the object for expression matrix
+    expression_matrix <- as.matrix(expression_matrix)
+    others_sorted <- sort(rownames(expression_matrix)[!(rownames(expression_matrix) %in% genes_of_interest)])
+    genes <- c(genes_of_interest, others_sorted)
+    cells <- colnames(expression_matrix)
 
-    # the object for expression matrix
-    # rhdf5::h5createFile(expr_file_name)
+    rhdf5::h5createFile(expr_file_name)
 
-    # rhdf5::h5createDataset(expr_file_name, "matrix_of_interest",
-    #     level = compression_level,
-    #     dims = c(length(genes_of_interest), ncol(expression_matrix)),
-    #     storage.mode = "double",
-    #     # chunk = c(length(genes_of_interest), 1)
-    #     chunk = c(1, ncol(expression_matrix))
-    # )
-    # rhdf5::h5createDataset(expr_file_name, "matrix_others",
-    #     level = compression_level,
-    #     dims = c(length(others_sorted), ncol(expression_matrix)),
-    #     maxdims = c(length(others_sorted), ncol(expression_matrix)),
-    #     storage.mode = "double",
-    #     # chunk = c(length(others_sorted), 1)
-    #     chunk = c(1, ncol(expression_matrix))
-    # )
+    rhdf5::h5createDataset(expr_file_name, "matrix_of_interest",
+        level = compression_level,
+        dims = c(length(genes_of_interest), ncol(expression_matrix)),
+        storage.mode = "double",
+        # chunk = c(length(genes_of_interest), 1)
+        chunk = c(1, ncol(expression_matrix))
+    )
 
-    # rhdf5::h5write(genes_of_interest, expr_file_name, "genes_of_interest")
-    # rhdf5::h5write(others_sorted, expr_file_name, "genes_others")
-    # rhdf5::h5write(cells, expr_file_name, "cells")
-    # rhdf5::h5write(as.matrix(expression_matrix[genes_of_interest, ]), expr_file_name, "matrix_of_interest")
-    # rhdf5::h5write(as.matrix(expression_matrix[others_sorted, ]), expr_file_name, "matrix_others")
+    rhdf5::h5createDataset(expr_file_name, "rank_of_interest",
+        level = compression_level,
+        dims = c(length(genes_of_interest), ncol(expression_matrix)),
+        storage.mode = "integer",
+        # chunk = c(length(genes_of_interest), 1)
+        chunk = c(1, ncol(expression_matrix))
+    )
+    
+    rhdf5::h5createDataset(expr_file_name, "matrix_others",
+        level = compression_level,
+        dims = c(length(others_sorted), ncol(expression_matrix)),
+        maxdims = c(length(others_sorted), ncol(expression_matrix)),
+        storage.mode = "double",
+        # chunk = c(length(others_sorted), 1)
+        chunk = c(1, ncol(expression_matrix))
+    )
+
+    rhdf5::h5write(genes_of_interest, expr_file_name, "genes_of_interest")
+    rhdf5::h5write(others_sorted, expr_file_name, "genes_others")
+    rhdf5::h5write(cells, expr_file_name, "cells")
+    rhdf5::h5write(expression_matrix[genes_of_interest, ], expr_file_name, "matrix_of_interest")
+    rhdf5::h5write(expression_matrix[others_sorted, ], expr_file_name, "matrix_others")
+
+    rank_matrix <- matrix(nrow = length(genes_of_interest), ncol = ncol(expression_matrix))
+
+    for (i in seq_len(nrow(rank_matrix))) {
+      rank_matrix[i, ] <- rank(expression_matrix[genes_of_interest[i], ], ties.method = "min")
+    }
+    rhdf5::h5write(rank_matrix, expr_file_name, "rank_of_interest")
 
     print("Done writing genes")
 
@@ -419,4 +444,170 @@ write_objects <- function(clustassess_object,
     rhdf5::h5write(unique_colors, stability_file_name, "colors", level = compression_level)
 
     rhdf5::h5closeAll()
+}
+
+
+
+#' Writing the shiny app folder
+#' 
+#' @description  to be completed
+#' 
+#' @export
+write_shiny_app <- function(seurat_object,
+                            assay_name,
+                            clustassess_object,
+                            project_folder,
+                            compression_level = 6,
+                            summary_function = median,
+                            qualpalr_colorspace = "pretty") {
+
+   write_objects(
+        clustassess_object = clustassess_object,
+        expression_matrix = seurat_object@assays[[assay_name]]@data,
+        metadata = seurat_object@meta.data,
+        project_folder = project_folder,
+        compression_level = compression_level,
+        summary_function = summary_function,
+        qualpalr_colorspace = qualpalr_colorspace
+    )
+
+    file_content <- "
+        library(ggplot2)
+        library(shiny)
+        library(reactlog)
+        library(rhdf5)
+        library(ClustAssess)
+
+        tabs_numbers <- seq_len(5)
+        names(tabs_numbers) <- c(
+        \"Home\",
+        \"Dimensionality Reduction\",
+        \"Graph Construction\",
+        \"Graph Clustering\",
+        \"Comparison\"
+        )
+
+        ui <- fluidPage(
+            tags$head(
+                tags$style(
+                \"#tabset_id {
+                    position: fixed;
+                    width: 100%;
+                    background-color: white;
+                    top: 0;
+                    z-index: 100;
+                    font-size: 25px;
+                    # margin-top: 72px;
+                    }\",
+                \"#graph_clust-show_config {
+                    z-index: 900;
+                    position: fixed;
+                    top: 10px;
+                    font-size: 15px;
+                    right: 25px;
+                }\",
+                \"div.vertical-line{
+                width: 1px; /* Line width */
+                background-color: black; /* Line color */
+                height: 100%; /* Override in-line if you want specific height. */
+                float: left; /* Causes the line to float to left of content. 
+                    You can instead use position:absolute or display:inline-block
+                    if this fits better with your design */
+                }\"
+                )
+            ),
+            tags$head(tags$script(shiny::HTML('
+            var dimension = [0, 0];
+            var resizeId;
+            $(document).on(\"shiny:connected\", function(e) {
+                dimension[0] = window.innerWidth;
+                dimension[1] = window.innerHeight;
+                Shiny.onInputChange(\"dimension\", dimension);
+            });
+
+            function transferWindowSize() {
+                console.log(dimension);
+                console.log(window.innerHeight);
+
+                let dif_width = Math.abs(window.innerWidth - dimension[0]);
+                let dif_height = Math.abs(window.innerHeight - dimension[1]);
+                console.log(dif_height);
+
+                if (dif_width >= 50 || dif_height >= 50) {
+                console.log(\"Changed\")
+                dimension[0] = window.innerWidth;
+                dimension[1] = window.innerHeight;
+                Shiny.onInputChange(\"dimension\", dimension);
+                }
+            }
+
+            $(window).resize(function() {
+                clearTimeout(resizeId);
+                resizeId = setTimeout(transferWindowSize, 500);
+            });
+            '))),
+            tags$head(
+                tags$link(rel = \"stylesheet\", type = \"text/css\", href = \"www/shiny.css\")
+
+            ),
+            # theme = bslib::bs_theme(version = 4),
+            shinyjs::useShinyjs(),
+            tabsetPanel(
+                id = \"tabset_id\",
+                ui_landing_page(\"landing_page\"),
+                ui_dimensionality_reduction(\"dim_reduc\"),
+                ui_graph_construction(\"graph_constr\"),
+                ui_graph_clustering(\"graph_clust\")
+                # ui_comparisons(\"comparison\")
+                # ui_comparisons_2(\"comparison\")
+            )
+            )
+
+            server <- function(input, output, session) {
+            shiny::hideTab(\"tabset_id\", \"Graph Construction\")
+            shiny::hideTab(\"tabset_id\", \"Graph Clustering\")
+            # output$test_o <- renderText(input$dimension)
+            fchoice <- shiny::reactiveVal(
+                list(
+                chosen_feature_type = \"Highly_Variable\",
+                chosen_set_size = \"1500\"
+                )
+            )
+            # fchoice <- NULL 
+            cchoice <- shiny::reactiveVal()
+            height_ratio <- 0.65 # used to control the height of the plot proportional to the window's height
+            observe({
+                shinyjs::runjs(\"window.scrollTo(0, 0)\")
+                tab_number <- as.integer(tabs_numbers[input$tabset_id])
+                print(tab_number)
+
+                if (tab_number == 1) {
+                server_landing_page(\"landing_page\", height_ratio, shiny::reactive(input$dimension))
+                }
+
+                if (tab_number == 2) {
+                fchoice(server_dimensionality_reduction(\"dim_reduc\", session))
+                # fchoice <- shiny::isolate(server_dimensionality_reduction(\"dim_reduc\", session))
+                }
+
+                if (tab_number == 3) {
+                server_graph_construction(\"graph_constr\", fchoice())
+                }
+
+                if (tab_number == 4) {
+                cchoice(server_graph_clustering(\"graph_clust\", fchoice(), shiny::reactive(input$dimension)))
+                }
+
+                if (tab_number == 5) {
+                #server_comparisons_2(\"comparison\", feature_choice, cluster_method_choice)
+                # server_comparisons(\"comparison\", c(\"Highly_Variable\", \"2000\"), \"SLM\")
+                }
+            }) %>% bindEvent(input$tabset_id)
+            }
+    
+    "
+
+
+    write(file_content, file.path(project_folder, "app.R"))
+
 }
