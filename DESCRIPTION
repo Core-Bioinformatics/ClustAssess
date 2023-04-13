@@ -23,6 +23,7 @@ Imports:
     fastcluster,
     rlang,
     Matrix,
+    Gmedian,
     igraph,
     magrittr,
     matrixStats,
