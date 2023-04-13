@@ -224,7 +224,6 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
         shiny::column(6,
         shinyWidgets::pickerInput(
                 inputId = ns("select_groups"),
-                # label = "Tu",
                 choices = "",
                 inline = FALSE,
                 # width = "100%",
@@ -1215,7 +1214,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     pt.cex = text_size * 2,
     bty = 'n',
     ncol = number_columns,
-    text.width = NA,
+    # text.width = NA,
     xpd = TRUE,
     inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
   )
@@ -1311,7 +1310,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
     pt.cex = text_size * 2,
     bty = 'n',
     ncol = number_columns,
-    text.width = NA,
+    # text.width = NA,
     xpd = TRUE,
     inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
   )
