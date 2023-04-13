@@ -461,6 +461,10 @@ write_shiny_app <- function(seurat_object,
                             summary_function = median,
                             qualpalr_colorspace = "pretty") {
 
+    if (!dir.exists(project_folder)) {
+        dir.create(project_folder)
+    }
+
    write_objects(
         clustassess_object = clustassess_object,
         expression_matrix = seurat_object@assays[[assay_name]]@data,
