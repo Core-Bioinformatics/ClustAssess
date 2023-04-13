@@ -42,6 +42,7 @@ Imports:
     SharedObject,
     stringr,
     gtable,
+    reactlog,
     glue,
     shiny,
     shinyWidgets,
