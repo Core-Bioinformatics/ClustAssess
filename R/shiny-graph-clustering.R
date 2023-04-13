@@ -125,6 +125,42 @@ ui_graph_clustering_k_stab <- function(id) {
   )
 }
 
+
+ui_comparison_markers <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
+    shiny::selectInput(
+      inputId = ns("select_method_markers"),
+      label = "Select the clustering method",
+      choices = ""
+    ),
+    # shiny::uiOutput(ns("select_n_clusters_generator")),
+    shiny::selectInput(
+      inputId = ns("select_k_markers"),
+      label = "Select the number of clusters (k)",
+      choices = ""
+    ),
+    shinyWidgets::pickerInput(
+          inputId = ns("select_clusters_markers"),
+          label = "Select the group of k",
+          choices = "",
+          inline = FALSE,
+          # width = "100%",
+          # width = "30%",
+          options = list(
+            `actions-box` = TRUE,
+            title = "Select/deselect clusters",
+            # actionsBox = TRUE,
+            size = 10,
+            width = "90%",
+            `selected-text-format` = "count > 3"
+          ), 
+          multiple = TRUE
+        )
+  )
+}
+
 #' Graph clustering - ui side
 #'
 #' @description to be completed
@@ -140,7 +176,26 @@ ui_graph_clustering <- function(id) {
     ui_graph_clustering_per_value_umap(ns("per_value_umap")),
     ui_graph_clustering_overall_boxplot(ns("overall_boxplot")),
     ui_graph_clustering_k_stab(ns("k_stab")),
-    ui_graph_clustering_choice(ns("cluster_method_choice"))
+    ui_graph_clustering_choice(ns("cluster_method_choice")),
+
+    shiny::h2("Identification of markers"),
+    shiny::fluidRow(
+      shiny::column(
+          6,
+          ui_comparison_markers(ns("group_left"))
+      ),
+      shiny::column(
+          6,
+          ui_comparison_markers(ns("group_right"))
+      )
+  ),
+  shiny::actionButton(ns("markers_button"),
+      "Find markers!"
+  ),
+  DT::dataTableOutput(ns("markers")),
+  shiny::downloadButton(ns("markers_download_button"),
+      "Download markers!"
+  ),
   )
 }
 
@@ -288,7 +343,8 @@ server_graph_clustering_per_value_umap <- function(id) {
       )
 
       k_legend_height <- shiny::reactive({
-        shiny::req(input$select_k != "")
+        # shiny::req(input$select_k != "")
+        shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
         unique_values <- seq_len(as.integer(input$select_k))
 
         predicted_width <- strwidth(unique_values, units = "inches", cex = input$clustering_umap_text_size) * 96
@@ -300,6 +356,10 @@ server_graph_clustering_per_value_umap <- function(id) {
         2 * predicted_height * number_rows
       })
 
+      ecc_legend_height <- shiny::reactive(
+        (0.2 + 2 * strheight("text", units = "inches", cex = input$clustering_umap_text_size)) * 96
+      )
+
       output$umap_k <- shiny::renderPlot(
         height = function() {
           plt_height()
@@ -309,7 +369,7 @@ server_graph_clustering_per_value_umap <- function(id) {
         },
         {
         # shiny::req(pkg_env$lock_choice(), pkg_env$lock_k(), pkg_env$lock_stable)
-        shiny::req(input$select_k != "")
+        shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
 
         color_plot2(
           embedding = pkg_env$stab_obj$umap,
@@ -333,10 +393,7 @@ server_graph_clustering_per_value_umap <- function(id) {
           text_size = input$clustering_umap_text_size,
           labels = input$clustering_umap_labels,
           groups_highlight = input$select_clusters
-
-          # factor(pkg_env$stab_obj$clustering_stability$split_by_k[[input$select_method]][[input$select_k]]$mb, levels = as.character(seq_len(as.numeric(input$select_k))))
-        ) #+ ggplot2::theme(legend.position = "bottom", aspect.ratio = 1) +
-          # ggplot2::guides(color = ggplot2::guide_legend(title = "clusters"))
+        )
       })
 
          output$umap_k_legend <- shiny::renderPlot(
@@ -348,10 +405,84 @@ server_graph_clustering_per_value_umap <- function(id) {
           },
           {
             shiny::req(k_legend_height())
+            # shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
             only_legend_plot(
               unique_values = seq_len(as.integer(input$select_k)),
               color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k)),
               color_info = NULL,
+              plt_width = plt_height(),
+              text_size = input$clustering_umap_text_size 
+            )
+
+          }
+        )
+
+        ecc_value <- shiny::reactive({
+          shiny::req(input$select_k != "")
+          
+          formatted_k <- sprintf("%06d", as.integer(input$select_k))
+           rhdf5::h5read("stability.h5", paste(
+              # input$
+              pkg_env$lock_stable$feature_set,
+              pkg_env$lock_stable$n_features,
+              "clustering_stability",
+              "split_by_k",
+              "ecc",
+              paste(formatted_k, input$select_method, sep = ";"),
+              sep = "/"
+            ))
+        })
+
+        output$umap_ecc <- shiny::renderPlot(
+          height = function() {
+            plt_height()
+          },
+          width = function() {
+            plt_height()
+          },
+          {
+          # shiny::req(pkg_env$lock_choice(), pkg_env$lock_k(), pkg_env$lock_stable)
+          shiny::req(input$select_k != "")
+          formatted_k <- sprintf("%06d", as.integer(input$select_k))
+
+          ecc_order <- rhdf5::h5read("stability.h5", paste(
+            # input$
+            pkg_env$lock_stable$feature_set,
+            pkg_env$lock_stable$n_features,
+            "clustering_stability",
+            "split_by_k",
+            "ecc_order",
+            paste(formatted_k, input$select_method, sep = ";"),
+            sep = "/"
+          ))
+
+          color_plot2(
+            embedding = pkg_env$stab_obj$umap[ecc_order, ],
+            color_info = ecc_value(),
+            color_values = NULL,
+            unique_values = NULL,
+            plt_height = plt_height(),
+            plt_width = plt_height(),
+            pch = ifelse(input$clustering_umap_pt_type == "Pixel", ".", 19),
+            pt_size = input$clustering_umap_pt_size,
+            text_size = input$clustering_umap_text_size
+          )
+        })
+
+        output$umap_ecc_legend <- shiny::renderPlot(
+          height = function() {
+            ecc_legend_height()
+          },
+          width = function() {
+            plt_height()
+          },
+          {
+            # shiny::req(k_legend_height())
+            shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
+            only_legend_plot(
+              unique_values = NULL,
+              color_values = NULL,
+              color_info = ecc_value(),
               plt_width = plt_height(),
               text_size = input$clustering_umap_text_size 
             )
@@ -397,6 +528,43 @@ server_graph_clustering_k_stab <- function(id) {
           colour_information = "ecc"
         )
       })
+    }
+  )
+}
+
+
+server_comparison_markers <- function(id) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "select_method_markers",
+        choices = names(pkg_env$stab_obj$structure_list),
+        selected = names(pkg_env$stab_obj$structure_list)[1],
+      )
+      # )
+
+      shiny::observe({
+        shiny::req(input$select_method_markers %in% names(pkg_env$stab_obj$structure_list))
+        # print(input$select_method)
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_k_markers",
+          choices = pkg_env$stab_obj$structure_list[[input$select_method_markers]],
+          selected = pkg_env$stab_obj$structure_list[[input$select_method_markers]][1]
+        )
+      })
+
+      shiny::observe({
+        shiny::req(input$select_k_markers %in% pkg_env$stab_obj$structure_list[[input$select_method_markers]])
+        shinyWidgets::updatePickerInput(
+          session = session,
+          inputId = "select_clusters_markers",
+          choices = seq_len(as.integer(input$select_k_markers))
+        )
+      }) %>% shiny::bindEvent(input$select_k_markers)
+
     }
   )
 }
@@ -460,7 +628,87 @@ server_graph_clustering <- function(id, feature_choice, window_height) {
           session = session
         )
       }) %>% shiny::bindEvent(input$show_config)
-      gc()
+
+  
+  
+      server_comparison_markers("group_left")
+      server_comparison_markers("group_right")
+      used_genes <- rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))]
+      expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[used_genes], NULL))
+      rank_matrix <- rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[used_genes], NULL))
+      rownames(expr_matrix) <- used_genes
+
+      markers_val <- shiny::reactive({
+        print("start")
+        print(system.time({
+          mb1 <-  factor(rhdf5::h5read("stability.h5", paste(
+            # input$
+            ftype,
+            fsize,
+            "clustering_stability",
+            "split_by_k",
+            "mbs",
+            input$"group_left-select_method_markers",
+            input$"group_left-select_k_markers",
+            sep = "/"
+          )))
+        
+      mb2 <-  factor(rhdf5::h5read("stability.h5", paste(
+            # input$
+            ftype,
+            fsize,
+            "clustering_stability",
+            "split_by_k",
+            "mbs",
+            input$"group_right-select_method_markers",
+            input$"group_right-select_k_markers",
+            sep = "/"
+          )))
+
+      cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers" )
+      cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
+
+      }))
+      # cells_left <- colnames(expr_matrix())[cells_index_left]
+      # cells_right <- colnames(expr_matrix())[cells_index_right]
+      
+
+      calculate_markers(
+        expression_matrix = expr_matrix,
+        cells1 = cells_index_left,
+        cells2 = cells_index_right,
+        rank_matrix = rank_matrix
+      )
+
+      # print(mks)
+      # write.csv(mks, "test.csv")
+
+      # return(mks)
+
+      }) %>% shiny::bindEvent(input$markers_button)
+
+
+    output$markers <- DT::renderDataTable({
+      shiny::req(markers_val())
+      markers_val()
+    }, rownames = FALSE)
+
+    output$markers_download_button <- shiny::downloadHandler(
+      filename = function() { "markers.csv" },
+      content = function(file) {
+         write.csv(markers_val(), file)
+      }
+    )
+
+    shinyjs::hide("markers_download_button")
+
+    shiny::observe({
+      shiny::req(markers_val())
+      shinyjs::show("markers_download_button")
+    }) %>% shiny::bindEvent(markers_val())
+
+
+      # gc()
       return(clustering_choice)
     }
   )
