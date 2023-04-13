@@ -108,13 +108,18 @@ ui_landing_page <- function(id){
 #' @description to be completed
 #'
 #' @export
-server_landing_page <- function(id, height_ratio) {
+server_landing_page <- function(id, height_ratio, dimension) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+        ggplot2::theme_set(ggplot2::theme_classic())
         if (is.null(pkg_env$feature_ordering)) {
+          print(paste(Sys.time(), "landing - loading"))
           add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
-          add_env_variable("metadata", readRDS("metadata.rds"))
+          mdt <- readRDS("metadata.rds")
+          add_env_variable("metadata", mdt$metadata)
+          add_env_variable("metadata_colors", mdt$metadata_colors)
+          add_env_variable("metadata_unique", mdt$metadata_unique)
           genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
           index <- seq_along(genes)
           names(index) <- genes
@@ -123,13 +128,17 @@ server_landing_page <- function(id, height_ratio) {
           index <- seq_along(genes)
           names(index) <- genes
           add_env_variable("genes_others", index)
-          rm(genes)
-          rm(index)
-          gc()
+          # rm(genes)
+          # rm(index)
+          # gc()
           add_env_variable("cells", rhdf5::h5read("expression.h5", "cells"))
           add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
           add_env_variable("height_ratio", height_ratio)
+          print(paste(Sys.time(), "landing - finished loading"))
         }
+
+        add_env_variable("dimension", dimension)
     }
+    
   )
 }
