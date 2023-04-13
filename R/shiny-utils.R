@@ -177,7 +177,7 @@ only_legend_plot <- function(unique_values,
       pt.cex = text_size * 2,
       bty = 'n',
       ncol = number_columns,
-      text.width = NA,
+      # text.width = NA,
       xpd = TRUE
     )
   }
@@ -347,7 +347,7 @@ color_plot2 <- function(embedding,
       pt.cex = text_size * 2,
       bty = 'n',
       ncol = number_columns,
-      text.width = NA,
+      # text.width = NA,
       xpd = TRUE
     )
   }
