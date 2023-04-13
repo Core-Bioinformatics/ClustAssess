@@ -58,18 +58,18 @@ write_objects <- function(clustassess_object,
     for (mtd_col in metadata_columns) {
         if (is.factor(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
-            metadata_colors[[mtd_col]] <- ifelse(
-                length(metadata_unique[[mtd_col]]) > 1,
-                qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex,
-                "#92521d"
-            )
+            if (length(metadata_unique[[mtd_col]]) > 1) {
+                metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
+            } else {
+                metadata_colors[[mtd_col]] <- "#92521d"
+            }
         } else if (is.character(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
-            metadata_colors[[mtd_col]] <- ifelse(
-                length(metadata_unique[[mtd_col]]) > 1,
-                qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex,
-                "#92521d"
-            )
+            if (length(metadata_unique[[mtd_col]]) > 1) {
+                metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
+            } else {
+                metadata_colors[[mtd_col]] <- "#92521d"
+            }
         } else if (is.logical(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
             metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
@@ -111,7 +111,7 @@ write_objects <- function(clustassess_object,
 
                 ecc_by_step <- clustassess_object$feature_stability$by_steps[[ftype]][[fsize_index]][[resval]]$ecc
                 summary_values_by_step[res_index] <- summary_function(ecc_by_step)
-                res_dt_by_step <- data.table::data.table(ecc = ecc_by_step, res = resval) #  mb = mb if you want to also include the mb vector
+                res_dt_by_step <- data.frame(ecc = ecc_by_step, res = resval) #  mb = mb if you want to also include the mb vector
                 if (res_index == 1) {
                     size_dt_by_step <- res_dt_by_step
                 } else {
@@ -122,7 +122,7 @@ write_objects <- function(clustassess_object,
                     ecc_incremental <- clustassess_object$feature_stability$incremental[[ftype]][[fsize_index]][[resval]]
 
                     summary_values_incremental[res_index] <- summary_function(ecc_incremental)
-                    res_dt_incremental <- data.table::data.table(ecc = ecc_incremental, res = resval) #  mb = mb if you want to also include the mb vector
+                    res_dt_incremental <- data.frame(ecc = ecc_incremental, res = resval) #  mb = mb if you want to also include the mb vector
                     if (res_index == 1) {
                         size_dt_incremental <- res_dt_incremental
                     } else {
@@ -134,7 +134,7 @@ write_objects <- function(clustassess_object,
             }
 
             size_dt_by_step[,"fsize"] <-  fsize_index
-            summary_values_by_step <- data.table::data.table(ecc = summary_values_by_step, fsize = fsize_index)
+            summary_values_by_step <- data.frame(ecc = summary_values_by_step, fsize = fsize_index)
 
             if (fsize_index == 1) {
                 ftype_dt_by_step <- size_dt_by_step
@@ -149,7 +149,7 @@ write_objects <- function(clustassess_object,
             }
 
             size_dt_incremental[,"fsize"] <-  fsize_index
-            summary_values_incremental <- data.table::data.table(ecc = summary_values_incremental, fsize = fsize_index)
+            summary_values_incremental <- data.frame(ecc = summary_values_incremental, fsize = fsize_index)
 
             if (fsize_index == 1) {
                 ftype_dt_incremental <- size_dt_incremental
@@ -185,15 +185,16 @@ write_objects <- function(clustassess_object,
     feature_ordering$resolution <- stringr::str_sort(resolution_values, numeric = TRUE)
     # split the data tables by resolution
     clustassess_object$feature_stability$by_steps <- lapply(resolution_values, function(resval) {
-        subdt <- overall_dtable_by_step[res == resval][order(ecc)]
+        subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval) %>% dplyr::arrange(order(.data$ecc))
         subdt$fsize <- factor(subdt$fsize)
+        subdt$resval <- NULL
 
-        return(subdt[, resval:=NULL])
+        return(subdt)
     })
     names(clustassess_object$feature_stability$by_steps) <- feature_ordering$resolution
 
     clustassess_object$feature_stability$incremental  <- lapply(resolution_values, function(resval) {
-        subdt <- overall_dtable_incremental[res == resval][order(ecc)]
+        subdt <- overall_dtable_incremental %>% dplyr::filter(.data$res == resval) %>% dplyr::arrange(order(.data$ecc))
         subdt$fsize <- factor(subdt$fsize)
 
         return(subdt)
@@ -270,7 +271,7 @@ write_objects <- function(clustassess_object,
                         # )
                         # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions <- NULL
 
-                        temp_by_res_summary <- data.table::data.table(
+                        temp_by_res_summary <- data.frame(
                             k = as.integer(n_clusters),
                             res = as.numeric(res),
                             cl_method = cl_method,
@@ -321,7 +322,7 @@ write_objects <- function(clustassess_object,
                     ecc_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc[ecc_order]
                     ecc_order_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc_order
 
-                    temp_by_k_summary <- data.table::data.table(
+                    temp_by_k_summary <- data.frame(
                         k = as.integer(n_clusters),
                         cl_method = cl_method,
                         n_partitions = length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions),
@@ -348,14 +349,14 @@ write_objects <- function(clustassess_object,
 
             clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k <- list(
                 mbs = mbs_list,
-                summary = by_k_summary[order(k, cl_method)],
+                summary = by_k_summary %>% dplyr::arrange(.data$k, .data$cl_method),
                 ecc = ecc_list,
                 ecc_order = ecc_order_list,
                 structure_list = structure_list
             )
 
             clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution <- list(
-                summary = by_res_summary[order(res, cl_method)],
+                summary = by_res_summary %>% dplyr::arrange(.data$res, .data$cl_method),
                 ecc = ecc_list_by_res,
                 ecc_order = ecc_order_list_by_res
             )
@@ -560,7 +561,7 @@ write_shiny_app <- function(seurat_object,
                 id = \"tabset_id\",
                 ui_landing_page(\"landing_page\"),
                 ui_dimensionality_reduction(\"dim_reduc\"),
-                ui_graph_construction(\"graph_constr\"),
+                #ui_graph_construction(\"graph_constr\"),
                 ui_graph_clustering(\"graph_clust\")
                 # ui_comparisons(\"comparison\")
                 # ui_comparisons_2(\"comparison\")
@@ -595,7 +596,7 @@ write_shiny_app <- function(seurat_object,
                 }
 
                 if (tab_number == 3) {
-                server_graph_construction(\"graph_constr\", fchoice())
+                #server_graph_construction(\"graph_constr\", fchoice())
                 }
 
                 if (tab_number == 4) {
@@ -613,5 +614,6 @@ write_shiny_app <- function(seurat_object,
 
 
     write(file_content, file.path(project_folder, "app.R"))
+    styler::style_file(file.path(project_folder, "app.R"))
 
 }
