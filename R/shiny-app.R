@@ -609,6 +609,8 @@ write_shiny_app <- function(seurat_object,
                 }
             }) %>% bindEvent(input$tabset_id)
             }
+
+            shinyApp(ui, server)
     
     "
 
