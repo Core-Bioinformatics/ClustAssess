@@ -792,7 +792,7 @@ server_dimensionality_distribution <- function(id) {
         predicted_width <- strwidth(unique_values, units = "inches", cex = input$metadata_text_size) * 96
         predicted_height <- strheight(unique_values[1], units = "inches", cex = input$metadata_text_size) * 96
         space_width <- strwidth(" ", units = "inches", cex = input$metadata_text_size) * 96
-        number_columns <- plt_height() %/% (4 * space_width + max(predicted_width))
+        number_columns <- min(plt_height() %/% (4 * space_width + max(predicted_width)), length(unique_values))
         number_rows <- ceiling(length(unique_values) / number_columns)
 
         2 * predicted_height * number_rows

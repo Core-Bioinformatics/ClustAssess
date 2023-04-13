@@ -145,7 +145,7 @@ only_legend_plot <- function(unique_values,
       # calculate space needed for the legend
     predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
     space_width <- strwidth(" ", units = "inches", cex = text_size)
-    number_columns <- plt_width %/% (4 * space_width + max(predicted_width))
+    number_columns <- min(plt_width %/% (4 * space_width + max(predicted_width)), length(unique_values))
   }
   
   if (is.null(color_values)) {
@@ -169,7 +169,7 @@ only_legend_plot <- function(unique_values,
     par(mar = c(0, 0, 0, 0))
     plot(NULL, xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
     legend(
-      "center",
+      "topleft",
       legend = unique_values,
       col = color_values,
       pch = 15,
