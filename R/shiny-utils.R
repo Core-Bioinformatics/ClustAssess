@@ -575,6 +575,7 @@ download_plot_handler <- function(session, filename, to_save_plot, width, height
 identify_cluster_markers <- function(
   cells1_name,
   cells2_name,
+  expression_matrix,
   mean_function_name = "logNormalize",
   features = NULL
 ) {
@@ -583,7 +584,7 @@ identify_cluster_markers <- function(
   print(cells1_name)
   print(cells2_name)
   foldchange_result <- Seurat::FoldChange(
-    object = pkg_env$expression_matrix,
+    object = expression_matrix,
     cells.1 = cells1_name,
     cells.2 = cells2_name,
     features = features,
@@ -663,6 +664,7 @@ calculate_markers <- function(expression_matrix,
                               pseudocount_use = 1,
                               base = 2) {
   
+  print(Sys.time())
   default_mean_fxn <- function(x) {
     return(log(x = rowMeans(x = x) + pseudocount_use, base = base))
   }
@@ -676,8 +678,9 @@ calculate_markers <- function(expression_matrix,
 
   expression_matrix <- expression_matrix[ , indices]
 
+
   used_slot <- "data"
-  norm_method <- NULL
+  norm_method <- ""
 
   base_text <- ifelse(test = base == exp(1), yes = "", no = base)
   fc_name <- ifelse(
@@ -686,7 +689,7 @@ calculate_markers <- function(expression_matrix,
     no = paste0("avg_log", base_text, "FC")
   )
   mean_fxn <- switch(EXPR = used_slot,
-    data = switch(EXPR = norm.method %||% "",
+    data = switch(EXPR = norm_method,
       LogNormalize = function(x) {
         return(log(x = rowMeans(x = expm1(x = x)) + pseudocount_use, base = base))
       },
@@ -694,10 +697,10 @@ calculate_markers <- function(expression_matrix,
     scale.data = rowMeans,
     default_mean_fxn
   )
-
+  
   fc_results <- Seurat::FoldChange(
     object = expression_matrix,
-    cells.1 = seq_along(cells1), ,
+    cells.1 = seq_along(cells1), 
     cells.2 = seq(from = length(cells1) + 1, to = length(indices), by = 1),
     mean.fxn = mean_fxn,
     fc.name = fc_name
@@ -722,16 +725,19 @@ calculate_markers <- function(expression_matrix,
   # return(expression_matrix)
 
   if (!is.matrix(rank_matrix)) {
-    rank_matrix = matrix(nrow = nrow(expression_matrix), ncol = ncol(expression_matrix))
+    print(Sys.time())
+    rank_matrix <- matrix(nrow = nrow(expression_matrix), ncol = ncol(expression_matrix))
 
     for (i in seq_len(nrow(expression_matrix))) {
       rank_matrix[i, ] <- rank(expression_matrix[i, ], ties.method = "min")
     }
+    print(Sys.time())
   } else {
-    rank_matrix <- rank_matrix[mask, ]
+    rank_matrix <- rank_matrix[mask, indices]
   }
 
-  fc_results$p_val <- wilcox_test(rank_matrix[, indices], length(cells1), ncol(rank_matrix))
+  fc_results$p_val <- wilcox_test(rank_matrix, length(cells1), max(rank_matrix))
+  print(Sys.time())
   fc_results$gene <- feature_names
   fc_results$p_val_adj <- p.adjust(
     p = fc_results$p_val,
