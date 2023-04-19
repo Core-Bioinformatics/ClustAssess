@@ -4,6 +4,10 @@
 
 ui_graph_construction <- function(id) {
   ns <- shiny::NS(id)
+  shiny::absolutePanel(id='selection_info',
+                       height ='20%',
+                       width = '100%',
+                       top = '100%')
   shiny::tabPanel(
     "Graph Construction",
     h1("Relationship between the number of neighbours and the number of connected components"),
@@ -86,7 +90,7 @@ ui_graph_construction <- function(id) {
     shiny::fluidRow(shiny::tags$head(shiny::tags$style(shiny::HTML("pre { white-space: pre-wrap; word-break: keep-all; }"))),
                     shiny::splitLayout(cellWidths = c("15%", "55%","30%"),
                                        shiny::div(style="width:90%;",shiny::verticalLayout(
-                                         shiny::verbatimTextOutput(ns("hover_info")),
+                                         shiny::htmlOutput(ns("hover_info")),
                                          shiny::h1('\n'))),
                                        shiny::plotOutput(ns("plot_neigh_k"),hover = shiny::hoverOpts(id = ns("nn_hover"), delayType = "throttle"),click = shiny::clickOpts(id=ns("ecc_click")), width="100%", height="700px"),
                                        shiny::div(style="width:90%;",shiny::verticalLayout(shiny::verbatimTextOutput(ns("click_info")),shiny::plotOutput(ns('umap_ecc'))))
@@ -135,11 +139,11 @@ ui_graph_construction <- function(id) {
     shiny::fluidRow(
       shiny::splitLayout(cellWidths = c("15%", "55%","30%"),
                          shiny::verticalLayout(shiny::div(style="width:90%;"),
-                                               shiny::verbatimTextOutput(ns("hover_info_nnstab")),
+                                               shiny::htmlOutput(ns("hover_info_nnstab")),
                                                shiny::h1('\n')),
                          shiny::plotOutput(ns("plot_neigh_stability"),hover = shiny::hoverOpts(id = ns("nn_stability_hover"), delayType = "throttle"),click = shiny::clickOpts(id=ns("neigh_stability_click")), width="100%", height="700px"),
                          shiny::div(style="width:90%;",shiny::verticalLayout(shiny::verbatimTextOutput(ns("click_info_2")),shiny::plotOutput(ns('neigh_umap_ecc')))))
-    ),style="margin-left:10px "
+    ),style="margin-left:25px;margin-top:72px"
   )
 }
 ####### SERVER #######
@@ -191,7 +195,7 @@ server_graph_construction <- function(id,chosen_config){
         }else{
           option <-'Greys'
         }
-        ClustAssess::plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
+        plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
           ggplot2::scale_fill_brewer(palette = option)
       })
       #1 Plot Relationship between the number of neighbours and then number of connected components
@@ -222,29 +226,28 @@ server_graph_construction <- function(id,chosen_config){
         }
       )
       #Add hovering output for second plot, and add the text box
-      ecc_mouse_hover <- shiny::reactiveVal(c(NA, NA,NA))
-      output$hover_info <- shiny::renderPrint({
+      output$hover_info <- shiny::renderUI({
         if(is.null(input$nn_hover)) {
-          return(cat('Hover over the plot to see more'))
-        }
-        x <- input$nn_hover$x
-        col <- round(x)
-        obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
-        obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
-        configs <- unique(obj$L1)
-        cat(paste0('Selected NN:','\t',val,'\n'))
-        for (config in configs){
-          filt_obj <- obj[obj$L1==config,]
+          HTML(paste(strong('Hover over the plot to see more')))
+        }else{
+          col <- round(input$nn_hover$x)
+          obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
+          obj <- reshape2::melt(obj)
+          val <- sort.int(as.integer(unique(obj$L2)))[col]
+          configs <- unique(obj$L1)
           
-          maxi <- max(filt_obj$value[filt_obj$L2==val])
-          mini <- min(filt_obj$value[filt_obj$L2==val])
-          iqr <- stats::IQR(filt_obj$value[filt_obj$L2==val])
-          
-          cat(paste0(config,'\n'))
-          cat(paste0('Max: ',maxi,'\n'))
-          cat(paste0('Min: ',mini,'\n'))
-          cat(paste0('IQR: ',iqr,'\n'))
+          out <- paste0(strong('Selected number of neighbours: '),val,'<br/>','<br/>')
+          for (config in configs){
+            filt_obj <- obj[obj$L1==config,]
+            
+            maxi <- max(filt_obj$value[filt_obj$L2==val])
+            mini <- min(filt_obj$value[filt_obj$L2==val])
+            iqr <- stats::IQR(filt_obj$value[filt_obj$L2==val])
+            
+            tmp_out <- paste0(strong(config),'<br/>','Max: ',maxi,'<br/>','Min: ',mini,'<br/>','IQR: ',iqr,'<br/>','<br/>')
+            out <- paste0(out,tmp_out)
+          }
+          HTML(paste(out,sep=''))
         }
       })
       #Reactive for second plot
@@ -261,7 +264,7 @@ server_graph_construction <- function(id,chosen_config){
         }else{
           obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
-          ClustAssess::plot_n_neigh_k_correspondence(obj$nn_stability) +
+          plot_n_neigh_k_correspondence(obj$nn_stability) +
             ggplot2::scale_fill_brewer(palette = option)
         }
       })
@@ -298,7 +301,7 @@ server_graph_construction <- function(id,chosen_config){
         col <- round(input$ecc_click$x)
         obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
         obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
+        val <- sort.int(as.integer(unique(obj$L2)))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
           selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
@@ -308,7 +311,7 @@ server_graph_construction <- function(id,chosen_config){
           selected_config <- ceiling(input_steps)
           selection <- sort(configs)[selected_config]
         }
-        cat(paste0('UMAP:','\n',selection,'\n',val,' NNs'))
+        cat(paste0(selection,'\n',val,' NNs'))
       })
       output$umap_ecc <- shiny::renderPlot({
         if(is.null(input$ecc_click)) {
@@ -318,7 +321,7 @@ server_graph_construction <- function(id,chosen_config){
         col <- round(input$ecc_click$x)
         obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
         obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
+        val <-  sort.int(as.integer(unique(obj$L2)))[col]
         configs <- unique(obj$L1)
         if (input$ecc_click$x<0.5){
           selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
@@ -336,9 +339,12 @@ server_graph_construction <- function(id,chosen_config){
           aes(x = .data$X1,
               y = .data$X2,
               color = ecc)) +
+          ggplot2::xlab('UMAP 1') +
+          ggplot2::ylab('UMAP 2') +
           ggplot2::geom_point() +
           ggplot2::scale_color_viridis_c() +
-          ggplot2::theme_bw()
+          ggplot2::theme_bw() + 
+          ggplot2::coord_fixed()
       })
       #Reactive for third plot
       plot_neigh_stability_Input <- shiny::reactive({
@@ -350,11 +356,11 @@ server_graph_construction <- function(id,chosen_config){
           option <-'Greys'
         }
         if (length(input$sel_stab)==0){
-          return(ggplot2:ggplot() + ggplot2::theme_void())
+          return(ggplot2::ggplot() + ggplot2::theme_void())
         }else{
           obj <- pkg_env$stab_obj
           obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
-          ClustAssess::plot_n_neigh_ecs(obj$nn_stability) +
+          plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
             ggplot2::scale_fill_brewer(palette = option)
         }
       })
@@ -385,28 +391,31 @@ server_graph_construction <- function(id,chosen_config){
         }
       )
       #Hover info
-      output$hover_info_nnstab <- shiny::renderPrint({
+      hoverdf <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency
+      hoverdf <- reshape2::melt(hoverdf)
+      hoverdf$value <- round(hoverdf$value,digits=2)
+      
+      output$hover_info_nnstab <- shiny::renderUI({
         if(is.null(input$nn_stability_hover)) {
-          return(cat('Hover over the plot to see more'))
-        }
-        x <- input$nn_stability_hover$x
-        col <- round(x)
-        obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
-        obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
-        configs <- unique(obj$L1)
-        cat(paste0('Selected NN:','\t',val,'\n'))
-        for (config in configs){
-          filt_obj <- obj[obj$L1==config,]
+          HTML(paste(strong('Hover over the plot to see more')))
+        }else{
+          col <- round(input$nn_stability_hover$x)
+          obj <- subset(hoverdf, L1 == input$sel_stab)
+          val <-  sort.int(as.integer(unique(obj$L2)))[col]
+          configs <- unique(obj$L1)
           
-          maxi <- round(max(filt_obj$value[filt_obj$L2==val]),digits=2)
-          mini <- round(min(filt_obj$value[filt_obj$L2==val]),digits=2)
-          iqr <- round(IQR(filt_obj$value[filt_obj$L2==val]),digits=2)
-          
-          cat(paste0(config,'\n'))
-          cat(paste0('Max: ',maxi,'\n'))
-          cat(paste0('Min: ',mini,'\n'))
-          cat(paste0('IQR: ',iqr,'\n'))
+          out <- paste0(strong('Selected number of neighbours: '),val,'<br/>','<br/>')
+          for (config in configs){
+            filt_obj <- obj[obj$L1==config,]
+            
+            maxi <- max(filt_obj$value[filt_obj$L2==val])
+            mini <- min(filt_obj$value[filt_obj$L2==val])
+            iqr <- IQR(filt_obj$value[filt_obj$L2==val])
+            
+            tmp_out <- paste0(strong(config),'<br/>','Max: ',maxi,'<br/>','Min: ',mini,'<br/>','IQR: ',iqr,'<br/>','<br/>')
+            out <- paste0(out,tmp_out)
+          }
+          HTML(paste(out,sep=''))
         }
       })
       #Plot UMAP + add some text on the chosen selection
@@ -417,7 +426,7 @@ server_graph_construction <- function(id,chosen_config){
         col <- round(input$neigh_stability_click$x)
         obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
+        val <-  sort.int(as.integer(unique(obj$L2)))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
           selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
@@ -427,7 +436,7 @@ server_graph_construction <- function(id,chosen_config){
           selected_config <- ceiling(input_steps)
           selection <- sort(configs)[selected_config]
         }
-        cat(paste0('UMAP:','\n',selection,'\n',val,' NNs'))
+        cat(paste0(selection,'\n',val,' NNs'))
       })
       output$neigh_umap_ecc <- shiny::renderPlot({
         if(is.null(input$neigh_stability_click)) {
@@ -437,7 +446,7 @@ server_graph_construction <- function(id,chosen_config){
         col <- round(input$neigh_stability_click$x)
         obj <- pkg_env$stab_obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
         obj <- reshape2::melt(obj)
-        val <- sort(unique(obj$L2))[col]
+        val <-  sort.int(as.integer(unique(obj$L2)))[col]
         configs <- unique(obj$L1)
         if (input$neigh_stability_click$x<0.5){
           selection <- sort(names(pkg_env$stab_obj$nn_stability$n_different_partitions))[1]
@@ -455,9 +464,12 @@ server_graph_construction <- function(id,chosen_config){
           aes(x = .data$X1,
               y = .data$X2,
               color = ecc)) +
+          ggplot2::xlab('UMAP 1') +
+          ggplot2::ylab('UMAP 2') +
           ggplot2::geom_point() +
           ggplot2::scale_color_viridis_c() +
-          ggplot2::theme_bw()
+          ggplot2::theme_bw() + 
+          ggplot2::coord_fixed()
       })
     }
   )
