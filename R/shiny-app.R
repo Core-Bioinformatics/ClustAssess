@@ -479,7 +479,6 @@ write_shiny_app <- function(seurat_object,
     file_content <- "
         library(ggplot2)
         library(shiny)
-        library(reactlog)
         library(rhdf5)
         library(ClustAssess)
 

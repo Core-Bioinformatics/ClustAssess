@@ -19,7 +19,9 @@ Encoding: UTF-8
 biocViews:
 Imports: 
     ggplot2,
+    bulkAnalyseR,
     dplyr,
+    DT,
     fastcluster,
     rlang,
     Matrix,
@@ -32,8 +34,6 @@ Imports:
     methods,
     stats,
     foreach,
-    doParallel,
-    doRNG,
     progress,
     reshape2,
     RANN,
@@ -42,23 +42,31 @@ Imports:
     SharedObject,
     stringr,
     gtable,
-    reactlog,
+    qualpalr,
+    RColorBrewer,
     glue,
     shiny,
+    shinyjs,
+    shinyLP,
     shinyWidgets,
-    uwot
+    styler,
+    uwot,
+    viridis
 RoxygenNote: 7.2.3
 LinkingTo: 
     Rcpp,
     RcppEigen
 Suggests: 
     knitr,
+    doParallel,
+    doRNG,
     rmarkdown,
     e1071,
     dbscan,
     dendextend,
     Seurat,
     readr,
+    reactlog,
     patchwork
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
