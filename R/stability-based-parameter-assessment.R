@@ -1,7 +1,6 @@
 # TODO check user interrupt
 # TODO add logging options to files - maybe verbose lvels
 #' @importFrom foreach %dopar%
-#' @importFrom doRNG %dorng%
 NULL
 
 ranking_functions <- list(

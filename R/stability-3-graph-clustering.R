@@ -293,7 +293,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         # .packages = c("ClustAssess"),
         .export = needed_vars
         # .export = c("seurat_clustering")
-      ) %dorng% { # %dopar% { #
+      )  %dopar% { #
         # apply the clustering, which should return a membership vector
         do.call(seurat_clustering, c(
           list(
