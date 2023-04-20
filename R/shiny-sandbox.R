@@ -21,14 +21,14 @@ ui_sandbox <- function(id){
       shiny::splitLayout(cellWidths = c('50%','50%'),
                          shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1('Configuration 1'),
                                                                              shiny::splitLayout(cellWidths = c('50%','50%'),
-                                                                                                shiny::verticalLayout(shiny::selectInput(ns("sandbox_sel_fset_1"), "Select feature - set", choices =names(stab_obj$feature_stability$by_steps), selected =names(stab_obj$feature_stability$by_steps)[1], multiple = FALSE),
-                                                                                                                      shiny::selectInput(ns("sandbox_sel_steps_1"), "Select feature - size:", choices = stab_obj$feature_ordering$stable[[1]], selected = stab_obj$feature_ordering$stable[[1]][1], multiple = FALSE)),
-                                                                                                shiny::verticalLayout(shiny::radioButtons(ns('sandbox_clustering_method_1'),'Select clustering Method',choices=names(stab_obj[[1]][[1]]$clustering_stability$split_by_k),selected=names(stab_obj[[1]][[1]]$clustering_stability$split_by_k)[1], width='50%'),
+                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('sandbox_sel_fset_1_render')),
+                                                                                                                      shiny::uiOutput(ns('sandbox_sel_steps_1_render'))),
+                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('sandbox_clustering_method_1_render')),
                                                                                                                       shiny::uiOutput(ns('sandbox_k_selection_1')))),
                                                                              shiny::plotOutput(ns("sandbox_umap_1")),
                                                                              shiny::splitLayout(cellWidths = c('50%','50%'),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::selectInput(ns("sandbox_col_1"), "Colour by:", choices = c('ECC',colnames(metadata), 'Clusters'), multiple = FALSE),
-                                                                                                                                                    shiny::selectInput(ns("sandbox_col_3"), "Colour by:", choices = c('ECC',colnames(metadata), 'Clusters'), selected='Clusters', multiple = FALSE))),
+                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('sandbox_render_meta_1')),
+                                                                                                                                                    shiny::uiOutput(ns('sandbox_render_meta_2')))),
                                                                                                 shiny::verticalLayout(shiny::h1(),
                                                                                                                       shinyWidgets::dropdownButton(
                                                                                                                         label = "",
@@ -62,14 +62,14 @@ ui_sandbox <- function(id){
                          shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('k_selection')),
                                                                              shiny::h1('Configuration 2'),
                                                                              shiny::splitLayout(cellWidths = c("50%","50%"),
-                                                                                                shiny::verticalLayout(shiny::selectInput(ns("sandbox_sel_fset_2"), "Select feature - set", choices =names(stab_obj$feature_stability$by_steps), selected =names(stab_obj$feature_stability$by_steps)[1], multiple = FALSE),
-                                                                                                                      shiny::selectInput(ns("sandbox_sel_steps_2"), "Select feature - size:", choices = stab_obj$feature_ordering$stable[[1]], selected = stab_obj$feature_ordering$stable[[1]][1], multiple = FALSE)),
-                                                                                                shiny::verticalLayout(shiny::radioButtons(ns('sandbox_clustering_method_2'),'Select clustering Method',choices=names(stab_obj[[1]][[1]]$clustering_stability$split_by_k),selected=names(stab_obj[[1]][[1]]$clustering_stability$split_by_k)[1], width='50%'),
+                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('sandbox_sel_fset_2_render')),
+                                                                                                                      shiny::uiOutput(ns('sandbox_sel_steps_2_render'))),
+                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('sandbox_clustering_method_2_render')),
                                                                                                                       shiny::uiOutput(ns('sandbox_k_selection_2')))),
                                                                              shiny::plotOutput(ns("sandbox_umap_2")),
                                                                              shiny::splitLayout(cellWidths = c('33%','33%','33%'),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::selectInput(ns("sandbox_col_2"), "Colour by:", choices = c('ECC',colnames(metadata), 'Clusters'), multiple = FALSE),
-                                                                                                                                                    shiny::selectInput(ns("sandbox_col_4"), "Colour by:", choices = c('ECC',colnames(metadata), 'Clusters'), selected='Clusters', multiple = FALSE))),
+                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('sandbox_render_meta_3')),
+                                                                                                                                                    shiny::uiOutput(ns('sandbox_render_meta_4')))),
                                                                                                 shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1(),
                                                                                                                                                     shinyWidgets::dropdownButton(
                                                                                                                                                       label = "",
@@ -135,7 +135,7 @@ ui_sandbox <- function(id){
       ),
       
       shiny::plotOutput(ns('sandbox_barcode_heatmap')))
-    ),style = "margin-left: 25px;",
+    ),style = "margin-left: 25px;margin-top:72px;",
     shiny::tags$head(shiny::tags$style(shiny::HTML("
                               .shiny-split-layout > div {
                                 overflow: visible;
@@ -153,52 +153,172 @@ server_sandbox <- function(id){
     function(input, output, session) {
       #Set the dropdown menu depending on the available clusters
       ns <- shiny::NS(id)
+      metadata <- readRDS('metadata.rds')
+      temp_list <- rhdf5::h5read("stability.h5",'/')
+      temp_list$feature_stability <- NULL
+      obj_fsets <- names(temp_list$feature_ordering$stable)
+      
+      slim_obj <- function(x){
+        temp_list[[fset]][[x]]$nn_con_comps <- NULL
+        temp_list[[fset]][[x]]$pca <- NULL
+        temp_list[[fset]][[x]]$clustering_stability$split_by_resolution <- NULL
+        temp_list[[fset]][[x]]$feature_list <- NULL
+      }
+      
+      for (fset in obj_fsets){
+        lapply(temp_list$feature_ordering$stable[[1]], slim_obj)
+      }
+      
+      add_env_variable("stab_obj_2", temp_list)
+      rm(temp_list)
+      gc()
+      
+      #Render UI
+      #render colouring in of umaps
+      output$sandbox_render_meta_1 <- shiny::renderUI({
+        shiny::selectInput(ns("sandbox_col_1"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), multiple = FALSE)
+      })
+      output$sandbox_render_meta_2 <- shiny::renderUI({
+        shiny::selectInput(ns("sandbox_col_3"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='Clusters', multiple = FALSE)
+      })
+      output$sandbox_render_meta_3 <- shiny::renderUI({
+        shiny::selectInput(ns("sandbox_col_2"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), multiple = FALSE)
+      })
+      output$sandbox_render_meta_4 <- shiny::renderUI({
+        shiny::selectInput(ns("sandbox_col_4"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='Clusters', multiple = FALSE)
+      })
+      
+      options <- names(pkg_env$stab_obj_2$feature_ordering$stable)
+      output$sandbox_sel_fset_1_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::selectInput(
+          inputId = ns("sandbox_sel_fset_1"),
+          label = "Select feature - set:",
+          choices = options,
+          selected = options[1],
+          multiple = FALSE
+        )
+      })
+      outputOptions(output, "sandbox_sel_fset_1_render", suspendWhenHidden=FALSE)
+      
+      options_2 <- pkg_env$stab_obj_2$feature_ordering$stable[[1]]
+      output$sandbox_sel_steps_1_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::selectInput(
+          inputId = ns("sandbox_sel_steps_1"),
+          label = "Select feature - size:",
+          choices = options_2,
+          selected = options_2[1],
+          multiple = FALSE
+        )
+      })
+      outputOptions(output, "sandbox_sel_steps_1_render", suspendWhenHidden=FALSE)
+      
+      
+      options_3 <- names(pkg_env$stab_obj_2[[1]][[1]]$clustering_stability$split_by_k$mbs)
+      output$sandbox_clustering_method_1_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::radioButtons(
+          inputId = ns("sandbox_clustering_method_1"),
+          label = "Select clustering Method:",
+          choices = options_3,
+          selected = options_3[1],
+          width ='50%'
+        )
+      })
+      outputOptions(output, "sandbox_clustering_method_1_render", suspendWhenHidden=FALSE)
+      
+      output$sandbox_sel_fset_2_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::selectInput(
+          inputId = ns("sandbox_sel_fset_2"),
+          label = "Select feature - set:",
+          choices = options,
+          selected = options[1],
+          multiple = FALSE
+        )
+      })
+      outputOptions(output, "sandbox_sel_fset_2_render", suspendWhenHidden=FALSE)
+      
+      output$sandbox_sel_steps_2_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::selectInput(
+          inputId = ns("sandbox_sel_steps_2"),
+          label = "Select feature - size:",
+          choices = options_2,
+          selected = options_2[1],
+          multiple = FALSE
+        )
+      })
+      outputOptions(output, "sandbox_sel_steps_2_render", suspendWhenHidden=FALSE)
+      
+      output$sandbox_clustering_method_2_render <- shiny::renderUI({
+        ns <- session$ns
+        shiny::radioButtons(
+          inputId = ns("sandbox_clustering_method_2"),
+          label = "Select clustering Method:",
+          choices = options_3,
+          selected = options_3[1],
+          width ='50%'
+        )
+      })
+      outputOptions(output, "sandbox_clustering_method_2_render", suspendWhenHidden=FALSE)
+      
       #Set the dropdown menu depending on the available clusters
       output$sandbox_k_selection_1 <- shiny::renderUI({
-        shiny::selectInput(ns("sandbox_k_1"), "Select a number of clusters:", choices = names(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_1]]), multiple = FALSE)
+        shiny::selectInput(ns("sandbox_k_1"), "Select a number of clusters:", choices = names(pkg_env$stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_1]]), multiple = FALSE)
       })
       output$sandbox_k_selection_2 <- shiny::renderUI({
-        shiny::selectInput(ns("sandbox_k_2"), "Select a number of clusters:", choices = names(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_2]]), multiple = FALSE)
+        shiny::selectInput(ns("sandbox_k_2"), "Select a number of clusters:", choices = names(pkg_env$stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_2]]), multiple = FALSE)
       })
       #Set the chosen configurations
       sandbox_1 <- shiny::reactive({
-        embedding <- stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$umap
+        embedding <- stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$umap
       })
       sandbox_2 <- shiny::reactive({
-        embedding <- stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$umap
+        embedding <- stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$umap
       })
       s_umap_1 <- shiny::reactive({
         if(is.null(input$sandbox_k_1)) {
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
         if (input$sandbox_col_1=='ECC'){
-          ECC <- stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$base_embedding),'_',stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$graph_type)]][[as.character(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$n_neighbours)]]
+          ECC <- stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$base_embedding),'_',stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$graph_type)]][[as.character(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$n_neighbours)]]
           ggplot2::ggplot(data.frame(
             sandbox_1()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = ECC)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
             ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }else if(input$sandbox_col_1=='Clusters'){
-          Clusters <-as.factor(as.matrix(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]]$mb))
+          Clusters <-as.factor(as.matrix(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]]))
           ggplot2::ggplot(data.frame(
             sandbox_1()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Clusters)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }else{
-          Feat <- metadata[[input$sandbox_col_1]]
+          Feat <- metadata$metadata[[input$sandbox_col_1]]
           ggplot2::ggplot(data.frame(
             sandbox_1()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Feat)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }
       })
       s_umap_2 <- shiny::reactive({
@@ -206,33 +326,42 @@ server_sandbox <- function(id){
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
         if (input$sandbox_col_2=='ECC'){
-          ECC <- stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$base_embedding),'_',stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$graph_type)]][[as.character(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$n_neighbours)]]
+          ECC <- stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$base_embedding),'_',stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$graph_type)]][[as.character(stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$stable_config$n_neighbours)]]
           ggplot2::ggplot(data.frame(
             sandbox_2()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = ECC)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
             ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
+          
         }else if(input$sandbox_col_2=='Clusters'){
-          Clusters <-as.factor(as.matrix(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]]$mb))
+          Clusters <-as.factor(as.matrix(stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]]))
           ggplot2::ggplot(data.frame(
             sandbox_2()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Clusters)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
             ggplot2::theme_bw()
         }else{
-          Feat <- metadata[[input$sandbox_col_2]]
+          Feat <- metadata$metadata[[input$sandbox_col_2]]
           ggplot2::ggplot(data.frame(
             sandbox_2()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Feat)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }
       })
       s_umap_3 <- shiny::reactive({
@@ -240,37 +369,47 @@ server_sandbox <- function(id){
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
         if (input$sandbox_col_3=='ECC'){
-          ECC <- stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$base_embedding),'_',stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$graph_type)]][[as.character(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$n_neighbours)]]
+          ECC <- stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$base_embedding),'_',stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$graph_type)]][[as.character(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$stable_config$n_neighbours)]]
           ggplot2::ggplot(data.frame(
             sandbox_1()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = ECC)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
             ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
+          
         }else if(input$sandbox_col_3=='Clusters'){
           if(is.null(input$sandbox_k_1)) {
             return(ggplot2::ggplot() + ggplot2::theme_void())
           }else{
-            Clusters <-as.factor(as.matrix(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]]$mb))
+            Clusters <-as.factor(as.matrix(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]]))
             ggplot2::ggplot(data.frame(
               sandbox_1()),
               ggplot2::aes(x = .data$X1,
                            y = .data$X2,
                            color = Clusters)) +
+              ggplot2::xlab('UMAP 1') +
+              ggplot2::ylab('UMAP 2') +
               ggplot2::geom_point() +
-              ggplot2::theme_bw() 
+              ggplot2::theme_bw() + 
+              ggplot2::coord_fixed()
           }
         }else{
-          Feat <- metadata[[input$sandbox_col_3]]
+          Feat <- metadata$metadata[[input$sandbox_col_3]]
           ggplot2::ggplot(data.frame(
             sandbox_1()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Feat)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }
       })
       s_umap_4 <- shiny::reactive({
@@ -278,44 +417,60 @@ server_sandbox <- function(id){
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
         if (input$sandbox_col_4=='ECC'){
-          ECC <- stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$nn_importance$n_neigh_ec_consistency[[2]][[1]]
+          ECC <- stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$nn_importance$n_neigh_ec_consistency[[2]][[1]]
           ggplot2::ggplot(data.frame(
             sandbox_2()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = ECC)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
             ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
+          
         }else if(input$sandbox_col_4=='Clusters'){
           if(is.null(input$sandbox_k_2)) {
             return(ggplot2::ggplot() + ggplot2::theme_void())
           }else{
-            Clusters <- as.factor(as.matrix(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]]$mb))
+            Clusters <- as.factor(as.matrix(stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]]))
             ggplot2::ggplot(data.frame(
               sandbox_2()),
               ggplot2::aes(x = .data$X1,
                            y = .data$X2,
                            color = Clusters)) +
+              ggplot2::xlab('UMAP 1') +
+              ggplot2::ylab('UMAP 2') +
               ggplot2::geom_point() +
-              ggplot2::theme_bw() 
+              ggplot2::theme_bw() + 
+              ggplot2::coord_fixed()
           }
         }else{
-          Feat <- metadata[[input$sandbox_col_4]]
+          Feat <- metadata$metadata[[input$sandbox_col_4]]
           ggplot2::ggplot(data.frame(
             sandbox_2()),
             ggplot2::aes(x = .data$X1,
                          y = .data$X2,
                          color = Feat)) +
+            ggplot2::xlab('UMAP 1') +
+            ggplot2::ylab('UMAP 2') +
             ggplot2::geom_point() +
-            ggplot2::theme_bw()
+            ggplot2::theme_bw() + 
+            ggplot2::coord_fixed()
         }
       })
       
       output$sandbox_umap_1 <-shiny::renderPlot({
+        if(is.null(s_umap_1())) {
+          return(ggplot2::ggplot() + ggplot2::theme_void())
+        }
         s_umap_1()
       })
       output$sandbox_umap_2 <-shiny::renderPlot({
+        if(is.null(s_umap_2())) {
+          return(ggplot2::ggplot() + ggplot2::theme_void())
+        }
         s_umap_2()
       })
       output$sandbox_umap_3 <-shiny::renderPlot({
@@ -324,7 +479,7 @@ server_sandbox <- function(id){
         }
         s_umap_3()
       })
-      output$sandbox_umap_4 <-renderPlot({
+      output$sandbox_umap_4 <-shiny::renderPlot({
         if(is.null(s_umap_4())) {
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
@@ -428,10 +583,10 @@ server_sandbox <- function(id){
         if(is.null(input$sandbox_k_2)) {
           return(ggplot2::ggplot() + ggplot2::theme_void())
         }
-        clustering_1 <- as.matrix(stab_obj[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]]$mb)
+        clustering_1 <- as.matrix(stab_obj_2[[input$sandbox_sel_fset_1]][[input$sandbox_sel_steps_1]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_1]][[input$sandbox_k_1]])
         df_1 <- data.frame(clustering_1) 
         df_1$cell <- rownames(df_1)
-        clustering_2 <- clustering <- as.matrix(stab_obj[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]]$mb)
+        clustering_2 <- clustering <- as.matrix(stab_obj_2[[input$sandbox_sel_fset_2]][[input$sandbox_sel_steps_2]]$clustering_stability$split_by_k$mbs[[input$sandbox_clustering_method_2]][[input$sandbox_k_2]])
         df_2 <- data.frame(clustering_2) 
         df_2$cell <- rownames(df_2)
         all_clusters_1 <- unique(df_1[,1])
@@ -447,6 +602,7 @@ server_sandbox <- function(id){
             for (n in all_clusters_2){
               cluster_2 <- rownames(df_2[df_2[,1]==n,])
               mat[as.character(n),as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
+              label <- 'JSI'
             }
           }
         }else{
@@ -455,6 +611,7 @@ server_sandbox <- function(id){
             for (n in all_clusters_2){
               cluster_2 <- rownames(df_2[df_2[,1]==n,])
               mat[as.character(n),as.character(m)] <- length(intersect(cluster_1, cluster_2))
+              label <- 'Shared cells'
             }
           }
         }
@@ -478,11 +635,11 @@ server_sandbox <- function(id){
             axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))) + 
           xlab("Clusters in Configuration 2") +
           ylab("Clusters in Configuration 1") +
-          labs(fill="JSI")
+          labs(fill=label)
       })
       output$sandbox_barcode_heatmap <- shiny::renderPlot({
         sandbox_barcode_heatmap()
-      })
+      },height=500)
       
       sandbox_heatmap_filetype <- shiny::reactive({
         if (input$sandbox_heatmap_filetype=='PDF'){
