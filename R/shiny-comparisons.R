@@ -140,8 +140,8 @@ server_comparisons <- function(id,chosen_config,chosen_method){
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      metadata <- readRDS('/sutherland-scratch/ml2088/ClustAssess/shiny/shiny_42/organ_Lung/metadata.rds')
-      temp_list <- rhdf5::h5read("/sutherland-scratch/ml2088/ClustAssess/shiny/shiny_42/organ_Lung/stability.h5",'/')
+      metadata <- readRDS('metadata.rds')
+      temp_list <- rhdf5::h5read("stability.h5",'/')
       temp_list$feature_stability <- NULL
       obj_fsets <- names(temp_list$feature_ordering$stable)
       
