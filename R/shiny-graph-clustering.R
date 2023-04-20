@@ -350,7 +350,12 @@ server_graph_clustering_per_value_umap <- function(id) {
         predicted_width <- strwidth(unique_values, units = "inches", cex = input$clustering_umap_text_size) * 96
         predicted_height <- strheight(unique_values[1], units = "inches", cex = input$clustering_umap_text_size) * 96
         space_width <- strwidth(" ", units = "inches", cex = input$clustering_umap_text_size) * 96
-        number_columns <- min(plt_height() %/% (4 * space_width + max(predicted_width)), length(unique_values))
+        number_columns <- min(
+          max(
+            plt_height() %/% (5 * space_width + max(predicted_width)),
+            1),
+          length(unique_values)
+        )
         number_rows <- ceiling(length(unique_values) / number_columns)
 
         2 * predicted_height * number_rows
@@ -406,9 +411,14 @@ server_graph_clustering_per_value_umap <- function(id) {
           {
             shiny::req(k_legend_height())
             # shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
+            unique_values <- seq_len(as.integer(input$select_k))
+            if (!is.null(input$select_clusters)) {
+              unique_values <- as.integer(input$select_clusters)
+            }
+
             only_legend_plot(
-              unique_values = seq_len(as.integer(input$select_k)),
-              color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k)),
+              unique_values = unique_values,
+              color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k))[unique_values],
               color_info = NULL,
               plt_width = plt_height(),
               text_size = input$clustering_umap_text_size 

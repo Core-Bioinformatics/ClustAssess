@@ -106,6 +106,7 @@ metadata_plot <- function(embedding,
                           pt_size = 1,
                           pch = '.',
                           text_size = 1,
+                          axis_size = 1,
                           display_legend = FALSE,
                           labels = FALSE) {
 
@@ -120,6 +121,7 @@ metadata_plot <- function(embedding,
     pt_size = pt_size,
     pch = pch,
     text_size = text_size,
+    axis_size = axis_size,
     display_legend = display_legend,
     labels = labels
   )
@@ -128,26 +130,29 @@ metadata_plot <- function(embedding,
 only_legend_plot <- function(unique_values,
                              color_values,
                              color_info,
-                             text_size = 1,
-                             plt_width) {
+                             plt_width,
+                             text_size = 1) {
 
   is_continuous <- is.null(unique_values)
-  # print(unique_values)
-  # print(color_values)
-  # print(color_info)
-  # print(plt_width)
+  plt_width <- plt_width / ppi 
 
-  plt_width <- plt_width / 96
-
-  if(is_continuous) {
+  if (is_continuous) {
+    par(mai = c(0.1, 0, 0.1, 0))
     unique_values <- c(min(color_info), max(color_info))
   } else {
-      # calculate space needed for the legend
-    predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
-    space_width <- strwidth(" ", units = "inches", cex = text_size)
-    number_columns <- min(plt_width %/% (4 * space_width + max(predicted_width)), length(unique_values))
+    par(mar = c(0, 0, 0, 0))
+    # calculate space needed for the legend
+    predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = text_size)
+    space_width <- predicted_width[1]
+    predicted_width <- predicted_width[2:length(predicted_width)]
+    number_columns <- min(
+      max(
+        plt_width %/% (5 * space_width + max(predicted_width)),
+        1),
+      length(unique_values)
+    )
   }
-  
+
   if (is.null(color_values)) {
     color_values <- viridis::viridis(50)
   }
@@ -157,6 +162,197 @@ only_legend_plot <- function(unique_values,
     color_values <- color_values(ncolors)
   }
 
+  if (is_continuous) {
+    legend_image <- as.raster(matrix(color_values, nrow=1))
+    plot(c(0, 1) , c(-1, 1), type = "n", axes = FALSE, bty = "n", ylab = "", xlab = "")
+    text(y=-0.5, x = seq(0,1,l=5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+    rasterImage(legend_image, 0, 0, 1,1)
+    
+  } else {
+    plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
+    legend(
+      "topleft",
+      legend = unique_values,
+      col = color_values,
+      pch = 15,
+      cex = text_size,
+      pt.cex = text_size * 2,
+      bty = "n",
+      ncol = number_columns,
+      # text.width = NA,
+      xpd = TRUE
+    )
+  }
+  # par(old_par)
+
+  # dev.off()
+}
+
+
+only_legend_metadata_plot <- function(metadata_name,
+                                      groups = NULL,
+                                      text_size = 1,
+                                      plt_width) {
+
+  unique_values <- pkg_env$metadata_unique[[metadata_name]]
+  color_values <- pkg_env$metadata_colors[[metadata_name]]
+  color_info <- pkg_env$metadata[, metadata_name]
+
+  if (!is.null(unique_values) && !is.null(groups)) {
+    color_values <- color_values[which(unique_values %in% groups)]
+    unique_values <- groups
+  }
+
+  only_legend_plot(
+    unique_values = unique_values,
+    color_values = color_values,
+    color_info = color_info,
+    text_size = text_size,
+    plt_width = plt_width
+  )
+}
+
+color_plot2 <- function(embedding,
+                        color_info,
+                        color_values,
+                        plt_height,
+                        plt_width,
+                        groups_highlight = NULL,
+                        unique_values = NULL,
+                        pt_size = 1,
+                        pch = ".",
+                        text_size = 1,
+                        axis_size = 1,
+                        display_legend = FALSE,
+                        labels = FALSE) {
+
+  if (is.null(color_values)) {
+    # TODO treat this case
+  }
+
+  xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
+  ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
+  
+  # convert pixels to inches
+  plt_height <- plt_height / ppi 
+  plt_width <- plt_width / ppi
+  
+  is_continuous <- is.null(unique_values) 
+  
+  if(is_continuous) {
+    unique_values <- c(min(color_info), max(color_info))
+    number_rows <- 2
+    predicted_height <- strheight("1", units = "inches", cex = text_size)
+  } else {
+      # calculate space needed for the legend
+    predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
+    predicted_height <- strheight(unique_values[1], units = "inches", cex = text_size)
+    space_width <- strwidth(" ", units = "inches", cex = text_size)
+    number_columns <- min(
+      max(
+        plt_width %/% (5 * space_width + max(predicted_width)),
+        1),
+      length(unique_values)
+    )
+    number_rows <- ceiling(length(unique_values) / number_columns)
+
+  }
+
+  if (is.null(color_values)) {
+    color_values <- viridis::viridis(50)
+  }
+
+  if (is.function(color_values)) {
+    ncolors <- ifelse(is_continuous, 50, length(unique_values))
+    color_values <- color_values(ncolors)
+  }
+
+  if (is_continuous) {
+    color_info <- cut(color_info, breaks = 50)
+    groups_included <- NULL
+  } else {
+    groups_included <- seq_along(unique_values)
+
+    if (!is.null(groups_highlight)) {
+      groups_included <- which(unique_values %in% groups_highlight)
+      color_values[-groups_included] <- "lightgray"
+
+      if (length(groups_included) != length(unique_values)) {
+        mask <- (color_info %in% groups_highlight)
+        embedding <- rbind(
+          embedding[!mask, ],
+          embedding[mask, ])
+        color_info <- c(color_info[!mask], color_info[mask])
+      }
+    }
+  }
+
+  # print(color_info)nf <- 
+  if (display_legend) {
+    layout(
+      matrix(c(1,2), nrow = 2),
+      heights = c(
+        lcm((plt_height - 0.25 - predicted_height * number_rows * 2)*2.54),
+        lcm((0.25 + predicted_height * number_rows * 2) *2.54)
+      )
+    )
+  }
+
+  if (is.logical(color_info)) {
+    embedding <- rbind(
+      embedding[!color_info, ],
+      embedding[color_info, ]
+    )
+
+    ntrue <- sum(color_info)
+    colrs <- c(
+      rep(color_values[1], length(color_info) - ntrue),
+      rep(color_values[2], ntrue)
+    )
+    # colrs[color_info] <- color_values[2]
+  } else {
+    colrs <- color_values[color_info]
+  }
+
+  plot(
+    embedding,
+    pch = pch,
+    col = colrs,
+    cex = pt_size,
+    xlab = "UMAP_1",
+    ylab = "UMAP_2",
+    cex.axis = axis_size,
+    cex.lab = axis_size,
+    xlim = xlim,
+    ylim = ylim
+  )
+
+  if (!is_continuous && labels) {
+      for (unique_val in unique_values[groups_included]) {
+        mask <- (color_info == unique_val)
+
+        # TODO precalculate the medians in the write_object funcrion
+        geometric_median <- Gmedian::Gmedian(embedding[mask, ])
+
+        shadowtext(
+          geometric_median[1], #+ text_width * 0.6,
+          geometric_median[2], #+ text_size * 0.75,
+          unique_val,
+          col = "black",
+          bg = "white",
+          cex = text_size,
+          xpd = TRUE
+
+        )
+      }
+
+  } 
+
+  
+  if (!display_legend) {
+    return()
+  }
+  
   if (is_continuous) {
     par(mai = c(0.1, 0, 0.1, 0))
     legend_image <- as.raster(matrix(color_values, nrow=1))
@@ -181,176 +377,8 @@ only_legend_plot <- function(unique_values,
       xpd = TRUE
     )
   }
-}
 
-
-only_legend_metadata_plot <- function(metadata_name,
-                                      text_size = 1,
-                                      plt_width) {
-
-  only_legend_plot(
-    unique_values = pkg_env$metadata_unique[[metadata_name]],
-    color_values = pkg_env$metadata_colors[[metadata_name]],
-    color_info = pkg_env$metadata[, metadata_name],
-    text_size = text_size,
-    plt_width = plt_width
-  )
-}
-
-color_plot2 <- function(embedding,
-                        color_info,
-                        color_values,
-                        plt_height,
-                        plt_width,
-                        groups_highlight = NULL,
-                        unique_values = NULL,
-                        pt_size = 1,
-                        pch = ".",
-                        text_size = 1,
-                        display_legend = FALSE,
-                        labels = FALSE) {
-  if (is.null(color_values)) {
-    # TODO treat this case
-  }
-  
-  # convert pixels to inches
-  plt_height <- plt_height / 96
-  plt_width <- plt_width / 96
-  
-  is_continuous <- is.null(unique_values) 
-  
-  if(is_continuous) {
-    unique_values <- c(min(color_info), max(color_info))
-    number_rows <- 2
-    predicted_height <- strheight("1", units = "inches", cex = text_size)
-  } else {
-      # calculate space needed for the legend
-    predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
-    predicted_height <- strheight(unique_values[1], units = "inches", cex = text_size)
-    space_width <- strwidth(" ", units = "inches", cex = text_size)
-    number_columns <- plt_width %/% (4 * space_width + max(predicted_width))
-    number_rows <- ceiling(length(unique_values) / number_columns)
-  }
-
-  if (is.null(color_values)) {
-    color_values <- viridis::viridis(50)
-  }
-
-  if (is.function(color_values)) {
-    ncolors <- ifelse(is_continuous, 50, length(unique_values))
-    color_values <- color_values(ncolors)
-  }
-
-  if (is_continuous) {
-    color_info <- cut(color_info, breaks = 50)
-  } else {
-    groups_included <- seq_along(unique_values)
-
-    if (!is.null(groups_highlight)) {
-      groups_included <- which(unique_values %in% groups_highlight)
-      color_values[-groups_included] <- "gray"
-    }
-  }
-
-  # print(color_info)nf <- 
-  if (display_legend) {
-    layout(
-      matrix(c(1,2), nrow = 2),
-      heights = c(
-        lcm((plt_height - 0.25 - predicted_height * number_rows * 2)*2.54),
-        lcm((0.25 + predicted_height * number_rows * 2) *2.54)
-      )
-    )
-  }
-
-  # BUG when the text size is changed, the original size for the xy labels remains printed
-
-  if (is.logical(color_info)) {
-    embedding <- rbind(
-      embedding[!color_info, ],
-      embedding[color_info, ]
-    )
-
-    ntrue <- sum(color_info)
-    colrs <- c(
-      rep(color_values[1], length(color_info) - ntrue),
-      rep(color_values[2], ntrue)
-    )
-    # colrs[color_info] <- color_values[2]
-  } else {
-    colrs <- color_values[color_info]
-  }
-
-  plot(
-    embedding,
-    pch = pch,
-    col = colrs,
-    cex = pt_size,
-    panel.first = {
-        axis(1, tck = 1, lty = 2, col = "gray", cex.axis = text_size)
-        axis(2, tck = 1, lty = 2, col = "gray", cex.axis = text_size)
-    },
-    xlab = "UMAP_1",
-    ylab = "UMAP_2",
-    cex.lab = text_size
-  )
-
-  if (labels && !is_continuous) {
-      for (unique_val in unique_values[groups_included]) {
-        geometric_median <- Gmedian::Gmedian(embedding[color_info == unique_val, ])
-
-        text_width <- strwidth(unique_val, cex = text_size)
-        rect(
-          geometric_median[1],
-          geometric_median[2],
-          geometric_median[1] + text_width * 1.2,
-          geometric_median[2] + text_size * 1.5,
-          col = "white",
-          border = "black",
-          xpd = TRUE
-        )
-
-        text(
-          geometric_median[1] + text_width * 0.6,
-          geometric_median[2] + text_size * 0.75,
-          unique_val,
-          cex = text_size,
-          col = "black",
-          xpd = TRUE
-        )
-      }
-
-      # title(xlab = "UMAP_1", ylab = "UMAP_2")
-  }
-  
-  if (!display_legend) {
-    return()
-  }
-  
-  if (is_continuous) {
-    par(mai = c(0.1, 0, 0.1, 0))
-    legend_image <- as.raster(matrix(color_values, nrow=1))
-    plot(c(0,1),c(-1,1), type = 'n', axes = F, bty='n',ylab='',xlab='')
-    text(y=-0.5, x = seq(0,1,l=5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
-    rasterImage(legend_image, 0, 0, 1,1)
-    
-  } else {
-    
-    par(mar = c(0, 0, 0, 0))
-    plot(NULL, xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
-    legend(
-      "center",
-      legend = unique_values,
-      col = color_values,
-      pch = 15,
-      cex = text_size,
-      pt.cex = text_size * 2,
-      bty = 'n',
-      ncol = number_columns,
-      # text.width = NA,
-      xpd = TRUE
-    )
-  }
+  # dev.off()
 }
 
 color_plot <- function(embedding,
@@ -748,4 +776,22 @@ calculate_markers <- function(expression_matrix,
   fc_results <- fc_results[, c(5, 1, 2, 3, 4, 6)]
 
   return(fc_results)
+}
+
+# function copied from https://cran.r-project.org/web/packages/TeachingDemos/index.html
+shadowtext <- function(x, y = NULL, labels, col = 'white', bg = 'black',
+	theta= seq(pi / 32, 2 * pi, length.out = 64), r = 0.1, cex=1, ... ) {
+
+	xy <- xy.coords(x,y)
+	fx <- grconvertX(xy$x, to='nfc')
+	fy <- grconvertY(xy$y, to='nfc')
+	fxo <- r*strwidth('A', units='figure', cex=cex)
+	fyo <- r*strheight('A', units='figure', cex=cex)
+	
+	for (i in theta) {
+	  text(grconvertX(fx + cos(i)*fxo, from="nfc"),
+	       grconvertY(fy + sin(i)*fyo, from="nfc"),
+	       labels, cex=cex, col=bg, ...)
+	}
+	text(xy$x, xy$y, labels, cex=cex, col=col, ... ) 
 }
