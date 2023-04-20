@@ -1,5 +1,6 @@
 
 
+ppi <- 72 
 # stab_obj <- readRDS("stability_object2.rds")
 # stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/clustassess_obj.rds")
 # stab_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/clustassess_obj.rds")
@@ -56,15 +57,16 @@ write_objects <- function(clustassess_object,
     metadata_colors <- list()
     metadata_unique <- list()
     for (mtd_col in metadata_columns) {
-        if (is.factor(metadata[,mtd_col])) {
-            metadata_unique[[mtd_col]] <- levels(metadata[,mtd_col])
+        if (is.factor(metadata[, mtd_col])) {
+            metadata[, mtd_col] <- droplevels(metadata[, mtd_col])
+            metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 1) {
                 metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
             } else {
                 metadata_colors[[mtd_col]] <- "#92521d"
             }
-        } else if (is.character(metadata[,mtd_col])) {
-            metadata_unique[[mtd_col]] <- unique(metadata[,mtd_col])
+        } else if (is.character(metadata[, mtd_col])) {
+            metadata_unique[[mtd_col]] <- unique(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 1) {
                 metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
             } else {
