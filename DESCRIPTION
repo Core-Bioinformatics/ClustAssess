@@ -65,8 +65,10 @@ Suggests:
     dbscan,
     dendextend,
     Seurat,
+    ragg,
     readr,
     reactlog,
+    RhpcBLASctl,
     patchwork
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
