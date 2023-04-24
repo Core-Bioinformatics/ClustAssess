@@ -340,16 +340,21 @@ server_graph_clustering_per_value_umap <- function(id) {
       # render_plot_by_height("umap_ecc", session)
       plt_height <- shiny::reactive(
         floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.5))
+        
       )
 
       k_legend_height <- shiny::reactive({
         # shiny::req(input$select_k != "")
         shiny::req(input$select_k %in% pkg_env$stab_obj$structure_list[[input$select_method]])
+
+        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        pdf(file = NULL, width = plt_height(), height = plt_height())
         unique_values <- seq_len(as.integer(input$select_k))
 
-        predicted_width <- strwidth(unique_values, units = "inches", cex = input$clustering_umap_text_size) * 96
-        predicted_height <- strheight(unique_values[1], units = "inches", cex = input$clustering_umap_text_size) * 96
-        space_width <- strwidth(" ", units = "inches", cex = input$clustering_umap_text_size) * 96
+        predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = input$clustering_umap_text_size) * 96
+        space_width <- predicted_width[1]
+        predicted_width <- predicted_width[2:length(predicted_width)]
+
         number_columns <- min(
           max(
             plt_height() %/% (5 * space_width + max(predicted_width)),
@@ -358,12 +363,26 @@ server_graph_clustering_per_value_umap <- function(id) {
         )
         number_rows <- ceiling(length(unique_values) / number_columns)
 
-        2 * predicted_height * number_rows
+        text_height <- strheight(paste(
+          rep("TEXT", number_rows + 1),
+          collapse = "\n"
+          ),
+          units = "inches",
+          cex = input$clustering_umap_text_size) * ppi
+
+        dev.off()
+
+        return(text_height)
       })
 
-      ecc_legend_height <- shiny::reactive(
-        (0.2 + 2 * strheight("text", units = "inches", cex = input$clustering_umap_text_size)) * 96
-      )
+      ecc_legend_height <- shiny::reactive({
+        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        pdf(file = NULL, width = plt_height(), height = plt_height())
+        par(mai = c(0.1, 0, 0.1, 0))
+        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$clustering_umap_text_size)
+        dev.off()
+        return((0.2 + text_height) * ppi)
+      })
 
       output$umap_k <- shiny::renderPlot(
         height = function() {

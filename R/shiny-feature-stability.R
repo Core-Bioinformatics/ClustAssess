@@ -469,9 +469,14 @@ server_dimensionality_stability <- function(id) {
          floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * (1 - proportion_widths / 100)))
       )
 
-      legend_height <- shiny::reactive(
-        (0.2 + 2 * strheight("text", units = "inches", cex = input$by_step_res_text_size)) * 96
-      )
+      legend_height <- shiny::reactive({
+        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        pdf(file = NULL, width = plt_height(), height = plt_height())
+        par(mai = c(0.1, 0, 0.1, 0))
+        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$by_step_res_text_size)
+        dev.off()
+        return((0.2 + text_height) * ppi)
+      })
 
       ecc_value <- shiny::reactive({
           shiny::req(
@@ -506,7 +511,7 @@ server_dimensionality_stability <- function(id) {
           shiny::req(
             ecc_value()
           )
-
+          
           color_plot2(
             embedding = rhdf5::h5read(
               "stability.h5",
@@ -798,6 +803,8 @@ server_dimensionality_distribution <- function(id) {
       )
 
       gene_legend_height <- shiny::reactive({
+        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        pdf(NULL, width =  plt_height(), height = plt_height())
         par(mai = c(0.1, 0, 0.1, 0))
         text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
         dev.off()
@@ -806,7 +813,8 @@ server_dimensionality_distribution <- function(id) {
 
       metadata_legend_height <- shiny::reactive({
         unique_values <- pkg_env$metadata_unique[[input$metadata]]
-        ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
+        pdf(file = NULL, width = plt_height(), height = plt_height())
         if (is.null(unique_values)) {
           par(mai = c(0.1, 0, 0.1, 0))
           text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
@@ -895,7 +903,11 @@ server_dimensionality_distribution <- function(id) {
 
           unique_values <- NULL
           color_values <- function(n) {
-            grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+            pdf(file = NULL)
+            colour_init <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+            dev.off()
+
+            return(colour_init)
           }
 
           if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
@@ -903,6 +915,7 @@ server_dimensionality_distribution <- function(id) {
             color_values <- c("lightgray", "red")
           }
 
+          # pdf(file = NULL)
           only_legend_plot(
             plt_width = plt_height(),
             text_size = input$gene_text_size,
@@ -952,6 +965,8 @@ server_dimensionality_distribution <- function(id) {
           },
           {
             shiny::req(metadata_legend_height(), input$metadata)
+            # pdf(file = NULL)
+            # dev.off()
             only_legend_metadata_plot(
               metadata_name = input$metadata,
               plt_width = plt_height(),
