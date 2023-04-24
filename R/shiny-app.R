@@ -1,6 +1,7 @@
 
 
 ppi <- 72 
+single_color <- "#025147"
 # stab_obj <- readRDS("stability_object2.rds")
 # stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/clustassess_obj.rds")
 # stab_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/clustassess_obj.rds")
@@ -63,14 +64,14 @@ write_objects <- function(clustassess_object,
             if (length(metadata_unique[[mtd_col]]) > 1) {
                 metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
             } else {
-                metadata_colors[[mtd_col]] <- "#92521d"
+                metadata_colors[[mtd_col]] <- single_color
             }
         } else if (is.character(metadata[, mtd_col])) {
             metadata_unique[[mtd_col]] <- unique(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 1) {
                 metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
             } else {
-                metadata_colors[[mtd_col]] <- "#92521d"
+                metadata_colors[[mtd_col]] <- single_color
             }
         } else if (is.logical(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
@@ -92,7 +93,11 @@ write_objects <- function(clustassess_object,
     ftype_index <- 1
     nftypes <- length(clustassess_object$feature_stability$by_steps)
     unique_n_colors <- c(nftypes)
-    clustassess_object$feature_stability$colours <- qualpalr::qualpal(nftypes, colorspace = qualpalr_colorspace)$hex
+    if (nftypes > 1) {
+        clustassess_object$feature_stability$colours <- qualpalr::qualpal(nftypes, colorspace = qualpalr_colorspace)$hex
+    } else {
+        clustassess_object$feature_stability$colours <- single_color
+    }
     for (ftype in names(clustassess_object$feature_stability$by_steps)) {
         feature_ordering$original[[ftype]] <- names(clustassess_object$feature_stability$by_steps[[ftype]])
         fsize_index <- 1
@@ -368,7 +373,7 @@ write_objects <- function(clustassess_object,
     unique_colors <- lapply(unique_n_colors, function(n) {
         n <- as.integer(n)
         if (n == 1) {
-            return("#92521d")
+            return(single_color)
         }
         qualpalr::qualpal(n, colorspace = qualpalr_colorspace)$hex
     })
