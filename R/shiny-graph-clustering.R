@@ -200,7 +200,7 @@ ui_graph_clustering <- function(id) {
 }
 
 ###### SERVER ######
-server_graph_clustering_choice <- function(id) {
+server_graph_clustering_choice <- function(id, parent_session) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -215,6 +215,11 @@ server_graph_clustering_choice <- function(id) {
       )
 
       user_choice <- shiny::reactive(input$radio_cluster_method) %>% shiny::bindEvent(input$fix_cluster_button)
+
+      shiny::observe({
+        shiny::showTab("tabset_id", "Comparison", select = TRUE, session = parent_session)
+      }) %>% shiny::bindEvent(input$fix_cluster_button, ignoreInit = TRUE)
+
       return(user_choice)
     }
   )
@@ -603,7 +608,7 @@ server_comparison_markers <- function(id) {
 #' @description to be completed
 #'
 #' @export
-server_graph_clustering <- function(id, feature_choice, window_height) {
+server_graph_clustering <- function(id, feature_choice, parent_session) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -633,7 +638,7 @@ server_graph_clustering <- function(id, feature_choice, window_height) {
         shinyjs::enable("show_config")
       ) %>% shiny::bindEvent(input$"cluster_method_choice-radio_cluster_method", ignoreInit = TRUE, once = TRUE)
 
-      clustering_choice <- server_graph_clustering_choice("cluster_method_choice")
+      clustering_choice <- server_graph_clustering_choice("cluster_method_choice", parent_session)
 
 
       
