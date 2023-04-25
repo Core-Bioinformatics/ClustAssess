@@ -63,6 +63,72 @@ empty_ggplot <- function() {
     ggplot2::theme_void()
 }
 
+grouped_boxplot <- function(groups_list,
+                            groups_values,
+                            x_values,
+                            boxplot_width = 0.5,
+                            space_inter = 1,
+                            space_intra = 1,
+                            text_size = 1) {
+
+
+  unique_groups_values <- unique(groups_values)
+  unique_x_values <- unique(x_values)
+
+  n_groups <- length(unique_groups_values)
+  n_boxplots <- length(groups_values)
+
+  groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
+  groups_values <- match(groups_values, unique_groups_values)
+  at_values <- rep(0, length(groups_values))
+  text_coords <- rep(0, length(unique_x_values))
+  abline_coords <- rep(0, length(unique_x_values)-1)
+  
+  count_diff <- -1
+  prev_value <- -1
+  updated_count <- FALSE
+  start_index <- 1
+  
+  for (i in seq_along(groups_values)) {
+    if (x_values[i] != prev_value) {
+      if (prev_value != -1) {
+        updated_count <- TRUE
+      }
+      prev_value <- x_values[i]
+      count_diff <- count_diff + 1
+      abline_coords[count_diff+1] <- (n_groups - 1)  * (space_intra - 1) + n_groups + (n_groups * space_intra + space_inter) * count_diff + (space_inter) 
+    }
+  
+    at_values[i] <- count_diff * (n_groups * space_intra + space_inter) + groups_values[i] + (groups_values[i] - 1) * (space_intra - 1)
+    
+    if (updated_count) {
+      # abline_coords[count_diff] <- (at_values[i] + at_values[i-1]) / 2
+      updated_count <- FALSE
+      text_coords[count_diff] <- mean(at_values[start_index:(i-1)])
+      start_index <- i
+    }
+  }
+  
+  text_coords[count_diff+1] <- mean(at_values[start_index:n_boxplots])
+  
+  
+
+  boxplot(
+    groups_list,
+    outline = FALSE,
+    at = at_values,
+    col = groups_colours[groups_values],
+    boxwex = boxplot_width * (n_groups + (space_intra - 1) * (n_groups -1)) / n_groups,
+    xaxt = "n",
+    xlab = NA,
+    cex.axis = text_size,
+    cex.lab = text_size
+  )
+  abline(v = abline_coords, lty = "dashed", col = "grey")
+  title(xlab = "k", ylab = "ecc", cex.lab = text_size)
+  axis(side = 1, at = text_coords, labels = unique_x_values, las = 2, cex.axis = text_size)
+}
+
 expression_ggplot <- function(embedding, expression, threshold = 0) {
   df <- data.frame(embedding)
   colnames(df) <- paste("UMAP", 1:2, sep = "_")
