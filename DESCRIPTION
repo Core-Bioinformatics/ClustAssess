@@ -1,7 +1,7 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
                   role = c("aut", "cre")), person("Andi", "Munteanu",
                   email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
