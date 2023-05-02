@@ -73,6 +73,7 @@ write_objects <- function(clustassess_object,
             } else {
                 metadata_colors[[mtd_col]] <- single_color
             }
+            metadata[, mtd_col] <- factor(metadata[, mtd_col])
         } else if (is.logical(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
             metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
