@@ -63,17 +63,62 @@ empty_ggplot <- function() {
     ggplot2::theme_void()
 }
 
-grouped_boxplot <- function(groups_list,
+grouped_boxplot_dataframe <- function(dataframe,
+                                      y_column,
+                                      x_column,
+                                      plt_height,
+                                      plt_width,
+                                      xlabel = NULL,
+                                      ylabel = NULL,
+                                      plot_title = "",
+                                      text_size = 1) {
+
+  
+  unique_groups <- unique(dataframe[ , x_column])
+  n_groups <- length(unique_groups)
+  groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
+
+  if (is.null(xlabel)) {
+    xlabel <- x_column
+  }
+
+  if (is.null(ylabel)) {
+    ylabel <- y_column
+  }
+  
+  boxplot(
+    formula = as.formula(paste0(y_column, " ~ ", x_column)),
+    data = dataframe,
+    col = groups_colours,
+    cex.axis = text_size,
+    cex.label = text_size,
+    main = plot_title,
+    xlab = xlabel,
+    ylab = ylabel
+  )
+}
+
+grouped_boxplot_list <- function(groups_list,
                             groups_values,
                             x_values,
+                            plt_height,
+                            plt_width,
+
                             boxplot_width = 0.5,
                             space_inter = 1,
                             space_intra = 1,
+                            display_legend = TRUE,
                             text_size = 1) {
 
 
   unique_groups_values <- unique(groups_values)
   unique_x_values <- unique(x_values)
+
+  # print(plt_width)
+  # convert pixels to inches
+  plt_height <- plt_height / ppi 
+
+  plt_width <- plt_width / ppi
 
   n_groups <- length(unique_groups_values)
   n_boxplots <- length(groups_values)
@@ -88,7 +133,7 @@ grouped_boxplot <- function(groups_list,
   prev_value <- -1
   updated_count <- FALSE
   start_index <- 1
-  
+
   for (i in seq_along(groups_values)) {
     if (x_values[i] != prev_value) {
       if (prev_value != -1) {
@@ -96,29 +141,60 @@ grouped_boxplot <- function(groups_list,
       }
       prev_value <- x_values[i]
       count_diff <- count_diff + 1
-      abline_coords[count_diff+1] <- (n_groups - 1)  * (space_intra - 1) + n_groups + (n_groups * space_intra + space_inter) * count_diff + (space_inter) 
     }
   
     at_values[i] <- count_diff * (n_groups * space_intra + space_inter) + groups_values[i] + (groups_values[i] - 1) * (space_intra - 1)
     
     if (updated_count) {
       # abline_coords[count_diff] <- (at_values[i] + at_values[i-1]) / 2
+      abline_coords[count_diff] <- (count_diff - 1) * (n_groups * space_intra + space_inter) + n_groups + (n_groups - 1) * (space_intra - 1) + (space_inter + space_intra) / 2
       updated_count <- FALSE
       text_coords[count_diff] <- mean(at_values[start_index:(i-1)])
       start_index <- i
     }
   }
+
+  # print(at_values)
+  # print(abline_coords)
+  # print(groups_values)
   
   text_coords[count_diff+1] <- mean(at_values[start_index:n_boxplots])
-  
-  
+
+  if (display_legend) {
+    predicted_width <- strwidth(unique_groups_values, units = "inches", cex = text_size)
+    # predicted_height <- strheight(unique_groups_values[1], units = "inches", cex = text_size)
+    space_width <- strwidth(" ", units = "inches", cex = text_size)
+    number_columns <- min(
+      max(
+        plt_width %/% (5 * space_width + max(predicted_width)),
+        1),
+      length(unique_groups_values)
+    )
+    number_rows <- ceiling(length(unique_groups_values) / number_columns)
+
+    text_height <- strheight(paste(
+          rep("TEXT", number_rows + 1),
+          collapse = "\n"
+          ),
+          units = "inches",
+          cex = text_size)  + 0.1
+
+
+    layout(
+      matrix(c(1,2), nrow = 2),
+      heights = c(
+        lcm((plt_height - text_height) * 2.54),
+        lcm(text_height * 2.54)
+      )
+    )
+  }
 
   boxplot(
     groups_list,
     outline = FALSE,
     at = at_values,
     col = groups_colours[groups_values],
-    boxwex = boxplot_width * (n_groups + (space_intra - 1) * (n_groups -1)) / n_groups,
+    boxwex = boxplot_width * (n_groups + (space_intra - 1) * (n_groups - 1)) / n_groups,
     xaxt = "n",
     xlab = NA,
     cex.axis = text_size,
@@ -127,6 +203,26 @@ grouped_boxplot <- function(groups_list,
   abline(v = abline_coords, lty = "dashed", col = "grey")
   title(xlab = "k", ylab = "ecc", cex.lab = text_size)
   axis(side = 1, at = text_coords, labels = unique_x_values, las = 2, cex.axis = text_size)
+
+  if (!display_legend) {
+    return()
+  }
+
+  par(mar = c(0, 0, 0, 0))
+  plot(NULL, xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+  legend(
+    "topleft",
+    legend = unique_groups_values,
+    col = groups_colours,
+    pch = 15,
+    cex = text_size,
+    pt.cex = text_size * 2,
+    bty = 'n',
+    # horizontal = TRUE,
+    horiz = TRUE,
+    # text.width = NA,
+    xpd = TRUE
+  )
 }
 
 expression_ggplot <- function(embedding, expression, threshold = 0) {
@@ -174,7 +270,12 @@ metadata_plot <- function(embedding,
                           text_size = 1,
                           axis_size = 1,
                           display_legend = FALSE,
+                          predicted_height = NULL,
                           labels = FALSE) {
+
+
+  # print(pkg_env$metadata[[metadata_name]])
+  # print(embedding)
 
   color_plot2(
     embedding = embedding,
@@ -189,6 +290,7 @@ metadata_plot <- function(embedding,
     text_size = text_size,
     axis_size = axis_size,
     display_legend = display_legend,
+    predicted_height = predicted_height,
     labels = labels
   )
 }
@@ -290,14 +392,16 @@ color_plot2 <- function(embedding,
                         text_size = 1,
                         axis_size = 1,
                         display_legend = FALSE,
+                        predicted_height = NULL,
                         labels = FALSE) {
 
   if (is.null(color_values)) {
     # TODO treat this case
   }
 
-  xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
-  ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
+
+  # xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
+  # ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
   
   # convert pixels to inches
   plt_height <- plt_height / ppi 
@@ -305,22 +409,37 @@ color_plot2 <- function(embedding,
   
   is_continuous <- is.null(unique_values) 
   
-  if(is_continuous) {
-    unique_values <- c(min(color_info), max(color_info))
-    number_rows <- 2
-    predicted_height <- strheight("1", units = "inches", cex = text_size)
-  } else {
-      # calculate space needed for the legend
-    predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
-    predicted_height <- strheight(unique_values[1], units = "inches", cex = text_size)
-    space_width <- strwidth(" ", units = "inches", cex = text_size)
-    number_columns <- min(
-      max(
-        plt_width %/% (5 * space_width + max(predicted_width)),
-        1),
-      length(unique_values)
-    )
-    number_rows <- ceiling(length(unique_values) / number_columns)
+  if (display_legend) {
+    if(is_continuous) {
+      unique_values <- c(min(color_info), max(color_info))
+      number_rows <- 2
+
+      if (is.null(predicted_height)) {
+        predicted_height <- strheight("1", units = "inches", cex = text_size)
+      }
+    } else {
+        # calculate space needed for the legend
+      predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
+      space_width <- strwidth(" ", units = "inches", cex = text_size)
+      number_columns <- min(
+        max(
+          plt_width %/% (5 * space_width + max(predicted_width)),
+          1),
+        length(unique_values)
+      )
+
+
+      if (is.null(predicted_height)) {
+        number_rows <- ceiling(length(unique_values) / number_columns)
+        predicted_height <- strheight(paste(
+              rep("TEXT", number_rows + 1),
+              collapse = "\n"
+              ),
+              units = "inches",
+              cex = text_size)
+      }
+
+    }
 
   }
 
@@ -353,13 +472,12 @@ color_plot2 <- function(embedding,
     }
   }
 
-  # print(color_info)nf <- 
   if (display_legend) {
     layout(
       matrix(c(1,2), nrow = 2),
       heights = c(
-        lcm((plt_height - 0.25 - predicted_height * number_rows * 2)*2.54),
-        lcm((0.25 + predicted_height * number_rows * 2) *2.54)
+        lcm(plt_height*2.54),
+        lcm(predicted_height *2.54)
       )
     )
   }
@@ -388,9 +506,7 @@ color_plot2 <- function(embedding,
     xlab = "UMAP_1",
     ylab = "UMAP_2",
     cex.axis = axis_size,
-    cex.lab = axis_size,
-    xlim = xlim,
-    ylim = ylim
+    cex.lab = axis_size
   )
 
   if (!is_continuous && labels) {
@@ -766,8 +882,10 @@ calculate_markers <- function(expression_matrix,
   if (is.null(feature_names)) {
     feature_names <- rownames(expression_matrix)
   }
+
+  cells2 <- setdiff(cells2, cells1)
   
-  indices <- c(cells1, setdiff(cells2, cells1))
+  indices <- c(cells1, cells2)
   n <- length(feature_names)
 
   expression_matrix <- expression_matrix[ , indices]
