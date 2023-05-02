@@ -496,7 +496,7 @@ server_dimensionality_stability <- function(id) {
               input$by_step_resolution,
               sep = "/"
             )
-          ) %>% dplyr::filter(fsize == fsize_index & ftype == input$select_ftype_umap))$ecc
+          ) %>% dplyr::filter(.data$fsize == fsize_index & .data$ftype == input$select_ftype_umap))$ecc
       })
 
       output$umap_ecc <- shiny::renderPlot(
