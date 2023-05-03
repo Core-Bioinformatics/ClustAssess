@@ -871,6 +871,8 @@ calculate_markers <- function(expression_matrix,
                               min_diff_pct_threshold = -Inf,
                               rank_matrix = NULL,
                               feature_names = NULL,
+                              used_slot = "data",
+                              norm_method = "LogNormalize",
                               pseudocount_use = 1,
                               base = 2) {
   
@@ -884,15 +886,15 @@ calculate_markers <- function(expression_matrix,
   }
 
   cells2 <- setdiff(cells2, cells1)
-  
+
+  if (length(cells2) == 0 || length(cells1) == 0) {
+    return()
+  }
+
   indices <- c(cells1, cells2)
   n <- length(feature_names)
 
   expression_matrix <- expression_matrix[ , indices]
-
-
-  used_slot <- "data"
-  norm_method <- ""
 
   base_text <- ifelse(test = base == exp(1), yes = "", no = base)
   fc_name <- ifelse(
