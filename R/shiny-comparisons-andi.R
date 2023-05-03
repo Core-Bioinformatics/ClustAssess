@@ -4,21 +4,73 @@ ui_comparison_markers <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
+    shiny::h2("Identification of markers"),
+    shinyWidgets::dropdownButton(
+      shiny::tagList(
+        shiny::sliderInput(
+          inputId = ns("logfc"),
+          label = "logFC threshold",
+          min = 0.00, max = 10.00, value = 0.00, step = 0.1
+        ),
+        shiny::sliderInput(
+          inputId = ns("min_pct"),
+          label = "Minimum gene frequency",
+          min = 0.01, max = 1.00, value = 0.10, step = 0.01
+        ),
+        shinyWidgets::prettySwitch(
+          inputId = ns("norm_type"),
+          label = "Data is normalised",
+          value = TRUE,
+          status = "success",
+          fill = TRUE
+        )
+      ),
+      circle = TRUE,
+      status = "info",
+      size = "sm",
+      icon = shiny::icon("gear")
+    ),
+    shiny::htmlOutput(ns("marker_text")),
+    shiny::actionButton(ns("enable_markers"),
+      "Enable DEG analysis",
+      style = "font-size:20px;",
+      class = "btn-danger"
+    ),
+    shiny::fluidRow(
+        shiny::column(
+            6,
+            ui_comparison_markers_panel(ns("group_left"))
+        ),
+        shiny::column(
+            6,
+            ui_comparison_markers_panel(ns("group_right"))
+        )
+      ),
+      shiny::actionButton(ns("markers_button"), "Find markers!"),
+      DT::dataTableOutput(ns("markers_dt")),
+      shiny::downloadButton(ns("markers_download_button"), "Download markers!")
+  )
+}
+
+ui_comparison_markers_panel <- function(id) {
+  ns <- shiny::NS(id)
+
+  shiny::tagList(
     shiny::selectInput(
       inputId = ns("select_k_markers"),
-      label = "Select the number of clusters (k)",
+      label = "Select the number of clusters (k) or metadata",
       choices = ""
     ),
     shinyWidgets::pickerInput(
           inputId = ns("select_clusters_markers"),
-          label = "Select the group of k",
+          label = "Select the groups of cells",
           choices = "",
           inline = FALSE,
           # width = "100%",
           # width = "30%",
           options = list(
             `actions-box` = TRUE,
-            title = "Select/deselect clusters",
+            title = "Select/deselect subgroups",
             # actionsBox = TRUE,
             size = 10,
             width = "90%",
@@ -159,55 +211,135 @@ ui_comparisons <- function(id){
         size='sm',
         shiny::radioButtons(ns('heatmap_type'),'Calculate similarity',choices=c('JSI','Cells per cluster'), width='100%')
       ),
-      
+
       shiny::plotOutput(ns('barcode_heatmap')),
-      shiny::h2("Identification of markers"),
-      # waiter::useWaiter(),
-      shiny::actionButton(ns("enable_markers"),
-        "Enable DGE analysis",
-        style = "font-size:20px;",
-        class = "btn-danger"
-      ),
-      shiny::fluidRow(
-        shiny::column(
-            6,
-            ui_comparison_markers(ns("group_left"))
-        ),
-        shiny::column(
-            6,
-            ui_comparison_markers(ns("group_right"))
-        )
-      ),
-      shiny::actionButton(ns("markers_button"),
-          "Find markers!"
-      ),
-      DT::dataTableOutput(ns("markers")),
-      shiny::downloadButton(ns("markers_download_button"),
-          "Download markers!"
-      ),
+      ui_comparison_markers(ns("markers"))
       
-    ),style = "margin-left: 25px;margin-top:72px;")
+    ), style = "margin-left: 25px;margin-top:72px;")
 }
 ####### SERVER #######
-
 server_comparison_markers <- function(id, k_choices) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+      
+      # it would be nice to have gene umaps
+      shinyjs::html("marker_text", "Warning: Enabling DEG analysis will results into loading the memory. This process might take some time.")
+      shinyjs::hide("group_left-select_k_markers")
+      shinyjs::hide("group_left-select_clusters_markers")
+      shinyjs::hide("group_right-select_k_markers")
+      shinyjs::hide("group_right-select_clusters_markers")
+      shinyjs::hide("markers_download_button")
+      shinyjs::hide("markers_button")
+      shinyjs::show("enable_markers")
+      
+      server_comparison_markers_panels("group_left", k_choices)
+      server_comparison_markers_panels("group_right", k_choices)
+
+      shiny::observe({
+          shinyjs::html("marker_text", "Preparing the objects for the analysis...")
+              
+          expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL))
+          rownames(expr_matrix) <- pkg_env$used_genes
+          add_env_variable("rank_matrix", rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL)))
+          add_env_variable("expr_matrix", expr_matrix)
+          # waiter::waiter_hide()
+          shinyjs::hide("enable_markers")
+          shinyjs::show("group_left-select_k_markers")
+          shinyjs::show("group_left-select_clusters_markers")
+          shinyjs::show("group_right-select_k_markers")
+          shinyjs::show("group_right-select_clusters_markers")
+          shinyjs::show("markers_button")
+          shinyjs::html("marker_text", "")
+
+      }) %>% shiny::bindEvent(input$enable_markers)
+
+
+      markers_val <- shiny::reactive({
+        shiny::req(input$"group_left-select_clusters_markers",
+                   input$"group_right-select_clusters_markers")
+
+        print("start")
+        subgroup_left <- input$"group_left-select_k_markers"
+        subgroup_right <- input$"group_right-select_k_markers"
+
+        if (is.na(as.numeric(subgroup_left))) {
+          mb1 <- pkg_env$metadata[[subgroup_left]]
+        } else {
+          mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
+        }
+        
+        if (is.na(as.numeric(subgroup_right))) {
+          mb2 <- pkg_env$metadata[[subgroup_right]]
+        } else {
+          mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
+
+        }
+
+        cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers" )
+        cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
+
+        calculate_markers(
+          expression_matrix = pkg_env$expr_matrix, # expression matrix
+          cells1 = cells_index_left,
+          cells2 = cells_index_right,
+          rank_matrix = pkg_env$rank_matrix, # rank matrix
+          norm_method = ifelse(input$norm_type, "LogNormalize", ""),
+          min_pct_threshold = input$min_pct,
+          logfc_threshold = input$logfc
+        )
+      }) %>% shiny::bindEvent(input$markers_button)
+
+
+    output$markers_dt <- DT::renderDataTable({
+      shiny::req(markers_val())
+      markers_val()
+    }, rownames = FALSE)
+
+    output$markers_download_button <- shiny::downloadHandler(
+      filename = function() { "markers.csv" },
+      content = function(file) {
+         write.csv(markers_val(), file)
+      }
+    )
+
+
+    shiny::observe({
+      shiny::req(markers_val())
+      shinyjs::show("markers_download_button")
+    }) %>% shiny::bindEvent(markers_val())
+    }
+  )
+}
+
+server_comparison_markers_panels <- function(id, k_choices) {
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      # also add categorical metadata
+      available_choices <- c(names(pkg_env$metadata_unique), k_choices)
 
         shiny::updateSelectInput(
           session = session,
           inputId = "select_k_markers",
-          choices = k_choices,
-          selected = k_choices[1]
+          choices = available_choices,
+          selected = available_choices[1]
         )
 
       shiny::observe({
-        shiny::req(input$select_k_markers %in% k_choices)
+        shiny::req(input$select_k_markers %in% available_choices)
+
+        if (is.na(as.numeric(input$select_k_markers))) {
+           available_subgroups <- pkg_env$metadata_unique[[input$select_k_markers]]
+        } else {
+          available_subgroups <- seq_len(as.numeric(input$select_k_markers))
+        }
+
         shinyWidgets::updatePickerInput(
           session = session,
           inputId = "select_clusters_markers",
-          choices = seq_len(as.integer(input$select_k_markers))
+          choices = available_subgroups,
+          selected = available_subgroups[1]
         )
       }) %>% shiny::bindEvent(input$select_k_markers)
 
@@ -215,7 +347,7 @@ server_comparison_markers <- function(id, k_choices) {
   )
 }
 
-server_comparisons <- function(id, chosen_config, chosen_method){
+server_comparisons <- function(id, chosen_config, chosen_method) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -237,8 +369,7 @@ server_comparisons <- function(id, chosen_config, chosen_method){
         umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
       ))
       
-      used_genes <- rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))]
-
+      add_env_variable("used_genes", rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))])
       add_env_variable("current_tab", "Comparison")
 
       gc()
@@ -307,97 +438,12 @@ server_comparisons <- function(id, chosen_config, chosen_method){
       },
       width = function() {
         plt_height()
-      }
-      )
-
+      })
 
       # similar for the second umap
 
-      # it would be nice to have gene umaps
 
-      shinyjs::hide("group_left-select_k_markers")
-      shinyjs::hide("group_left-select_clusters_markers")
-      shinyjs::hide("group_right-select_k_markers")
-      shinyjs::hide("group_right-select_clusters_markers")
-      shinyjs::hide("markers_download_button")
-      shinyjs::hide("markers_button")
-      
-      server_comparison_markers("group_left", k_values)
-      server_comparison_markers("group_right", k_values)
-
-      shiny::observe({
-          shinyjs::show("group_left-select_k_markers")
-          shinyjs::show("group_left-select_clusters_markers")
-          shinyjs::show("group_right-select_k_markers")
-          shinyjs::show("group_right-select_clusters_markers")
-          shinyjs::show("markers_button")
-
-
-          
-          expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[used_genes], NULL))
-          rownames(expr_matrix) <- used_genes
-          add_env_variable("rank_matrix", rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[used_genes], NULL)))
-          add_env_variable("expr_matrix", expr_matrix)
-          # waiter::waiter_hide()
-          shinyjs::hide("enable_markers")
-
-      }) %>% shiny::bindEvent(input$enable_markers)
-      
-
-
-
-   
-
-      markers_val <- shiny::reactive({
-        shiny::req(input$"group_left-select_clusters_markers",
-                   input$"group_right-select_clusters_markers")
-
-        print("start")
-          
-        mb1 <-  factor(pkg_env$stab_obj$mbs[[input$"group_left-select_k_markers"]])
-        mb2 <-  factor(pkg_env$stab_obj$mbs[[input$"group_right-select_k_markers"]])
-
-        cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers" )
-        cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
-
-        shiny::req(any(!(cells_index_right %in% cells_index_left)))
-
-      # cells_left <- colnames(expr_matrix())[cells_index_left]
-      # cells_right <- colnames(expr_matrix())[cells_index_right]
-      
-
-      calculate_markers(
-        expression_matrix = pkg_env$expr_matrix, # expression matrix
-        cells1 = cells_index_left,
-        cells2 = cells_index_right,
-        rank_matrix = pkg_env$rank_matrix, # rank matrix 
-      )
-
-      # print(mks)
-      # write.csv(mks, "test.csv")
-
-      # return(mks)
-
-      }) %>% shiny::bindEvent(input$markers_button)
-
-
-    output$markers <- DT::renderDataTable({
-      shiny::req(markers_val())
-      markers_val()
-    }, rownames = FALSE)
-
-    output$markers_download_button <- shiny::downloadHandler(
-      filename = function() { "markers.csv" },
-      content = function(file) {
-         write.csv(markers_val(), file)
-      }
-    )
-
-
-    shiny::observe({
-      shiny::req(markers_val())
-      shinyjs::show("markers_download_button")
-    }) %>% shiny::bindEvent(markers_val())
+    server_comparison_markers("markers", k_values)
 
   })
 }
