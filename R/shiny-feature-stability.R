@@ -804,11 +804,11 @@ server_dimensionality_distribution <- function(id) {
 
       gene_legend_height <- shiny::reactive({
         # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-        pdf(NULL, width =  plt_height(), height = plt_height())
+        pdf(file = NULL, width =  plt_height(), height = plt_height())
         par(mai = c(0.1, 0, 0.1, 0))
         text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
         dev.off()
-        return((0.2 + text_height) * ppi)
+        return(text_height * ppi * 1.25)
       })
 
       metadata_legend_height <- shiny::reactive({
@@ -849,7 +849,7 @@ server_dimensionality_distribution <- function(id) {
 
       output$umap_gene <- shiny::renderPlot(
         height = function() {
-          plt_height()
+          plt_height() + gene_legend_height()
         },
         width = function() {
           plt_height()
@@ -881,6 +881,8 @@ server_dimensionality_distribution <- function(id) {
             color_info = used_matrix,
             plt_height = plt_height(),
             plt_width = plt_height(),
+            predicted_height = (gene_legend_height() - 1) / ppi,
+            display_legend = TRUE,
             # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
             unique_values = unique_values,
             color_values = color_values,
@@ -891,40 +893,40 @@ server_dimensionality_distribution <- function(id) {
         }
       )
 
-      output$umap_gene_legend <- shiny::renderPlot(
-        height = function() {
-          gene_legend_height()
-        },
-        width = function() {
-          plt_height()
-        },
-        {
-          shiny::req(gene_legend_height(), input$feature_steps, expr_matrix())
+      # output$umap_gene_legend <- shiny::renderPlot(
+      #   height = function() {
+      #     gene_legend_height()
+      #   },
+      #   width = function() {
+      #     plt_height()
+      #   },
+      #   {
+      #     shiny::req(gene_legend_height(), input$feature_steps, expr_matrix())
 
-          unique_values <- NULL
-          color_values <- function(n) {
-            pdf(file = NULL)
-            colour_init <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
-            dev.off()
+      #     unique_values <- NULL
+      #     color_values <- function(n) {
+      #       pdf(file = NULL)
+      #       colour_init <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+      #       dev.off()
 
-            return(colour_init)
-          }
+      #       return(colour_init)
+      #     }
 
-          if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
-            unique_values <- c("other", "cells above threshold")
-            color_values <- c("lightgray", "red")
-          }
+      #     if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
+      #       unique_values <- c("other", "cells above threshold")
+      #       color_values <- c("lightgray", "red")
+      #     }
 
-          # pdf(file = NULL)
-          only_legend_plot(
-            plt_width = plt_height(),
-            text_size = input$gene_text_size,
-            color_values = color_values,
-            unique_values = unique_values,
-            color_info = expr_matrix()
-          )
-        }
-      )
+      #     # pdf(file = NULL)
+      #     only_legend_plot(
+      #       plt_width = plt_height(),
+      #       text_size = input$gene_text_size,
+      #       color_values = color_values,
+      #       unique_values = unique_values,
+      #       color_info = expr_matrix()
+      #     )
+      #   }
+      # )
 
       output$umap_metadata <- shiny::renderPlot(
         height = function() {
@@ -1006,8 +1008,9 @@ server_dimensionality_distribution <- function(id) {
                 sep = "/"
               )),
               color_info = used_matrix,
-              plt_height = input$gene_height * ppi,
+              plt_height = input$gene_height * ppi - gene_legend_height(),
               plt_width = input$gene_width * ppi,
+              predicted_height = (gene_legend_height() - 1) / ppi,
               # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
               unique_values = unique_values,
               color_values = color_values,
@@ -1240,17 +1243,6 @@ update_sliders <- function(session) {
       selected = colnames(pkg_env$metadata)[1]
     )
   }
-}
-
-
-
-metadata_download_module <- function(id) {
-  shiny::moduleServer(
-    id,
-    function(input, output, session) {
-
-    }
-  )
 }
 
 
