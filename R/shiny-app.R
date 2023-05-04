@@ -532,8 +532,8 @@ write_shiny_app <- function(seurat_object,
             var dimension = [0, 0];
             var resizeId;
             $(document).on(\"shiny:connected\", function(e) {
-                dimension[0] = window.innerWidth;
-                dimension[1] = window.innerHeight;
+                dimension[0] = window.innerWidth - 20;
+                dimension[1] = window.innerHeight - 30;
                 Shiny.onInputChange(\"dimension\", dimension);
             });
 
@@ -541,14 +541,14 @@ write_shiny_app <- function(seurat_object,
                 console.log(dimension);
                 console.log(window.innerHeight);
 
-                let dif_width = Math.abs(window.innerWidth - dimension[0]);
-                let dif_height = Math.abs(window.innerHeight - dimension[1]);
+                let dif_width = Math.abs(window.innerWidth - 20 - dimension[0]);
+                let dif_height = Math.abs(window.innerHeight - 30 - dimension[1]);
                 console.log(dif_height);
 
-                if (dif_width >= 50 || dif_height >= 50) {
+                if (dif_width >= 200 || dif_height >= 200) {
                 console.log(\"Changed\")
-                dimension[0] = window.innerWidth;
-                dimension[1] = window.innerHeight;
+                dimension[0] = window.innerWidth - 20;
+                dimension[1] = window.innerHeight - 30;
                 Shiny.onInputChange(\"dimension\", dimension);
                 }
             }
@@ -578,6 +578,7 @@ write_shiny_app <- function(seurat_object,
             server <- function(input, output, session) {
             shiny::hideTab(\"tabset_id\", \"Graph Construction\")
             shiny::hideTab(\"tabset_id\", \"Graph Clustering\")
+            shiny::hideTab(\"tabset_id\", \"Comparison\")
             # output$test_o <- renderText(input$dimension)
             fchoice <- shiny::reactiveVal(
                 list(
@@ -603,16 +604,15 @@ write_shiny_app <- function(seurat_object,
                 }
 
                 if (tab_number == 3) {
-                #server_graph_construction(\"graph_constr\", fchoice())
+                server_graph_construction(\"graph_constr\", fchoice())
                 }
 
                 if (tab_number == 4) {
-                cchoice(server_graph_clustering(\"graph_clust\", fchoice(), shiny::reactive(input$dimension)))
+                cchoice(server_graph_clustering(\"graph_clust\", fchoice(), session))
                 }
 
                 if (tab_number == 5) {
-                #server_comparisons_2(\"comparison\", feature_choice, cluster_method_choice)
-                # server_comparisons(\"comparison\", c(\"Highly_Variable\", \"2000\"), \"SLM\")
+                server_comparisons(\"comparison\", fchoice(), cchoice())
                 }
             }) %>% bindEvent(input$tabset_id)
             }
