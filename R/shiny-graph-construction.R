@@ -153,11 +153,15 @@ server_graph_construction <- function(id,chosen_config){
     id,
     function(input, output, session) {
       #Reactive for first plot 
+        
+      chosen_config <- shiny::isolate(chosen_config())
       temp_list <- rhdf5::h5read("stability.h5", paste(unlist(chosen_config[1]), unlist(chosen_config[2]), sep = "/"))
       temp_list$pca <- NULL
       temp_list$stable_config <- NULL
       temp_list$clustering_stability <- NULL
       add_env_variable("stab_obj", temp_list)
+
+      add_env_variable("current_tab", "Graph Construction")
       rm(temp_list)
       gc()
       
