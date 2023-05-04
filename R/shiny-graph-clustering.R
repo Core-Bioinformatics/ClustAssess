@@ -146,7 +146,7 @@ ui_graph_clustering_k_stab <- function(id) {
       shiny::sliderInput(
         inputId = ns("res_point_range"),
         label = "Size point range",
-        min = 0.1, max = 5.00, value = c(0.75, 1.75)
+        min = 0.1, max = 5.00, value = c(1.35, 2.35)
       ),
       shiny::sliderInput(
         inputId = ns("res_distance_factor"),
@@ -175,7 +175,7 @@ ui_graph_clustering_k_stab <- function(id) {
       shiny::sliderInput(
         inputId = ns("k_point_range"),
         label = "Size point range",
-        min = 0.1, max = 5.00, value = c(0.75, 1.75)
+        min = 0.1, max = 5.00, value = c(1.35, 2.35)
       ),
       shiny::sliderInput(
         inputId = ns("k_distance_factor"),
