@@ -139,8 +139,11 @@ server_landing_page <- function(id, height_ratio, dimension) {
         add_env_variable("metadata", mdt$metadata)
         add_env_variable("metadata_colors", mdt$metadata_colors)
         add_env_variable("metadata_unique", mdt$metadata_unique)
+        add_env_variable("enable_markers_button", shiny::reactiveVal(-1))
+        add_env_variable("find_markers_button", shiny::reactiveVal(-1))
         rm(mdt)
         print(paste(Sys.time(), "landing - finished loading"))
+        gc()
     }
     
   )
