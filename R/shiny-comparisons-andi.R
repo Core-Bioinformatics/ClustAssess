@@ -159,139 +159,61 @@ ui_comparison_gene_panel <- function(id, draw_line) {
     )
 }
 
+ui_comparison_jsi_panel <- function(id){
+  ns <- shiny::NS(id)
+  
+  shiny::tagList(
+  shiny::h1('Jaccard Simmilarity Index (JSI)/Cells per cluster'),
+  shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = 'success', icon = shiny::icon('info'),size='sm'),
+                         shiny::h3(shiny::strong('Jaccard Simmilarity Index (JSI) between clusters')),
+                         shiny::br(),
+                         shiny::h5('This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner.'),
+                         shiny::h1('\n'),
+                         shiny::h5('For more information please go to:'),
+                         shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
+                         placement = "right",
+                         arrow = F,
+                         maxWidth = '700px'),
+  shinyWidgets::dropdownButton(
+    label = "",
+    icon = shiny::icon("download"),
+    status = "success",
+    size='sm',
+    shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
+    shiny::textInput(ns("filename_heatmap"), "File name:", width = "80%"),
+    shiny::numericInput(ns("width_heatmap"), "Width (in):", 7, 3, 100, 0.1),
+    shiny::numericInput(ns("height_heatmap"), "Height (in):", 7, 3, 100, 0.1),
+    shiny::selectInput(ns('heatmap_filetype'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
+    shiny::downloadButton(ns('download_heatmap'), label="Download Plot")
+    
+  ),
+  shinyWidgets::dropdownButton(
+    label = "",
+    icon = shiny::icon("cog"),
+    status = "success",
+    size='sm',
+    shiny::radioButtons(ns('heatmap_type'),'Calculate similarity',choices=c('JSI','Cells per cluster'), width='100%')
+  ),
+  shiny::selectInput(
+    inputId = ns("jsi_k_1"),
+    label = "Select the number of clusters (k) for the first comparison",
+    choices = ""
+  ),
+  shiny::selectInput(
+    inputId = ns("jsi_k_2"),
+    label = "Select the number of clusters (k) for the second comparison",
+    choices = ""
+  ),
+  shiny::plotOutput(ns('barcode_heatmap'),height = "auto")
+  )
+}
+
 ui_comparisons <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel(
     "Comparison",
     shiny::fluidRow(
-      shiny::splitLayout(cellWidths = c('50%','50%'),
-                         shiny::div(style="width:90%; overflow-wrap: break-word;",shiny::h1('Compare your current configuration',style="margin-bottom:10px "),
-                                    shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info_UMAPs"), status = 'success', icon = shiny::icon('info'),size='sm'),
-                                                           shiny::h3(shiny::strong('Compare your current configuration')),
-                                                           shiny::div(style="white-space: pre-wrap; /* css-3 */
-                                                                      white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
-                                                                      white-space: -pre-wrap; /* Opera 4-6 */
-                                                                      white-space: -o-pre-wrap; /* Opera 7 */
-                                                                      word-wrap: break-word; /* Internet Explorer 5.5+ */",
-                                                                      shiny::h5('In this plot you can compare the configuration you have selected in the previous tabs to any other configuration. Here, you can also colour each configuration by the ECC, clusters, as well as any other metadata features that you have previously specified. You should choose the number of clusters that makes the most sense to you.')),
-                                                           shiny::h5('For more information please go to:'),
-                                                           shiny::tagList("", shiny::a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
-                                                           placement = "right",
-                                                           arrow = F,
-                                                           maxWidth = '700px'),
-                                    shiny::uiOutput(ns('k_selection_fixed')),
-                                    shiny::verticalLayout(shiny::h1('Configuration 1'),
-                                                          gear_umaps(ns, "gear_umap_fixed"),
-                                                          shiny::plotOutput(ns("umap_fixed"), height = "auto"),
-                                                          shiny::splitLayout(cellWidths = c('50%','50%'),
-                                                                             shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('render_meta_1')),
-                                                                                                                                 shiny::uiOutput(ns('render_meta_2')))),
-                                                                             shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1(),
-                                                                                                                                 shinyWidgets::dropdownButton(
-                                                                                                                                   label = "",
-                                                                                                                                   icon = shiny::icon("download"),
-                                                                                                                                   status = "success",
-                                                                                                                                   size='sm',
-                                                                                                                                   shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                   shiny::textInput(ns("filename_umap_1"), "File name:", width = "80%"),
-                                                                                                                                   shiny::numericInput(ns("width_umap_1"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::numericInput(ns("height_umap_1"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::selectInput(ns('umap_filetype_1'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                   shiny::downloadButton(ns('download_umap_1'), label="Download Plot")
-                                                                                                                                   
-                                                                                                                                 ),
-                                                                                                                                 shiny::h1(),
-                                                                                                                                 shiny::h1(),
-                                                                                                                                 shinyWidgets::dropdownButton(
-                                                                                                                                   label = "",
-                                                                                                                                   icon = shiny::icon("download"),
-                                                                                                                                   status = "success",
-                                                                                                                                   size='sm',
-                                                                                                                                   shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                   shiny::textInput(ns("filename_umap_3"), "File name:", width = "80%"),
-                                                                                                                                   shiny::numericInput(ns("width_umap_3"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::numericInput(ns("height_umap_3"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::selectInput(ns('umap_filetype_3'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                   shiny::downloadButton(ns('download_umap_3'), label="Download Plot")
-                                                                                                                                   
-                                                                                                                                 )))),
-                                                          shiny::plotOutput(ns("umap_fixed_2"), height = "auto")),style="border-right:5px solid;"),
-                         shiny::div(style="width:90%;",shiny::verticalLayout(shiny::splitLayout(cellWidths = c("50%","50%"),
-                                                                                                shiny::verticalLayout(shiny::uiOutput(ns("compare_sel_fset_render")),
-                                                                                                                      shiny::uiOutput(ns('compare_sel_steps_render'))),
-                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('clustering_method_choice_render')),
-                                                                                                                      shiny::uiOutput(ns('k_selection')))),
-                                                                             shiny::h1('Configuration 2'),
-                                                                             shiny::plotOutput(ns("umap_choice")),
-                                                                             shiny::splitLayout(cellWidths = c('33%','33%','33%'),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('render_meta_3')),
-                                                                                                                                                    shiny::uiOutput(ns('render_meta_4')))),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1(),
-                                                                                                                                                    shinyWidgets::dropdownButton(
-                                                                                                                                                      label = "",
-                                                                                                                                                      icon = shiny::icon("download"),
-                                                                                                                                                      status = "success",
-                                                                                                                                                      size='sm',
-                                                                                                                                                      shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                                      shiny::textInput(ns("filename_umap_2"), "File name:", width = "80%"),
-                                                                                                                                                      shiny::numericInput(ns("width_umap_2"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::numericInput(ns("height_umap_2"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::selectInput(ns('umap_filetype_2'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                                      shiny::downloadButton(ns('download_umap_2'), label="Download Plot")
-                                                                                                                                                      
-                                                                                                                                                    ),
-                                                                                                                                                    shiny::h1(),
-                                                                                                                                                    shiny::h1(),
-                                                                                                                                                    shinyWidgets::dropdownButton(
-                                                                                                                                                      label = "",
-                                                                                                                                                      icon = shiny::icon("download"),
-                                                                                                                                                      status = "success",
-                                                                                                                                                      size='sm',
-                                                                                                                                                      shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                                      shiny::textInput(ns("filename_umap_4"), "File name:", width = "80%"),
-                                                                                                                                                      shiny::numericInput(ns("width_umap_4"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::numericInput(ns("height_umap_4"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::selectInput(ns('umap_filetype_4'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                                      shiny::downloadButton(ns('download_umap_4'), label="Download Plot")
-                                                                                                                                                      
-                                                                                                                                                    )))),
-                                                                             shiny::plotOutput(ns("umap_choice_2")))
-                         ),
-      ),
-      shiny::h1('Jaccard Simmilarity Index (JSI)/Cells per cluster'),
-      shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = 'success', icon = shiny::icon('info'),size='sm'),
-                             shiny::h3(shiny::strong('Jaccard Simmilarity Index (JSI) between clusters')),
-                             shiny::br(),
-                             shiny::h5('This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner.'),
-                             shiny::h1('\n'),
-                             shiny::h5('For more information please go to:'),
-                             shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
-                             placement = "right",
-                             arrow = F,
-                             maxWidth = '700px'),
-      shinyWidgets::dropdownButton(
-        label = "",
-        icon = shiny::icon("download"),
-        status = "success",
-        size='sm',
-        shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-        shiny::textInput(ns("filename_heatmap"), "File name:", width = "80%"),
-        shiny::numericInput(ns("width_heatmap"), "Width (in):", 7, 3, 100, 0.1),
-        shiny::numericInput(ns("height_heatmap"), "Height (in):", 7, 3, 100, 0.1),
-        shiny::selectInput(ns('heatmap_filetype'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-        shiny::downloadButton(ns('download_heatmap'), label="Download Plot")
-        
-      ),
-      shinyWidgets::dropdownButton(
-        label = "",
-        icon = shiny::icon("cog"),
-        status = "success",
-        size='sm',
-        shiny::radioButtons(ns('heatmap_type'),'Calculate similarity',choices=c('JSI','Cells per cluster'), width='100%')
-      ),
-
-      shiny::plotOutput(ns('barcode_heatmap')),
-      
+      shiny::h1('Compare your current configuration',style="margin-bottom:10px ")
     ),
     shiny::splitLayout(
       cellWidths = c("48%", "48%"),
@@ -303,6 +225,7 @@ ui_comparisons <- function(id){
       ui_comparison_gene_panel(ns("gene_panel_left"), TRUE),
       ui_comparison_gene_panel(ns("gene_panel_right"), FALSE)
     ),
+    ui_comparison_jsi_panel(ns('jsi_plot')),
     ui_comparison_markers(ns("markers")),
     style = "margin-left: 25px;margin-top:72px;")
 }
@@ -761,10 +684,110 @@ server_comparison_gene_panel <- function(id) {
   )
 }
 
+server_comparison_jsi <- function(id,k_choices){
+  shiny::moduleServer(
+    id,
+    function(input, output, session) {
+      
+      plt_width <- shiny::reactive(
+        
+        pkg_env$dimension()[1]
+        
+      )
+      
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "jsi_k_1",
+        choices = k_choices,
+        selected = k_choices[1]
+      )
+      
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "jsi_k_2",
+        choices = k_choices,
+        selected = k_choices[1]
+      )
+      
+      
+
+      plt_height <- shiny::reactive(
+        floor(pkg_env$height_ratio * pkg_env$dimension()[2])
+        
+      )
+      
+      barcode_heatmap <- shiny::reactive({
+        if(is.null(input$jsi_k_1) | is.null(input$jsi_k_2)) {
+          return(ggplot2::ggplot() + ggplot2::theme_void())
+        }else {
+          clustering_1 <- as.matrix(stab_obj$mbs[[as.character(input$jsi_k_1)]])
+          df_1 <- data.frame(clustering_1) 
+          df_1$cell <- rownames(df_1)
+          clustering_2 <- as.matrix(stab_obj$mbs[[as.character(input$jsi_k_2)]])
+          df_2 <- data.frame(clustering_2) 
+          df_2$cell <- rownames(df_2)
+          all_clusters_1 <- unique(df_1[,1])
+          all_clusters_2 <- unique(df_2[,1])
+          
+          mat = matrix(, nrow = length(all_clusters_2), 
+                       ncol = length(all_clusters_1))
+          colnames(mat) <- sort(all_clusters_1)
+          rownames(mat) <- sort(all_clusters_2)
+          if (input$heatmap_type=='JSI'){
+            for (m in all_clusters_1){
+              cluster_1 <- rownames(df_1[df_1[,1]==m,])
+              for (n in all_clusters_2){
+                cluster_2 <- rownames(df_2[df_2[,1]==n,])
+                mat[as.character(n),as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
+                label <- 'JSI'
+              }
+            }
+          }else{
+            for (m in all_clusters_1){
+              cluster_1 <- rownames(df_1[df_1[,1]==m,])
+              for (n in all_clusters_2){
+                cluster_2 <- rownames(df_2[df_2[,1]==n,])
+                mat[as.character(n),as.character(m)] <- length(intersect(cluster_1, cluster_2))
+                label <- 'Shared cells'
+              }
+            }
+          }
+          df_mat <- reshape2::melt(mat)
+          
+          ggplot2::ggplot(df_mat, ggplot2::aes(Var1,Var2)) + 
+                   ggplot2::geom_tile(ggplot2::aes(fill = value)) + 
+                   ggplot2::geom_text(ggplot2::aes(label = round(value, 2))) + 
+                   ggplot2::scale_fill_gradient2(low = scales::muted("darkred"), 
+                                                 mid = "white", 
+                                                 high = scales::muted("midnightblue"), 
+                                                 midpoint = 0) + 
+                   ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +
+                   ggplot2::scale_y_continuous(breaks = pretty(df_mat$Var2, n = length(all_clusters_1))) +
+                   ggplot2::theme(
+                     panel.background = ggplot2::element_rect(fill="white"), 
+                     axis.text.x = ggplot2::element_text(hjust = 1,vjust=1,size = 10,face = "bold"),
+                     axis.text.y = ggplot2::element_text(size = 10,face = "bold"),
+                     axis.title=ggplot2::element_text(size=14,face="bold"),
+                     axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
+                     axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))) + 
+                   ggplot2::xlab("Clusters in Configuration 2") +
+                   ggplot2::ylab("Clusters in Configuration 1") +
+                   ggplot2::labs(fill=label)
+        }
+      })
+      
+      output$barcode_heatmap <- shiny::renderPlot({
+        barcode_heatmap()
+      },height=plt_height(),width=plt_width())
+    })
+}
+
 server_comparisons <- function(id, chosen_config, chosen_method) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+      print(chosen_config())
+      print(chosen_method())
       isolated_chosen_config <- shiny::isolate(chosen_config())
       ftype <- isolated_chosen_config$chosen_feature_type
       fsize <- isolated_chosen_config$chosen_set_size
@@ -805,11 +828,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
           )
         )
       }
-      
       server_comparison_metadata_panel("metadata_panel_left")
       server_comparison_metadata_panel("metadata_panel_right")
       server_comparison_gene_panel("gene_panel_left")
       server_comparison_gene_panel("gene_panel_right")
+      server_comparison_jsi('jsi_plot',k_values)
       server_comparison_markers("markers", k_values)
     
       gc()
