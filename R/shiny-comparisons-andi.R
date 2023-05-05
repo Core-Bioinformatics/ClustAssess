@@ -717,9 +717,6 @@ server_comparison_jsi <- function(id,k_choices){
       )
       
       barcode_heatmap <- shiny::reactive({
-        if(is.null(input$jsi_k_1) | is.null(input$jsi_k_2)) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }else {
           clustering_1 <- as.matrix(stab_obj$mbs[[as.character(input$jsi_k_1)]])
           df_1 <- data.frame(clustering_1) 
           df_1$cell <- rownames(df_1)
@@ -773,12 +770,39 @@ server_comparison_jsi <- function(id,k_choices){
                    ggplot2::xlab("Clusters in Configuration 2") +
                    ggplot2::ylab("Clusters in Configuration 1") +
                    ggplot2::labs(fill=label)
-        }
       })
       
       output$barcode_heatmap <- shiny::renderPlot({
-        barcode_heatmap()
+        if(is.null(input$jsi_k_1) | is.null(input$jsi_k_2)) {
+          return(ggplot2::ggplot() + ggplot2::theme_void())
+        }else {
+          barcode_heatmap()  
+        }
       },height=plt_height(),width=plt_width())
+      
+      heatmap_filetype <- shiny::reactive({
+        if (input$heatmap_filetype=='PDF'){
+          filename <- paste0(input$filename_heatmap,'.pdf')
+          return(filename)
+        }else if (input$heatmap_filetype=='PNG'){
+          filename <- paste0(input$filename_heatmap,'.png')
+          return(filename)
+        }else{
+          filename <- paste0(input$filename_heatmap,'.svg')
+          return(filename)
+        }
+      })
+      
+      output$download_heatmap <- shiny::downloadHandler(
+        filename = function() {heatmap_filetype()},
+        content = function(file) {
+          ggplot2::ggsave(file,barcode_heatmap(),width = input$width_heatmap,
+                          height = input$height_heatmap,
+                          units = "in",
+                          limitsize = FALSE)
+        }
+      )
+          
     })
 }
 
