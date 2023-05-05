@@ -9,6 +9,7 @@ ui_landing_page <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel("Home",
                   icon = shiny::icon("home"),
+                  titlePanel("ClustAssess"),
                   shiny::headerPanel(
                     list(shiny::tags$head(shiny::tags$style(".container {
                                         position: relative;
