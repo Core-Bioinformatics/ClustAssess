@@ -518,6 +518,9 @@ write_shiny_app <- function(seurat_object,
                     font-size: 15px;
                     right: 25px;
                 }\",
+                \".shiny-split-layout > div {
+                    overflow: visible;
+                }\",
                 \"div.vertical-line{
                 width: 1px; /* Line width */
                 background-color: black; /* Line color */
@@ -568,10 +571,9 @@ write_shiny_app <- function(seurat_object,
                 id = \"tabset_id\",
                 ui_landing_page(\"landing_page\"),
                 ui_dimensionality_reduction(\"dim_reduc\"),
-                #ui_graph_construction(\"graph_constr\"),
-                ui_graph_clustering(\"graph_clust\")
-                # ui_comparisons(\"comparison\")
-                # ui_comparisons_2(\"comparison\")
+                ui_graph_construction(\"graph_constr\"),
+                ui_graph_clustering(\"graph_clust\"),
+                ui_comparisons(\"comparison\")
             )
             )
 
@@ -579,16 +581,14 @@ write_shiny_app <- function(seurat_object,
             shiny::hideTab(\"tabset_id\", \"Graph Construction\")
             shiny::hideTab(\"tabset_id\", \"Graph Clustering\")
             shiny::hideTab(\"tabset_id\", \"Comparison\")
-            # output$test_o <- renderText(input$dimension)
             fchoice <- shiny::reactiveVal(
                 list(
                 chosen_feature_type = \"Highly_Variable\",
                 chosen_set_size = \"1500\"
                 )
             )
-            # fchoice <- NULL 
             cchoice <- shiny::reactiveVal()
-            height_ratio <- 0.65 # used to control the height of the plot proportional to the window's height
+            height_ratio <- 0.6 # used to control the height of the plot proportional to the window's height
             observe({
                 shinyjs::runjs(\"window.scrollTo(0, 0)\")
                 tab_number <- as.integer(tabs_numbers[input$tabset_id])
@@ -600,7 +600,6 @@ write_shiny_app <- function(seurat_object,
 
                 if (tab_number == 2) {
                 fchoice(server_dimensionality_reduction(\"dim_reduc\", session))
-                # fchoice <- shiny::isolate(server_dimensionality_reduction(\"dim_reduc\", session))
                 }
 
                 if (tab_number == 3) {
