@@ -2,6 +2,11 @@
 
 ####### UI #######
 
+#' Ui graph construction
+#'
+#' @description to be completed
+#'
+#' @export
 ui_graph_construction <- function(id) {
   ns <- shiny::NS(id)
   shiny::absolutePanel(id='selection_info',
@@ -148,6 +153,11 @@ ui_graph_construction <- function(id) {
 }
 ####### SERVER #######
 
+#' Server graph construction
+#'
+#' @description to be completed
+#'
+#' @export
 server_graph_construction <- function(id,chosen_config){
   shiny::moduleServer(
     id,
