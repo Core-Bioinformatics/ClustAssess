@@ -7,6 +7,11 @@
 
 # pkg_env <- as.environment("namsespace:ClustAsssess")#new.env(parent = emptyenv())
 pkg_env <- .GlobalEnv#new.env(parent = baseenv())
+filetypes <- list(
+  "PDF" = pdf,
+  "PNG" = function(filename, width, height) { ragg::agg_png(filename, width, height, units = "in") },
+  "SVG" = svg
+)
 
 
 add_env_variable <- function(variable_name, value) {
@@ -315,10 +320,18 @@ only_legend_plot <- function(unique_values,
     predicted_width <- predicted_width[2:length(predicted_width)]
     number_columns <- min(
       max(
-        plt_width %/% (5 * space_width + max(predicted_width)),
+        plt_width %/% (6 * space_width + max(predicted_width)),
         1),
       length(unique_values)
     )
+      number_rows <- ceiling(length(unique_values) / number_columns)
+
+    # print(strheight(paste(
+    #           rep("TEXT", number_rows + 1),
+    #           collapse = "\n"
+    #           ),
+    #           units = "inches",
+    #           cex = text_size) * ppi)
   }
 
   if (is.null(color_values)) {
@@ -390,6 +403,7 @@ color_plot2 <- function(embedding,
                         pt_size = 1,
                         pch = ".",
                         text_size = 1,
+                        legend_text_size = 1,
                         axis_size = 1,
                         display_legend = FALSE,
                         predicted_height = NULL,
@@ -398,8 +412,6 @@ color_plot2 <- function(embedding,
   if (is.null(color_values)) {
     # TODO treat this case
   }
-
-
   # xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
   # ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
   
@@ -415,15 +427,15 @@ color_plot2 <- function(embedding,
       number_rows <- 2
 
       if (is.null(predicted_height)) {
-        predicted_height <- strheight("1", units = "inches", cex = text_size)
+        predicted_height <- strheight("TE\nXT\n", units = "inches", cex = legend_text_size)
       }
     } else {
         # calculate space needed for the legend
-      predicted_width <- strwidth(unique_values, units = "inches", cex = text_size)
-      space_width <- strwidth(" ", units = "inches", cex = text_size)
+      predicted_width <- strwidth(unique_values, units = "inches", cex = legend_text_size)
+      space_width <- strwidth(" ", units = "inches", cex = legend_text_size)
       number_columns <- min(
         max(
-          plt_width %/% (5 * space_width + max(predicted_width)),
+          plt_width %/% (6 * space_width + max(predicted_width)),
           1),
         length(unique_values)
       )
@@ -436,7 +448,7 @@ color_plot2 <- function(embedding,
               collapse = "\n"
               ),
               units = "inches",
-              cex = text_size)
+              cex = legend_text_size)
       }
 
     }
@@ -460,7 +472,7 @@ color_plot2 <- function(embedding,
 
     if (!is.null(groups_highlight)) {
       groups_included <- which(unique_values %in% groups_highlight)
-      color_values[-groups_included] <- "lightgray"
+      color_values[-groups_included] <- "#e3e3e3"
 
       if (length(groups_included) != length(unique_values)) {
         mask <- (color_info %in% groups_highlight)
@@ -476,7 +488,7 @@ color_plot2 <- function(embedding,
     layout(
       matrix(c(1,2), nrow = 2),
       heights = c(
-        lcm(plt_height*2.54),
+        lcm((plt_height - predicted_height)*2.54),
         lcm(predicted_height *2.54)
       )
     )
@@ -539,7 +551,7 @@ color_plot2 <- function(embedding,
     par(mai = c(0.1, 0, 0.1, 0))
     legend_image <- as.raster(matrix(color_values, nrow=1))
     plot(c(0,1),c(-1,1), type = 'n', axes = F, bty='n',ylab='',xlab='')
-    text(y=-0.5, x = seq(0,1,l=5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+    text(y=-0.5, x = seq(0,1,l=5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = legend_text_size)
     rasterImage(legend_image, 0, 0, 1,1)
     
   } else {
@@ -551,8 +563,8 @@ color_plot2 <- function(embedding,
       legend = unique_values,
       col = color_values,
       pch = 15,
-      cex = text_size,
-      pt.cex = text_size * 2,
+      cex = legend_text_size,
+      pt.cex = legend_text_size * 2,
       bty = 'n',
       ncol = number_columns,
       # text.width = NA,
@@ -980,4 +992,91 @@ shadowtext <- function(x, y = NULL, labels, col = 'white', bg = 'black',
 	       labels, cex=cex, col=bg, ...)
 	}
 	text(xy$x, xy$y, labels, cex=cex, col=col, ... ) 
+}
+
+gear_overall <- function(ns, id) {
+  shiny::tagList(
+    shiny::sliderInput(
+      inputId = ns(paste0(id, "_boxplot_width")),
+      label = "Boxplot width",
+      min = 0.00, max = 1.00, value = 0.50
+    ),
+    shiny::sliderInput(
+      inputId = ns(paste0(id, "_inter_distance")),
+      label = "Space between groups",
+      min = 1, max = 15, value = 1, step = 1
+    ),
+    shiny::sliderInput(
+      inputId = ns(paste0(id, "_intra_distance")),
+      label = "Space inside groups",
+      min = 1, max = 15, value = 1, step = 1
+    ),
+    shiny::sliderInput(
+      inputId = ns(paste0(id, "_text_size")),
+      label = "Text size",
+      min = 0.10, max = 10.00, value = 1.00, step = 0.1
+    ),
+    shiny::sliderInput(
+      inputId = ns(paste0(id, "_text_offset")),
+      label = "Boxplot text offset",
+      min = 0.005, max = 0.15, value = 0.01, step = 0.005
+    ),
+  )
+}
+
+gear_umaps <- function(ns, id) {
+  shinyWidgets::dropdownButton(
+    shiny::tagList(
+      shiny::sliderInput(
+        inputId = ns(paste0(id, "_text_size")),
+        label = "Text size",
+        min = 0.10, max = 10.00, value = 1.00, step = 0.1
+      ),
+      shiny::sliderInput(
+        inputId = ns(paste0(id, "_axis_size")),
+        label = "Axis labels size",
+        min = 0.10, max = 10.00, value = 1.00, step = 0.1
+      ),
+      shiny::sliderInput(
+        inputId = ns(paste0(id, "_legend_size")),
+        label = "Legend size",
+        min = 0.10, max = 10.00, value = 1.00, step = 0.1
+      ),
+      shiny::sliderInput(
+        inputId = ns(paste0(id, "_pt_size")),
+        label = "Point size",
+        min = 0.05, max = 5.00, value = 0.10, step = 0.05
+      ),
+      shinyWidgets::radioGroupButtons(
+        inputId = ns(paste0(id, "_pt_type")),
+        label = "Point type",
+        choices = c("Pixel", "Circle")
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns(paste0(id, "_labels")),
+        label = "Show labels",
+        status = "success",
+        fill = TRUE
+      )
+    ),
+    circle = TRUE,
+    status = "success",
+    size = "sm",
+    icon = shiny::icon("cog")
+  )
+}
+
+gear_download <- function(ns, id, label = "") {
+  shinyWidgets::dropdownButton(
+      label = "",
+      icon = shiny::icon("download"),
+      status = "success",
+      size = "sm",
+      shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
+      shiny::textInput(ns(paste0("filename_", id)), "File name:", width = "80%", value = label),
+      shiny::numericInput(ns(paste0("width_", id)), "Width (in):", 7, 3, 100, 0.1),
+      shiny::numericInput(ns(paste0("height_", id)), "Height (in):", 7, 3, 100, 0.1),
+      shiny::selectInput(ns(paste0("filetype_", id)), "Filetype", choices = c("PDF", "PNG", "SVG"), selected = "PDF", width = "80%"),
+      shiny::downloadButton(ns(paste0("download_", id)), label = "Download Plot")
+  )
 }
