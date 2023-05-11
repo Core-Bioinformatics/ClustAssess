@@ -4,7 +4,7 @@
 \alias{server_graph_clustering}
 \title{Graph clustering - server side}
 \usage{
-server_graph_clustering(id, feature_choice, window_height)
+server_graph_clustering(id, feature_choice, parent_session)
 }
 \description{
 to be completed

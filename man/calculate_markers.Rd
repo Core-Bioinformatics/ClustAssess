@@ -13,6 +13,8 @@ calculate_markers(
   min_diff_pct_threshold = -Inf,
   rank_matrix = NULL,
   feature_names = NULL,
+  used_slot = "data",
+  norm_method = "LogNormalize",
   pseudocount_use = 1,
   base = 2
 )

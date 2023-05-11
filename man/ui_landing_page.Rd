@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny-landing-page.R
 \name{ui_landing_page}
 \alias{ui_landing_page}
-\title{Landing page - ui side}
+\title{Writing objects}
 \usage{
 ui_landing_page(id)
 }
