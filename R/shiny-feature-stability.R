@@ -1,71 +1,6 @@
 proportion_widths <- 55
 #### UI ####
-gear_overall <- function(ns, id) {
-  shiny::tagList(
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_boxplot_width")),
-      label = "Boxplot width",
-      min = 0.00, max = 1.00, value = 0.50
-    ),
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_inter_distance")),
-      label = "Space between groups",
-      min = 1, max = 15, value = 1, step = 1
-    ),
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_intra_distance")),
-      label = "Space inside groups",
-      min = 1, max = 15, value = 1, step = 1
-    ),
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_text_size")),
-      label = "Text size",
-      min = 0.10, max = 10.00, value = 1.00, step = 0.1
-    ),
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_text_offset")),
-      label = "Boxplot text offset",
-      min = 0.005, max = 0.15, value = 0.01, step = 0.005
-    ),
-  )
-}
 
-gear_umaps <- function(ns, id) {
-  shinyWidgets::dropdownButton(
-    shiny::tagList(
-      shiny::sliderInput(
-        inputId = ns(paste0(id, "_text_size")),
-        label = "Text size",
-        min = 0.10, max = 10.00, value = 1.00, step = 0.1
-      ),
-      shiny::sliderInput(
-        inputId = ns(paste0(id, "_axis_size")),
-        label = "Axis labels size",
-        min = 0.10, max = 10.00, value = 1.00, step = 0.1
-      ),
-      shiny::sliderInput(
-        inputId = ns(paste0(id, "_pt_size")),
-        label = "Point size",
-        min = 0.05, max = 5.00, value = 0.10, step = 0.05
-      ),
-      shinyWidgets::radioGroupButtons(
-        inputId = ns(paste0(id, "_pt_type")),
-        label = "Point type",
-        choices = c("Pixel", "Circle")
-      ),
-      shinyWidgets::prettySwitch(
-        inputId = ns(paste0(id, "_labels")),
-        label = "Show labels",
-        status = "success",
-        fill = TRUE
-      )
-    ),
-    circle = TRUE,
-    status = "info",
-    size = "sm",
-    icon = shiny::icon("gear")
-  )
-}
 
 
 ui_dimensionality_stability <- function(id) {
@@ -712,10 +647,17 @@ server_dimensionality_distribution <- function(id) {
         )
       }) %>% shiny::bindEvent(input$gene_expr)
 
+      changed_metadata <- shiny::reactiveVal(FALSE)
+      
       shiny::observe({
         mtd_names <- pkg_env$metadata_unique[[input$metadata]]
         if (is.null(mtd_names)) {
           shinyjs::hide(id = "select_groups")
+          shinyWidgets::updatePickerInput(
+            session,
+            inputId = "select_groups",
+            choices = NULL
+          )
 
         } else {
           shinyjs::show(id = "select_groups")
@@ -726,6 +668,8 @@ server_dimensionality_distribution <- function(id) {
             selected = mtd_names
           )
         }
+
+        changed_metadata(TRUE)
 
       }) %>% shiny::bindEvent(input$metadata)
 
@@ -863,11 +807,11 @@ server_dimensionality_distribution <- function(id) {
           if (length(input$gene_expr) > 1) {
             unique_values <- c("FALSE", "TRUE")
             color_values <- c("lightgray", "red")
-            used_matrix <- matrixStats::colSums2(used_matrix >= input$expr_threshold) == length(input$gene_expr)
+            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) == length(input$gene_expr)
           } else if (input$expr_threshold > 0) {
             unique_values <- c("FALSE", "TRUE")
             color_values <- c("lightgray", "red")
-            used_matrix <- used_matrix >= input$expr_threshold
+            used_matrix <- used_matrix > input$expr_threshold
           }
 
           color_plot2(
@@ -893,41 +837,6 @@ server_dimensionality_distribution <- function(id) {
         }
       )
 
-      # output$umap_gene_legend <- shiny::renderPlot(
-      #   height = function() {
-      #     gene_legend_height()
-      #   },
-      #   width = function() {
-      #     plt_height()
-      #   },
-      #   {
-      #     shiny::req(gene_legend_height(), input$feature_steps, expr_matrix())
-
-      #     unique_values <- NULL
-      #     color_values <- function(n) {
-      #       pdf(file = NULL)
-      #       colour_init <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
-      #       dev.off()
-
-      #       return(colour_init)
-      #     }
-
-      #     if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
-      #       unique_values <- c("other", "cells above threshold")
-      #       color_values <- c("lightgray", "red")
-      #     }
-
-      #     # pdf(file = NULL)
-      #     only_legend_plot(
-      #       plt_width = plt_height(),
-      #       text_size = input$gene_text_size,
-      #       color_values = color_values,
-      #       unique_values = unique_values,
-      #       color_info = expr_matrix()
-      #     )
-      #   }
-      # )
-
       output$umap_metadata <- shiny::renderPlot(
         height = function() {
           plt_height()
@@ -936,7 +845,19 @@ server_dimensionality_distribution <- function(id) {
           plt_height()
         },
         {
-          shiny::req(input$feature_steps, input$metadata)
+          current_metadata <- input$metadata
+          groups <- input$select_groups
+
+          shiny::req(input$feature_steps, current_metadata, cancelOutput = TRUE)
+          shiny::isolate({
+            if (changed_metadata() && !is.null(pkg_env$metadata_unique[[current_metadata]])) {
+              matched_elems <- match(groups, pkg_env$metadata_unique[[current_metadata]])
+              matched_elems <- matched_elems[!is.na(matched_elems)]
+              shiny::req(length(matched_elems) == length(pkg_env$metadata_unique[[current_metadata]]), cancelOutput = TRUE)
+              changed_metadata(FALSE)
+            }
+          })
+
           metadata_plot(
             embedding = rhdf5::h5read("stability.h5", paste(
               "feature_stability",
@@ -953,30 +874,10 @@ server_dimensionality_distribution <- function(id) {
             text_size = input$metadata_text_size,
             axis_size = input$metadata_axis_size,
             labels = input$metadata_labels,
-            groups_highlight = input$select_groups
+            groups_highlight = groups
           )
         }
       )
-
-        output$umap_metadata_legend <- shiny::renderPlot(
-          height = function() {
-            metadata_legend_height()
-          },
-          width = function() {
-            plt_height()
-          },
-          {
-            shiny::req(metadata_legend_height(), input$metadata)
-            # pdf(file = NULL)
-            # dev.off()
-            only_legend_metadata_plot(
-              metadata_name = input$metadata,
-              plt_width = plt_height(),
-              groups = input$select_groups,
-              text_size = input$metadata_text_size 
-            )
-          }
-        )
 
         output$download_gene <-  shiny::downloadHandler(
           filename = function() {
