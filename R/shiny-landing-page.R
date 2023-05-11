@@ -1,10 +1,10 @@
-#' Landing page - ui side
+####### UI #######
+
+#' Writing objects
 #'
 #' @description to be completed
 #'
 #' @export
-####### UI #######
-
 ui_landing_page <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel("Home",
@@ -115,24 +115,22 @@ server_landing_page <- function(id, height_ratio, dimension) {
     function(input, output, session) {
         print(paste(Sys.time(), "landing - loading"))
         ggplot2::theme_set(ggplot2::theme_classic())
-        if (is.null(pkg_env$feature_ordering)) {
-          add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
-       
-          genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
-          index <- seq_along(genes)
-          names(index) <- genes
-          add_env_variable("genes_of_interest", index)
-          genes <- rhdf5::h5read("expression.h5", "genes_others")
-          index <- seq_along(genes)
-          names(index) <- genes
-          add_env_variable("genes_others", index)
-          rm(genes)
-          rm(index)
-          # gc()
-          add_env_variable("cells", rhdf5::h5read("expression.h5", "cells"))
-          add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
-          add_env_variable("height_ratio", height_ratio)
-        }
+        add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
+      
+        genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
+        index <- seq_along(genes)
+        names(index) <- genes
+        add_env_variable("genes_of_interest", index)
+        genes <- rhdf5::h5read("expression.h5", "genes_others")
+        index <- seq_along(genes)
+        names(index) <- genes
+        add_env_variable("genes_others", index)
+        rm(genes)
+        rm(index)
+        # gc()
+        add_env_variable("cells", rhdf5::h5read("expression.h5", "cells"))
+        add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
+        add_env_variable("height_ratio", height_ratio)
 
         add_env_variable("dimension", dimension)
         mdt <- readRDS("metadata.rds")
