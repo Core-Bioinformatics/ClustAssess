@@ -137,7 +137,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
       seed_sequence = seed_sequence,
       npcs = npcs,
       ecs_thresh = ecs_threshold,
-      ncores = n_cores,
+      ncores = 1,
       algorithm = 1,
       verbose = verbose,
       ...
@@ -388,4 +388,133 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
   }
 
   return(feature_configs)
+}
+
+
+update_seurat_object <- function(original_seurat_object,
+                                 clustassess_object,
+                                 stable_feature_type,
+                                 stable_feature_set_size,
+                                 stable_clustering_method,
+                                 stable_n_clusters,
+                                 seurat_assay = "SCT") {
+
+
+}
+
+#' Create monocle object based on expression matrix
+#'
+#' @description to be completed
+#'
+#' @export
+create_monocle_object <- function(normalized_expression_matrix,
+                                 count_matrix = NULL,
+                                 clustassess_object,
+                                 metadata,
+                                 stable_feature_type,
+                                 stable_feature_set_size,
+                                 stable_clustering_method,
+                                 stable_n_clusters = NULL,
+                                 gene_names = NULL,
+                                 cell_names = NULL,
+                                 use_all_genes = FALSE,
+                                 is_object_from_shinyapp = FALSE) {
+
+  if (is.null(gene_names)) {
+    gene_names <- rownames(normalized_expression_matrix)
+  }
+
+  if (is.null(gene_names)) {
+    stop("The gene names should be provided.")
+  }
+
+  if (is.null(cell_names)) {
+    cell_names <- colnames(normalized_expression_matrix)
+  }
+
+  if (is.null(cell_names)) {
+    stop("The cell names should be provided.")
+  }
+
+  rownames(normalized_expression_matrix) <- gene_names
+  colnames(normalized_expression_matrix) <- cell_names
+
+  if (is.null(count_matrix)) {
+    count_matrix <- normalized_expression_matrix
+  } else {
+    rownames(count_matrix) <- gene_names
+    colnames(count_matrix) <- cell_names
+  }
+
+  if (!use_all_genes) {
+    used_genes <- clustassess_object[[stable_feature_type]]$feature_list[seq_len(as.integer(stable_feature_set_size))]
+    normalized_expression_matrix <- normalized_expression_matrix[used_genes, ]
+    count_matrix <- count_matrix[used_genes, ]
+    gene_names <- used_genes
+  }
+
+  clustassess_object <- clustassess_object[[stable_feature_type]][[as.character(stable_feature_set_size)]]
+  gc()
+
+
+  if (is_object_from_shinyapp) {
+    available_n_clusters <- clustassess_object$clustering_stability$structure_list[[stable_clustering_method]]
+
+  } else {
+    available_n_clusters <- names(clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]])
+  }
+
+  if (is.null(stable_n_clusters)) {
+    stable_n_clusters <- available_n_clusters
+  } else {
+    stable_n_clusters <- as.character(stable_n_clusters)
+    which_present <- which(available_n_clusters %in% stable_n_clusters)
+    
+    if (length(which_present) != length(available_n_clusters)) {
+      warning(paste0("Only the n clusters of ", paste(available_n_clusters[which_present], collapse = " "), " are obtained for the provided configuration."))
+    }
+
+    stable_n_clusters <- available_n_clusters[which_present]
+  }
+
+  if (!is.data.frame(metadata) || nrow(metadata) == 0) {
+    metadata <- data.frame(identical_ident = rep(1, length(cell_names)))
+  } else {
+    metadata_values <- colnames(metadata)
+    metadata_values[which(metadata_values == "sample_name")] <- "sample_names"
+    colnames(metadata) <- metadata_values
+  }
+
+  for (k in stable_n_clusters) {
+    if (is_object_from_shinyapp) {
+      metadata[[paste0("stable_", k, "_clusters")]] <- factor(clustassess_object$clustering_stability$split_by_k$mbs[[stable_clustering_method]][[k]])
+      ecc <- clustassess_object$clustering_stability$split_by_k$ecc[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
+      ecc_order <- clustassess_object$clustering_stability$split_by_k$ecc_order[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
+      metadata[[paste0("ecc_", k)]] <- ecc[ecc_order]
+    } else {
+      metadata[[paste0("stable_", k, "_clusters")]] <- clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$partitions[[1]]$mb
+      metadata[[paste0("ecc_", k)]] <- clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$ecc
+    }
+  }
+
+  rownames(metadata) <- cell_names
+
+  monocle_cds <- monocle3::new_cell_data_set(
+    expression_data = count_matrix,
+    cell_metadata = metadata,
+    gene_metadata = data.frame("gene_short_name" = gene_names, row.names = gene_names)
+  )
+
+  monocle_cds@assays@data$normalized_data <- normalized_expression_matrix
+
+  pca_embedding <- clustassess_object$pca
+  rownames(pca_embedding) <- cell_names
+  colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
+  SingleCellExperiment::reducedDims(monocle_cds)$PCA <- pca_embedding
+  umap_embedding <- clustassess_object$umap
+  rownames(umap_embedding) <- cell_names
+  colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
+  SingleCellExperiment::reducedDims(monocle_cds)$UMAP <- umap_embedding
+
+  return(monocle_cds)
 }
