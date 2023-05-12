@@ -1,6 +1,6 @@
 ####### UI #######
 
-ui_comparisons <- function(id){
+ui_comparisons_ <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel(
     "Comparison",
@@ -136,11 +136,14 @@ ui_comparisons <- function(id){
 }
 ####### SERVER #######
 
-server_comparisons <- function(id,chosen_config,chosen_method){
+server_comparisons_ <- function(id,chosen_config,chosen_method){
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      metadata <- readRDS('metadata.rds')
+      chosen_config <- shiny::isolate(chosen_config())
+      chosen_method <- shiny::isolate(chosen_method())
+
+      # metadata <- readRDS('metadata.rds') # already done in `shiny_landing_page.R`
       temp_list <- rhdf5::h5read("stability.h5",'/')
       temp_list$feature_stability <- NULL
       obj_fsets <- names(temp_list$feature_ordering$stable)
