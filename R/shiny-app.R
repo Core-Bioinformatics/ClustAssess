@@ -266,7 +266,7 @@ write_objects <- function(clustassess_object,
                     ecc_order <- order(ecc)
                     res_format <- sprintf("%.6f", as.numeric(res))
                     ecc_list_by_res[[paste(res_format, cl_method, sep = ";")]] <- ecc[ecc_order]
-                    ecc_order_list_by_res[[paste(res_format, cl_method, sep = ";")]] <- ecc_order
+                    ecc_order_list_by_res[[paste(res_format, cl_method, sep = ";")]] <- Matrix::invPerm(ecc_order)
 
                     # create the summary table for the complex plot
                     for (n_clusters in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters)) {
@@ -328,7 +328,7 @@ write_objects <- function(clustassess_object,
                     ecc_order <- order(ecc)
                     n_clusters_format <- sprintf("%06d", as.integer(n_clusters))
                     ecc_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc[ecc_order]
-                    ecc_order_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- ecc_order
+                    ecc_order_list[[paste(n_clusters_format, cl_method, sep = ";")]] <- Matrix::invPerm(ecc_order)
 
                     temp_by_k_summary <- data.frame(
                         k = as.integer(n_clusters),
@@ -487,21 +487,24 @@ write_shiny_app <- function(seurat_object,
     file_content <- "
         library(ggplot2)
         library(shiny)
+        library(shinyjs)
         library(rhdf5)
         library(ClustAssess)
 
-        tabs_numbers <- seq_len(5)
+        tabs_numbers <- seq_len(6)
         names(tabs_numbers) <- c(
         \"Home\",
         \"Dimensionality Reduction\",
         \"Graph Construction\",
         \"Graph Clustering\",
-        \"Comparison\"
+        \"Comparison\",
+        \"Sandbox\"
         )
 
         ui <- fluidPage(
             tags$head(
                 tags$style(
+                    HTML(
                 \"#tabset_id {
                     position: fixed;
                     width: 100%;
@@ -530,8 +533,9 @@ write_shiny_app <- function(seurat_object,
                     if this fits better with your design */
                 }\"
                 )
+                )
             ),
-            tags$head(tags$script(shiny::HTML('
+            tags$head(tags$script(HTML('
             var dimension = [0, 0];
             var resizeId;
             $(document).on(\"shiny:connected\", function(e) {
@@ -566,36 +570,39 @@ write_shiny_app <- function(seurat_object,
 
             ),
             # theme = bslib::bs_theme(version = 4),
-            shinyjs::useShinyjs(),
+            useShinyjs(),
             tabsetPanel(
                 id = \"tabset_id\",
                 ui_landing_page(\"landing_page\"),
                 ui_dimensionality_reduction(\"dim_reduc\"),
                 ui_graph_construction(\"graph_constr\"),
                 ui_graph_clustering(\"graph_clust\"),
-                ui_comparisons(\"comparison\")
+                ui_comparisons(\"comparison\"),
+                ui_sandbox(\"sandbox\")
             )
             )
 
             server <- function(input, output, session) {
-            shiny::hideTab(\"tabset_id\", \"Graph Construction\")
-            shiny::hideTab(\"tabset_id\", \"Graph Clustering\")
-            shiny::hideTab(\"tabset_id\", \"Comparison\")
-            fchoice <- shiny::reactiveVal(
+            hideTab(\"tabset_id\", \"Dimensionality Reduction\")
+            hideTab(\"tabset_id\", \"Graph Construction\")
+            hideTab(\"tabset_id\", \"Graph Clustering\")
+            hideTab(\"tabset_id\", \"Comparison\")
+            hideTab(\"tabset_id\", \"Sandbox\")
+            fchoice <- reactiveVal(
                 list(
                 chosen_feature_type = \"Highly_Variable\",
                 chosen_set_size = \"1500\"
                 )
             )
-            cchoice <- shiny::reactiveVal()
+            cchoice <- reactiveVal()
             height_ratio <- 0.6 # used to control the height of the plot proportional to the window's height
             observe({
-                shinyjs::runjs(\"window.scrollTo(0, 0)\")
+                runjs(\"window.scrollTo(0, 0)\")
                 tab_number <- as.integer(tabs_numbers[input$tabset_id])
                 print(tab_number)
 
                 if (tab_number == 1) {
-                server_landing_page(\"landing_page\", height_ratio, shiny::reactive(input$dimension))
+                server_landing_page(\"landing_page\", height_ratio, reactive(input$dimension), session)
                 }
 
                 if (tab_number == 2) {
@@ -612,6 +619,10 @@ write_shiny_app <- function(seurat_object,
 
                 if (tab_number == 5) {
                 server_comparisons(\"comparison\", fchoice(), cchoice())
+                }
+
+                if (tab_number == 6) {
+                server_sandbox(\"sandbox\")
                 }
             }) %>% bindEvent(input$tabset_id)
             }
