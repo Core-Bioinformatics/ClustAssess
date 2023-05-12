@@ -26,9 +26,9 @@ ui_dimensionality_stability <- function(id) {
       ),
       gear_overall(ns, "by_step_res"),
       circle = TRUE,
-      status = "info",
+      status = "success",
       size = "sm",
-      icon = shiny::icon("gear")
+      icon = shiny::icon("cog")
     ),
     shiny::splitLayout(
       cellWidths = paste0(c(proportion_widths - 3, 100 - proportion_widths), "%"), #c("52%", "45%"),
@@ -51,9 +51,9 @@ ui_dimensionality_stability <- function(id) {
           ),
           gear_overall(ns, "incremental_res"),
           circle = TRUE,
-          status = "info",
+          status = "success",
           size = "sm",
-          icon = shiny::icon("gear")
+          icon = shiny::icon("cog")
         ),
         shiny::plotOutput(ns("boxplot_incr"), height = "auto")
       ),
@@ -91,9 +91,9 @@ ui_dimensionality_stability <- function(id) {
     shinyWidgets::dropdownButton(
       gear_overall(ns, "by_step"),
       circle = TRUE,
-      status = "info",
+      status = "success",
       size = "sm",
-      icon = shiny::icon("gear")
+      icon = shiny::icon("cog")
     ),
     shiny::plotOutput(ns("overall_boxplot_ecc"), height = "auto"),
     shiny::splitLayout(
@@ -108,9 +108,9 @@ ui_dimensionality_stability <- function(id) {
     shinyWidgets::dropdownButton(
       gear_overall(ns, "incremental"),
       circle = TRUE,
-      status = "info",
+      status = "success",
       size = "sm",
-      icon = shiny::icon("gear")
+      icon = shiny::icon("cog")
     ),
     shiny::plotOutput(ns("overall_boxplot_incremental"), height = "auto")
   )
@@ -126,72 +126,63 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
     shiny::selectizeInput(ns("feature_type"), "Feature names", NULL),
     shiny::selectizeInput(ns("feature_steps"), "Feature set size", NULL),
     shiny::hr(),
-    shiny::verticalLayout(
-      shiny::selectizeInput(
-        inputId = ns("gene_expr"),
-        choices = NULL,
-        label = "Gene name(s)",
-        width = "95%",
-        multiple = TRUE
-      ),
-      shiny::sliderInput(
-        inputId = ns("expr_threshold"),
-        label = "Gene expression threshold",
-        min = 0, max = 10, value = 0,
-        width = "95%"
-      )
+    shiny::selectizeInput(
+      inputId = ns("gene_expr"),
+      choices = NULL,
+      label = "Gene name(s)",
+      width = "95%",
+      multiple = TRUE
     ),
-    gear_umaps(ns, "gene"),
-    # shiny::actionButton(ns("download_gene_action"), "Download", icon = shiny::icon("download")),
-    shiny::downloadButton(ns("download_gene"), "Download"),
     shiny::splitLayout(
-      shiny::numericInput(ns("gene_height"), "Plot height (in)", value = 7),
-      shiny::numericInput(ns("gene_width"), "Plot width (in)", value = 7)
+        shiny::numericInput(
+          inputId = ns("expr_threshold"),
+          label = "Gene expression threshold",
+          min = 0, max = 10, value = 0, step = 0.01,
+          width = "95%"
+        ),
+        shiny::numericInput(
+          inputId = ns("relaxation"),
+          label = "#genes not expressed",
+          min = 0, max = 10, value = 0, step = 1,
+          width = "95%"
+        )
     ),
-    # shiny::uiOutput(ns("umap_gene_generator")),
+    shiny::splitLayout(
+      cellWidths = c("40px", "40px"),
+      gear_umaps(ns, "gene")
+      # gear_download(ns, "gene", "gene")
+    ),
+
     shiny::plotOutput(ns("umap_gene"), height = "auto"),
     shiny::plotOutput(ns("umap_gene_legend"), height = "auto"),
-    shiny::selectizeInput(
-      inputId = ns("metadata"),
-      label = "Metadata",
-      choices = NULL
+   
+      shiny::splitLayout(
+         shiny::selectizeInput(
+          inputId = ns("metadata"),
+          label = "Metadata",
+          choices = NULL
+        ),
+        shiny::verticalLayout(
+          shiny::tags$b("Select the highlighted gorups"),
+          shinyWidgets::pickerInput(
+                  inputId = ns("select_groups"),
+                  choices = "",
+                  inline = FALSE,
+                  options = list(
+                    `actions-box` = TRUE,
+                    title = "Select/deselect groups",
+                    size = 10,
+                    width = "90%",
+                    `selected-text-format` = "count > 3"
+                  ), 
+                  multiple = TRUE
+                )
+        )
     ),
-    # shiny::splitLayout(
-      # cellWidths = c("40px", "90%"),
-    # shiny::splitLayout(
-      # cellWidths = "40%",
-      shiny::fluidRow(
-        shiny::column(6,
-
-        gear_umaps(ns, "metadata"),
-          # shiny::actionButton(ns("download_metadata_action"), "Download", icon = shiny::icon("download")),
-        shiny::downloadButton(ns("download_metadata"), "Download"),
-        shiny::splitLayout(
-          shiny::numericInput(ns("metadata_height"), "Plot height (in)", value = 7),
-          shiny::numericInput(ns("metadata_width"), "Plot width (in)", value = 7)
-        ),
-        ),
-        shiny::column(6,
-        shinyWidgets::pickerInput(
-                inputId = ns("select_groups"),
-                choices = "",
-                inline = FALSE,
-                # width = "100%",
-                # width = "30%",
-                options = list(
-                  `actions-box` = TRUE,
-                  title = "Select/deselect groups",
-                  # actionsBox = TRUE,
-                  size = 10,
-                  width = "90%",
-                  `selected-text-format` = "count > 3"
-                ), 
-                multiple = TRUE
-              )
-        ),
-      ),
-    # ),
-    # shiny::uiOutput(ns("umap_metadata_generator"))
+    shiny::splitLayout(
+      gear_umaps(ns, "metadata")
+      # gear_download(ns, "metadata", "metadata")
+    ),
     shiny::plotOutput(ns("umap_metadata"), height = "auto"),
     shiny::plotOutput(ns("umap_metadata_legend"), height = "auto")
   )
@@ -271,119 +262,6 @@ server_dimensionality_stability <- function(id) {
     function(input, output, session) {
       # TODO add the ecc umap on the right with select
       # TODO less urgent add option to zoom in on the ecc umap
-      # boxplot_ecc_df <- shiny::reactive(
-      #   plot_feature_per_resolution_stability_boxplot(
-      #     feature_object_list = pkg_env$stab_obj,
-      #     resolution = input$resolution,
-      #     return_df = TRUE
-      #   )
-      # )
-
-      # # ecc_mouse_hover <- shiny::reactiveVal(c(NA, NA))
-      # ecc_mouse_hover <- shiny::reactive({
-      #   if (is.null(input$ecc_hover)) {
-      #     return(c(NA, NA))
-      #   }
-      #   x <- input$ecc_hover$x
-      #   # y <- input$ecc_hover$y
-      #   min_step <- min(as.numeric(boxplot_ecc_df()$step_index))
-      #   max_step <- max(as.numeric(boxplot_ecc_df()$step_index))
-      #   nconfigs <- length(pkg_env$feature_ordering$original)
-      #   chosen_step <- NULL
-      #   chosen_config <- NULL
-
-      #   for (steps_intervals in seq(from = min_step - 0.5, to = max_step - 0.5, by = 1)) {
-      #     if (x < steps_intervals + 1) {
-      #       chosen_step <- steps_intervals + 0.5
-      #       break
-      #     }
-      #   }
-
-      #   if (is.null(chosen_step)) {
-      #     chosen_step <- max_step
-      #   }
-
-      #   for (i in seq_len(nconfigs)) {
-      #     if (x < (steps_intervals + i / nconfigs)) {
-      #       chosen_config <- i
-      #       break
-      #     }
-      #   }
-
-      #   if (is.null(chosen_config)) {
-      #     chosen_config <- nconfigs
-      #   }
-
-      #   return(c(chosen_step, chosen_config))
-      # }) %>% shiny::bindEvent(input$ecc_hover)
-
-
-      # output$boxplot_ecc_info <- shiny::renderText({
-      #   if (is.na(ecc_mouse_hover()[1])) {
-      #     return("")
-      #   }
-
-      #   feature_type <- pkg_env$feature_types[ecc_mouse_hover()[2]]
-      #   nfeatures <- pkg_env$feature_ordering$original[[feature_type]][ecc_mouse_hover()[1]]
-      #   glue::glue("The ECC summary for {feature_type} - {nfeatures} and resolution {input$resolution}.")
-      #   # Click if you want to visualise the UMAP distribution.")
-      # })
-
-      # output$table_ecc_info <- shiny::renderTable({
-      #   if (is.na(ecc_mouse_hover()[1])) {
-      #     return()
-      #   }
-      #   summary_ecc <- fivenum(pkg_env$stab_obj$by_steps[[ecc_mouse_hover()[2]]][[ecc_mouse_hover()[1]]][[input$resolution]]$ecc)
-      #   data.frame(
-      #     min = summary_ecc[1],
-      #     Q1 = summary_ecc[2],
-      #     median = summary_ecc[3],
-      #     Q3 = summary_ecc[4],
-      #     max = summary_ecc[5]
-      #   )
-      # })
-
-      # shiny::observe({
-      #   output$boxplot_ecc <- shiny::renderPlot({
-      #     plot_feature_per_resolution_stability_boxplot(
-      #       feature_object_list = pkg_env$stab_obj,
-      #       resolution = input$resolution,
-      #       text_size = input$text_size,
-      #       boxplot_width = input$boxplot_width,
-      #       dodge_width = input$dodge_width
-      #     ) + ggplot2::theme(legend.position = "bottom")
-      #   })
-
-      #   output$boxplot_incr <- shiny::renderPlot({
-      #     plot_feature_per_resolution_stability_incremental(
-      #       feature_object_list = pkg_env$stab_obj,
-      #       resolution = input$resolution,
-      #       text_size = input$text_size,
-      #       boxplot_width = input$boxplot_width,
-      #       dodge_width = input$dodge_width
-      #     )
-      #   })
-      # }) %>% shiny::bindEvent(input$resolution)
-
-
-      # shiny::observe({
-      #   hover_coords <- ecc_mouse_hover()
-
-      #   output$umap_ecc <- shiny::renderPlot({
-      #     # if (is.na(hover_coords[1])) {
-      #     #   return(empty_ggplot())
-      #     # }
-
-      #     config_name <- pkg_env$feature_types[hover_coords[2]]
-      #     step_index <- pkg_env$feature_ordering$original[[config_name]][hover_coords[1]]
-      #     ecc <- pkg_env$stab_obj$by_steps[[config_name]][[step_index]][[input$resolution]]$ecc
-
-      #     color_ggplot(pkg_env$stab_obj$embedding_list[[config_name]][[step_index]], ecc) +
-      #       # ggplot2::guides(color = ggplot2::guide_legend(title = "ecc")) +
-      #       ggplot2::scale_color_viridis_c(name = "ECC") +
-      #       ggplot2::ggtitle(sprintf("ECC distribution\n%s - %s\nResolution %s", config_name, step_index, input$resolution))
-      #   })
-      # }) %>% shiny::bindEvent(input$ecc_click)
 
       shiny::updateSelectInput(
         session = session,
@@ -400,12 +278,12 @@ server_dimensionality_stability <- function(id) {
         )
       })
 
-      plt_height <- shiny::reactive(
+      plt_height <- shiny::reactive({
+        shiny::req(pkg_env$dimension())
          floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * (1 - proportion_widths / 100)))
-      )
+      })
 
       legend_height <- shiny::reactive({
-        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
         pdf(file = NULL, width = plt_height(), height = plt_height())
         par(mai = c(0.1, 0, 0.1, 0))
         text_height <- strheight("TE\nXT\n", units = "inches", cex = input$by_step_res_text_size)
@@ -436,15 +314,16 @@ server_dimensionality_stability <- function(id) {
 
       output$umap_ecc <- shiny::renderPlot(
         height = function() {
-           plt_height()
+           shiny::req(plt_height())
         },
         width = function() {
-           plt_height()
+           shiny::req(plt_height())
         },
         {
 
           shiny::req(
-            ecc_value()
+            ecc_value(),
+            plt_height()
           )
           
           color_plot2(
@@ -600,6 +479,9 @@ server_dimensionality_distribution <- function(id) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+      changed_metadata <- shiny::reactiveVal(FALSE)
+      metadata_legend_height <- shiny::reactiveVal(0)
+
       shiny::observeEvent(input$feature_type, {
         shiny::updateSelectizeInput(session,
           inputId = "feature_steps",
@@ -612,17 +494,6 @@ server_dimensionality_distribution <- function(id) {
       # TODO metadata highlight only a group of cells
       # TODO adapt the download
 
-      # shiny::observe({
-      #   height <- floor(input$dimension * pkg_env$height_ratio)
-      #   ns <- session$ns
-      #   # output$umap_gene_generator <- shiny::renderUI(
-      #   #   shiny::plotOutput(ns("umap_gene"), height = paste0(height, "px"))
-      #   # )
-
-      #   # output$umap_metadata_generator <- shiny::renderUI(
-      #   #   shiny::plotOutput(ns("umap_metadata"), height = paste0(height, "px"))
-      #   # )
-      # }) %>% shiny::bindEvent(input$dimension)
 
       expr_matrix <- shiny::reactive({
         index_interest <- pkg_env$genes_of_interest[input$gene_expr]
@@ -645,9 +516,20 @@ server_dimensionality_distribution <- function(id) {
           max = round(max_level_expr(), 3),
           step = round(max_level_expr() / 10, 3)
         )
+
+        shiny::updateNumericInput(
+          session,
+          inputId = "relaxation",
+          max = length(input$gene_expr) - 1
+        )
+
+        if (length(input$gene_expr) > 1) {
+          shinyjs::show("relaxation")
+        } else {
+          shinyjs::hide("relaxation")
+        }
       }) %>% shiny::bindEvent(input$gene_expr)
 
-      changed_metadata <- shiny::reactiveVal(FALSE)
       
       shiny::observe({
         mtd_names <- pkg_env$metadata_unique[[input$metadata]]
@@ -673,75 +555,6 @@ server_dimensionality_distribution <- function(id) {
 
       }) %>% shiny::bindEvent(input$metadata)
 
-
-     
-
-      # umap_gene_plot <- shiny::reactive({
-      #   if (is.null(input$feature_type) || is.null(input$feature_steps)) {
-      #     Sys.sleep(0.5) # wait a little
-      #   }
-
-      #   embedding <- pkg_env$stab_obj$embedding_list[[input$feature_type]][[input$feature_steps]]
-
-      #   if (length(input$gene_expr) == 0) {
-      #     return(empty_ggplot())
-      #   }
-
-      #   # if (is.null(embedding)) {
-      #   #   return(empty_ggplot())
-      #   # }
-
-      #   if (length(input$gene_expr) == 1) {
-      #     return(expression_ggplot(embedding, expr_matrix(), input$expr_threshold) + ggplot2::theme(aspect.ratio = 1))
-      #   }
-
-      #   voting_scheme_ggplot(
-      #     embedding,
-      #     matrixStats::colSums2(expr_matrix() >= input$expr_threshold),
-      #     nrow(expr_matrix())
-      #   ) #+ ggplot2::theme(aspect.ratio = 1)
-      # })
-
-      # umap_metadata_plot <- shiny::reactive({
-      #   if (is.null(input$feature_type) || is.null(input$feature_steps)) {
-      #     Sys.sleep(0.5) # wait a little
-      #   }
-
-      #   embedding <- pkg_env$stab_obj$embedding_list[[input$feature_type]][[input$feature_steps]]
-
-      #   # if (is.null(embedding)) {
-      #   #   return(empty_ggplot())
-      #   # }
-
-      #   metadata_ggplot(embedding, input$metadata) #+ ggplot2::theme(aspect.ratio = 1)
-      # })
-
-      # output$umap_gene <- shiny::renderCachedPlot(
-      #   {
-      #     umap_gene_plot()
-      #   },
-      #   cacheKeyExpr = {
-      #     list(input$feature_type, input$feature_steps, input$gene_expr, input$expr_threshold)
-      #   },
-      #   sizePolicy = shiny::sizeGrowthRatio(
-      #     height = floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2)),
-      #     width = floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2)),
-      #     growthRate = 1.2
-      #   )
-      # )
-
-      # output$umap_metadata <- shiny::renderCachedPlot(
-      #   {
-      #     umap_metadata_plot()
-      #   },
-      #   cacheKeyExpr = {
-      #     list(input$feature_type, input$feature_steps, input$metadata)
-      #   },
-      #   sizePolicy = shiny::sizeGrowthRatio(
-      #     height = 500, width = 500, growthRate = 1.2
-      #   )
-      # )
-
       plt_height <- shiny::reactive(
         floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.43))
       )
@@ -750,45 +563,9 @@ server_dimensionality_distribution <- function(id) {
         # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
         pdf(file = NULL, width =  plt_height(), height = plt_height())
         par(mai = c(0.1, 0, 0.1, 0))
-        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
+        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
         dev.off()
         return(text_height * ppi * 1.25)
-      })
-
-      metadata_legend_height <- shiny::reactive({
-        unique_values <- pkg_env$metadata_unique[[input$metadata]]
-        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-        pdf(file = NULL, width = plt_height(), height = plt_height())
-        if (is.null(unique_values)) {
-          par(mai = c(0.1, 0, 0.1, 0))
-          text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
-          dev.off()
-          return((0.2 + text_height) * ppi)
-        }
-
-        par(mar = c(0, 0, 0, 0))
-        predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = input$metadata_text_size) * ppi
-        space_width <- predicted_width[1]
-        predicted_width <- predicted_width[2:length(predicted_width)]
-
-        number_columns <- min(
-          max(
-            plt_height() %/% (5 * space_width + max(predicted_width)),
-            1),
-          length(unique_values)
-        )
-        number_rows <- ceiling(length(unique_values) / number_columns)
-
-        text_height <- strheight(paste(
-          rep("TEXT", number_rows + 1),
-          collapse = "\n"
-          ),
-          units = "inches",
-          cex = input$metadata_text_size) * ppi
-
-        dev.off()
-
-        return(text_height)
       })
 
       output$umap_gene <- shiny::renderPlot(
@@ -805,12 +582,12 @@ server_dimensionality_distribution <- function(id) {
           used_matrix <- expr_matrix()
           color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
           if (length(input$gene_expr) > 1) {
-            unique_values <- c("FALSE", "TRUE")
-            color_values <- c("lightgray", "red")
-            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) == length(input$gene_expr)
+            unique_values <- c("other", "cells above threshold")
+            color_values <- c("#e3e3e3", "red")
+            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation)
           } else if (input$expr_threshold > 0) {
-            unique_values <- c("FALSE", "TRUE")
-            color_values <- c("lightgray", "red")
+            unique_values <- c("other", "cells above threshold")
+            color_values <- c("#e3e3e3", "red")
             used_matrix <- used_matrix > input$expr_threshold
           }
 
@@ -823,7 +600,7 @@ server_dimensionality_distribution <- function(id) {
               sep = "/"
             )),
             color_info = used_matrix,
-            plt_height = plt_height(),
+            plt_height = plt_height() + gene_legend_height() - 1,
             plt_width = plt_height(),
             predicted_height = (gene_legend_height() - 1) / ppi,
             display_legend = TRUE,
@@ -832,7 +609,9 @@ server_dimensionality_distribution <- function(id) {
             color_values = color_values,
             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
             pt_size = input$gene_pt_size,
-            text_size = input$gene_text_size
+            axis = input$gene_axis_size,
+            legend_text_size = input$gene_legend_size,
+            text_size = input$gene_legend_size
           )
         }
       )
@@ -847,16 +626,53 @@ server_dimensionality_distribution <- function(id) {
         {
           current_metadata <- input$metadata
           groups <- input$select_groups
+          input$metadata_pt_size
+          input$metadata_axis_size
+          input$metadata_text_size
+          input$metadata_labels
+          input$metadata_pt_type
+          input$metadata_legend_size
+          input$feature_type
+          input$feature_steps
 
-          shiny::req(input$feature_steps, current_metadata, cancelOutput = TRUE)
           shiny::isolate({
+            shiny::req(input$feature_steps, current_metadata, cancelOutput = TRUE)
             if (changed_metadata() && !is.null(pkg_env$metadata_unique[[current_metadata]])) {
               matched_elems <- match(groups, pkg_env$metadata_unique[[current_metadata]])
               matched_elems <- matched_elems[!is.na(matched_elems)]
               shiny::req(length(matched_elems) == length(pkg_env$metadata_unique[[current_metadata]]), cancelOutput = TRUE)
               changed_metadata(FALSE)
             }
-          })
+
+            if (is.null(pkg_env$metadata_unique[[current_metadata]])) {
+              old_par <- par(mai = c(0.1, 0, 0.1, 0))
+              text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
+            } else {
+              old_par <- par(mar = c(0, 0, 0, 0))
+              predicted_width <- strwidth(c(" ", pkg_env$metadata_unique[[current_metadata]]), units = "inches", cex = input$metadata_legend_size) * ppi
+              space_width <- predicted_width[1]
+              predicted_width <- predicted_width[2:length(predicted_width)]
+
+              number_columns <- min(
+                max(
+                  plt_height() %/% (6 * space_width + max(predicted_width)),
+                  1
+                ),
+                length(pkg_env$metadata_unique[[current_metadata]])
+              )
+              number_rows <- ceiling(length(pkg_env$metadata_unique[[current_metadata]]) / number_columns)
+
+              text_height <- strheight(
+                paste(
+                  rep("TEXT", number_rows + 1),
+                  collapse = "\n"
+                ),
+                units = "inches",
+                cex = input$metadata_legend_size
+              )
+            }
+            par(old_par)
+            metadata_legend_height(text_height * ppi)
 
           metadata_plot(
             embedding = rhdf5::h5read("stability.h5", paste(
@@ -876,136 +692,59 @@ server_dimensionality_distribution <- function(id) {
             labels = input$metadata_labels,
             groups_highlight = groups
           )
+
+          })
         }
       )
 
-        output$download_gene <-  shiny::downloadHandler(
-          filename = function() {
-            "feature_genes.pdf"
+      shiny::observe({
+        shiny::req(input$metadata, metadata_legend_height() > 0)
+        output$umap_metadata_legend <- shiny::renderPlot(
+          height = function() {
+            metadata_legend_height()
           },
-          content = function(file) {
-            # ggplot2::ggsave(file, to_save_plot, width = width, height = height)
-            shiny::req(input$feature_steps, input$expr_threshold, input$gene_expr, input$gene_width, input$gene_height, expr_matrix())
-            pdf(file, width = input$metadata_width, height = input$metadata_height)
-            unique_values <- NULL
-            used_matrix <- expr_matrix()
-            color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
-            if (length(input$gene_expr) > 1) {
-              unique_values <- c("other", "cells above threshold")
-              color_values <- c("lightgray", "red")
-              used_matrix <- matrixStats::colSums2(used_matrix >= input$expr_threshold) == length(input$gene_expr)
-            } else if (input$expr_threshold > 0) {
-              unique_values <- c("other", "cells above threshold")
-              color_values <- c("lightgray", "red")
-              used_matrix <- used_matrix >= input$expr_threshold
-            }
+          width = function() {
+            plt_height()
+          },
+          {
+            plt_height()
+            input$select_groups
+            input$metadata_legend_size
+            current_metadata <- input$metadata
 
-            color_plot2(
-              embedding = rhdf5::h5read("stability.h5", paste(
-                "feature_stability",
-                "embedding_list",
-                input$feature_type,
-                input$feature_steps,
-                sep = "/"
-              )),
-              color_info = used_matrix,
-              plt_height = input$gene_height * ppi - gene_legend_height(),
-              plt_width = input$gene_width * ppi,
-              predicted_height = (gene_legend_height() - 1) / ppi,
-              # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
-              unique_values = unique_values,
-              color_values = color_values,
-              pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
-              pt_size = input$gene_pt_size,
-              text_size = input$gene_text_size,
-              display_legend = TRUE
-            )
-            dev.off()
+            shiny::isolate({
+              if (!is.null(pkg_env$metadata_unique[[current_metadata]])) {
+                matched_elems <- match(input$select_groups, pkg_env$metadata_unique[[current_metadata]])
+                matched_elems <- matched_elems[!is.na(matched_elems)]
+                if (changed_metadata()) {
+                  shiny::req(
+                    length(matched_elems) == length( pkg_env$metadata_unique[[current_metadata]]),
+                    length(matched_elems) == length(input$select_groups),
+                    cancelOutput = TRUE
+                  )
+                }
+
+                color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
+                unique_values <- pkg_env$metadata_unique[[current_metadata]][matched_elems]
+                # changed_metadata(FALSE)
+              } else {
+                color_values <- NULL
+                unique_values <- NULL
+              }
+
+
+              only_legend_plot(
+                unique_values = unique_values,
+                color_values = color_values,
+                color_info = pkg_env$metadata[[current_metadata]],
+                plt_width = plt_height(),
+                text_size = input$metadata_legend_size
+              )
+            })
           }
         )
+      })
 
-        output$download_metadata <-  shiny::downloadHandler(
-          filename = function() {
-            "feature_metadata.pdf"
-          },
-          content = function(file) {
-            # ggplot2::ggsave(file, to_save_plot, width = width, height = height)
-            shiny::req(input$feature_steps, input$metadata, input$metadata_width, input$metadata_height)
-            pdf(file, width = input$metadata_width, height = input$metadata_height)
-            metadata_plot(
-              embedding = rhdf5::h5read("stability.h5", paste(
-                "feature_stability",
-                "embedding_list",
-                input$feature_type,
-                input$feature_steps,
-                sep = "/"
-              )),
-              metadata_name = input$metadata,
-              plt_height = input$metadata_height * ppi,
-              plt_width = input$metadata_width * ppi,
-              pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
-              pt_size = input$metadata_pt_size,
-              text_size = input$metadata_text_size,
-              axis_size = input$metadata_axis_size,
-              labels = input$metadata_labels,
-              groups_highlight = input$select_groups,
-              display_legend = TRUE
-            )
-            dev.off()
-          }
-        )
-
-
-      # shiny::observe({
-      #   download_plot_modal(
-      #     session,
-      #     output,
-      #     paste0(paste("gene_plot", input$feature_type, input$feature_steps, paste(input$gene_expr, collapse = "_"), sep = "_"), ".pdf"),
-      #     "download_gene"
-      #   )
-      # }) %>% shiny::bindEvent(input$download_gene_action)
-
-      # shiny::observe({
-      #   if (input$feature_type == "" || is.null(input$feature_steps)) {
-      #     Sys.sleep(0.5) # wait a little
-      #   }
-
-      #   if (input$feature_steps == "" || is.null(input$feature_steps)) {
-      #     Sys.sleep(0.5)
-      #   }
-
-      #   download_plot_modal(
-      #     session,
-      #     output,
-      #     paste0(paste("metadata_plot", input$feature_type, input$feature_steps, input$metadata, sep = "_"), ".pdf"),
-      #     "download_metadata"
-      #   )
-
-
-
-      #   print("output creat")
-      # }) %>% shiny::bindEvent(input$download_metadata_action)
-
-      # shiny::observe(
-      #   {
-      #     output$download_gene <- download_plot_handler(
-      #       session,
-      #       input$filename,
-      #       umap_gene_plot(),
-      #       input$width,
-      #       input$height
-      #     )
-
-      #     output$download_metadata <- download_plot_handler(
-      #       session,
-      #       input$filename,
-      #       umap_metadata_plot(),
-      #       input$width,
-      #       input$height
-      #     )
-      #   },
-      #   priority = 10
-      # ) %>% shiny::bindEvent(input$filename)
     }
   )
 }
@@ -1055,8 +794,8 @@ server_dimensionality_choice <- function(id, parent_session) {
       )) %>% shiny::bindEvent(input$fix_feature_button)
 
       shiny::observe({
-        shiny::showTab("tabset_id", "Graph Construction", select = FALSE, session = parent_session)
-        shiny::showTab("tabset_id", "Graph Clustering", select = TRUE, session = parent_session)
+        shiny::showTab("tabset_id", "Graph Construction", select = TRUE, session = parent_session)
+        shiny::showTab("tabset_id", "Graph Clustering", select = FALSE, session = parent_session)
       }) %>% shiny::bindEvent(input$fix_feature_button, ignoreInit = TRUE)
 
       return(user_choice)
