@@ -173,6 +173,11 @@ ui_sandbox_jsi_panel <- function(id){
   )
 }
 
+#' UI sandbox 
+#'
+#' @description to be completed
+#'
+#' @export
 ui_sandbox <- function(id){
   ns <- shiny::NS(id)
   shiny::tabPanel(
@@ -978,9 +983,9 @@ server_sandbox_jsi <- function(id){
         }
         df_mat <- reshape2::melt(mat)
         
-        ggplot2::ggplot(df_mat, ggplot2::aes(Var1,Var2)) + 
-          ggplot2::geom_tile(ggplot2::aes(fill = value)) + 
-          ggplot2::geom_text(ggplot2::aes(label = round(value, 2))) + 
+        ggplot2::ggplot(df_mat, ggplot2::aes(.data$Var1,.data$Var2)) + 
+          ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) + 
+          ggplot2::geom_text(ggplot2::aes(label = round(.data$value, 2))) + 
           ggplot2::scale_fill_gradient2(low = scales::muted("darkred"), 
                                         mid = "white", 
                                         high = scales::muted("midnightblue"), 
@@ -1033,6 +1038,11 @@ server_sandbox_jsi <- function(id){
     })
 }
 
+#' server sandbox 
+#'
+#' @description to be completed
+#'
+#' @export
 server_sandbox <- function(id) {
   shiny::moduleServer(
     id,
@@ -1046,7 +1056,7 @@ server_sandbox <- function(id) {
       
       server_sandbox_config_choice('config_choice_left','left')
       shiny::observeEvent(input$"config_choice_left-fix_config",{
-        req(pkg_env$selected_kvals_left)
+        shiny::req(pkg_env$selected_kvals_left)
         shiny::updateSelectizeInput(
           session,
           inputId = "sbx_metadata_panel_left-metadata",
@@ -1071,7 +1081,7 @@ server_sandbox <- function(id) {
       
       server_sandbox_config_choice('config_choice_right','right')
       shiny::observeEvent(input$"config_choice_right-fix_config",{
-        req(pkg_env$selected_kvals_right)
+        shiny::req(pkg_env$selected_kvals_right)
         shiny::updateSelectizeInput(
           session,
           inputId = "sbx_metadata_panel_right-metadata",
@@ -1101,7 +1111,7 @@ server_sandbox <- function(id) {
       
       #And the JSI
       shiny::observeEvent(input$"config_choice_left-fix_config",{
-        req(pkg_env$selected_kvals_left)
+        shiny::req(pkg_env$selected_kvals_left)
         shiny::updateSelectizeInput(
           session = session,
           inputId = "sbx_jsi-jsi_k_1",
@@ -1110,7 +1120,7 @@ server_sandbox <- function(id) {
         )
       })
       shiny::observeEvent(input$"config_choice_right-fix_config",{
-        req(pkg_env$selected_kvals_right)
+        shiny::req(pkg_env$selected_kvals_right)
         shiny::updateSelectizeInput(
           session = session,
           inputId = "sbx_jsi-jsi_k_2",
