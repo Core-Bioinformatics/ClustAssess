@@ -15,6 +15,7 @@ create_monocle_object(
   stable_n_clusters = NULL,
   gene_names = NULL,
   cell_names = NULL,
+  use_all_genes = FALSE,
   is_object_from_shinyapp = FALSE
 )
 }
