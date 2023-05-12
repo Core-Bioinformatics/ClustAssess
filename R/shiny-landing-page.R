@@ -23,7 +23,7 @@ ui_landing_page <- function(id){
                                         left: 126px;
                                       }")),
                          shiny::HTML('<div class="container" style="width:100%">
-                          <img src="starry_night_4.png" alt="starry" style="width:100%"/>
+                          <img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-0.4.0/docs/articles/ClustAssess_files/figure-html/ClustAssess_starry_night.png" alt="starry" style="width:100%"/>
                           <!--<div class="bottom-left">Automated pipeline for assessing the robustness of single-cell clustering</div>-->
                        </div>')
                     )),
@@ -109,7 +109,7 @@ ui_landing_page <- function(id){
 #' @description to be completed
 #'
 #' @export
-server_landing_page <- function(id, height_ratio, dimension) {
+server_landing_page <- function(id, height_ratio, dimension, parent_session) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -141,6 +141,15 @@ server_landing_page <- function(id, height_ratio, dimension) {
         add_env_variable("enable_markers_button", shiny::reactiveVal(-1))
         add_env_variable("find_markers_button", shiny::reactiveVal(-1))
         rm(mdt)
+
+        shiny::observe({
+          shiny::req(pkg_env$dimension()[1] > 0,
+                      pkg_env$dimension()[2] > 0)
+                      
+          
+          shiny::showTab("tabset_id", "Dimensionality Reduction", select = FALSE, session = parent_session)
+          shiny::showTab("tabset_id", "Sandbox", select = FALSE, session = parent_session)
+        }) %>% shiny::bindEvent(pkg_env$dimension(), once = TRUE)
         print(paste(Sys.time(), "landing - finished loading"))
         gc()
     }
