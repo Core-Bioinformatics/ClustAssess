@@ -222,7 +222,7 @@ server_sandbox_config_choice <- function(id,side){
       
       output$sandbox_sel_steps_render <- shiny::renderUI({
         ns <- session$ns
-        req(input$sandbox_sel_fset)
+        shiny::req(input$sandbox_sel_fset)
         shiny::selectInput(
           inputId = ns("sandbox_sel_steps"),
           label = "Select feature - size:",
@@ -233,8 +233,8 @@ server_sandbox_config_choice <- function(id,side){
       })
       
       shiny::observeEvent(input$sandbox_sel_steps,{
-        req(input$sandbox_sel_fset)
-        req(input$sandbox_sel_steps)
+        shiny::req(input$sandbox_sel_fset)
+        shiny::req(input$sandbox_sel_steps)
         add_env_variable("clustering_options", list(
           clustering_options =rhdf5::h5read("stability.h5", paste(input$sandbox_sel_fset,input$sandbox_sel_steps,'clustering_stability/split_by_k/structure_list',sep ='/'))
         ))
@@ -272,11 +272,11 @@ server_sandbox_config_choice <- function(id,side){
         )
       })
       user_choice <- shiny::eventReactive(input$fix_config,{
-        req(input$fix_config)
-        req(input$sandbox_sel_fset)
-        req(input$sandbox_sel_steps)
-        req(input$sandbox_select_n_clusters)
-        req(input$sandbox_clustering_method)
+        shiny::req(input$fix_config)
+        shiny::req(input$sandbox_sel_fset)
+        shiny::req(input$sandbox_sel_steps)
+        shiny::req(input$sandbox_select_n_clusters)
+        shiny::req(input$sandbox_clustering_method)
         user_choice <- list(
           fset = input$sandbox_sel_fset,
           fsize = input$sandbox_sel_steps,
@@ -286,7 +286,7 @@ server_sandbox_config_choice <- function(id,side){
         user_choice
       })
       shiny::observeEvent(input$fix_config,{
-        req(user_choice())
+        shiny::req(user_choice())
         if (user_choice()$side=='left'){
           add_env_variable("stab_obj_left", list(
             mbs = rhdf5::h5read("stability.h5", paste(user_choice()$fset, user_choice()$fsize, "clustering_stability", "split_by_k", "mbs", user_choice()$c_method, sep = "/"))[user_choice()$k_vals],
@@ -304,7 +304,7 @@ server_sandbox_config_choice <- function(id,side){
         }
     })
       shiny::observeEvent(input$fix_config,{
-        req(user_choice())
+        shiny::req(user_choice())
         if (user_choice()$side=='left'){
           print('Adding k as an env variable')
           add_env_variable('selected_kvals_left',user_choice()$k_vals)
@@ -949,10 +949,10 @@ server_sandbox_jsi <- function(id){
       )
       
       barcode_heatmap <- shiny::reactive({
-        clustering_1 <- as.matrix(stab_obj$mbs[[as.character(input$jsi_k_1)]])
+        clustering_1 <- as.matrix(stab_obj_left$mbs[[as.character(input$jsi_k_1)]])
         df_1 <- data.frame(clustering_1) 
         df_1$cell <- rownames(df_1)
-        clustering_2 <- as.matrix(stab_obj$mbs[[as.character(input$jsi_k_2)]])
+        clustering_2 <- as.matrix(stab_obj_right$mbs[[as.character(input$jsi_k_2)]])
         df_2 <- data.frame(clustering_2) 
         df_2$cell <- rownames(df_2)
         all_clusters_1 <- unique(df_1[,1])
@@ -1134,4 +1134,3 @@ server_sandbox <- function(id) {
       
     })
 }
-
