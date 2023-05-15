@@ -244,7 +244,6 @@ server_sandbox_config_choice <- function(id,side){
       output$sandbox_clustering_method_render <- shiny::renderUI({
         shiny::req(input$sandbox_sel_fset)
         shiny::req(input$sandbox_sel_steps)
-        shiny::req(pkg_env$clustering_options)
         ns <- session$ns
         shiny::radioButtons(
           inputId = ns("sandbox_clustering_method"),
