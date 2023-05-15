@@ -26,7 +26,7 @@ ui_sandbox_config_choice <- function(id, draw_line){
                                                                                                  shinyWidgets::pickerInput(
                                                                                                    inputId = ns("sandbox_select_n_clusters"),
                                                                                                    label = "Select a number of clusters",
-                                                                                                   choices = "",
+                                                                                                   choices = NULL,
                                                                                                    inline = FALSE,
                                                                                                    options = list(
                                                                                                      `actions-box` = TRUE,
