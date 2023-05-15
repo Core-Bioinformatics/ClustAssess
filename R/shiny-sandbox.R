@@ -71,7 +71,7 @@ ui_sandbox_metadata_panel <- function(id, draw_line) {
       # shiny::column(6,
       shinyWidgets::pickerInput(
         inputId = ns("select_groups"),
-        choices = "",
+        choices = NULL,
         inline = FALSE,
         # width = "100%",
         # width = "30%",
@@ -238,12 +238,12 @@ server_sandbox_config_choice <- function(id,side){
         add_env_variable("clustering_options", list(
           clustering_options =rhdf5::h5read("stability.h5", paste(input$sandbox_sel_fset,input$sandbox_sel_steps,'clustering_stability/split_by_k/structure_list',sep ='/'))
         ))
-        print(pkg_env$clustering_options)
       })
       
       output$sandbox_clustering_method_render <- shiny::renderUI({
         shiny::req(input$sandbox_sel_fset)
         shiny::req(input$sandbox_sel_steps)
+        shiny::req(pkg_env$clustering_options)
         ns <- session$ns
         shiny::radioButtons(
           inputId = ns("sandbox_clustering_method"),
@@ -308,13 +308,9 @@ server_sandbox_config_choice <- function(id,side){
       shiny::observeEvent(input$fix_config,{
         shiny::req(user_choice())
         if (user_choice()$side=='left'){
-          print('Adding k as an env variable')
           add_env_variable('selected_kvals_left',user_choice()$k_vals)
-          print(pkg_env$selected_kvals_left)
         }else{
-          print('Adding k as an env variable_right')
           add_env_variable('selected_kvals_right',user_choice()$k_vals)
-          print(pkg_env$selected_kvals_right)
           }
       })
     })
@@ -1059,6 +1055,7 @@ server_sandbox <- function(id) {
       server_sandbox_config_choice('config_choice_left','left')
       shiny::observeEvent(input$"config_choice_left-fix_config",{
         shiny::req(pkg_env$selected_kvals_left)
+        shiny::req(pkg_env$clustering_options)
         shiny::updateSelectizeInput(
           session,
           inputId = "sbx_metadata_panel_left-metadata",
@@ -1136,3 +1133,4 @@ server_sandbox <- function(id) {
       
     })
 }
+
