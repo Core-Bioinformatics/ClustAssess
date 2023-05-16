@@ -539,8 +539,8 @@ write_shiny_app <- function(seurat_object,
             var dimension = [0, 0];
             var resizeId;
             $(document).on(\"shiny:connected\", function(e) {
-                dimension[0] = window.innerWidth - 20;
-                dimension[1] = window.innerHeight - 30;
+                dimension[0] = Math.max(window.innerWidth - 20, 400);
+                dimension[1] = Math.max(window.innerHeight - 30, 400);
                 Shiny.onInputChange(\"dimension\", dimension);
             });
 
@@ -548,14 +548,14 @@ write_shiny_app <- function(seurat_object,
                 console.log(dimension);
                 console.log(window.innerHeight);
 
-                let dif_width = Math.abs(window.innerWidth - 20 - dimension[0]);
-                let dif_height = Math.abs(window.innerHeight - 30 - dimension[1]);
+                let dif_width = Math.abs(Math.max(window.innerWidth - 20, 400) - dimension[0]);
+                let dif_height = Math.abs(Math.max(window.innerHeight - 30, 400) - dimension[1]);
                 console.log(dif_height);
 
                 if (dif_width >= 200 || dif_height >= 200) {
                 console.log(\"Changed\")
-                dimension[0] = window.innerWidth - 20;
-                dimension[1] = window.innerHeight - 30;
+                dimension[0] = Math.max(window.innerWidth - 20, 400);
+                dimension[1] = Math.max(window.innerHeight - 30, 400);
                 Shiny.onInputChange(\"dimension\", dimension);
                 }
             }
