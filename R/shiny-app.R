@@ -67,13 +67,13 @@ write_objects <- function(clustassess_object,
                 metadata_colors[[mtd_col]] <- single_color
             }
         } else if (is.character(metadata[, mtd_col])) {
-            metadata_unique[[mtd_col]] <- unique(metadata[, mtd_col])
+            metadata[, mtd_col] <- factor(metadata[, mtd_col])
+            metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 1) {
                 metadata_colors[[mtd_col]] <- qualpalr::qualpal(length(metadata_unique[[mtd_col]]), colorspace = qualpalr_colorspace)$hex
             } else {
                 metadata_colors[[mtd_col]] <- single_color
             }
-            metadata[, mtd_col] <- factor(metadata[, mtd_col])
         } else if (is.logical(metadata[,mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
             metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
