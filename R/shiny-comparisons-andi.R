@@ -909,7 +909,7 @@ server_comparison_jsi <- function(id, k_choices) {
           ggplot2::scale_fill_gradient2(
             low = scales::muted("darkred"),
             mid = "white",
-            high = scales::muted("midnightblue"),
+            high = scales::muted("green"),
             midpoint = 0
           ) +
           ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +

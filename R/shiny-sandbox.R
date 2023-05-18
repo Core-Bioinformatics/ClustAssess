@@ -60,15 +60,11 @@ ui_sandbox_metadata_panel <- function(id, draw_line) {
     shiny::verticalLayout(
       # shiny::column(6,
       
-      gear_umaps(ns, "metadata"),
-      # shiny::actionButton(ns("download_metadata_action"), "Download", icon = shiny::icon("download")),
-      shiny::downloadButton(ns("download_metadata"), "Download"),
       shiny::splitLayout(
-        shiny::numericInput(ns("metadata_height"), "Plot height (in)", value = 7),
-        shiny::numericInput(ns("metadata_width"), "Plot width (in)", value = 7)
+        cellWidths = c("40px", "40px"),
+        gear_umaps(ns, "metadata"),
+        gear_download(ns, "metadata", "metadata")
       ),
-      # ),
-      # shiny::column(6,
       shinyWidgets::pickerInput(
         inputId = ns("select_groups"),
         choices = NULL,
@@ -114,11 +110,10 @@ ui_sandbox_gene_panel <- function(id, draw_line) {
         width = "95%"
       )
     ),
-    gear_umaps(ns, "gene"),
-    shiny::downloadButton(ns("download_gene"), "Download"),
     shiny::splitLayout(
-      shiny::numericInput(ns("gene_height"), "Plot height (in)", value = 7),
-      shiny::numericInput(ns("gene_width"), "Plot width (in)", value = 7)
+      cellWidths = c("40px", "40px"),
+      gear_umaps(ns, "gene"),
+      gear_download(ns, "gene", "gene"),
     ),
     shiny::plotOutput(ns("umap_gene"), height = "auto")
   )
@@ -447,49 +442,58 @@ server_sandbox_metadata_panel_left <- function(id) {
           )
         }
       )
+      plot_data <- shiny::reactive({
+        shiny::req(input$metadata)
+        
+        is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+        is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
+        
+        if (is_cluster || is_ecc) {
+          k <- strsplit(input$metadata, "_")[[1]][2]
+          if (is_ecc) {
+            cl_method <- strsplit(names(pkg_env$stab_obj_left$ecc)[1], ";")[[1]][2]
+            unique_values <- NULL
+            color_values <- NULL
+            color_info <- pkg_env$stab_obj_left$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+            color_info <- color_info[pkg_env$stab_obj_left$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
+          } else {
+            color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
+            unique_values <- seq_len(as.integer(k))
+            color_info <- pkg_env$stab_obj_left$mbs[[k]]
+          }
+        } else {
+          unique_values <- pkg_env$metadata_unique[[input$metadata]]
+          color_values <- pkg_env$metadata_colors[[input$metadata]]
+          color_info <- pkg_env$metadata[[input$metadata]]
+        }
+        
+        list(
+          unique_values = unique_values,
+          color_values = color_values,
+          color_info = color_info
+        )
+      }) %>% shiny::bindEvent(input$metadata)
       
-      output$download_metadata <-  shiny::downloadHandler(
+      output$download_metadata <- shiny::downloadHandler(
         filename = function() {
-          "feature_metadata.pdf"
+          paste0(input$filename_metadata, ".", tolower(input$filetype_metadata))
         },
         content = function(file) {
-          # ggplot2::ggsave(file, to_save_plot, width = width, height = height)
-          shiny::req(input$metadata, input$metadata_width, input$metadata_height)
-          pdf(file, width = input$metadata_width, height = input$metadata_height)
-          is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
-          is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
-          
-          if (is_cluster || is_ecc) {
-            k <- strsplit(input$metadata, "_")[[1]][2]
-            if (is_ecc) {
-              cl_method <- strsplit(names(pkg_env$stab_obj_left$ecc)[1], ";")[[1]][2]
-              print(cl_method)
-              unique_values <- NULL
-              color_values <- NULL
-              color_info <- pkg_env$stab_obj_left$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
-            } else {
-              color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
-              unique_values <- seq_len(as.integer(k))
-              color_info <- pkg_env$stab_obj_left$mbs[[k]]
-            }
-          } else {
-            unique_values <- pkg_env$metadata_unique[[input$metadata]]
-            color_values <- pkg_env$metadata_colors[[input$metadata]]
-            color_info <- pkg_env$metadata[[input$metadata]]
-          }
-          
+          shiny::req(input$metadata, input$width_metadata, input$height_metadata)
+          filetypes[[input$filetype_metadata]](file, width = input$width_metadata, height = input$height_metadata)
           color_plot2(
             embedding = pkg_env$stab_obj_left$umap,
-            color_info = color_info,
-            color_values = color_values,
-            unique_values = unique_values,
-            plt_height = input$metadata_height * ppi - metadata_legend_height(),
-            plt_width = input$metadata_width * ppi,
-            predicted_height = (metadata_legend_height() - 1) / ppi,
+            color_info = plot_data()$color_info,
+            color_values = plot_data()$color_values,
+            unique_values = plot_data()$unique_values,
+            plt_height = input$height_metadata * ppi, # - metadata_legend_height(),
+            plt_width = input$width_metadata * ppi,
+            # predicted_height = (metadata_legend_height() - 1) / ppi,
             pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
             pt_size = input$metadata_pt_size,
             text_size = input$metadata_text_size,
             axis_size = input$metadata_axis_size,
+            legend_text_size = input$metadata_legend_size,
             labels = input$metadata_labels,
             groups_highlight = input$select_groups,
             display_legend = TRUE
@@ -633,48 +637,58 @@ server_sandbox_metadata_panel_right <- function(id) {
         }
       )
       
-      output$download_metadata <-  shiny::downloadHandler(
+      plot_data <- shiny::reactive({
+        shiny::req(input$metadata)
+        
+        is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+        is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
+        
+        if (is_cluster || is_ecc) {
+          k <- strsplit(input$metadata, "_")[[1]][2]
+          if (is_ecc) {
+            cl_method <- strsplit(names(pkg_env$stab_obj_right$ecc)[1], ";")[[1]][2]
+            unique_values <- NULL
+            color_values <- NULL
+            color_info <- pkg_env$stab_obj_right$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+            color_info <- color_info[pkg_env$stab_obj_rightt$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
+          } else {
+            color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
+            unique_values <- seq_len(as.integer(k))
+            color_info <- pkg_env$stab_obj_right$mbs[[k]]
+          }
+        } else {
+          unique_values <- pkg_env$metadata_unique[[input$metadata]]
+          color_values <- pkg_env$metadata_colors[[input$metadata]]
+          color_info <- pkg_env$metadata[[input$metadata]]
+        }
+        
+        list(
+          unique_values = unique_values,
+          color_values = color_values,
+          color_info = color_info
+        )
+      }) %>% shiny::bindEvent(input$metadata)
+      
+      output$download_metadata <- shiny::downloadHandler(
         filename = function() {
-          "feature_metadata.pdf"
+          paste0(input$filename_metadata, ".", tolower(input$filetype_metadata))
         },
         content = function(file) {
-          # ggplot2::ggsave(file, to_save_plot, width = width, height = height)
-          shiny::req(input$metadata, input$metadata_width, input$metadata_height)
-          pdf(file, width = input$metadata_width, height = input$metadata_height)
-          is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
-          is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
-          
-          if (is_cluster || is_ecc) {
-            k <- strsplit(input$metadata, "_")[[1]][2]
-            if (is_ecc) {
-              cl_method <- strsplit(names(pkg_env$stab_obj_right$ecc)[1], ";")[[1]][2]
-              print(cl_method)
-              unique_values <- NULL
-              color_values <- NULL
-              color_info <- pkg_env$stab_obj_right$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
-            } else {
-              color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
-              unique_values <- seq_len(as.integer(k))
-              color_info <- pkg_env$stab_obj_right$mbs[[k]]
-            }
-          } else {
-            unique_values <- pkg_env$metadata_unique[[input$metadata]]
-            color_values <- pkg_env$metadata_colors[[input$metadata]]
-            color_info <- pkg_env$metadata[[input$metadata]]
-          }
-          
+          shiny::req(input$metadata, input$width_metadata, input$height_metadata)
+          filetypes[[input$filetype_metadata]](file, width = input$width_metadata, height = input$height_metadata)
           color_plot2(
             embedding = pkg_env$stab_obj_right$umap,
-            color_info = color_info,
-            color_values = color_values,
-            unique_values = unique_values,
-            plt_height = input$metadata_height * ppi - metadata_legend_height(),
-            plt_width = input$metadata_width * ppi,
-            predicted_height = (metadata_legend_height() - 1) / ppi,
+            color_info = plot_data()$color_info,
+            color_values = plot_data()$color_values,
+            unique_values = plot_data()$unique_values,
+            plt_height = input$height_metadata * ppi, # - metadata_legend_height(),
+            plt_width = input$width_metadata * ppi,
+            # predicted_height = (metadata_legend_height() - 1) / ppi,
             pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
             pt_size = input$metadata_pt_size,
             text_size = input$metadata_text_size,
             axis_size = input$metadata_axis_size,
+            legend_text_size = input$metadata_legend_size,
             labels = input$metadata_labels,
             groups_highlight = input$select_groups,
             display_legend = TRUE
@@ -768,31 +782,33 @@ server_sandbox_gene_panel_left <- function(id) {
         }
       )
       
-      output$download_gene <-  shiny::downloadHandler(
+      output$download_gene <- shiny::downloadHandler(
         filename = function() {
-          "feature_genes.pdf"
+          paste0(input$filename_gene, ".", tolower(input$filetype_gene))
         },
         content = function(file) {
-          shiny::req(input$expr_threshold, input$gene_expr, input$gene_width, input$gene_height, expr_matrix())
-          pdf(file, width = input$metadata_width, height = input$metadata_height)
+          shiny::req(input$expr_threshold, input$gene_expr, input$width_gene, input$height_gene, expr_matrix())
+          filetypes[[input$filetype_gene]](file, width = input$width_gene, height = input$height_gene)
           unique_values <- NULL
           used_matrix <- expr_matrix()
-          color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
+          color_values <- function(n) {
+            grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+          }
           if (length(input$gene_expr) > 1) {
             unique_values <- c("other", "cells above threshold")
             color_values <- c("lightgray", "red")
-            used_matrix <- matrixStats::colSums2(used_matrix >= input$expr_threshold) == length(input$gene_expr)
+            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation)
           } else if (input$expr_threshold > 0) {
             unique_values <- c("other", "cells above threshold")
             color_values <- c("lightgray", "red")
-            used_matrix <- used_matrix >= input$expr_threshold
+            used_matrix <- used_matrix > input$expr_threshold
           }
           
           color_plot2(
-            embedding = pkg_env$stab_obj_left$umap, 
+            embedding = pkg_env$stab_obj_left$umap,
             color_info = used_matrix,
-            plt_height = input$gene_height * ppi - gene_legend_height(),
-            plt_width = input$gene_width * ppi,
+            plt_height = input$height_gene * ppi, #- gene_legend_height(),
+            plt_width = input$width_gene * ppi,
             predicted_height = (gene_legend_height() - 1) / ppi,
             # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
             unique_values = unique_values,
@@ -800,6 +816,8 @@ server_sandbox_gene_panel_left <- function(id) {
             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
             pt_size = input$gene_pt_size,
             text_size = input$gene_text_size,
+            legend_text_size = input$gene_legend_size,
+            axis_size = input$gene_axis_size,
             display_legend = TRUE
           )
           dev.off()
@@ -889,31 +907,33 @@ server_sandbox_gene_panel_right <- function(id) {
         }
       )
       
-      output$download_gene <-  shiny::downloadHandler(
+      output$download_gene <- shiny::downloadHandler(
         filename = function() {
-          "feature_genes.pdf"
+          paste0(input$filename_gene, ".", tolower(input$filetype_gene))
         },
         content = function(file) {
-          shiny::req(input$expr_threshold, input$gene_expr, input$gene_width, input$gene_height, expr_matrix())
-          pdf(file, width = input$metadata_width, height = input$metadata_height)
+          shiny::req(input$expr_threshold, input$gene_expr, input$width_gene, input$height_gene, expr_matrix())
+          filetypes[[input$filetype_gene]](file, width = input$width_gene, height = input$height_gene)
           unique_values <- NULL
           used_matrix <- expr_matrix()
-          color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
+          color_values <- function(n) {
+            grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+          }
           if (length(input$gene_expr) > 1) {
             unique_values <- c("other", "cells above threshold")
             color_values <- c("lightgray", "red")
-            used_matrix <- matrixStats::colSums2(used_matrix >= input$expr_threshold) == length(input$gene_expr)
+            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation)
           } else if (input$expr_threshold > 0) {
             unique_values <- c("other", "cells above threshold")
             color_values <- c("lightgray", "red")
-            used_matrix <- used_matrix >= input$expr_threshold
+            used_matrix <- used_matrix > input$expr_threshold
           }
           
           color_plot2(
-            embedding = pkg_env$stab_obj_right$umap, 
+            embedding = pkg_env$stab_obj_right$umap,
             color_info = used_matrix,
-            plt_height = input$gene_height * ppi - gene_legend_height(),
-            plt_width = input$gene_width * ppi,
+            plt_height = input$height_gene * ppi, #- gene_legend_height(),
+            plt_width = input$width_gene * ppi,
             predicted_height = (gene_legend_height() - 1) / ppi,
             # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
             unique_values = unique_values,
@@ -921,6 +941,8 @@ server_sandbox_gene_panel_right <- function(id) {
             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
             pt_size = input$gene_pt_size,
             text_size = input$gene_text_size,
+            legend_text_size = input$gene_legend_size,
+            axis_size = input$gene_axis_size,
             display_legend = TRUE
           )
           dev.off()
@@ -986,7 +1008,7 @@ server_sandbox_jsi <- function(id){
           ggplot2::geom_text(ggplot2::aes(label = round(.data$value, 2))) + 
           ggplot2::scale_fill_gradient2(low = scales::muted("darkred"), 
                                         mid = "white", 
-                                        high = scales::muted("midnightblue"), 
+                                        high = scales::muted("green"), 
                                         midpoint = 0) + 
           ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +
           ggplot2::scale_y_continuous(breaks = pretty(df_mat$Var2, n = length(all_clusters_1))) +
@@ -1133,4 +1155,6 @@ server_sandbox <- function(id) {
       
     })
 }
+
+
 
