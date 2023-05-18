@@ -166,12 +166,12 @@ grouped_boxplot_list <- function(groups_list,
   text_coords[count_diff+1] <- mean(at_values[start_index:n_boxplots])
 
   if (display_legend) {
-    predicted_width <- strwidth(unique_groups_values, units = "inches", cex = text_size)
-    # predicted_height <- strheight(unique_groups_values[1], units = "inches", cex = text_size)
-    space_width <- strwidth(" ", units = "inches", cex = text_size)
+    predicted_width <- strwidth(c(" ", unique_groups_values), units = "inches", cex = text_size)
+    space_width <- predicted_width[1]
+    predicted_width <- predicted_width[2:length(predicted_width)]
     number_columns <- min(
       max(
-        plt_width %/% (5 * space_width + max(predicted_width)),
+        plt_width %/% (6 * space_width + max(predicted_width)),
         1),
       length(unique_groups_values)
     )
@@ -184,11 +184,10 @@ grouped_boxplot_list <- function(groups_list,
           units = "inches",
           cex = text_size)  + 0.1
 
-
     layout(
       matrix(c(1,2), nrow = 2),
       heights = c(
-        lcm((plt_height - text_height) * 2.54),
+        lcm((plt_height - text_height - 0.05) * 2.54),
         lcm(text_height * 2.54)
       )
     )

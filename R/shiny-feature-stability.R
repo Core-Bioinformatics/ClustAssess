@@ -163,7 +163,7 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
           choices = NULL
         ),
         shiny::verticalLayout(
-          shiny::tags$b("Select the highlighted gorups"),
+          shiny::tags$b("Select the highlighted groups"),
           shinyWidgets::pickerInput(
                   inputId = ns("select_groups"),
                   choices = "",
@@ -481,6 +481,7 @@ server_dimensionality_distribution <- function(id) {
     function(input, output, session) {
       changed_metadata <- shiny::reactiveVal(FALSE)
       metadata_legend_height <- shiny::reactiveVal(0)
+      gene_legend_height <- shiny::reactiveVal(0)
 
       shiny::observeEvent(input$feature_type, {
         shiny::updateSelectizeInput(session,
@@ -559,37 +560,51 @@ server_dimensionality_distribution <- function(id) {
         floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.43))
       )
 
-      gene_legend_height <- shiny::reactive({
-        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-        pdf(file = NULL, width =  plt_height(), height = plt_height())
-        par(mai = c(0.1, 0, 0.1, 0))
-        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
-        dev.off()
-        return(text_height * ppi * 1.25)
-      })
-
       output$umap_gene <- shiny::renderPlot(
         height = function() {
-          plt_height() + gene_legend_height()
+          plt_height() 
         },
         width = function() {
           plt_height()
         },
         {
-          shiny::req(input$feature_steps, input$expr_threshold, input$gene_expr, expr_matrix())
-          
-          unique_values <- NULL
-          used_matrix <- expr_matrix()
-          color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
-          if (length(input$gene_expr) > 1) {
-            unique_values <- c("other", "cells above threshold")
-            color_values <- c("#e3e3e3", "red")
-            used_matrix <- matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation)
-          } else if (input$expr_threshold > 0) {
-            unique_values <- c("other", "cells above threshold")
-            color_values <- c("#e3e3e3", "red")
-            used_matrix <- used_matrix > input$expr_threshold
-          }
+          shiny::req(input$gene_expr, input$feature_type, input$feature_steps, cancelOutput = TRUE)
+          plt_height()
+          relaxation <- input$relaxation
+          expr_threshold <- input$expr_threshold
+          input$gene_pt_type
+          input$gene_legend_size
+          input$gene_axis_size
+          input$gene_pt_size
+
+          shiny::isolate({
+            if (is.na(expr_threshold) || is.null(expr_threshold)) {
+              expr_threshold <- 0
+            }
+
+            if (is.na(relaxation) || is.null(relaxation)) {
+              relaxation <- 0
+            }
+
+            unique_values <- NULL
+            used_matrix <- expr_matrix()
+            color_values <- function(n) {
+              grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+            }
+            if (length(input$gene_expr) > 1) {
+              unique_values <- c("other", "cells above threshold")
+              color_values <- c("lightgray", "red")
+              used_matrix <- matrixStats::colSums2(used_matrix > expr_threshold) >= (length(input$gene_expr) - relaxation)
+            } else if (expr_threshold > 0) {
+              unique_values <- c("other", "cells above threshold")
+              color_values <- c("lightgray", "red")
+              used_matrix <- used_matrix > expr_threshold
+            }
+
+          old_par <- par(mai = c(0.1, 0, 0.1, 0))
+          text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
+          par(old_par)
+          gene_legend_height(text_height * ppi)
 
           color_plot2(
             embedding = rhdf5::h5read("stability.h5", paste(
@@ -600,11 +615,9 @@ server_dimensionality_distribution <- function(id) {
               sep = "/"
             )),
             color_info = used_matrix,
-            plt_height = plt_height() + gene_legend_height() - 1,
+            plt_height = plt_height(),
             plt_width = plt_height(),
-            predicted_height = (gene_legend_height() - 1) / ppi,
-            display_legend = TRUE,
-            # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
+            display_legend = FALSE,
             unique_values = unique_values,
             color_values = color_values,
             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
@@ -613,6 +626,7 @@ server_dimensionality_distribution <- function(id) {
             legend_text_size = input$gene_legend_size,
             text_size = input$gene_legend_size
           )
+          })
         }
       )
 
@@ -739,6 +753,58 @@ server_dimensionality_distribution <- function(id) {
                 color_info = pkg_env$metadata[[current_metadata]],
                 plt_width = plt_height(),
                 text_size = input$metadata_legend_size
+              )
+            })
+          }
+        )
+      })
+
+      shiny::observe({
+        shiny::req(input$gene_expr, gene_legend_height() > 0)
+        output$umap_gene_legend <- shiny::renderPlot(
+          height = function() {
+            gene_legend_height()
+          },
+          width = function() {
+            plt_height()
+          },
+          {
+            plt_height()
+            input$select_groups
+            expr_threshold <- input$expr_threshold
+            relaxation <- input$relaxation
+            input$gene_expr
+            input$gene_legend_size
+
+            shiny::isolate({
+              if (is.na(expr_threshold) || is.null(expr_threshold)) {
+                expr_threshold <- 0
+              }
+
+              if (is.na(relaxation) || is.null(relaxation)) {
+                relaxation <- 0
+              }
+
+              unique_values <- NULL
+              used_matrix <- expr_matrix()
+              color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
+              if (length(input$gene_expr) > 1) {
+                unique_values <- c("other", "cells above threshold")
+                color_values <- c("#e3e3e3", "red")
+                used_matrix <- matrixStats::colSums2(used_matrix > expr_threshold) >= (length(input$gene_expr) - relaxation)
+              } else if (expr_threshold > 0) {
+                unique_values <- c("other", "cells above threshold")
+                color_values <- c("#e3e3e3", "red")
+                used_matrix <- used_matrix > expr_threshold
+              }
+
+
+              only_legend_plot(
+                unique_values = unique_values,
+                color_values = color_values,
+                color_info = used_matrix,
+                plt_width = plt_height(),
+                text_size = input$gene_legend_size
               )
             })
           }

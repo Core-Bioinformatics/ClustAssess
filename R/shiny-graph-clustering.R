@@ -308,7 +308,7 @@ server_graph_clustering_per_value_boxplot <- function(id) {
             groups_list = ecc_list,
             groups_values = cl_method,
             x_values = k_or_res_values,
-            plt_height = plt_height() - 1,
+            plt_height = plt_height(),
             plt_width = plt_width(),
             display_legend = TRUE,
             boxplot_width = input$boxplot_width,
@@ -445,6 +445,7 @@ server_graph_clustering_per_value_umap <- function(id) {
       changed_method <- shiny::reactiveVal(FALSE)
       changed_k <- shiny::reactiveVal(FALSE)
       k_legend_height <- shiny::reactiveVal(0)
+      ecc_legend_height <- shiny::reactiveVal(0)
 
       shiny::updateSelectInput(
         session = session,
@@ -485,14 +486,7 @@ server_graph_clustering_per_value_umap <- function(id) {
         floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.5))
       )
 
-      ecc_legend_height <- shiny::reactive({
-        # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-        pdf(file = NULL, width = plt_height(), height = plt_height())
-        par(mai = c(0.1, 0, 0.1, 0))
-        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$clustering_umap_legend_size)
-        dev.off()
-        return((0.2 + text_height) * ppi)
-      })
+      
 
       output$umap_k <- shiny::renderPlot(
         height = function() {
@@ -623,7 +617,7 @@ server_graph_clustering_per_value_umap <- function(id) {
 
       output$umap_ecc <- shiny::renderPlot(
         height = function() {
-          plt_height() + ecc_legend_height()
+          plt_height()
         },
         width = function() {
           plt_height()
@@ -658,6 +652,11 @@ server_graph_clustering_per_value_umap <- function(id) {
             }
           formatted_k <- sprintf("%06d", as.integer(input$select_k))
 
+          old_par <- par(mai = c(0.1, 0, 0.1, 0))
+          text_height <- strheight("TE\nXT\n", units = "inches", cex = input$clustering_umap_legend_size)
+          par(old_par)
+          ecc_legend_height(text_height * ppi)
+
           color_plot2(
             embedding = pkg_env$stab_obj$umap,
             color_info = rhdf5::h5read("stability.h5", paste(
@@ -681,10 +680,9 @@ server_graph_clustering_per_value_umap <- function(id) {
             ],
             color_values = NULL,
             unique_values = NULL,
-            plt_height = plt_height() + ecc_legend_height() - 1,
+            plt_height = plt_height(),
             plt_width = plt_height(),
-            predicted_height = (ecc_legend_height() - 1) / ppi,
-            display_legend = TRUE,
+            display_legend = FALSE,
             pch = ifelse(input$clustering_umap_pt_type == "Pixel", ".", 19),
             pt_size = input$clustering_umap_pt_size,
             legend_text_size = input$clustering_umap_legend_size,
@@ -693,6 +691,65 @@ server_graph_clustering_per_value_umap <- function(id) {
           })
         }
       )
+
+      shiny::observe({
+        shiny::req(ecc_legend_height() > 0, input$select_method != "")
+        
+
+        output$umap_ecc_legend <- shiny::renderPlot(
+          height = function() {
+            ecc_legend_height()
+          },
+          width = function() {
+            plt_height()
+          },
+          {
+            
+            input$select_k
+            input$select_method
+            input$select_clusters
+            input$clustering_umap_legend_size
+            plt_height()
+
+            shiny::isolate({
+              unique_values <- as.character(seq_len(as.integer(input$select_k)))
+             
+              if (!is.null(input$select_clusters)) {
+                unique_values <- as.integer(input$select_clusters)
+              }
+              formatted_k <- sprintf("%06d", as.integer(input$select_k))
+
+              only_legend_plot(
+                unique_values = NULL,
+                color_values = NULL,
+                color_info = rhdf5::h5read("stability.h5", paste(
+                  pkg_env$lock_stable$feature_set,
+                  pkg_env$lock_stable$n_features,
+                  "clustering_stability",
+                  "split_by_k",
+                  "ecc",
+                  paste(formatted_k, input$select_method, sep = ";"),
+                  sep = "/"
+                ))[
+                  rhdf5::h5read("stability.h5", paste(
+                    pkg_env$lock_stable$feature_set,
+                    pkg_env$lock_stable$n_features,
+                    "clustering_stability",
+                    "split_by_k",
+                    "ecc_order",
+                    paste(formatted_k, input$select_method, sep = ";"),
+                    sep = "/"
+                  ))
+                ],
+                plt_width = plt_height(),
+                text_size = input$clustering_umap_legend_size
+              )
+            })
+          }
+        )
+      })
+
+
     }
   )
 }
