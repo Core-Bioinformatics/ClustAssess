@@ -86,6 +86,7 @@ write_objects <- function(clustassess_object,
         metadata_unique = metadata_unique),
         metadata_file_name
     )
+    print("Done writing the metadata")
 
     # establish the feature ordering (original and stable) and convert to data.table
     feature_ordering <- list(original = list(), stable = list(), original_incremental = list())
