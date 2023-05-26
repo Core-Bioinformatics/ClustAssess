@@ -3,35 +3,29 @@ get_nn_conn_comps_umap <- function(embedding,
                                    n_neigh_sequence,
                                    n_repetitions = 100,
                                    seed_sequence = NULL,
-                                   ncores = 1,
+                                   umap_arguments = list(),
                                    ...) {
-  # TODO add progress bar
-  ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
+  ncores <- foreach::getDoParWorkers()
 
-  # store the additional arguments used by umap or irlba in a list
-  suppl_args <- list(...)
-  for (i in seq_along(suppl_args)) {
-    assign(names(suppl_args)[i], suppl_args[[i]])
-  }
-
-  suppl_args[["n_threads"]] <- 1
-  suppl_args[["n_sgd_threads"]] <- 1
+  umap_arguments[["n_threads"]] <- 1
+  umap_arguments[["n_sgd_threads"]] <- 1
 
   nn_conn_comps_list <- list()
-  shared_embedding <- SharedObject::share(embedding)
+  if (ncores == 1) {
+    shared_embedding <- embedding
+  } else {
+    shared_embedding <- SharedObject::share(embedding)
+  }
 
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
+  if (length(n_neigh_sequence) > 1) {
+    n_neighs <- c(n_neigh_sequence[1], sapply(2:length(n_neigh_sequence), function(i) {
+      n_neigh_sequence[i] - n_neigh_sequence[i - 1]
+    }))
+    start_k <- n_neigh_sequence - n_neighs
+  } else {
+    start_k <- 0
+    n_neighs <- n_neigh_sequence
+  }
 
   all_vars <- ls()
   # the variables needed in each PSOCK process
@@ -39,7 +33,9 @@ get_nn_conn_comps_umap <- function(embedding,
     "shared_embedding",
     "n_neigh_sequence",
     "graph_reduction_type",
-    "suppl_args"
+    "start_k",
+    "n_neighs",
+    "umap_arguments"
   )
   seed <- NA
   getNNmatrix <- getNNmatrix
@@ -47,13 +43,14 @@ get_nn_conn_comps_umap <- function(embedding,
   # send the name of the dim reduction arguments
   nn_conn_comps_list_temp <- foreach::foreach(
     seed = seed_sequence,
+    .inorder = FALSE,
     .noexport = all_vars[!(all_vars %in% needed_vars)],
     .export = c("getNNmatrix"),
     .packages = c("ClustAssess")
   ) %dopar% {
-    # perform the UMAP / PCA dimensionality reduction
+    # perform the UMAP dimensionality reduction
     set.seed(seed)
-    umap_embedding <- do.call(uwot::umap, c(list(X = shared_embedding), suppl_args))
+    umap_embedding <- do.call(uwot::umap, c(list(X = shared_embedding), umap_arguments))
     colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
     rownames(umap_embedding) <- rownames(shared_embedding)
 
@@ -65,21 +62,28 @@ get_nn_conn_comps_umap <- function(embedding,
     # for each neighbour, return the number of connected components
     # of the generated graph
     # TODO maybe add the evolution of the conn comps by varying the pruning param
-    sapply(n_neigh_sequence, function(n_neigh) {
-      g <- igraph::graph_from_adjacency_matrix(
-        getNNmatrix(nn2_res, n_neigh)$nn
+    g <- NULL
+    n_comps <- rep(0, length(n_neigh_sequence))
+    for (neigh_index in seq_along(n_neigh_sequence)) {
+      current_g <- igraph::graph_from_adjacency_matrix(
+        getNNmatrix(nn2_res, n_neighs[neigh_index], start_k[neigh_index], -1)$nn
       )
 
-      length(unique(igraph::clusters(g)$membership))
-    })
+      if (neigh_index == 1) {
+        g <- current_g
+      } else {
+        g <- igraph::union(g, current_g)
+      }
+
+      n_comps[neigh_index] <- igraph::clusters(g)$no
+    }
+
+    n_comps
   }
 
-  # if a parallel backend was created, terminate the processes
-  # if (ncores > 1) {
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
-
-  shared_embedding <- SharedObject::unshare(embedding)
+  if (ncores > 1) {
+    shared_embedding <- SharedObject::unshare(embedding)
+  }
 
   # store the results obtained for each number of neighbours in different lists
   for (i in seq_along(n_neigh_sequence)) {
@@ -96,61 +100,66 @@ get_nn_conn_comps_umap <- function(embedding,
 }
 
 get_nn_conn_comps_pca <- function(embedding,
-                                  n_neigh_sequence,
-                                  ncores = 1) {
-  # TODO add progress bar
-  ncores <- min(ncores, length(n_neigh_sequence), parallel::detectCores())
+                                  n_neigh_sequence) {
+  ncores <- foreach::getDoParWorkers()
   nn_conn_comps_list <- list()
+
 
   nn2_res <- RANN::nn2(
     embedding,
     k = max(n_neigh_sequence)
   )$nn.idx
-  shared_nn2_res <- SharedObject::share(nn2_res)
 
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
+  if (ncores == 1) {
+    shared_nn2_res <- nn2_res
+  } else {
+    shared_nn2_res <- SharedObject::share(nn2_res)
+  }
 
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
+  if (length(n_neigh_sequence) > 1) {
+    n_neighs <- c(n_neigh_sequence[1], sapply(2:length(n_neigh_sequence), function(i) {
+      n_neigh_sequence[i] - n_neigh_sequence[i - 1]
+    }))
+    start_k <- n_neigh_sequence - n_neighs
+  } else {
+    start_k <- 0
+    n_neighs <- n_neigh_sequence
+  }
 
   all_vars <- ls()
   # the variables needed in each PSOCK process
-  needed_vars <- c("shared_nn2_res")
+  needed_vars <- c("shared_nn2_res", "start_k", "n_neighs")
 
   # send the name of the dim reduction arguments
-  nn_conn_comps_list_temp <- foreach::foreach(
-    n_neigh = n_neigh_sequence,
+  g_list <- foreach::foreach(
+    # n_neigh = n_neigh_sequence,
+    i = seq_along(n_neigh_sequence),
+    .inorder = TRUE,
     .noexport = all_vars[!(all_vars %in% needed_vars)],
     .export = c("getNNmatrix"),
     .packages = c("ClustAssess")
   ) %dopar% {
     # for each neighbour, return the number of connected components
     # of the generated graph
-    g <- igraph::graph_from_adjacency_matrix(
-      getNNmatrix(shared_nn2_res, n_neigh)$nn
+    igraph::graph_from_adjacency_matrix(
+      getNNmatrix(shared_nn2_res, n_neighs[i], start_k[i], -1)$nn
     )
-
-    length(unique(igraph::clusters(g)$membership))
   }
 
-  # if a parallel backend was created, terminate the processes
-  # if (ncores > 1) {
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
+  if (ncores > 1) {
+    shared_nn2_res <- SharedObject::unshare(nn2_res)
+  }
 
-  shared_nn2_res <- SharedObject::unshare(nn2_res)
+  g <- NULL
   # store the results obtained for each number of neighbours in different lists
   for (i in seq_along(n_neigh_sequence)) {
     n_neigh <- n_neigh_sequence[i]
-    nn_conn_comps_list[[as.character(n_neigh)]] <- nn_conn_comps_list_temp[[i]]
+    if (is.null(g)) {
+      g <- g_list[[i]]
+    } else {
+      g <- igraph::union(g, g_list[[i]])
+    }
+    nn_conn_comps_list[[as.character(n_neigh)]] <- igraph::clusters(g)$no
   }
 
   nn_conn_comps_list <- list(nn_conn_comps_list)
@@ -207,20 +216,15 @@ get_nn_conn_comps <- function(embedding,
                               n_neigh_sequence,
                               n_repetitions = 100,
                               seed_sequence = NULL,
-                              ncores = 1,
+                              include_umap = FALSE,
+                              umap_arguments = list(),
                               ...) {
   # check parameters
   if (!is.numeric(n_neigh_sequence)) {
     stop("n_neigh_sequence parameter should be numeric")
   }
   # convert number of neighbors to integers
-  n_neigh_sequence <- as.integer(n_neigh_sequence)
-
-  if (!is.numeric(ncores) || length(ncores) > 1) {
-    stop("ncores parameter should be numeric")
-  }
-  # convert number of cores to integers
-  ncores <- as.integer(ncores)
+  n_neigh_sequence <- sort(as.integer(n_neigh_sequence))
 
   if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
     stop("n_repetitions parameter should be numeric")
@@ -247,18 +251,23 @@ get_nn_conn_comps <- function(embedding,
     seed_sequence <- as.integer(seed_sequence)
   }
 
+  nn_comps_result <- get_nn_conn_comps_pca(
+    embedding = embedding,
+    n_neigh_sequence = n_neigh_sequence
+  )
+
+  if (!include_umap) {
+    return(nn_comps_result)
+  }
+
   return(c(
-    get_nn_conn_comps_pca(
-      embedding = embedding,
-      n_neigh_sequence = n_neigh_sequence,
-      ncores = ncores
-    ),
+    nn_comps_result,
     get_nn_conn_comps_umap(
       embedding = embedding,
       n_neigh_sequence = n_neigh_sequence,
       n_repetitions = n_repetitions,
       seed_sequence = seed_sequence,
-      ncores = ncores,
+      umap_arguments = umap_arguments,
       ...
     )
   ))
@@ -298,7 +307,7 @@ plot_connected_comps_evolution <- function(nn_conn_comps_object) {
   for (n_neighbours in names(nn_conn_comps_object$PCA)) {
     nn_conn_comps_object$PCA[[n_neighbours]] <- as.integer(nn_conn_comps_object$PCA[[n_neighbours]])
   }
-  
+
   for (n_neighbours in names(nn_conn_comps_object$UMAP)) {
     nn_conn_comps_object$UMAP[[n_neighbours]] <- as.integer(nn_conn_comps_object$UMAP[[n_neighbours]])
   }
@@ -358,7 +367,7 @@ get_n_strong_components <- function(nn_matrix,
     weighted = TRUE
   )
 
-  length(unique(igraph::clusters(g)$membership))
+  igraph::clusters(g)$no
 }
 
 #' Relationship Between Number of Nearest Neighbors and Graph Connectivity
@@ -378,21 +387,21 @@ get_n_strong_components <- function(nn_matrix,
 #' @examples
 #' set.seed(2021)
 #'
-get_highest_prune_param <- function(embedding,
-                                    n_neigh) {
-  nn_matrix <- Seurat::FindNeighbors(
+get_highest_prune_param_embedding <- function(embedding,
+                                              n_neigh) {
+  print(system.time(nn_matrix <- Seurat::FindNeighbors(
     embedding,
     k.param = n_neigh,
     nn.method = "rann",
     compute.SNN = FALSE,
     verbose = FALSE
-  )$nn
-  g <- igraph::graph_from_adjacency_matrix(
+  )$nn))
+  print(system.time(g <- igraph::graph_from_adjacency_matrix(
     nn_matrix,
     mode = "directed"
-  )
+  )))
 
-  target_n_conn_comps <- length(unique(igraph::clusters(g)$membership))
+  target_n_conn_comps <- igraph::clusters(g)$no
 
   possible_values <- sapply(0:n_neigh, function(i) {
     i / (2 * n_neigh - i)
@@ -408,6 +417,7 @@ get_highest_prune_param <- function(embedding,
       n_neigh,
       possible_values[middle]
     )
+    print(paste(middle, current_n_conn_comps))
 
     if (current_n_conn_comps > target_n_conn_comps) {
       stop_n <- middle
@@ -427,15 +437,80 @@ get_highest_prune_param <- function(embedding,
   return(possible_values[middle])
 }
 
+#' Relationship Between Number of Nearest Neighbors and Graph Connectivity
+#'
+#' @description Display the distribution of the number connected components
+#' obtained for each number of neighbors across random seeds.
+#'
+#' @param embedding An object or a concatenation of objects returned
+#' by the `get_nn_conn_comps` method.
+#'
+#'
+#' @return A ggplot2 object with boxplots for the connected component distributions.
+#' @export
+#'
+#' @note The number of connected components is displayed on a logarithmic scale.
+#'
+#' @examples
+#' set.seed(2021)
+#'
+get_highest_prune_param <- function(nn_matrix,
+                                    n_neigh) {
+  nn_matrix <- computeSNN(nn_matrix, n_neigh, 0)
+  g <- igraph::graph_from_adjacency_matrix(
+    nn_matrix,
+    mode = "undirected",
+    weighted = TRUE
+  )
+
+  target_n_conn_comps <- igraph::clusters(g)$no
+
+  possible_values <- sapply(0:n_neigh, function(i) {
+    i / (2 * n_neigh - i)
+  })
+
+  start_n <- 1
+  stop_n <- length(possible_values)
+  prev_g <- g
+
+  while (start_n <= stop_n) {
+    middle <- as.integer((stop_n + start_n) / 2)
+    current_g <- igraph::delete_edges(prev_g, which(igraph::E(prev_g)$weight <= possible_values[middle]))
+
+    current_n_conn_comps <- igraph::clusters(current_g)$no
+    # print(paste(middle, current_n_conn_comps))
+
+    if (current_n_conn_comps > target_n_conn_comps) {
+      stop_n <- middle
+
+      if (start_n == stop_n) {
+        start_n <- middle - 1
+      }
+    } else {
+      start_n <- middle + 1
+      prev_g <- current_g
+
+      if (start_n == stop_n) {
+        break
+      }
+    }
+  }
+
+  return(list(
+    prune_value = possible_values[middle],
+    adj_matrix = pruneSNN(nn_matrix, possible_values[middle])
+  ))
+}
+
 assess_nn_stability_pca <- function(embedding,
                                     n_neigh_sequence,
                                     n_repetitions = 100,
                                     seed_sequence = NULL,
                                     ecs_thresh = 1,
-                                    ncores = 1,
                                     graph_type = 2,
                                     algorithm = 1) {
-  # TODO add progress bar
+  ncores <- foreach::getDoParWorkers()
+  cell_names <- rownames(embedding)
   partitions_list <- list()
 
   if (graph_type != 0) {
@@ -446,42 +521,69 @@ assess_nn_stability_pca <- function(embedding,
     partitions_list[[paste("PCA", "nn", sep = "_")]] <- list()
   }
 
-  ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
   nn2_res <- RANN::nn2(
     embedding,
     k = max(n_neigh_sequence)
   )$nn.idx
 
-  for (n_neigh in n_neigh_sequence) {
-    partitions_list[[paste("PCA", "snn", sep = "_")]][[as.character(n_neigh)]] <- list()
+  if (ncores > 1) {
+    shared_nn2_res <- SharedObject::share(nn2_res)
+  } else {
+    shared_nn2_res <- nn2_res
+  }
 
-    # build the nn and snn graphs
-    neigh_matrix <- getNNmatrix(nn2_res, n_neigh, 0)
-    rownames(neigh_matrix$nn) <- rownames(embedding)
-    colnames(neigh_matrix$nn) <- rownames(embedding)
+  all_vars <- ls()
+  needed_vars <- c(
+    "cell_names",
+    "shared_nn2_res",
+    "graph_type"
+  )
+  neigh_matrices <- foreach::foreach(
+    n_neigh = n_neigh_sequence,
+    .inorder = TRUE,
+    .noexport = all_vars[!(all_vars %in% needed_vars)],
+    .packages = c("ClustAssess")
+  ) %dopar% {
+    neigh_matrix <- getNNmatrix(shared_nn2_res, n_neigh, 0, -1)
+    rownames(neigh_matrix$nn) <- cell_names
+    colnames(neigh_matrix$nn) <- cell_names
 
-    rownames(neigh_matrix$snn) <- rownames(embedding)
-    colnames(neigh_matrix$snn) <- rownames(embedding)
+    if (graph_type > 0) {
+      neigh_matrix$snn <- get_highest_prune_param(
+        nn_matrix = neigh_matrix$nn,
+        n_neigh = n_neigh
+      )$adj_matrix
+      rownames(neigh_matrix$snn) <- cell_names
+      colnames(neigh_matrix$snn) <- cell_names
+    }
 
-    shared_neigh_matrix <- SharedObject::share(neigh_matrix)
+    neigh_matrix
+  }
 
-    # if (ncores > 1) {
-    #   # create a parallel backend
-    #   my_cluster <- parallel::makeCluster(
-    #     ncores,
-    #     type = "PSOCK"
-    #   )
+  names(neigh_matrices) <- as.character(n_neigh_sequence)
 
-    #   doParallel::registerDoParallel(cl = my_cluster)
-    # } else {
-    #   # create a sequential backend
-    #   foreach::registerDoSEQ()
-    # }
+  if (ncores > 1) {
+    shared_nn2_res <- SharedObject::unshare(nn2_res)
+    rm(shared_nn2_res)
+  }
+
+  rm(nn2_res)
+  gc()
+
+
+  for (n_neigh in as.character(n_neigh_sequence)) {
+    partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
+
+    if (ncores > 1) {
+      shared_neigh_matrix <- SharedObject::share(neigh_matrices[[n_neigh]])
+    } else {
+      shared_neigh_matrix <- neigh_matrices[[n_neigh]]
+    }
 
     # the variables needed in the PSOCK processes
     seed <- NA
     needed_vars <- c(
-      "n_neigh",
+      # "n_neigh",
       "graph_type",
       "algorithm",
       "shared_neigh_matrix"
@@ -490,6 +592,7 @@ assess_nn_stability_pca <- function(embedding,
 
     partitions_list_temp <- foreach::foreach(
       seed = seed_sequence,
+      .inorder = FALSE,
       .noexport = all_vars[!(all_vars %in% needed_vars)]
     ) %dopar% {
       # apply the clustering method on the graph specified by the variable `graph_type`
@@ -533,16 +636,16 @@ assess_nn_stability_pca <- function(embedding,
       return(list(cluster_results_snn, cluster_results_nn))
     }
 
-    # if a parallel backend was created, terminate the processes
-    # if (ncores > 1) {
-    #   parallel::stopCluster(cl = my_cluster)
-    # }
+    if (ncores > 1) {
+      shared_neigh_matrix <- SharedObject::unshare(neigh_matrices[[n_neigh]])
+    }
 
-    shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
+    neigh_matrices[[n_neigh]] <- NULL
+    gc()
 
     # merge the partitions that are considered similar by a given ecs threshold
     for (i in seq_along(partitions_list)) {
-      partitions_list[[i]][[as.character((n_neigh))]] <- merge_partitions(
+      partitions_list[[i]][[n_neigh]] <- merge_partitions(
         lapply(partitions_list_temp, function(x) {
           x[[i]]
         }),
@@ -574,8 +677,7 @@ assess_nn_stability_pca <- function(embedding,
         }),
         sapply(n_neigh, function(x) {
           x$freq
-        }),
-        ncores = 1
+        })
       )
     })
   })
@@ -596,43 +698,25 @@ assess_nn_stability_umap <- function(embedding,
                                      n_repetitions = 100,
                                      seed_sequence = NULL,
                                      ecs_thresh = 1,
-                                     ncores = 1,
                                      graph_type = 2,
                                      algorithm = 1,
+                                     umap_arguments = list(),
                                      ...) {
-  ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
-  # TODO add progress bar
+  ncores <- foreach::getDoParWorkers()
 
   object_names <- c("snn", "nn")
   if (graph_type < 2) {
     object_names <- object_names[graph_type + 1]
   }
 
-  # additional arguments that will be used by umap or irlba
-  suppl_args <- list(...)
-  i <- 1
-  while (i < length(suppl_args)) {
-    assign(names(suppl_args)[i], suppl_args[[i]])
-    i <- i + 1
+  umap_arguments[["n_threads"]] <- 1
+  umap_arguments[["n_sgd_threads"]] <- 1
+
+  if (ncores > 1) {
+    shared_embedding <- SharedObject::share(embedding)
+  } else {
+    shared_embedding <- embedding
   }
-
-  suppl_args[["n_threads"]] <- 1
-  suppl_args[["n_sgd_threads"]] <- 1
-
-  shared_embedding <- SharedObject::share(embedding)
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
 
   # the variables needed in the PSOCK processes
   needed_vars <- c(
@@ -641,7 +725,7 @@ assess_nn_stability_umap <- function(embedding,
     "graph_reduction_type",
     "graph_type",
     "algorithm",
-    "suppl_args",
+    "umap_arguments",
     "prune_SNN"
   )
 
@@ -650,6 +734,7 @@ assess_nn_stability_umap <- function(embedding,
 
   seed_list <- foreach::foreach(
     seed = seed_sequence,
+    .inorder = FALSE,
     .noexport = all_vars[!(all_vars %in% needed_vars)],
     .export = c("getNNmatrix"),
     .packages = c("ClustAssess")
@@ -657,7 +742,7 @@ assess_nn_stability_umap <- function(embedding,
     # perform the dimensionality reduction
     set.seed(seed)
     row_names <- rownames(shared_embedding)
-    embedding <- do.call(uwot::umap, c(list(X = shared_embedding), suppl_args))
+    embedding <- do.call(uwot::umap, c(list(X = shared_embedding), umap_arguments))
     colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
     rownames(embedding) <- row_names
 
@@ -669,12 +754,18 @@ assess_nn_stability_umap <- function(embedding,
     seed_result <- list()
 
     for (n_neigh in n_neigh_sequence) {
-      neigh_matrix <- getNNmatrix(nn2_res, n_neigh)
+      neigh_matrix <- getNNmatrix(nn2_res, n_neigh, 0, -1)
       rownames(neigh_matrix$nn) <- row_names
       colnames(neigh_matrix$nn) <- row_names
 
-      rownames(neigh_matrix$snn) <- row_names
-      colnames(neigh_matrix$snn) <- row_names
+      if (graph_type > 0) {
+        neigh_matrix$snn <- get_highest_prune_param(
+          nn_matrix = neigh_matrix$nn,
+          n_neigh = n_neigh
+        )$adj_matrix
+        rownames(neigh_matrix$snn) <- row_names
+        colnames(neigh_matrix$snn) <- row_names
+      }
 
       # apply the clustering method on the graph specified by the variable `graph_type`
       if (graph_type > 0) {
@@ -713,12 +804,10 @@ assess_nn_stability_umap <- function(embedding,
     return(seed_result)
   }
 
-  # if a parallel backend was created, terminate the processes
-  # if (ncores > 1) {
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
+  if (ncores > 1) {
+    shared_embedding <- SharedObject::unshare(embedding)
+  }
 
-  shared_embedding <- SharedObject::unshare(embedding)
   rm(shared_embedding)
   gc()
 
@@ -739,8 +828,7 @@ assess_nn_stability_umap <- function(embedding,
     for (n_neigh in as.character(n_neigh_sequence)) {
       partitions_list[[i]][[n_neigh]] <- merge_partitions(
         partitions_list[[i]][[n_neigh]],
-        ecs_thresh = ecs_thresh,
-        ncores = ncores
+        ecs_thresh = ecs_thresh
       )
     }
   }
@@ -846,9 +934,9 @@ assess_nn_stability <- function(embedding,
                                 seed_sequence = NULL,
                                 graph_reduction_type = "PCA",
                                 ecs_thresh = 1,
-                                ncores = 1,
                                 graph_type = 2,
                                 algorithm = 1,
+                                umap_arguments = list(),
                                 ...) {
   # TODO vary by resolution
   # TODO add option to use pruning
@@ -860,13 +948,7 @@ assess_nn_stability <- function(embedding,
     stop("n_neigh_sequence parameter should be numeric")
   }
   # convert number of neighbors to integers
-  n_neigh_sequence <- as.integer(n_neigh_sequence)
-
-  if (!is.numeric(ncores) || length(ncores) > 1) {
-    stop("ncores parameter should be numeric")
-  }
-  # convert number of cores to integers
-  ncores <- as.integer(ncores)
+  n_neigh_sequence <- sort(as.integer(n_neigh_sequence))
 
   if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
     stop("n_repetitions parameter should be numeric")
@@ -915,7 +997,6 @@ assess_nn_stability <- function(embedding,
       n_neigh_sequence = n_neigh_sequence,
       n_repetitions = n_repetitions,
       seed_sequence = seed_sequence,
-      ncores = ncores,
       ecs_thresh = ecs_thresh,
       graph_type = graph_type,
       algorithm = algorithm
@@ -927,172 +1008,12 @@ assess_nn_stability <- function(embedding,
     n_neigh_sequence = n_neigh_sequence,
     n_repetitions = n_repetitions,
     seed_sequence = seed_sequence,
-    ncores = ncores,
     ecs_thresh = ecs_thresh,
     graph_type = graph_type,
     algorithm = algorithm,
+    umap_arguments = umap_arguments,
     ...
   ))
-
-  if (graph_reduction_type == "UMAP") {
-    suppl_args[["n_threads"]] <- 1
-    suppl_args[["n_sgd_threads"]] <- 1
-  }
-
-  for (n_neigh in n_neigh_sequence) {
-    partitions_list[[paste(graph_reduction_type, "snn", sep = "_")]][[as.character(n_neigh)]] <- list()
-
-    # build the nn and snn graphs
-    if (graph_reduction_type == "PCA") {
-      neigh_matrix <- Seurat::FindNeighbors(
-        embedding,
-        k.param = n_neigh,
-        nn.method = "rann",
-        verbose = FALSE,
-        prune.SNN = 0
-      )
-    }
-
-    # if (ncores > 1) {
-    #   # create a parallel backend
-    #   my_cluster <- parallel::makeCluster(
-    #     ncores,
-    #     type = "PSOCK"
-    #   )
-
-    #   doParallel::registerDoParallel(cl = my_cluster)
-    # } else {
-    #   # create a sequential backend
-    #   foreach::registerDoSEQ()
-    # }
-
-    # the variables needed in the PSOCK processes
-    if (graph_reduction_type == "UMAP") {
-      needed_vars <- c("embedding", "n_neigh", "graph_reduction_type", "graph_type", "algorithm", "suppl_args", "prune_SNN")
-    } else {
-      needed_vars <- c("n_neigh", "graph_reduction_type", "graph_type", "algorithm", "suppl_args", "neigh_matrix", "prune_SNN")
-    }
-    all_vars <- ls()
-    seed <- NA
-
-    partitions_list_temp <- foreach::foreach(
-      seed = seed_sequence,
-      .noexport = all_vars[!(all_vars %in% needed_vars)]
-    ) %dopar% {
-      # perform the dimensionality reduction
-      set.seed(seed)
-      if (graph_reduction_type == "UMAP") {
-        row_names <- rownames(embedding)
-        embedding <- do.call(uwot::umap, c(list(X = embedding), suppl_args))
-        colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
-        rownames(embedding) <- row_names
-
-        # build the nn and snn graphs
-        neigh_matrix <- Seurat::FindNeighbors(
-          embedding,
-          k.param = n_neigh,
-          nn.method = "rann",
-          verbose = FALSE,
-          prune.SNN = 0
-        )
-      }
-
-      # apply the clustering method on the graph specified by the variable `graph_type`
-      if (graph_type != 1) {
-        cluster_results_nn <- Seurat::FindClusters(
-          neigh_matrix$nn,
-          random.seed = seed,
-          algorithm = algorithm,
-          n.start = 1,
-          verbose = FALSE
-        )
-        cluster_results_nn <- list(
-          mb = cluster_results_nn[, names(cluster_results_nn)[1]],
-          freq = 1,
-          seed = seed
-        )
-
-        if (graph_type == 0) {
-          return(cluster_results_nn)
-        }
-      }
-
-      cluster_results_snn <- Seurat::FindClusters(
-        neigh_matrix$snn,
-        random.seed = seed,
-        algorithm = algorithm,
-        n.start = 1,
-        verbose = FALSE
-      )
-      cluster_results_snn <- list(
-        mb = cluster_results_snn[, names(cluster_results_snn)[1]],
-        freq = 1,
-        seed = seed
-      )
-
-      if (graph_type == 1) {
-        return(cluster_results_snn)
-      }
-
-      return(list(cluster_results_nn, cluster_results_snn))
-    }
-
-    # if a parallel backend was created, terminate the processes
-    # if (ncores > 1) {
-    #   parallel::stopCluster(cl = my_cluster)
-    # }
-
-    # merge the partitions that are considered similar by a given ecs threshold
-    for (i in seq_along(partitions_list)) {
-      partitions_list[[i]][[as.character((n_neigh))]] <- merge_partitions(
-        lapply(partitions_list_temp, function(x) {
-          x[[i]]
-        }),
-        ecs_thresh = ecs_thresh,
-        ncores = ncores
-      )
-    }
-  }
-
-  names(partitions_list) <- paste(config_name, names(partitions_list), sep = "_")
-
-  # create an object showing the number of clusters obtained for each number of
-  # neighbours
-  nn_object_n_clusters <- list()
-  for (config_name in names(partitions_list)) {
-    nn_object_n_clusters[[config_name]] <- list()
-    for (n_neigh in names(partitions_list[[config_name]])) {
-      nn_object_n_clusters[[config_name]][[n_neigh]] <- unlist(lapply(partitions_list[[config_name]][[n_neigh]], function(x) {
-        rep(length(unique(x$mb)), x$freq)
-      }))
-    }
-  }
-
-  # create an object that contains the ecc of the partitions obtained for each
-  # number of neighbours
-  nn_ecs_object <- lapply(partitions_list, function(config) {
-    lapply(config, function(n_neigh) {
-      weighted_element_consistency(
-        lapply(n_neigh, function(x) {
-          x$mb
-        }),
-        sapply(n_neigh, function(x) {
-          x$freq
-        }),
-        ncores = ncores
-      )
-    })
-  })
-
-  list(
-    n_neigh_k_corresp = nn_object_n_clusters,
-    n_neigh_ec_consistency = nn_ecs_object,
-    n_different_partitions = lapply(partitions_list, function(config) {
-      sapply(config, function(n_neigh) {
-        length(n_neigh)
-      })
-    })
-  )
 }
 
 # 2. neighbors <-> number of clusters association
@@ -1132,7 +1053,7 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
     for (n_neighbours in names(nn_object_n_clusters[[config_name]])) {
       nn_object_n_clusters[[config_name]][[n_neighbours]] <- as.integer(nn_object_n_clusters[[config_name]][[n_neighbours]])
     }
- }
+  }
   melted_obj <- reshape2::melt(nn_object_n_clusters)
   colnames(melted_obj) <- c("k", "n_neigh", "config_name")
 
@@ -1209,7 +1130,7 @@ plot_n_neigh_ecs <- function(nn_ecs_object,
     for (n_neighbours in names(nn_ecs_object[[config_name]])) {
       nn_ecs_object[[config_name]][[n_neighbours]] <- as.numeric(nn_ecs_object[[config_name]][[n_neighbours]])
     }
- }
+  }
   melted_obj <- reshape2::melt(nn_ecs_object)
   colnames(melted_obj) <- c("ECC", "n_neigh", "config_name")
 
