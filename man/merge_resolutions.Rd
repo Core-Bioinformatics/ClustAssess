@@ -4,7 +4,7 @@
 \alias{merge_resolutions}
 \title{Merge Resolutions}
 \usage{
-merge_resolutions(res_obj, object_name, ncores = 1)
+merge_resolutions(res_obj, object_name)
 }
 \arguments{
 \item{res_obj}{A list associated to a configuration field from the object

@@ -15,11 +15,18 @@ automatic_stability_assessment(
   temp_file = NULL,
   seed_sequence = NULL,
   graph_reduction_embedding = "PCA",
+  include_umap_nn_assessment = FALSE,
   n_top_configs = 3,
   ranking_criterion = "median",
   npcs = 30,
   verbose = TRUE,
   ecs_threshold = 1,
+  post_processing_dim_reduction = function(pca_emb) {
+     pca_emb
+ },
+  umap_arguments = list(),
+  clustering_arguments = list(),
+  save_temp = TRUE,
   ...
 )
 }

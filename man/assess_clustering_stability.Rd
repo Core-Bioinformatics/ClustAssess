@@ -10,9 +10,9 @@ assess_clustering_stability(
   n_repetitions = 100,
   seed_sequence = NULL,
   ecs_thresh = 1,
-  ncores = 1,
   algorithm = 1:3,
   verbose = TRUE,
+  clustering_arguments = list(),
   ...
 )
 }
@@ -30,14 +30,14 @@ sequence will be built starting from 1 with a step of 100.}
 
 \item{ecs_thresh}{The ECS threshold used for merging similar clusterings.}
 
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
-
 \item{algorithm}{An index or a list of indexes indicating which community detection
 algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
 More details can be found in the Seurat's \code{FindClusters} function.}
 
 \item{verbose}{Boolean value used for displaying the progress bar.}
+
+\item{ncores}{The number of parallel R instances that will run the code.
+If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A list having two fields:

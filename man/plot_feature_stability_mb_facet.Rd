@@ -58,8 +58,8 @@ feature_stability_result <- assess_feature_stability(
   min_dist = 0.3
 )
 plot_feature_stability_mb_facet(
-   feature_stability_result,
-   umap_embedding,
-   0.1
+  feature_stability_result,
+  umap_embedding,
+  0.1
 )
 }

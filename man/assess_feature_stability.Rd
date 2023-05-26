@@ -15,9 +15,12 @@ assess_feature_stability(
   graph_reduction_type = "PCA",
   npcs = 30,
   ecs_thresh = 1,
-  ncores = 1,
   algorithm = 1,
   verbose = FALSE,
+  post_processing = function(pca_emb) {
+     pca_emb
+ },
+  umap_arguments = list(),
   ...
 )
 }
@@ -46,14 +49,14 @@ should be built on either the PCA or the UMAP embedding.}
 
 \item{ecs_thresh}{The ECS threshold used for merging similar clusterings.}
 
-\item{ncores}{The number of parallel R instances that will run the code. If
-the value is set to 1, the code will be run sequentially.}
-
 \item{algorithm}{An index indicating which community detection algorithm will
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
 can be found in the Seurat's \code{FindClusters} function.}
 
 \item{...}{additional arguments passed to the umap method.}
+
+\item{ncores}{The number of parallel R instances that will run the code. If
+the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A list having one field associated with a step value. Each step

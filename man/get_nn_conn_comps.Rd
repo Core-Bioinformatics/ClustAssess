@@ -9,7 +9,8 @@ get_nn_conn_comps(
   n_neigh_sequence,
   n_repetitions = 100,
   seed_sequence = NULL,
-  ncores = 1,
+  include_umap = FALSE,
+  umap_arguments = list(),
   ...
 )
 }
@@ -25,13 +26,13 @@ different seeds; ignored if seed_sequence is provided by the user.}
 \item{seed_sequence}{A custom seed sequence; if the value is NULL, the
 sequence will be built starting from 1 with a step of 100.}
 
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
-
 \item{...}{Additional arguments passed to the the `uwot::umap` method.}
 
 \item{config_name}{User specified string that uniquely describes the
 embedding characteristics.}
+
+\item{ncores}{The number of parallel R instances that will run the code.
+If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A list having one field associated with a number of nearest neighbors.
