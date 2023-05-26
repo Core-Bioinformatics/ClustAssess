@@ -77,12 +77,16 @@ assess_feature_stability <- function(data_matrix,
                                      graph_reduction_type = "PCA",
                                      npcs = 30,
                                      ecs_thresh = 1,
-                                     ncores = 1,
                                      algorithm = 1,
                                      verbose = FALSE,
+                                     post_processing = function(pca_emb) {
+                                       pca_emb
+                                     },
+                                     umap_arguments = list(),
                                      ...) {
   # TODO create a function that does checks of the parameters
   # TODO while doing the assessment, prune the graph
+  # BUG irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)
   # check parameters
   if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix")) {
     stop("the data matrix parameter should be a matrix")
@@ -133,11 +137,7 @@ assess_feature_stability <- function(data_matrix,
     stop("algorithm should be a number between 1 and 4")
   }
 
-  if (!is.numeric(ncores) || length(ncores) > 1) {
-    stop("ncores parameter should be numeric")
-  }
-  # convert number of cores to integers
-  ncores <- as.integer(ncores)
+  ncores <- foreach::getDoParWorkers()
 
   partitions_list <- list()
 
@@ -158,24 +158,21 @@ assess_feature_stability <- function(data_matrix,
     n_repetitions <- length(seed_sequence)
   }
 
-  ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
+  if (is.null(post_processing) || !is.function(post_processing)) {
+    post_processing <- function(x) {
+      x
+    }
+  }
 
   # convert the negative steps to the size of the feature
   steps[steps <= 0 |
     steps > length(feature_set)] <- length(feature_set)
   steps <- sort(unique(steps))
 
-  # store the additional arguments used by umap in a list
-  suppl_args <- list(...)
-  i <- 1
-  while (i <= length(suppl_args)) {
-    assign(names(suppl_args)[i], suppl_args[[i]])
-    i <- i + 1
-  }
 
   if (graph_reduction_type == "UMAP") {
-    suppl_args[["n_threads"]] <- 1
-    suppl_args[["n_sgd_threads"]] <- 1
+    umap_arguments[["n_threads"]] <- 1
+    umap_arguments[["n_sgd_threads"]] <- 1
   }
 
   if (verbose) {
@@ -205,46 +202,48 @@ assess_feature_stability <- function(data_matrix,
     # calculate the precise PCA embedding using prcomp
     embedding <- prcomp(x = trimmed_matrix, rank. = actual_npcs)
     embedding <- embedding$x
+    embedding <- post_processing(embedding)
     colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     rownames(embedding) <- rownames(trimmed_matrix)
 
     # build the SNN graph before if PCA
     if (graph_reduction_type == "PCA") {
-      neigh_matrix <- Seurat::FindNeighbors(
-        embedding,
-        nn.method = "rann",
-        verbose = FALSE
-      )$snn
+      neigh_matrix <- get_highest_prune_param(
+        nn_matrix = Seurat::FindNeighbors(
+          embedding,
+          nn.method = "rann",
+          compute.SNN = FALSE,
+          verbose = FALSE
+        )$nn,
+        n_neigh = 20
+      )$adj_matrix
+      rownames(neigh_matrix) <- rownames(embedding)
+      colnames(neigh_matrix) <- rownames(embedding)
     }
 
     # the variables needed in each PSOCK process
     needed_vars <- c(
       "graph_reduction_type",
-      "suppl_args",
+      "umap_arguments",
       "resolution",
       "algorithm"
     )
 
     if (graph_reduction_type == "PCA") {
       needed_vars <- c(needed_vars, "shared_neigh_matrix")
-      shared_neigh_matrix <- SharedObject::share(neigh_matrix)
+      if (ncores > 1) {
+        shared_neigh_matrix <- SharedObject::share(neigh_matrix)
+      } else {
+        shared_neigh_matrix <- neigh_matrix
+      }
     } else {
       needed_vars <- c(needed_vars, "shared_embedding")
-      shared_embedding <- SharedObject::share(embedding)
+      if (ncores > 1) {
+        shared_embedding <- SharedObject::share(embedding)
+      } else {
+        shared_embedding <- embedding
+      }
     }
-
-    # if (ncores > 1) {
-    #   # create a parallel backend
-    #   my_cluster <- parallel::makeCluster(
-    #     ncores,
-    #     type = "PSOCK"
-    #   )
-
-    #   doParallel::registerDoParallel(cl = my_cluster)
-    # } else {
-    #   # create a sequential backend
-    #   foreach::registerDoSEQ()
-    # }
 
     all_vars <- ls()
     seed <- 0
@@ -252,6 +251,7 @@ assess_feature_stability <- function(data_matrix,
     # send the name of the umap arguments
     partitions_list[[step]] <- foreach::foreach(
       seed = seed_sequence,
+      .inorder = FALSE,
       .noexport = all_vars[!(all_vars %in% needed_vars)]
     ) %dopar% {
       if (graph_reduction_type == "UMAP") {
@@ -262,7 +262,7 @@ assess_feature_stability <- function(data_matrix,
           uwot::umap,
           c(
             list(X = shared_embedding),
-            suppl_args
+            umap_arguments
           )
         )
         colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
@@ -270,11 +270,15 @@ assess_feature_stability <- function(data_matrix,
         gc()
 
         # build the nn and snn graphs
-        shared_neigh_matrix <- Seurat::FindNeighbors(
-          embedding,
-          nn.method = "rann",
-          verbose = FALSE
-        )$snn
+        shared_neigh_matrix <- get_highest_prune_param(
+          nn_matrix = Seurat::FindNeighbors(
+            embedding,
+            nn.method = "rann",
+            compute.SNN = FALSE,
+            verbose = FALSE
+          )$nn,
+          n_neigh = 20
+        )$adj_matrix
       }
 
       # apply graph clustering to the snn graph
@@ -302,11 +306,6 @@ assess_feature_stability <- function(data_matrix,
       cluster_results
     }
 
-    # if a parallel backend was created, terminate the processes
-    # if (ncores > 1) {
-    #   parallel::stopCluster(cl = my_cluster)
-    # }
-
     if (graph_reduction_type == "PCA") {
       shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
     } else {
@@ -314,12 +313,14 @@ assess_feature_stability <- function(data_matrix,
     }
 
     set.seed(42) # to match Seurat's default
-    embedding <- uwot::umap(
-      X = embedding,
-      n_threads = 1,
-      n_sgd_threads = 1,
-      ...
+    embedding <- do.call(
+      uwot::umap,
+      c(
+        list(X = embedding),
+        umap_arguments
+      )
     )
+
     colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
     rownames(embedding) <- rownames(data_matrix)
     gc()
@@ -332,7 +333,6 @@ assess_feature_stability <- function(data_matrix,
           x[[r]]
         }),
         ecs_thresh = ecs_thresh,
-        ncores = ncores,
         order = TRUE
       )
     })
@@ -703,9 +703,9 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #'   min_dist = 0.3
 #' )
 #' plot_feature_stability_mb_facet(
-#'    feature_stability_result,
-#'    umap_embedding,
-#'    0.1
+#'   feature_stability_result,
+#'   umap_embedding,
+#'   0.1
 #' )
 plot_feature_stability_mb_facet <- function(feature_object_list,
                                             embedding,
@@ -821,9 +821,9 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
 #'   min_dist = 0.3
 #' )
 #' plot_feature_stability_ecs_facet(
-#'    feature_stability_result,
-#'    umap_embedding,
-#'    0.1
+#'   feature_stability_result,
+#'   umap_embedding,
+#'   0.1
 #' )
 plot_feature_stability_ecs_facet <- function(feature_object_list,
                                              embedding,
