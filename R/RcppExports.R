@@ -17,12 +17,16 @@ filterNNmatrix <- function(oldNN, nnRanked, oldK, newK, prune = 0) {
     .Call('_ClustAssess_filterNNmatrix', PACKAGE = 'ClustAssess', oldNN, nnRanked, oldK, newK, prune)
 }
 
+pruneSNN <- function(snnMatrix, prune = 0) {
+    .Call('_ClustAssess_pruneSNN', PACKAGE = 'ClustAssess', snnMatrix, prune)
+}
+
 computeSNN <- function(nnMatrix, k, prune = 0) {
     .Call('_ClustAssess_computeSNN', PACKAGE = 'ClustAssess', nnMatrix, k, prune)
 }
 
-getNNmatrix <- function(nnRanked, k = -1L, prune = 0) {
-    .Call('_ClustAssess_getNNmatrix', PACKAGE = 'ClustAssess', nnRanked, k, prune)
+getNNmatrix <- function(nnRanked, k = -1L, start = 0L, prune = 0) {
+    .Call('_ClustAssess_getNNmatrix', PACKAGE = 'ClustAssess', nnRanked, k, start, prune)
 }
 
 update_connectivity_cpp <- function(connectivity, sampling_indices, cluster_assignments) {
