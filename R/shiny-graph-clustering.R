@@ -311,20 +311,12 @@ server_graph_clustering_per_value_boxplot <- function(id) {
             plt_height = plt_height(),
             plt_width = plt_width(),
             display_legend = TRUE,
+            xlab_text = "resolution",
             boxplot_width = input$boxplot_width,
             space_inter = input$space_inter_groups,
             space_intra = input$space_intra_groups,
             text_size = input$text_size
           )
-
-          # shiny::req(pkg_env$lock_k())
-          # shiny_plot_clustering_per_value_stability(pkg_env$stab_obj$ecc_by_res,
-          #   value_type = "resolution",
-          #   width = input$boxplot_width,
-          #   space_inter_groups = input$space_inter_groups,
-          #   space_intra_groups = input$space_intra_groups,
-          #   text_size = input$text_size
-          # )
         }
       )
 
@@ -351,9 +343,10 @@ server_graph_clustering_per_value_boxplot <- function(id) {
             groups_list = ecc_list,
             groups_values = cl_method,
             x_values = k_or_res_values,
-            plt_height = plt_height() - 1, #* 0.95,
+            plt_height = plt_height(),  #* 0.95,
             plt_width = plt_width(),
             display_legend = TRUE, # FIXME fix this (works atm)
+            xlab_text = "k",
             boxplot_width = input$boxplot_width,
             space_inter = input$space_inter_groups,
             space_intra = input$space_intra_groups,
