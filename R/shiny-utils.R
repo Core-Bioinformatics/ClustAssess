@@ -108,7 +108,7 @@ grouped_boxplot_list <- function(groups_list,
                             x_values,
                             plt_height,
                             plt_width,
-
+                            xlab_text,
                             boxplot_width = 0.5,
                             space_inter = 1,
                             space_intra = 1,
@@ -205,7 +205,7 @@ grouped_boxplot_list <- function(groups_list,
     cex.lab = text_size
   )
   abline(v = abline_coords, lty = "dashed", col = "grey")
-  title(xlab = "k", ylab = "ecc", cex.lab = text_size)
+  title(xlab = xlab_text, ylab = "ecc", cex.lab = text_size)
   axis(side = 1, at = text_coords, labels = unique_x_values, las = 2, cex.axis = text_size)
 
   if (!display_legend) {
@@ -1014,23 +1014,20 @@ gear_overall <- function(ns, id) {
       inputId = ns(paste0(id, "_text_size")),
       label = "Text size",
       min = 0.10, max = 10.00, value = 1.00, step = 0.1
-    ),
-    shiny::sliderInput(
-      inputId = ns(paste0(id, "_text_offset")),
-      label = "Boxplot text offset",
-      min = 0.005, max = 0.15, value = 0.01, step = 0.005
-    ),
+    )
   )
 }
 
-gear_umaps <- function(ns, id) {
+gear_umaps <- function(ns, id, discrete = TRUE) {
   shinyWidgets::dropdownButton(
     shiny::tagList(
-      shiny::sliderInput(
-        inputId = ns(paste0(id, "_text_size")),
-        label = "Text size",
-        min = 0.10, max = 10.00, value = 1.00, step = 0.1
-      ),
+      if (discrete) { 
+        shiny::sliderInput(
+          inputId = ns(paste0(id, "_text_size")),
+          label = "Text size",
+          min = 0.10, max = 10.00, value = 1.00, step = 0.1
+        )
+      },
       shiny::sliderInput(
         inputId = ns(paste0(id, "_axis_size")),
         label = "Axis labels size",
@@ -1051,12 +1048,14 @@ gear_umaps <- function(ns, id) {
         label = "Point type",
         choices = c("Pixel", "Circle")
       ),
-      shinyWidgets::prettySwitch(
-        inputId = ns(paste0(id, "_labels")),
-        label = "Show labels",
-        status = "success",
-        fill = TRUE
-      )
+      if (discrete) {
+        shinyWidgets::prettySwitch(
+          inputId = ns(paste0(id, "_labels")),
+          label = "Show labels",
+          status = "success",
+          fill = TRUE
+        )
+      }
     ),
     circle = TRUE,
     status = "success",
