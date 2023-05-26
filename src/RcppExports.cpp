@@ -65,6 +65,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pruneSNN
+Eigen::SparseMatrix<double> pruneSNN(Eigen::SparseMatrix<double> snnMatrix, double prune);
+RcppExport SEXP _ClustAssess_pruneSNN(SEXP snnMatrixSEXP, SEXP pruneSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type snnMatrix(snnMatrixSEXP);
+    Rcpp::traits::input_parameter< double >::type prune(pruneSEXP);
+    rcpp_result_gen = Rcpp::wrap(pruneSNN(snnMatrix, prune));
+    return rcpp_result_gen;
+END_RCPP
+}
 // computeSNN
 Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double>& nnMatrix, int k, double prune);
 RcppExport SEXP _ClustAssess_computeSNN(SEXP nnMatrixSEXP, SEXP kSEXP, SEXP pruneSEXP) {
@@ -78,14 +89,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // getNNmatrix
-List getNNmatrix(Eigen::MatrixXd nnRanked, int k, double prune);
-RcppExport SEXP _ClustAssess_getNNmatrix(SEXP nnRankedSEXP, SEXP kSEXP, SEXP pruneSEXP) {
+List getNNmatrix(Eigen::MatrixXd nnRanked, int k, int start, double prune);
+RcppExport SEXP _ClustAssess_getNNmatrix(SEXP nnRankedSEXP, SEXP kSEXP, SEXP startSEXP, SEXP pruneSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type nnRanked(nnRankedSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type start(startSEXP);
     Rcpp::traits::input_parameter< double >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(getNNmatrix(nnRanked, k, prune));
+    rcpp_result_gen = Rcpp::wrap(getNNmatrix(nnRanked, k, start, prune));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -121,8 +133,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_filterNNmatrix", (DL_FUNC) &_ClustAssess_filterNNmatrix, 5},
+    {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},
-    {"_ClustAssess_getNNmatrix", (DL_FUNC) &_ClustAssess_getNNmatrix, 3},
+    {"_ClustAssess_getNNmatrix", (DL_FUNC) &_ClustAssess_getNNmatrix, 4},
     {"_ClustAssess_update_connectivity_cpp", (DL_FUNC) &_ClustAssess_update_connectivity_cpp, 3},
     {"_ClustAssess_wilcox_test", (DL_FUNC) &_ClustAssess_wilcox_test, 3},
     {NULL, NULL, 0}
