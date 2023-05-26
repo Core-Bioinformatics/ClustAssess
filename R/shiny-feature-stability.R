@@ -18,20 +18,24 @@ ui_dimensionality_stability <- function(id) {
       ),
       shiny::h2("ECC per individual resolution values")
     ),
-    shinyWidgets::dropdownButton(
-      shinyWidgets::sliderTextInput(
-        inputId = ns("by_step_resolution"),
-        label = "Resolution",
-        choices = c("")
+    shiny::splitLayout(
+      cellWidths = c("40px", "40px"),
+      shinyWidgets::dropdownButton(
+        shinyWidgets::sliderTextInput(
+          inputId = ns("by_step_resolution"),
+          label = "Resolution",
+          choices = c("")
+        ),
+        gear_overall(ns, "by_step_res"),
+        circle = TRUE,
+        status = "success",
+        size = "sm",
+        icon = shiny::icon("cog")
       ),
-      gear_overall(ns, "by_step_res"),
-      circle = TRUE,
-      status = "success",
-      size = "sm",
-      icon = shiny::icon("cog")
+      gear_download(ns, "by_step_res", "by_step_res")
     ),
     shiny::splitLayout(
-      cellWidths = paste0(c(proportion_widths - 3, 100 - proportion_widths), "%"), #c("52%", "45%"),
+      cellWidths = paste0(c(proportion_widths - 3, 100 - proportion_widths), "%"), # c("52%", "45%"),
       shiny::tagList(
         shiny::plotOutput(ns("boxplot_ecc"), height = "auto"),
         shiny::splitLayout(
@@ -43,17 +47,21 @@ ui_dimensionality_stability <- function(id) {
           ),
           # shiny::h2("Incremental ECS per individual resolution values")
         ),
-        shinyWidgets::dropdownButton(
-          shinyWidgets::sliderTextInput(
-            inputId = ns("incremental_resolution"),
-            label = "Resolution",
-            choices = c("")
+        shiny::splitLayout(
+          cellWidths = c("40px", "40px"),
+          shinyWidgets::dropdownButton(
+            shinyWidgets::sliderTextInput(
+              inputId = ns("incremental_resolution"),
+              label = "Resolution",
+              choices = c("")
+            ),
+            gear_overall(ns, "incremental_res"),
+            circle = TRUE,
+            status = "success",
+            size = "sm",
+            icon = shiny::icon("cog")
           ),
-          gear_overall(ns, "incremental_res"),
-          circle = TRUE,
-          status = "success",
-          size = "sm",
-          icon = shiny::icon("cog")
+          gear_download(ns, "incremental_resolution", "incremental_resolution")
         ),
         shiny::plotOutput(ns("boxplot_incr"), height = "auto")
       ),
@@ -69,6 +77,7 @@ ui_dimensionality_stability <- function(id) {
           label = "Select the feature set size",
           choices = ""
         ),
+        gear_umaps(ns, "ecc_res_umap", FALSE),
         shiny::plotOutput(ns("umap_ecc"), height = "auto", width = "100%"),
         shiny::plotOutput(ns("umap_ecc_legend"), height = "auto", width = "100%"),
         shiny::tableOutput(ns("table_ecc_info"))
@@ -88,12 +97,16 @@ ui_dimensionality_stability <- function(id) {
       ),
       shiny::h2("Overall stability")
     ),
-    shinyWidgets::dropdownButton(
-      gear_overall(ns, "by_step"),
-      circle = TRUE,
-      status = "success",
-      size = "sm",
-      icon = shiny::icon("cog")
+    shiny::splitLayout(
+      cellWidths = c("40px", "40px"),
+      shinyWidgets::dropdownButton(
+        gear_overall(ns, "by_step"),
+        circle = TRUE,
+        status = "success",
+        size = "sm",
+        icon = shiny::icon("cog")
+      ),
+      gear_download(ns, "by_step", "by_step")
     ),
     shiny::plotOutput(ns("overall_boxplot_ecc"), height = "auto"),
     shiny::splitLayout(
@@ -105,12 +118,16 @@ ui_dimensionality_stability <- function(id) {
       ),
       shiny::h2("Overall incremental stability")
     ),
-    shinyWidgets::dropdownButton(
-      gear_overall(ns, "incremental"),
-      circle = TRUE,
-      status = "success",
-      size = "sm",
-      icon = shiny::icon("cog")
+    shiny::splitLayout(
+      cellWidths = c("40px", "40px"),
+      shinyWidgets::dropdownButton(
+        gear_overall(ns, "incremental"),
+        circle = TRUE,
+        status = "success",
+        size = "sm",
+        icon = shiny::icon("cog")
+      ),
+      gear_download(ns, "incremental", "incremental")
     ),
     shiny::plotOutput(ns("overall_boxplot_incremental"), height = "auto")
   )
@@ -121,7 +138,7 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
   style <- ifelse(draw_line, "border-right:5px solid", "")
 
   # shiny::wellPanel(
-    shinyWidgets::panel(
+  shinyWidgets::panel(
     style = style,
     shiny::selectizeInput(ns("feature_type"), "Feature names", NULL),
     shiny::selectizeInput(ns("feature_steps"), "Feature set size", NULL),
@@ -134,50 +151,47 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
       multiple = TRUE
     ),
     shiny::splitLayout(
-        shiny::numericInput(
-          inputId = ns("expr_threshold"),
-          label = "Gene expression threshold",
-          min = 0, max = 10, value = 0, step = 0.01,
-          width = "95%"
-        ),
-        shiny::numericInput(
-          inputId = ns("relaxation"),
-          label = "#genes not expressed",
-          min = 0, max = 10, value = 0, step = 1,
-          width = "95%"
-        )
+      shiny::numericInput(
+        inputId = ns("expr_threshold"),
+        label = "Gene expression threshold",
+        min = 0, max = 10, value = 0, step = 0.01,
+        width = "95%"
+      ),
+      shiny::numericInput(
+        inputId = ns("relaxation"),
+        label = "#genes not expressed",
+        min = 0, max = 10, value = 0, step = 1,
+        width = "95%"
+      )
     ),
     shiny::splitLayout(
       cellWidths = c("40px", "40px"),
-      gear_umaps(ns, "gene")
-      # gear_download(ns, "gene", "gene")
+      gear_umaps(ns, "gene", FALSE)
     ),
-
     shiny::plotOutput(ns("umap_gene"), height = "auto"),
     shiny::plotOutput(ns("umap_gene_legend"), height = "auto"),
-   
-      shiny::splitLayout(
-         shiny::selectizeInput(
-          inputId = ns("metadata"),
-          label = "Metadata",
-          choices = NULL
-        ),
-        shiny::verticalLayout(
-          shiny::tags$b("Select the highlighted groups"),
-          shinyWidgets::pickerInput(
-                  inputId = ns("select_groups"),
-                  choices = "",
-                  inline = FALSE,
-                  options = list(
-                    `actions-box` = TRUE,
-                    title = "Select/deselect groups",
-                    size = 10,
-                    width = "90%",
-                    `selected-text-format` = "count > 3"
-                  ), 
-                  multiple = TRUE
-                )
+    shiny::splitLayout(
+      shiny::selectizeInput(
+        inputId = ns("metadata"),
+        label = "Metadata",
+        choices = NULL
+      ),
+      shiny::verticalLayout(
+        shiny::tags$b("Select the highlighted groups"),
+        shinyWidgets::pickerInput(
+          inputId = ns("select_groups"),
+          choices = "",
+          inline = FALSE,
+          options = list(
+            `actions-box` = TRUE,
+            title = "Select/deselect groups",
+            size = 10,
+            width = "90%",
+            `selected-text-format` = "count > 3"
+          ),
+          multiple = TRUE
         )
+      )
     ),
     shiny::splitLayout(
       gear_umaps(ns, "metadata")
@@ -280,7 +294,7 @@ server_dimensionality_stability <- function(id) {
 
       plt_height <- shiny::reactive({
         shiny::req(pkg_env$dimension())
-         floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * (1 - proportion_widths / 100)))
+        floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * (1 - proportion_widths / 100)))
       })
 
       legend_height <- shiny::reactive({
@@ -292,40 +306,39 @@ server_dimensionality_stability <- function(id) {
       })
 
       ecc_value <- shiny::reactive({
-          shiny::req(
-            input$select_fsize_umap,
-            input$select_fsize_umap != "",
-            input$by_step_resolution != "",
-            input$by_step_resolution != "0"
+        shiny::req(
+          input$select_fsize_umap,
+          input$select_fsize_umap != "",
+          input$by_step_resolution != "",
+          input$by_step_resolution != "0"
+        )
+
+        fsize_index <- which(input$select_fsize_umap == pkg_env$feature_ordering$original[[input$select_ftype_umap]])
+
+        (rhdf5::h5read(
+          "stability.h5",
+          paste(
+            "feature_stability",
+            "by_steps",
+            input$by_step_resolution,
+            sep = "/"
           )
-
-          fsize_index <- which(input$select_fsize_umap == pkg_env$feature_ordering$original[[input$select_ftype_umap]])
-
-          (rhdf5::h5read(
-            "stability.h5",
-            paste(
-              "feature_stability",
-              "by_steps",
-              input$by_step_resolution,
-              sep = "/"
-            )
-          ) %>% dplyr::filter(.data$fsize == fsize_index & .data$ftype == input$select_ftype_umap))$ecc
+        ) %>% dplyr::filter(.data$fsize == fsize_index & .data$ftype == input$select_ftype_umap))$ecc
       })
 
       output$umap_ecc <- shiny::renderPlot(
         height = function() {
-           shiny::req(plt_height())
+          shiny::req(plt_height())
         },
         width = function() {
-           shiny::req(plt_height())
+          shiny::req(plt_height())
         },
         {
-
           shiny::req(
             ecc_value(),
             plt_height()
           )
-          
+
           color_plot2(
             embedding = rhdf5::h5read(
               "stability.h5",
@@ -340,10 +353,15 @@ server_dimensionality_stability <- function(id) {
             color_info = ecc_value(),
             color_values = NULL,
             plt_height = plt_height(),
-            plt_width  = plt_height(),
-            text_size = input$by_step_res_text_size
+            plt_width = plt_height(),
+            axis_size = input$ecc_res_umap_axis_size,
+            pt_size = input$ecc_res_umap_pt_size,
+            pch = ifelse(input$ecc_res_umap_pt_type == "Pixel", ".", 19),
+            legend_text_size = input$ecc_res_umap_legend_size,
+            text_size = input$ecc_res_umap_text_size
           )
-      })
+        }
+      )
 
       output$umap_ecc_legend <- shiny::renderPlot(
         height = function() {
@@ -357,7 +375,7 @@ server_dimensionality_stability <- function(id) {
 
           only_legend_plot(
             plt_width = plt_height(),
-            text_size = input$by_step_res_text_size,
+            text_size = input$ecc_res_umap_legend_size,
             color_values = NULL,
             unique_values = NULL,
             color_info = ecc_value()
@@ -369,7 +387,7 @@ server_dimensionality_stability <- function(id) {
         shiny::req(ecc_value())
 
         data.frame(
-          "Stat" = c("Min", "Q1", "Median", "Q2", "Max"),
+          "Stat" = c("Min", "Q1", "Median", "Q3", "Max"),
           "ECC value" = stats::fivenum(ecc_value())
         )
       })
@@ -377,7 +395,6 @@ server_dimensionality_stability <- function(id) {
       output$boxplot_ecc <- shiny::renderPlot(
         {
           shiny::req(input$by_step_resolution != "", input$by_step_resolution != "0")
-          print(input$by_step_resolution)
 
           shiny_plot_feature_stability_boxplot(
             resval = input$by_step_resolution,
@@ -389,8 +406,7 @@ server_dimensionality_stability <- function(id) {
             width = input$by_step_res_boxplot_width,
             space_intra_groups = input$by_step_res_intra_distance,
             plt_title = paste("res", input$by_step_resolution),
-            space_inter_groups = input$by_step_res_inter_distance,
-            text_offset = input$by_step_res_text_offset
+            space_inter_groups = input$by_step_res_inter_distance
           )
         },
         height = function() {
@@ -398,23 +414,23 @@ server_dimensionality_stability <- function(id) {
         }
       )
 
-      output$boxplot_incr <- shiny::renderPlot({
-        shiny::req(input$by_step_resolution != "", input$by_step_resolution != "0")
+      output$boxplot_incr <- shiny::renderPlot(
+        {
+          shiny::req(input$by_step_resolution != "", input$by_step_resolution != "0")
 
-        shiny_plot_feature_stability_incremental(
-          resval = input$incremental_resolution,
-          feature_ordering = pkg_env$feature_ordering,
-          # plt_height = floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2)),
-          plt_height = floor(pkg_env$height_ratio * pkg_env$dimension()[2]),
-          plt_width = pkg_env$dimension()[1] * (proportion_widths - 5) / 100,
-          text_size = input$incremental_res_text_size,
-          plt_title = paste("res", input$incremental_resolution),
-          width = input$incremental_res_boxplot_width,
-          space_intra_groups = input$incremental_res_intra_distance,
-          space_inter_groups = input$incremental_res_inter_distance,
-          text_offset = input$incremental_res_text_offset
-        )
-      },
+          shiny_plot_feature_stability_incremental(
+            resval = input$incremental_resolution,
+            feature_ordering = pkg_env$feature_ordering,
+            # plt_height = floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2)),
+            plt_height = floor(pkg_env$height_ratio * pkg_env$dimension()[2]),
+            plt_width = pkg_env$dimension()[1] * (proportion_widths - 5) / 100,
+            text_size = input$incremental_res_text_size,
+            plt_title = paste("res", input$incremental_resolution),
+            width = input$incremental_res_boxplot_width,
+            space_intra_groups = input$incremental_res_intra_distance,
+            space_inter_groups = input$incremental_res_inter_distance
+          )
+        },
         height = function() {
           floor(pkg_env$height_ratio * pkg_env$dimension()[2])
         }
@@ -430,8 +446,7 @@ server_dimensionality_stability <- function(id) {
             text_size = input$by_step_text_size,
             width = input$by_step_boxplot_width,
             space_intra_groups = input$by_step_intra_distance,
-            space_inter_groups = input$by_step_inter_distance,
-            text_offset = input$by_step_text_offset
+            space_inter_groups = input$by_step_inter_distance
           )
         },
         height = function() {
@@ -449,8 +464,7 @@ server_dimensionality_stability <- function(id) {
             text_size = input$incremental_text_size,
             width = input$incremental_boxplot_width,
             space_intra_groups = input$incremental_intra_distance,
-            space_inter_groups = input$incremental_inter_distance,
-            text_offset = input$incremental_text_offset
+            space_inter_groups = input$incremental_inter_distance
           )
         },
         height = function() {
@@ -466,6 +480,94 @@ server_dimensionality_stability <- function(id) {
       #     dodge_width = input$dodge_width
       #   )
       # })
+
+      output$download_by_step_res <- shiny::downloadHandler(
+        filename = function() {
+          paste0(input$filename_by_step_res, ".", tolower(input$filetype_by_step_res))
+        },
+        content = function(file) {
+          shiny::req(input$by_step_resolution != "", input$by_step_resolution != "0")
+          filetypes[[input$filetype_by_step_res]](file, width = input$width_by_step_res, height = input$height_by_step_res)
+
+          shiny_plot_feature_stability_boxplot(
+            resval = input$by_step_resolution,
+            feature_ordering = pkg_env$feature_ordering,
+            plt_height = input$height_by_step_res * ppi,
+            plt_width = input$width_by_step_res * ppi,
+            text_size = input$by_step_res_text_size,
+            width = input$by_step_res_boxplot_width,
+            space_intra_groups = input$by_step_res_intra_distance,
+            plt_title = paste("res", input$by_step_resolution),
+            space_inter_groups = input$by_step_res_inter_distance
+          )
+          dev.off()
+        }
+      )
+
+      output$download_incremental_resolution <- shiny::downloadHandler(
+        filename = function() {
+          paste0(input$filename_incremental_resolution, ".", tolower(input$filetype_incremental_resolution))
+        },
+        content = function(file) {
+          shiny::req(input$by_step_resolution != "", input$by_step_resolution != "0")
+          filetypes[[input$filetype_incremental_resolution]](file, width = input$width_incremental_resolution, height = input$height_incremental_resolution)
+
+          shiny_plot_feature_stability_incremental(
+            resval = input$incremental_resolution,
+            feature_ordering = pkg_env$feature_ordering,
+            plt_height = input$height_incremental_resolution * ppi,
+            plt_width = input$width_incremental_resolution * ppi,
+            text_size = input$incremental_res_text_size,
+            plt_title = paste("res", input$incremental_resolution),
+            width = input$incremental_res_boxplot_width,
+            space_intra_groups = input$incremental_res_intra_distance,
+            space_inter_groups = input$incremental_res_inter_distance
+          )
+          dev.off()
+        }
+      )
+
+      output$download_by_step <- shiny::downloadHandler(
+        filename = function() {
+          paste0(input$filename_by_step, ".", tolower(input$filetype_by_step))
+        },
+        content = function(file) {
+          filetypes[[input$filetype_by_step]](file, width = input$width_by_step, height = input$height_by_step)
+
+          shiny_plot_feature_stability_boxplot(
+            resval = "overall",
+            feature_ordering = pkg_env$feature_ordering,
+            plt_height = input$height_by_step * ppi,
+            plt_width = input$width_by_step * ppi,
+            text_size = input$by_step_text_size,
+            width = input$by_step_boxplot_width,
+            space_intra_groups = input$by_step_intra_distance,
+            space_inter_groups = input$by_step_inter_distance
+          )
+          dev.off()
+        }
+      )
+
+      output$download_incremental <- shiny::downloadHandler(
+        filename = function() {
+          paste0(input$filename_incremental, ".", tolower(input$filetype_incremental))
+        },
+        content = function(file) {
+          filetypes[[input$filetype_incremental]](file, width = input$width_incremental, height = input$height_incremental)
+
+          shiny_plot_feature_stability_incremental(
+            resval = "overall",
+            feature_ordering = pkg_env$feature_ordering,
+            plt_height = input$height_incremental * ppi,
+            plt_width = input$width_incremental * ppi,
+            text_size = input$incremental_text_size,
+            width = input$incremental_boxplot_width,
+            space_intra_groups = input$incremental_intra_distance,
+            space_inter_groups = input$incremental_inter_distance
+          )
+          dev.off()
+        }
+      )
 
       shiny::observe(dr_individual_ecc_info(session)) %>% shiny::bindEvent(input$info_ecc_res)
       shiny::observe(dr_individual_incremental_info(session)) %>% shiny::bindEvent(input$info_ecs_incr_res)
@@ -531,7 +633,7 @@ server_dimensionality_distribution <- function(id) {
         }
       }) %>% shiny::bindEvent(input$gene_expr)
 
-      
+
       shiny::observe({
         mtd_names <- pkg_env$metadata_unique[[input$metadata]]
         if (is.null(mtd_names)) {
@@ -541,7 +643,6 @@ server_dimensionality_distribution <- function(id) {
             inputId = "select_groups",
             choices = NULL
           )
-
         } else {
           shinyjs::show(id = "select_groups")
           shinyWidgets::updatePickerInput(
@@ -553,7 +654,6 @@ server_dimensionality_distribution <- function(id) {
         }
 
         changed_metadata(TRUE)
-
       }) %>% shiny::bindEvent(input$metadata)
 
       plt_height <- shiny::reactive(
@@ -562,7 +662,7 @@ server_dimensionality_distribution <- function(id) {
 
       output$umap_gene <- shiny::renderPlot(
         height = function() {
-          plt_height() 
+          plt_height()
         },
         width = function() {
           plt_height()
@@ -589,7 +689,7 @@ server_dimensionality_distribution <- function(id) {
             unique_values <- NULL
             used_matrix <- expr_matrix()
             color_values <- function(n) {
-              grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+              grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
             }
             if (length(input$gene_expr) > 1) {
               unique_values <- c("other", "cells above threshold")
@@ -601,31 +701,31 @@ server_dimensionality_distribution <- function(id) {
               used_matrix <- used_matrix > expr_threshold
             }
 
-          old_par <- par(mai = c(0.1, 0, 0.1, 0))
-          text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
-          par(old_par)
-          gene_legend_height(text_height * ppi)
+            old_par <- par(mai = c(0.1, 0, 0.1, 0))
+            text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
+            par(old_par)
+            gene_legend_height(text_height * ppi)
 
-          color_plot2(
-            embedding = rhdf5::h5read("stability.h5", paste(
-              "feature_stability",
-              "embedding_list",
-              input$feature_type,
-              input$feature_steps,
-              sep = "/"
-            )),
-            color_info = used_matrix,
-            plt_height = plt_height(),
-            plt_width = plt_height(),
-            display_legend = FALSE,
-            unique_values = unique_values,
-            color_values = color_values,
-            pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
-            pt_size = input$gene_pt_size,
-            axis = input$gene_axis_size,
-            legend_text_size = input$gene_legend_size,
-            text_size = input$gene_legend_size
-          )
+            color_plot2(
+              embedding = rhdf5::h5read("stability.h5", paste(
+                "feature_stability",
+                "embedding_list",
+                input$feature_type,
+                input$feature_steps,
+                sep = "/"
+              )),
+              color_info = used_matrix,
+              plt_height = plt_height(),
+              plt_width = plt_height(),
+              display_legend = FALSE,
+              unique_values = unique_values,
+              color_values = color_values,
+              pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
+              pt_size = input$gene_pt_size,
+              axis = input$gene_axis_size,
+              legend_text_size = input$gene_legend_size,
+              text_size = input$gene_legend_size
+            )
           })
         }
       )
@@ -688,25 +788,24 @@ server_dimensionality_distribution <- function(id) {
             par(old_par)
             metadata_legend_height(text_height * ppi)
 
-          metadata_plot(
-            embedding = rhdf5::h5read("stability.h5", paste(
-              "feature_stability",
-              "embedding_list",
-              input$feature_type,
-              input$feature_steps,
-              sep = "/"
-            )),
-            metadata_name = input$metadata,
-            plt_height = plt_height(),
-            plt_width = plt_height(),
-            pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
-            pt_size = input$metadata_pt_size,
-            text_size = input$metadata_text_size,
-            axis_size = input$metadata_axis_size,
-            labels = input$metadata_labels,
-            groups_highlight = groups
-          )
-
+            metadata_plot(
+              embedding = rhdf5::h5read("stability.h5", paste(
+                "feature_stability",
+                "embedding_list",
+                input$feature_type,
+                input$feature_steps,
+                sep = "/"
+              )),
+              metadata_name = input$metadata,
+              plt_height = plt_height(),
+              plt_width = plt_height(),
+              pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
+              pt_size = input$metadata_pt_size,
+              text_size = input$metadata_text_size,
+              axis_size = input$metadata_axis_size,
+              labels = input$metadata_labels,
+              groups_highlight = groups
+            )
           })
         }
       )
@@ -732,7 +831,7 @@ server_dimensionality_distribution <- function(id) {
                 matched_elems <- matched_elems[!is.na(matched_elems)]
                 if (changed_metadata()) {
                   shiny::req(
-                    length(matched_elems) == length( pkg_env$metadata_unique[[current_metadata]]),
+                    length(matched_elems) == length(pkg_env$metadata_unique[[current_metadata]]),
                     length(matched_elems) == length(input$select_groups),
                     cancelOutput = TRUE
                   )
@@ -787,7 +886,9 @@ server_dimensionality_distribution <- function(id) {
 
               unique_values <- NULL
               used_matrix <- expr_matrix()
-              color_values <- function(n) { grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n) }
+              color_values <- function(n) {
+                grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+              }
               if (length(input$gene_expr) > 1) {
                 unique_values <- c("other", "cells above threshold")
                 color_values <- c("#e3e3e3", "red")
@@ -810,7 +911,6 @@ server_dimensionality_distribution <- function(id) {
           }
         )
       })
-
     }
   )
 }
@@ -893,8 +993,8 @@ server_dimensionality_reduction <- function(id, parent_session) {
       # server_dimensionality_distribution("distribution_left")
       # shiny::observe({
       #   print("Starts loading")
-        server_dimensionality_distribution("distribution_left")
-        server_dimensionality_distribution("distribution_right")
+      server_dimensionality_distribution("distribution_left")
+      server_dimensionality_distribution("distribution_right")
       # }) %>% shiny::bindEvent(input[["distribution_right-metadata"]], ignoreInit = TRUE, once = TRUE)
       feature_choice <- server_dimensionality_choice("feature_choice", parent_session)
 
@@ -964,7 +1064,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
                                                  space_intra_groups = 1,
                                                  space_inter_groups = 1,
                                                  text_offset = 0.01) {
-# convert pixels to inches
+  # convert pixels to inches
   plt_height <- plt_height / 96
   plt_width <- plt_width / 96
   # calculate space needed for the legend
@@ -975,9 +1075,9 @@ shiny_plot_feature_stability_boxplot <- function(resval,
   number_rows <- ceiling(length(fgroups) / number_columns)
   current_margins <- par("mai")
   old_margin <- current_margins[1]
-  current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2 
+  current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
   par(mai = current_margins)
-  
+
   col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
   n_groups <- length(fgroups)
   n_fsizes <- max(sapply(feature_ordering$original, function(x) {
@@ -1026,11 +1126,12 @@ shiny_plot_feature_stability_boxplot <- function(resval,
   y_text <- boundaries$stats[nrow(boundaries$stats), ]
   y_text[is.na(y_text)] <- 0
 
-  text(
-    x = at_values,
-    y = y_text + text_offset,
-    name_values,
+  axis(
+    side = 1,
+    at = at_values,
+    labels = name_values,
     cex = text_size,
+    las = 2,
     xpd = NA
   )
 
@@ -1041,11 +1142,10 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     pch = 15,
     cex = text_size,
     pt.cex = text_size * 2,
-    bty = 'n',
+    bty = "n",
     ncol = number_columns,
-    # text.width = NA,
-    xpd = TRUE,
-    inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
+    xpd = TRUE
+    # inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
   )
 }
 
@@ -1098,7 +1198,6 @@ shiny_plot_feature_stability_incremental <- function(resval,
     abline_coords[i - 1] <- n_groups * space_intra_groups + (n_groups * space_intra_groups + space_inter_groups) * (i - 2) + (space_inter_groups + space_intra_groups) / 2
   }
 
-  # par(mai = c(0.1, 1, 0.5 + text_offset * plot_height / 96, 0.1))
   boundaries <- boxplot(
     formula = ecc ~ ftype + fsize,
     data = rhdf5::h5read("stability.h5", ifelse(resval == "overall",
@@ -1108,7 +1207,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
     col = col,
     at = at_values,
     xaxt = "n",
-    xlab = "# features",
+    xlab = "", # "# features",
     boxwex = width * (n_groups + (space_intra_groups - 1) * (n_groups - 1)) / n_groups,
     outline = FALSE,
     cex.lab = text_size,
@@ -1122,12 +1221,21 @@ shiny_plot_feature_stability_incremental <- function(resval,
   y_text <- boundaries$stats[nrow(boundaries$stats), ]
   y_text[is.na(y_text)] <- 0
 
-  text(
-    x = at_values,
-    y = y_text + text_offset,
-    name_values,
+  # text(
+  #   x = at_values,
+  #   y = y_text + text_offset,
+  #   name_values,
+  #   cex = text_size,
+  #   xpd = NA
+  # )
+
+  axis(
+    side = 1,
+    at = at_values,
+    labels = name_values,
     cex = text_size,
-    xpd = NA
+    # xpd = NA,
+    las = 2
   )
 
   legend(
@@ -1137,10 +1245,9 @@ shiny_plot_feature_stability_incremental <- function(resval,
     pch = 15,
     cex = text_size,
     pt.cex = text_size * 2,
-    bty = 'n',
+    bty = "n",
     ncol = number_columns,
-    # text.width = NA,
-    xpd = TRUE,
-    inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
+    xpd = TRUE
+    # inset = c(0, -((old_margin + predicted_height[1] * 2) / plt_height))
   )
 }
