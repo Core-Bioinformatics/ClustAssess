@@ -27,14 +27,7 @@ algorithm_names_mapping <- list(
 #' @md
 #' @keywords internal
 merge_resolutions <- function(res_obj,
-                              object_name,
-                              ncores = 1) {
-  if (!is.numeric(ncores) || length(ncores) > 1) {
-    stop("ncores parameter should be numeric")
-  }
-
-  # convert ncores to an integer
-  ncores <- as.integer(ncores)
+                              object_name) {
   clusters_obj <- list()
 
   # concatenate all partitions having the same number of clusters into a list
@@ -51,21 +44,7 @@ merge_resolutions <- function(res_obj,
     }
   }
 
-  ncores <- min(ncores, length(clusters_obj), parallel::detectCores())
   k_vals <- names(clusters_obj)
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
 
   all_vars <- ls()
   needed_vars <- c("clusters_obj")
@@ -73,7 +52,7 @@ merge_resolutions <- function(res_obj,
   i <- 1
 
   merge_identical_partitions <- merge_identical_partitions
-  are_identical_memberships <- are_identical_memberships 
+  are_identical_memberships <- are_identical_memberships
 
 
   # merge identical partitions from each list for a fixed k
@@ -88,10 +67,6 @@ merge_resolutions <- function(res_obj,
 
   names(clusters_obj) <- k_vals
 
-  # if a parallel backend was created, terminate the processes
-  # if (ncores > 1) {
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
 
   for (k in names(clusters_obj)) {
     clusters_obj[[k]] <- list(partitions = clusters_obj[[k]])
@@ -103,8 +78,7 @@ merge_resolutions <- function(res_obj,
       }),
       sapply(clusters_obj[[k]]$partitions, function(x) {
         x$freq
-      }),
-      ncores = ncores
+      })
     )
 
     clusters_obj[[k]][["ecc"]] <- ec_consistency
@@ -172,12 +146,13 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                                         n_repetitions = 100,
                                         seed_sequence = NULL,
                                         ecs_thresh = 1,
-                                        ncores = 1,
                                         algorithm = 1:3,
                                         verbose = TRUE,
+                                        clustering_arguments = list(),
                                         ...) {
   # BUG there are some performance issues, make sure the main runtime is caused by the clustering method
   # TODO add leidenbase implementation for the algorithm = 4
+  ncores <- foreach::getDoParWorkers()
   # check the parameters
   if (!is.numeric(resolution)) {
     stop("resolution parameter should be numeric")
@@ -187,12 +162,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     stop("ecs_thresh pa              ld be numer,
               algorithm = alg_index                        ic")
   }
-
-  # if (!is.numeric(ncores) || length(ncores) > 1) {
-  #   stop("ncores parameter should be numeric")
-  # }
-  # # convert ncores to an integer
-  # ncores <- as.integer(ncores)
 
   if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
     stop("n_repetitions parameter should be numeric")
@@ -224,47 +193,25 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
   }
 
   result_object <- list()
-  ncores <- min(ncores, length(seed_sequence), parallel::detectCores())
 
   # additional arguments used by the clustering method
-  suppl_args <- list(...)
-  i <- 1
-  while (i <= length(suppl_args)) {
-    assign(names(suppl_args)[i], suppl_args[[i]])
-    i <- i + 1
+
+  if (ncores > 1) {
+    graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
+  } else {
+    graph_adjacency_matrix_shared <- graph_adjacency_matrix
   }
 
-
-  graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
-
   # the variables needed in the PSOCK processes
+  seurat_clustering <- seurat_clustering
   needed_vars <- c(
     "res",
     "seurat_clustering",
     "graph_adjacency_matrix_shared",
     "alg_index",
-    "suppl_args"
+    "clustering_arguments"
   )
-  seurat_clustering <- seurat_clustering
   all_vars <- ls()
-
-  # print(all_vars)
-  # print(needed_vars)
-  # print(setdiff(all_vars, needed_vars))
-
   seed <- 0
 
   for (alg_index in algorithm) {
@@ -290,10 +237,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         seed = seed_sequence,
         .inorder = FALSE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        # .packages = c("ClustAssess"),
         .export = needed_vars
-        # .export = c("seurat_clustering")
-      )  %dopar% { #
+      ) %dopar% {
         # apply the clustering, which should return a membership vector
         do.call(seurat_clustering, c(
           list(
@@ -302,12 +247,10 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
             seed = seed,
             algorithm = alg_index
           ),
-          suppl_args
+          clustering_arguments
         ))
       }
       different_partitions <- list()
-
-      # print("gata paralelq")
 
       # group the partitions by the number of clusters
       for (i in seq_along(seed_sequence)) {
@@ -328,7 +271,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
             seed = seed_sequence[i]
           )
         }
-
       }
 
       different_partitions <- different_partitions[sort(names(different_partitions))]
@@ -340,7 +282,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         different_partitions[[k]] <- list(
           partitions = merge_partitions(different_partitions[[k]],
             ecs_thresh = ecs_thresh,
-            ncores = ncores,
             order = TRUE
           )
         )
@@ -357,8 +298,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
           }),
           sapply(different_partitions[[k]]$partitions, function(x) {
             x$freq
-          }),
-          ncores = 1
+          })
         )
 
         different_partitions[[k]][["ecc"]] <- ec_consistency
@@ -372,8 +312,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
           }),
           sapply(unique_partitions, function(x) {
             x$freq
-          }),
-          ncores = 1
+          })
         )
       )
 
@@ -383,17 +322,15 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     }
   }
 
-  # if (ncores > 1) {
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
-  # print("merge resoutions")
-  graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
-  rm(graph_adjacency_matrix_shared)
-  # rm(graph_adjacency_matrix)
-  # gc()
+  if (ncores > 1) {
+    graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
+    rm(graph_adjacency_matrix_shared)
+  }
+  rm(graph_adjacency_matrix)
+  gc()
 
   split_by_k <- lapply(algorithm_names[algorithm], function(alg_name) {
-    merge_resolutions(result_object[[alg_name]], alg_name, ncores = ncores)
+    merge_resolutions(result_object[[alg_name]], alg_name)
   })
 
   names(split_by_k) <- algorithm_names[algorithm]
@@ -965,7 +902,6 @@ plot_k_n_partitions <- function(clust_object,
       yintercept = seq(from = 0, to = max_n_part, by = y_step),
       linetype = "dashed",
       color = "#C3C3d3"
-
     ) +
     ggplot2::geom_vline(
       xintercept = unique(unique_parts$n.clusters),
