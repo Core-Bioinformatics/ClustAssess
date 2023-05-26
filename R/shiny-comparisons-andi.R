@@ -17,6 +17,11 @@ ui_comparison_markers <- function(id) {
           label = "Minimum gene frequency",
           min = 0.01, max = 1.00, value = 0.10, step = 0.01
         ),
+        shiny::sliderInput(
+          inputId = ns("pval"),
+          label = "Maximum adj-pval",
+          min = 0.001, max = 1.00, value = 0.01, step = 0.001
+        ),
         shinyWidgets::prettySwitch(
           inputId = ns("norm_type"),
           label = "Data is normalised",
@@ -321,7 +326,7 @@ server_comparison_markers <- function(id, k_choices) {
           norm_method = ifelse(input$norm_type, "LogNormalize", ""),
           min_pct_threshold = input$min_pct,
           logfc_threshold = input$logfc
-        )
+        ) %>% dplyr::filter(.data$p_val_adj <= input$pval)
         shinyjs::show("markers_dt")
         shinyjs::show("markers_download_button")
         shinyjs::enable("markers_button")
