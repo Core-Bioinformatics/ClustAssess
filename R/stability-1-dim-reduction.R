@@ -85,7 +85,6 @@ assess_feature_stability <- function(data_matrix,
                                      umap_arguments = list(),
                                      ...) {
   # TODO create a function that does checks of the parameters
-  # TODO while doing the assessment, prune the graph
   # BUG irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)
   # check parameters
   if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix")) {
@@ -146,6 +145,8 @@ assess_feature_stability <- function(data_matrix,
   steps_ecc_list[[object_name]] <- list()
   embedding_list <- list()
   embedding_list[[object_name]] <- list()
+  pca_list <- list()
+  pca_list[[object_name]] <- list()
 
   # create a seed sequence if it's not provided
   if (is.null(seed_sequence)) {
@@ -205,6 +206,7 @@ assess_feature_stability <- function(data_matrix,
     embedding <- post_processing(embedding)
     colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     rownames(embedding) <- rownames(trimmed_matrix)
+    pca_list[[object_name]][[step]] <- embedding
 
     # build the SNN graph before if PCA
     if (graph_reduction_type == "PCA") {
@@ -386,7 +388,8 @@ assess_feature_stability <- function(data_matrix,
   list(
     by_steps = steps_ecc_list,
     incremental = incremental_ecs_list,
-    embedding_list = embedding_list
+    embedding_list = embedding_list,
+    pca_list = pca_list
   )
 }
 
