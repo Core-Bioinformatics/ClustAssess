@@ -542,6 +542,7 @@ assess_nn_stability_pca <- function(embedding,
     n_neigh = n_neigh_sequence,
     .inorder = TRUE,
     .noexport = all_vars[!(all_vars %in% needed_vars)],
+    .export = c("getNNmatrix"),
     .packages = c("ClustAssess")
   ) %dopar% {
     neigh_matrix <- getNNmatrix(shared_nn2_res, n_neigh, 0, -1)
