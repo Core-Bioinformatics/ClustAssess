@@ -127,7 +127,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
   feature_stability_object <- list(
     by_steps = list(),
     incremental = list(),
-    embedding_list = list()
+    embedding_list = list(),
+    pca_list = list()
   )
 
   if (verbose) {
@@ -159,6 +160,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
     feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
     feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
+
+    if (!is.null(temp_object$pca_list)) { # NOTE only for backwards compatability reasons
+      feature_stability_object$pca_list[[set_name]] <- temp_object$pca_list[[1]]
+    }
 
     if (!file_already_exists && save_temp) {
       saveRDS(feature_stability_object, temp_file)
@@ -211,22 +216,18 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     for (j in 1:current_n_top) {
       n_steps <- steps[[i]][feature_stability_ranking[j]]
       current_features <- features_sets[[set_name]][1:n_steps]
-      suppressWarnings(pca_emb <- Seurat::RunPCA(expression_matrix[current_features, ],
-        npcs = min(npcs, n_steps %/% 2),
-        approx = FALSE,
-        verbose = FALSE
-      )@cell.embeddings)
-      pca_emb <- post_processing_dim_reduction(pca_emb)
+      if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
+        suppressWarnings(pca_emb <- Seurat::RunPCA(expression_matrix[current_features, ],
+          npcs = min(npcs, n_steps %/% 2),
+          approx = FALSE,
+          verbose = FALSE
+        )@cell.embeddings)
+        pca_emb <- post_processing_dim_reduction(pca_emb)
+      } else {
+        pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
+      }
 
-      suppressWarnings(
-        umap_emb <- do.call(
-          uwot::umap,
-          c(
-            list(X = pca_emb),
-            umap_arguments
-          )
-        )
-      )
+      umap_emb <- feature_stability_object$embedding_list[[set_name]][[as.character(n_steps)]]
 
       feature_configs[[set_name]][[as.character(n_steps)]] <-
         list(
@@ -241,6 +242,11 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     }
     feature_configs[[set_name]]$feature_list <- features_sets[[set_name]][seq_len(max(steps[[set_name]]))]
   }
+
+  feature_configs$feature_stability$pca_list <- NULL
+  rm(feature_stability_object)
+  gc()
+
 
   # GRAPH CONSTRUCTION: CONNECTED COMPS
   if (verbose) {
