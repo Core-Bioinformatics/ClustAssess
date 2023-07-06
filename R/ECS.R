@@ -1,5 +1,4 @@
-#' @importFrom foreach %dopar%
-#' @importFrom foreach %do%
+#' @importFrom foreach %dopar% %do%
 NULL
 
 #' The Element-Centric Clustering Similarity
