@@ -6,7 +6,6 @@
 \usage{
 plot_feature_stability_mb_facet(
   feature_object_list,
-  embedding,
   resolution,
   text_size = 5,
   n_facet_cols = 3,

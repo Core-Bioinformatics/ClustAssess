@@ -710,7 +710,6 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #'   0.1
 #' )
 plot_feature_stability_mb_facet <- function(feature_object_list,
-                                            embedding,
                                             resolution,
                                             text_size = 5,
                                             n_facet_cols = 3,
@@ -721,13 +720,14 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
   }
 
   first_temp <- TRUE
+  umap_object_list <- feature_object_list$embedding_list
   feature_object_list <- feature_object_list$by_steps
 
   for (config_name in names(feature_object_list)) {
     for (steps in names(feature_object_list[[config_name]])) {
       temp_df <- data.frame(
-        x = embedding[, 1],
-        y = embedding[, 2],
+        x = umap_object_list[[config_name]][[steps]][, 1],
+        y = umap_object_list[[config_name]][[steps]][, 2],
         mb = feature_object_list[[config_name]][[steps]][[resolution]]$most_frequent_partition$mb
       )
 
