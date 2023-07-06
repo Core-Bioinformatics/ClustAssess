@@ -6,7 +6,6 @@
 \usage{
 plot_feature_stability_ecs_facet(
   feature_object_list,
-  embedding,
   resolution,
   n_facet_cols = 3,
   point_size = 0.3
