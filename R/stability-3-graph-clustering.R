@@ -657,6 +657,7 @@ plot_clustering_difference_facet <- function(clust_object,
 plot_k_resolution_corresp <- function(clust_object,
                                       colour_information = c("ecc", "freq_k"),
                                       dodge_width = 0.3,
+                                      summary_function = median,
                                       pt_size_range = c(1.5, 4)) {
   # TODO check the colors and the vertical lines, try to help the user
   if (length(colour_information) > 1) {
@@ -708,7 +709,7 @@ plot_k_resolution_corresp <- function(clust_object,
     temp_appereances$freq_k <- temp_appereances$freq_k / n_runs
     temp_appereances$ecc <- unlist(lapply(res_object, function(x) {
       sapply(x$clusters, function(k) {
-        mean(k$ecc)
+        summary_function(k$ecc)
       })
     }))
 
@@ -818,6 +819,7 @@ plot_k_n_partitions <- function(clust_object,
                                 colour_information = c("ecc", "freq_part"),
                                 dodge_width = 0.3,
                                 pt_size_range = c(1.5, 4),
+                                summary_function = median,
                                 y_step = 5) {
   if (length(colour_information) > 1) {
     colour_information <- colour_information[1]
@@ -858,7 +860,7 @@ plot_k_n_partitions <- function(clust_object,
     }))
     unique_parts_temp[["freq_part"]] <- unique_parts_temp$first.occ / unique_parts_temp$total.occ
     unique_parts_temp[["ecc"]] <- sapply(partition_object, function(x) {
-      mean(x$ecc)
+      summary_function(x$ecc)
     })
     overall_total_occ <- sum(unique_parts_temp$total.occ)
     unique_parts_temp[["frequency_k"]] <- unique_parts_temp$total.occ / overall_total_occ
