@@ -1,4 +1,5 @@
 #' @importFrom foreach %dopar%
+#' @importFrom foreach %do%
 NULL
 
 #' The Element-Centric Clustering Similarity
@@ -844,8 +845,7 @@ element_sim_matrix <- function(clustering_list,
                                rescale_path_type = "max",
                                ppr_implementation = "prpack",
                                dist_rescaled = FALSE,
-                               row_normalize = TRUE,
-                               ncores = 1) {
+                               row_normalize = TRUE) {
   if (!(output_type %in% c("data.frame", "matrix"))) {
     stop("output_type must be data.frame or matrix.")
   }
@@ -868,7 +868,6 @@ element_sim_matrix <- function(clustering_list,
   if (all(are_all_flat_disjoint == TRUE)) {
     return(element_sim_matrix_flat_disjoint(
       mb_list = clustering_list,
-      ncores = ncores,
       alpha = alpha,
       output_type = output_type
     ))
@@ -876,7 +875,6 @@ element_sim_matrix <- function(clustering_list,
 
   clustering_list <- create_clustering_list(
     object_list = clustering_list,
-    ncores = ncores,
     alpha = alpha,
     r = r,
     rescale_path_type = rescale_path_type,
@@ -914,7 +912,7 @@ element_sim_matrix <- function(clustering_list,
 }
 
 # calculate the similarity matrix when all the objects are flat disjoint memberships
-element_sim_matrix_flat_disjoint <- function(mb_list, ncores = 1, alpha = 0.9, output_type = "matrix") {
+element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type = "matrix") {
   if (!(output_type %in% c("data.frame", "matrix"))) {
     stop("output_type must be data.frame or matrix.")
   }
@@ -927,19 +925,6 @@ element_sim_matrix_flat_disjoint <- function(mb_list, ncores = 1, alpha = 0.9, o
     (i + 1):n_clusterings
   }))
   n_combinations <- n_clusterings * (n_clusterings - 1) / 2
-  ncores <- min(ncores, n_combinations, parallel::detectCores())
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   sim_matrix_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-  #   doParallel::registerDoParallel(cl = sim_matrix_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
 
   i <- NA
 
@@ -951,11 +936,6 @@ element_sim_matrix_flat_disjoint <- function(mb_list, ncores = 1, alpha = 0.9, o
       alpha
     ))
   }
-
-  # if (ncores > 1) {
-  #   # terminate the processes if a parallel backend was created
-  #   parallel::stopCluster(cl = sim_matrix_cluster)
-  # }
 
   sim_matrix <- matrix(NA, nrow = n_clusterings, ncol = n_clusterings)
   sim_matrix[lower.tri(sim_matrix, diag = FALSE)] <- ecs_values
@@ -1053,7 +1033,6 @@ merge_identical_partitions <- function(clustering_list,
 # merge the partitions when the ecs threshold is not 1
 merge_partitions_ecs <- function(partition_list,
                                  ecs_thresh = 0.99,
-                                 ncores = 1,
                                  order = TRUE) {
   partition_groups <- list()
   nparts <- length(partition_list)
@@ -1066,8 +1045,7 @@ merge_partitions_ecs <- function(partition_list,
   sim_matrix <- element_sim_matrix_flat_disjoint(
     lapply(partition_list, function(x) {
       x$mb
-    }),
-    ncores = ncores
+    })
   )
 
   for (i in 1:nparts) {
@@ -1159,18 +1137,11 @@ merge_partitions_ecs <- function(partition_list,
 #' merge_partitions(initial_list, 1)
 merge_partitions <- function(partition_list,
                              ecs_thresh = 1,
-                             ncores = 1,
                              order = TRUE) {
   # check the parameters
   if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
     stop("ecs_thresh parameter should be numeric")
   }
-
-  if (!is.numeric(ncores) || length(ncores) > 1) {
-    stop("ncores parameter should be numeric")
-  }
-  # convert ncores to an integer
-  ncores <- as.integer(ncores)
 
   if (!is.logical(order)) {
     stop("order parameter should be logical")
@@ -1186,22 +1157,21 @@ merge_partitions <- function(partition_list,
     })
   } else {
     if ("partitions" %in% names(partition_list)) { # the list contains the partition field, created by `get_resolution_importance` method
-      part_list <- merge_partitions(partition_list$partitions, ecs_thresh, ncores, order)
+      part_list <- merge_partitions(partition_list$partitions, ecs_thresh, order)
       ec_consistency <- weighted_element_consistency(
         lapply(part_list, function(x) {
           x$mb
         }),
         sapply(part_list, function(x) {
           x$freq
-        }),
-        ncores = ncores
+        })
       )
 
       return(list(partitions = part_list, ecc = ec_consistency))
     }
     if (!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
       return(lapply(partition_list, function(sublist) {
-        merge_partitions(sublist, ecs_thresh, ncores, order)
+        merge_partitions(sublist, ecs_thresh, order)
       }))
     }
   }
@@ -1212,7 +1182,7 @@ merge_partitions <- function(partition_list,
   }
 
   # otherwise merge the partitions using the `merge_partitions_ecs` function
-  merge_partitions_ecs(partition_list, ecs_thresh, ncores = ncores, order = order)
+  merge_partitions_ecs(partition_list, ecs_thresh, order = order)
 }
 
 #' Element-Wise Consistency Between a Set of Clusterings
@@ -1259,8 +1229,7 @@ element_consistency <- function(clustering_list,
                                 rescale_path_type = "max",
                                 ppr_implementation = "prpack",
                                 dist_rescaled = FALSE,
-                                row_normalize = TRUE,
-                                ncores = 1) {
+                                row_normalize = TRUE) {
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint <- sapply(clustering_list, function(x) {
     any(class(x) %in% c("numeric", "integer", "factor", "character"))
@@ -1280,8 +1249,7 @@ element_consistency <- function(clustering_list,
     # merge the identical partitions into the same object
     final_clustering_list <- merge_partitions(
       partition_list = clustering_list,
-      ecs_thresh = 1,
-      ncores = ncores
+      ecs_thresh = 1
     )
     return(weighted_element_consistency(
       clustering_list = lapply(final_clustering_list, function(x) {
@@ -1289,14 +1257,12 @@ element_consistency <- function(clustering_list,
       }),
       weights = sapply(final_clustering_list, function(x) {
         x$freq
-      }),
-      ncores = ncores
+      })
     ))
   }
 
   clustering_list <- create_clustering_list(
     object_list = clustering_list,
-    ncores = ncores,
     alpha = alpha,
     r = r,
     rescale_path_type = rescale_path_type,
@@ -1322,8 +1288,7 @@ element_consistency <- function(clustering_list,
 
 # calculate the element consistency of a list of clusterings where each object has a weight
 weighted_element_consistency <- function(clustering_list,
-                                         weights = NULL,
-                                         ncores = 1) {
+                                         weights = NULL) {
   n_clusterings <- length(clustering_list)
 
   if (n_clusterings == 1) {
@@ -1343,21 +1308,6 @@ weighted_element_consistency <- function(clustering_list,
   n_combinations <- n_clusterings * (n_clusterings - 1) / 2
   needed_vars <- c("first_index", "second_index", "clustering_list", "weights")
 
-  ncores <- min(ncores, n_combinations, parallel::detectCores())
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
-
   all_vars <- ls()
   # calculate the ecs between each pair of distinct partitions and multiply the
   # results by their weights
@@ -1368,17 +1318,12 @@ weighted_element_consistency <- function(clustering_list,
     .inorder = FALSE,
     .packages = c("ClustAssess"),
     .combine = "+"
-  ) %dopar% {
+  ) %do% {
     element_sim_elscore(
       clustering_list[[first_index[i]]],
       clustering_list[[second_index[i]]]
     ) * weights[first_index[i]] * weights[second_index[i]]
   }
-
-  # if (ncores > 1) {
-  #   # delete the parallel processes if the backend was created
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
 
   # if the weight of a partition is bigger than one, that means we would have
   # comparison between a partition and itself
@@ -1448,8 +1393,7 @@ element_agreement <- function(reference_clustering,
                               rescale_path_type = "max",
                               ppr_implementation = "prpack",
                               dist_rescaled = FALSE,
-                              row_normalize = TRUE,
-                              ncores = 1) {
+                              row_normalize = TRUE) {
   # check if all objects are flat disjoint membership vectors
   are_all_flat_disjoint <- sapply(clustering_list, function(x) {
     any(class(x) %in% c("numeric", "integer", "factor", "character"))
@@ -1465,8 +1409,7 @@ element_agreement <- function(reference_clustering,
     return(element_agreement_flat_disjoint(
       reference_clustering = reference_clustering,
       clustering_list = clustering_list,
-      alpha = alpha,
-      ncores = ncores
+      alpha = alpha
     ))
   }
 
@@ -1478,7 +1421,6 @@ element_agreement <- function(reference_clustering,
 
   clustering_list <- create_clustering_list(
     object_list = clustering_list,
-    ncores = ncores,
     alpha = alpha,
     r = r,
     rescale_path_type = rescale_path_type,
@@ -1527,28 +1469,13 @@ element_agreement <- function(reference_clustering,
 # are flat disjoint membership vectors
 element_agreement_flat_disjoint <- function(reference_clustering,
                                             clustering_list,
-                                            alpha = 0.9,
-                                            ncores = 1) {
+                                            alpha = 0.9) {
   n_points <- length(reference_clustering)
   for (mb_vector in clustering_list) {
     if (length(mb_vector) != n_points) {
       stop("The partitions do not have the same length")
     }
   }
-
-  ncores <- min(ncores, length(clustering_list), parallel::detectCores())
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
 
   obj <- NA
 
@@ -1558,42 +1485,21 @@ element_agreement_flat_disjoint <- function(reference_clustering,
     obj = clustering_list,
     .export = c("corrected_l1_mb", "create_clu2elm_dict"),
     .combine = "+"
-  ) %dopar% {
+  ) %do% {
     corrected_l1_mb(reference_clustering, obj, alpha)
   }
-
-  # if (ncores > 1) {
-  #   # terminate the processes if a parallel backend was created
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
 
   return(avg_agreement / length(clustering_list))
 }
 
 # create a list of Clustering objects
 create_clustering_list <- function(object_list,
-                                   ncores = 1,
                                    alpha = 0.9,
                                    r = 1,
                                    rescale_path_type = "max",
                                    ppr_implementation = "prpack",
                                    dist_rescaled = FALSE,
                                    row_normalize = TRUE) {
-  ncores <- min(ncores, length(object_list), parallel::detectCores())
-
-  # if (ncores > 1) {
-  #   # create a parallel backend
-  #   my_cluster <- parallel::makeCluster(
-  #     ncores,
-  #     type = "PSOCK"
-  #   )
-
-  #   doParallel::registerDoParallel(cl = my_cluster)
-  # } else {
-  #   # create a sequential backend
-  #   foreach::registerDoSEQ()
-  # }
-
   obj <- NA
   clustering_list <- foreach::foreach(
     obj = object_list,
@@ -1625,11 +1531,6 @@ create_clustering_list <- function(object_list,
       alpha = alpha
     )
   }
-
-  # if (ncores > 1) {
-  #   # terminate the processes if a parallel backend was created
-  #   parallel::stopCluster(cl = my_cluster)
-  # }
 
   return(clustering_list)
 }

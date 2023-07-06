@@ -650,8 +650,7 @@ assess_nn_stability_pca <- function(embedding,
         lapply(partitions_list_temp, function(x) {
           x[[i]]
         }),
-        ecs_thresh = ecs_thresh,
-        ncores = ncores
+        ecs_thresh = ecs_thresh
       )
     }
   }
@@ -856,8 +855,7 @@ assess_nn_stability_umap <- function(embedding,
         }),
         sapply(n_neigh, function(x) {
           x$freq
-        }),
-        ncores = 1
+        })
       )
     })
   })

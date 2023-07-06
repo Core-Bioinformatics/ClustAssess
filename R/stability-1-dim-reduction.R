@@ -351,8 +351,7 @@ assess_feature_stability <- function(data_matrix,
           }),
           sapply(partitions_list[[step]][[r]], function(x) {
             x$freq
-          }),
-          ncores = 1 # NOTE ECS should be fast enough without parallelization
+          }) # NOTE ECS should be fast enough without parallelization
         ),
         most_frequent_partition = partitions_list[[step]][[r]][[1]],
         n_different_partitions = length(partitions_list[[step]][[r]])
