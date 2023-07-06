@@ -522,7 +522,7 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
       position = ggplot2::position_dodge(width = dodge_width),
       size = text_size
     ) +
-    # ggplot2::theme_classic() +
+    ggplot2::theme_classic() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
     ggplot2::xlab("# features") +
     ggplot2::ylab("EC consistency") +
