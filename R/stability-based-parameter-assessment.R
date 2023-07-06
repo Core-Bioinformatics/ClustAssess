@@ -81,7 +81,6 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' @md
 #' @export
 automatic_stability_assessment <- function(expression_matrix, # expr matrix
-                                           n_cores,
                                            n_repetitions,
                                            n_neigh_sequence,
                                            resolution_sequence,
@@ -538,6 +537,13 @@ create_monocle_object <- function(normalized_expression_matrix,
     expression_data = count_matrix,
     cell_metadata = metadata,
     gene_metadata = data.frame("gene_short_name" = gene_names, row.names = gene_names)
+  )
+
+  monocle_cds <- monocle3::preprocess_cds(
+    cds = monocle_cds,
+    num_dim = ncol(clustassess_object$pca),
+    norm_method = "none",
+    scaling = FALSE
   )
 
   monocle_cds@assays@data$normalized_data <- normalized_expression_matrix
