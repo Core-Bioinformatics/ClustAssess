@@ -12,8 +12,7 @@ element_agreement(
   rescale_path_type = "max",
   ppr_implementation = "prpack",
   dist_rescaled = FALSE,
-  row_normalize = TRUE,
-  ncores = 1
+  row_normalize = TRUE
 )
 }
 \arguments{

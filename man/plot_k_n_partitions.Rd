@@ -9,6 +9,7 @@ plot_k_n_partitions(
   colour_information = c("ecc", "freq_part"),
   dodge_width = 0.3,
   pt_size_range = c(1.5, 4),
+  summary_function = median,
   y_step = 5
 )
 }

@@ -4,17 +4,17 @@
 \alias{merge_partitions}
 \title{Merge Partitions}
 \usage{
-merge_partitions(partition_list, ecs_thresh = 1, ncores = 1, order = TRUE)
+merge_partitions(partition_list, ecs_thresh = 1, order = TRUE)
 }
 \arguments{
 \item{partition_list}{A list of flat disjoint membership vectors.}
 
 \item{ecs_thresh}{A numeric: the ecs threshold.}
 
+\item{order}{A logical: if TRUE, order the partitions based on their frequencies.}
+
 \item{ncores}{The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.}
-
-\item{order}{A logical: if TRUE, order the partitions based on their frequencies.}
 }
 \value{
 a list of the merged partitions

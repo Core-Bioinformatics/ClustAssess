@@ -8,6 +8,7 @@ plot_k_resolution_corresp(
   clust_object,
   colour_information = c("ecc", "freq_k"),
   dodge_width = 0.3,
+  summary_function = median,
   pt_size_range = c(1.5, 4)
 )
 }

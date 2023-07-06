@@ -6,7 +6,6 @@
 \usage{
 automatic_stability_assessment(
   expression_matrix,
-  n_cores,
   n_repetitions,
   n_neigh_sequence,
   resolution_sequence,
