@@ -1,0 +1,106 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+`ClustAssess` provide the option to run the entire stability pipeline automatically, by choosing the parameters based on their highest stability.
+Another useful feature is the option to create, based on this object, a shiny app that user can interact with and perform the assessment of the PhenoGraph configuration and of the clusters.
+
+```{r}
+library(Matrix)
+library(Seurat)
+library(readr)
+library(ggplot2)
+library(ClustAssess)
+library(patchwork)
+packageVersion("ClustAssess") # should be 0.4.1
+
+```
+
+Read the cuomo object from the previous vignette
+
+```{r read}
+cuomo <- readRDS("cuomo_object.rds")
+```
+
+Initialise the parallel backend.
+
+```{r}
+RhpcBLASctl::blas_set_num_threads(1)
+ncores <- 8
+my_cluster <- parallel::makeCluster(
+  ncores,
+  type = "PSOCK"
+)
+
+doParallel::registerDoParallel(cl = my_cluster)
+```
+
+Define the feature sets of interest.
+
+```{r feature_sets}
+features <- dimnames(cuomo@assays$RNA)[[1]]
+var_features <- cuomo@assays[["RNA"]]@var.features
+n_abundant <- 3000
+most_abundant_genes <- rownames(cuomo@assays$RNA)[order(Matrix::rowSums(cuomo@assays$RNA),
+  decreasing = TRUE
+)]
+
+steps <- seq(from = 500, to = 3000, by = 500)
+ma_hv_genes_intersection_sets <- sapply(steps, function(x) intersect(most_abundant_genes[1:x], var_features[1:x]))
+ma_hv_genes_intersection <- Reduce(union, ma_hv_genes_intersection_sets)
+ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
+```
+
+Apply the automatic assessment.
+
+```{r}
+automm_output = automatic_stability_assessment(expression_matrix = cuomo@assays$RNA@scale.data,
+                                             n_repetitions = 10,
+                                             temp_file = "clustassess_temp.rds",
+                                             n_neigh_sequence = seq(from = 5, to = 50, by = 5),
+                                             resolution_sequence = seq(from = 0.1, to = 2, by = 0.1),
+                                             features_sets = list(
+                                               "HV" = var_features,
+                                               "MA" = most_abundant_genes[1:3000],
+                                               "MA_HV" = ma_hv_genes_intersection
+                                             ),
+                                             steps = list(
+                                               "HV" = steps,
+                                               "MA" = steps,
+                                               "MA_HV" = ma_hv_steps
+                                             ),
+                                             n_top_configs = 2,
+                                             npcs = 30,
+                                             umap_arguments = list(
+                                              min_dist = 0.3,
+                                              n_neighbors = 30,
+                                              metric = "cosine",
+                                              init = "spca"
+                                             )
+)
+```
+
+Close the connections opened when using multiple cores.
+```{r}
+foreach::registerDoSEQ()
+```
+
+Create the shiny app based on the ClustAssess output.
+*Note*: Please make sure that the directory mentioned in the parameter `project_folder` is empty / doesn't exist.
+
+```{r}
+write_shiny_app(
+  seurat_object = cuomo,
+  assay_name = "RNA",
+  clustassess_object = autom_output,
+  project_folder = "test_clustassess"
+)
+```
+
+The app can be run using the following command.
+
+```{r eval = FALSE}
+shiny::runApp("test_clustassess")
+```
+
