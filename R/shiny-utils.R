@@ -273,6 +273,7 @@ metadata_plot <- function(embedding,
                           pch = '.',
                           text_size = 1,
                           axis_size = 1,
+                          sort_cells = c("original", "highest", "lowest"),
                           display_legend = FALSE,
                           predicted_height = NULL,
                           labels = FALSE) {
@@ -293,6 +294,7 @@ metadata_plot <- function(embedding,
     pch = pch,
     text_size = text_size,
     axis_size = axis_size,
+    sort_cells = sort_cells,
     display_legend = display_legend,
     predicted_height = predicted_height,
     labels = labels
@@ -404,6 +406,7 @@ color_plot2 <- function(embedding,
                         text_size = 1,
                         legend_text_size = 1,
                         axis_size = 1,
+                        sort_cells = c("original", "highest", "lowest"),
                         display_legend = FALSE,
                         predicted_height = NULL,
                         labels = FALSE) {
@@ -418,7 +421,18 @@ color_plot2 <- function(embedding,
   plt_height <- plt_height / ppi 
   plt_width <- plt_width / ppi
   
-  is_continuous <- is.null(unique_values) 
+  is_continuous <- is.null(unique_values)
+
+   if (!is_continuous) {
+    sort_cells <- "original"
+  }
+
+  cell_ordering <- switch(
+    sort_cells[1],
+    "original" = seq_len(nrow(embedding)),
+    "highest" = order(color_info, decreasing = FALSE),
+    "lowest" = order(color_info, decreasing = TRUE)
+  )
   
   if (display_legend) {
     if(is_continuous) {
@@ -509,10 +523,12 @@ color_plot2 <- function(embedding,
     colrs <- color_values[color_info]
   }
 
+ 
+
   plot(
-    embedding,
+    embedding[cell_ordering, ],
     pch = pch,
-    col = colrs,
+    col = colrs[cell_ordering],
     cex = pt_size,
     xlab = "UMAP_1",
     ylab = "UMAP_2",
@@ -800,10 +816,6 @@ identify_cluster_markers <- function(
   mean_function_name = "logNormalize",
   features = NULL
 ) {
-  print("a")
-  print(mean_functions[[mean_function_name]])
-  print(cells1_name)
-  print(cells2_name)
   foldchange_result <- Seurat::FoldChange(
     object = expression_matrix,
     cells.1 = cells1_name,
@@ -812,7 +824,6 @@ identify_cluster_markers <- function(
     mean.fxn = mean_functions[[mean_function_name]],
     fc.name = ifelse(mean_function_name == "rowMeans", "avg_diff", "avg_log2FC")
   )
-  print("b")
 
   markers_result <- Seurat::FindMarkers(
     object = pkg_env$expression_matrix,
@@ -869,6 +880,86 @@ render_plot_by_height <- function(id, session) {
   })
 }
 
+calculate_markers_shiny <- function(cells1,
+                                    cells2,
+                                    logfc_threshold = 0,
+                                    min_pct_threshold = 0.1,
+                                    average_expression_threshold = 0,
+                                    min_diff_pct_threshold = -Inf,
+                                    rank_matrix = NULL,
+                                    feature_names = NULL,
+                                    used_slot = "data",
+                                    norm_method = "LogNormalize",
+                                    pseudocount_use = 1,
+                                    base = 2) {
+
+  cells2 <- setdiff(cells2, cells1)
+
+  if (length(cells2) == 0 || length(cells1) == 0) {
+    warning("One of the cell groups is empty!")
+    return()
+  }
+
+  average_expressions <- rhdf5::h5read("expression.h5", "average_expression")
+  nfiltered_genes <- sum(average_expressions >= average_expression_threshold)
+  chunk_size <- as.integer(rhdf5::h5read("expression.h5", "chunk_size"))
+  genes <- rhdf5::h5read("expression.h5", "genes")[seq_len(nfiltered_genes)]
+
+  average_expressions <- average_expressions[seq_len(nfiltered_genes)]
+  names(average_expressions) <- genes
+
+  nchunks <- ceiling(nfiltered_genes / chunk_size)
+  print(glue::glue("[{Sys.time()}] Start DEG analysis"))
+  df_list <- lapply(
+      seq_len(nchunks),
+      function(i) {
+        # print(i)
+          if (i == nchunks) {
+            index_list <- seq(from = chunk_size * (i - 1) + 1, by = 1, to = nfiltered_genes)
+          } else {
+            index_list <- seq(from = chunk_size * (i - 1) + 1, by = 1, length.out = chunk_size)
+          }
+          calculate_markers(
+            expression_matrix = rhdf5::h5read(
+              "expression.h5",
+              "expression_matrix",
+              index = list(index_list, NULL)
+            ),
+            rank_matrix = rhdf5::h5read(
+              "expression.h5",
+              "rank_matrix",
+              index = list(index_list, NULL)
+            ),
+            cells1 = cells1,
+            cells2 = cells2,
+            logfc_threshold = logfc_threshold,
+            min_pct_threshold = min_pct_threshold,
+            min_diff_pct_threshold  = min_diff_pct_threshold,
+            feature_names = genes[index_list],
+            used_slot = used_slot,
+            norm_method = norm_method,
+            pseudocount_use = pseudocount_use,
+            base = base,
+            check_cells_set_diff = FALSE,
+            adjust_pvals = FALSE
+            # calculate_pvals = FALSE
+          )
+      }
+  )
+  df_list <- dplyr::bind_rows(df_list)
+  df_list$p_val_adj <- p.adjust(
+      p = df_list$p_val,
+      method = "bonferroni",
+      n = nfiltered_genes
+    )
+  df_list$avg_expr <- average_expressions[df_list$gene]
+
+  print(glue::glue("[{Sys.time()}] DEG analysis - Done"))
+
+  
+  df_list
+}
+
 #' Calculate markers
 #'
 #' @description to be completed
@@ -885,18 +976,25 @@ calculate_markers <- function(expression_matrix,
                               used_slot = "data",
                               norm_method = "LogNormalize",
                               pseudocount_use = 1,
-                              base = 2) {
+                              base = 2,
+                              adjust_pvals = TRUE,
+                              check_cells_set_diff = TRUE) {
   
-  print(Sys.time())
   default_mean_fxn <- function(x) {
     return(log(x = rowMeans(x = x) + pseudocount_use, base = base))
   }
 
   if (is.null(feature_names)) {
-    feature_names <- rownames(expression_matrix)
+    if (is.null(rownames(expression_matrix))) {
+      rownames(expression_matrix) <- paste0("gene_", seq_len(nrow(expression_matrix)))
+    }
+  } else {
+    rownames(expression_matrix) <- feature_names
   }
 
-  cells2 <- setdiff(cells2, cells1)
+  if (check_cells_set_diff) {
+    cells2 <- setdiff(cells2, cells1)
+  }
 
   if (length(cells2) == 0 || length(cells1) == 0) {
     return()
@@ -939,6 +1037,8 @@ calculate_markers <- function(expression_matrix,
                 pct_diff >= min_diff_pct_threshold &
                 abs(fc_results[ , 1]) >= logfc_threshold)
 
+  # print(glue::glue("Length mask {length(mask)}"))
+
   if (length(mask) == 0) {
     return(data.frame())
   }
@@ -949,28 +1049,38 @@ calculate_markers <- function(expression_matrix,
 
   # return(expression_matrix)
 
-  if (!is.matrix(rank_matrix)) {
-    print(Sys.time())
+  if (is.null(rank_matrix)) {
     rank_matrix <- matrix(nrow = nrow(expression_matrix), ncol = ncol(expression_matrix))
 
     for (i in seq_len(nrow(expression_matrix))) {
       rank_matrix[i, ] <- rank(expression_matrix[i, ], ties.method = "min")
     }
-    print(Sys.time())
   } else {
     rank_matrix <- rank_matrix[mask, indices]
   }
 
-  fc_results$p_val <- wilcox_test(rank_matrix, length(cells1), max(rank_matrix))
-  print(Sys.time())
-  fc_results$gene <- feature_names
-  fc_results$p_val_adj <- p.adjust(
-    p = fc_results$p_val,
-    method = "bonferroni",
-    n = n 
-  )
+  if (length(mask) == 1) {
+    # expression_matrix <- matrix(expression_matrix, nrow = 1)
+    rank_matrix <- matrix(rank_matrix, nrow = 1)
+  }
 
-  fc_results <- fc_results[, c(5, 1, 2, 3, 4, 6)]
+
+  fc_results$gene <- feature_names
+  fc_results$p_val <- wilcox_test(rank_matrix, length(cells1), max(rank_matrix))
+
+  if (adjust_pvals) {
+    fc_results$p_val_adj <- p.adjust(
+      p = fc_results$p_val,
+      method = "bonferroni",
+      n = n
+    )
+
+    fc_results <- fc_results[, c(4, 1, 2, 3, 5, 6)]
+
+    return(fc_results)
+  }
+
+  fc_results <- fc_results[, c(4, 1, 2, 3, 5)]
 
   return(fc_results)
 }
@@ -1018,7 +1128,7 @@ gear_overall <- function(ns, id) {
   )
 }
 
-gear_umaps <- function(ns, id, discrete = TRUE) {
+gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
   shinyWidgets::dropdownButton(
     shiny::tagList(
       if (discrete) { 
@@ -1047,6 +1157,12 @@ gear_umaps <- function(ns, id, discrete = TRUE) {
         inputId = ns(paste0(id, "_pt_type")),
         label = "Point type",
         choices = c("Pixel", "Circle")
+      ),
+      shinyWidgets::radioGroupButtons(
+        inputId = ns(paste0(id, "_pt_order")),
+        label = "Point ordering",
+        choices = c("original", "highest", "lowest"),
+        selected = default_order
       ),
       if (discrete) {
         shinyWidgets::prettySwitch(
