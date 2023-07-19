@@ -10,6 +10,8 @@ write_objects(
   metadata,
   project_folder = ".",
   compression_level = 6,
+  chunk_size = 100,
+  gene_variance_threshold = 0,
   summary_function = median,
   qualpalr_colorspace = "pretty"
 )

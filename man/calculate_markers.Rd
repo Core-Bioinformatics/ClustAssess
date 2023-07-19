@@ -16,7 +16,9 @@ calculate_markers(
   used_slot = "data",
   norm_method = "LogNormalize",
   pseudocount_use = 1,
-  base = 2
+  base = 2,
+  adjust_pvals = TRUE,
+  check_cells_set_diff = TRUE
 )
 }
 \description{
