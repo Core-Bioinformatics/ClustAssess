@@ -117,14 +117,22 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session) {
         ggplot2::theme_set(ggplot2::theme_classic())
         add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
       
-        genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
-        index <- seq_along(genes)
-        names(index) <- genes
-        add_env_variable("genes_of_interest", index)
-        genes <- rhdf5::h5read("expression.h5", "genes_others")
-        index <- seq_along(genes)
-        names(index) <- genes
-        add_env_variable("genes_others", index)
+        if ("genes" %in% rhdf5::h5ls("expression.h5")$name) {
+          genes <- rhdf5::h5read("expression.h5", "genes")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes", index)
+        } else { # for backwards-compatibility purposes
+          genes <- rhdf5::h5read("expression.h5", "genes_of_interest")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes_of_interest", index)
+          genes <- rhdf5::h5read("expression.h5", "genes_others")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes_others", index)
+        }
+
         rm(genes)
         rm(index)
         # gc()

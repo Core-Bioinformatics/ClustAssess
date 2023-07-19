@@ -5,12 +5,22 @@ ui_comparison_markers <- function(id) {
 
   shiny::tagList(
     shiny::h2("Identification of markers"),
+    shiny::splitLayout(
+      cellWidths = c("90%", "10%"),
+      shiny::plotOutput(ns("avg_expression_violin")),
+      shiny::tableOutput(ns("avg_expression_table"))
+    ),
     shinyWidgets::dropdownButton(
       shiny::tagList(
         shiny::sliderInput(
           inputId = ns("logfc"),
           label = "logFC threshold",
-          min = 0.00, max = 10.00, value = 0.50, step = 0.1
+          min = 0.00, max = 10.00, value = 0.50, step = 0.01
+        ),
+        shiny::sliderInput(
+          inputId = ns("avg_expr_thresh"),
+          label = "Average expression threshold",
+          min = 0.00, max = 0.01, value = 0.00
         ),
         shiny::sliderInput(
           inputId = ns("min_pct"),
@@ -160,7 +170,7 @@ ui_comparison_gene_panel <- function(id, draw_line) {
     ),
     shiny::splitLayout(
       cellWidths = c("40px", "40px"),
-      gear_umaps(ns, "gene"),
+      gear_umaps(ns, "gene", FALSE, "highest"),
       gear_download(ns, "gene", "gene"),
     ),
     shiny::plotOutput(ns("umap_gene"), height = "auto"),
@@ -252,6 +262,39 @@ server_comparison_markers <- function(id, k_choices) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
+
+      if ("genes" %in% names(pkg_env)) { # for backward-compatibility purposes
+        output$avg_expression_violin <- shiny::renderPlot(
+          {
+            vioplot::vioplot(
+              x = rhdf5::h5read("expression.h5", "average_expression"),
+              horizontal = TRUE,
+              xlab = "Average expression",
+              main = "Average gene expression",
+              ylab = "",
+              xaxt = "n"
+            )
+          }
+        )
+
+        avg_stats <- fivenum(rhdf5::h5read("expression.h5", "average_expression"))
+
+        output$avg_expression_table <- shiny::renderTable({
+          data.frame(
+            row.names = c("min", "Q1", "median", "Q3", "max"),
+            b = avg_stats
+          )
+        }, colnames = FALSE, rownames = TRUE)
+
+        shiny::updateSliderInput(
+          session = session,
+          inputId = "avg_expr_thresh",
+          min = round(avg_stats[1], digits = 3),
+          max = round(avg_stats[5], digits = 3),
+          step = 0.01
+        )
+      }
+
       # it would be nice to have gene umaps
       shinyjs::html("marker_text", "Warning: Enabling DEG analysis will results into loading the memory. This process might take some time.")
       shinyjs::hide("group_left-select_k_markers")
@@ -273,11 +316,13 @@ server_comparison_markers <- function(id, k_choices) {
         # print(pkg_env$pressed_button)
         shinyjs::html("marker_text", "Preparing the objects for the analysis...")
 
-        expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL))
-        rownames(expr_matrix) <- pkg_env$used_genes
-        # TODO check if you really need to read the rank matrix i.e. check if calculating the rank matrix on the fly would be faster
-        add_env_variable("rank_matrix", rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL)))
-        add_env_variable("expr_matrix", expr_matrix)
+        if (!("genes" %in% names(pkg_env))) {
+          expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL))
+          rownames(expr_matrix) <- pkg_env$used_genes
+
+          add_env_variable("rank_matrix", rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL)))
+          add_env_variable("expr_matrix", expr_matrix)
+        }
         # waiter::waiter_hide()
         shinyjs::hide("enable_markers")
         shinyjs::show("group_left-select_k_markers")
@@ -318,15 +363,28 @@ server_comparison_markers <- function(id, k_choices) {
         cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
         cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
 
-        markers_result <- calculate_markers(
-          expression_matrix = pkg_env$expr_matrix, # expression matrix
-          cells1 = cells_index_left,
-          cells2 = cells_index_right,
-          rank_matrix = pkg_env$rank_matrix, # rank matrix
-          norm_method = ifelse(input$norm_type, "LogNormalize", ""),
-          min_pct_threshold = input$min_pct,
-          logfc_threshold = input$logfc
-        ) %>% dplyr::filter(.data$p_val_adj <= input$pval)
+        if ("genes" %in% names(pkg_env)) {
+            markers_result <- calculate_markers_shiny(
+            cells1 = cells_index_left,
+            cells2 = cells_index_right,
+            norm_method = ifelse(input$norm_type, "LogNormalize", ""),
+            used_slot = "data",
+            min_pct_threshold = input$min_pct,
+            logfc_threshold = input$logfc,
+            average_expression_threshold = input$avg_expr_thresh
+          ) #%>% dplyr::filter(.data$p_val_adj <= input$pval)
+        } else { # for backward-compatibility reasons
+          markers_result <- calculate_markers(
+            expression_matrix = pkg_env$expr_matrix, # expression matrix
+            cells1 = cells_index_left,
+            cells2 = cells_index_right,
+            rank_matrix = pkg_env$rank_matrix, # rank matrix
+            norm_method = ifelse(input$norm_type, "LogNormalize", ""),
+            min_pct_threshold = input$min_pct,
+            logfc_threshold = input$logfc
+          ) %>% dplyr::filter(.data$p_val_adj <= input$pval)
+        }
+
         shinyjs::show("markers_dt")
         shinyjs::show("markers_download_button")
         shinyjs::enable("markers_button")
@@ -498,6 +556,7 @@ server_comparison_metadata_panel <- function(id) {
           input$metadata_text_size
           input$metadata_labels
           input$metadata_pt_type
+          input$metadata_pt_order
           input$metadata_legend_size
           plt_height()
 
@@ -552,6 +611,7 @@ server_comparison_metadata_panel <- function(id) {
               display_legend = FALSE,
               pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
               pt_size = input$metadata_pt_size,
+              sort_cells = input$metadata_pt_order,
               text_size = input$metadata_text_size,
               axis_size = input$metadata_axis_size,
               labels = input$metadata_labels,
@@ -647,6 +707,14 @@ server_comparison_gene_panel <- function(id) {
     function(input, output, session) {
       gene_legend_height <- shiny::reactiveVal(0)
       expr_matrix <- shiny::reactive({
+        if ("genes" %in% names(pkg_env)) {
+          index_gene <- pkg_env$genes[input$gene_expr]
+          index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+
+          return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+        }
+
+        # for backward-compatibility purposes
         index_interest <- pkg_env$genes_of_interest[input$gene_expr]
         index_interest <- index_interest[!is.na(index_interest)]
 
@@ -701,6 +769,7 @@ server_comparison_gene_panel <- function(id) {
           input$gene_legend_size
           input$gene_axis_size
           input$gene_pt_size
+          input$gene_pt_order
 
           shiny::isolate({
             if (is.na(expr_threshold) || is.null(expr_threshold)) {
@@ -742,6 +811,7 @@ server_comparison_gene_panel <- function(id) {
             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
             pt_size = input$gene_pt_size,
             axis = input$gene_axis_size,
+            sort_cells = input$gene_pt_order,
             legend_text_size = input$gene_legend_size,
             text_size = input$gene_legend_size
           )
@@ -1009,12 +1079,18 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
           choices = c(colnames(pkg_env$metadata), paste0("stable_", k_values, "_clusters"), paste0("ecc_", k_values)),
           selected = paste0("stable_", k_values[1], "_clusters")
         )
+        
+        if ("genes" %in% names(pkg_env)) {
+          gene_choices <- names(pkg_env$genes)
+        } else { # for backward-compatibility purposes
+          gene_choices <- c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others))
+        }
+
         shiny::updateSelectizeInput(
           session,
           inputId = glue::glue("gene_panel_{panels}-gene_expr"),
-          choices = c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others)),
-          # selected = NULL,
-          selected = names(pkg_env$genes_of_interest[1]),
+          choices = gene_choices,
+          selected = gene_choices[1],
           server = TRUE,
           options = list(
             maxOptions = 7,

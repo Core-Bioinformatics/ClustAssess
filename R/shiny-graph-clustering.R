@@ -89,7 +89,7 @@ ui_graph_clustering_per_value_umap <- function(id) {
     ),
     shiny::splitLayout(
       cellWidths = c("40px", "300px"),
-      gear_umaps(ns, "clustering_umap"),
+      gear_umaps(ns, "clustering_umap", TRUE, "lowest"),
       shinyWidgets::pickerInput(
         inputId = ns("select_clusters"),
         choices = "",
@@ -700,6 +700,7 @@ server_graph_clustering_per_value_umap <- function(id) {
           input$clustering_umap_axis_size
           input$clustering_umap_legend_size
           input$clustering_umap_pt_size
+          input$clustering_umap_pt_order
           input$clustering_umap_pt_type
           input$select_method
           input$select_k
@@ -755,6 +756,7 @@ server_graph_clustering_per_value_umap <- function(id) {
               plt_height = plt_height(),
               plt_width = plt_height(),
               display_legend = FALSE,
+              sort_cells = input$clustering_umap_pt_order,
               pch = ifelse(input$clustering_umap_pt_type == "Pixel", ".", 19),
               pt_size = input$clustering_umap_pt_size,
               legend_text_size = input$clustering_umap_legend_size,

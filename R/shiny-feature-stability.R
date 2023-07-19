@@ -77,7 +77,7 @@ ui_dimensionality_stability <- function(id) {
           label = "Select the feature set size",
           choices = ""
         ),
-        gear_umaps(ns, "ecc_res_umap", FALSE),
+        gear_umaps(ns, "ecc_res_umap", FALSE, "lowest"),
         shiny::plotOutput(ns("umap_ecc"), height = "auto", width = "100%"),
         shiny::plotOutput(ns("umap_ecc_legend"), height = "auto", width = "100%"),
         shiny::tableOutput(ns("table_ecc_info"))
@@ -166,7 +166,7 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
     ),
     shiny::splitLayout(
       cellWidths = c("40px", "40px"),
-      gear_umaps(ns, "gene", FALSE)
+      gear_umaps(ns, "gene", FALSE, "highest")
     ),
     shiny::plotOutput(ns("umap_gene"), height = "auto"),
     shiny::plotOutput(ns("umap_gene_legend"), height = "auto"),
@@ -193,10 +193,9 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
         )
       )
     ),
-    shiny::splitLayout(
-      gear_umaps(ns, "metadata")
-      # gear_download(ns, "metadata", "metadata")
-    ),
+    # shiny::splitLayout(
+    gear_umaps(ns, "metadata", default_order = "highest"),
+    # ),
     shiny::plotOutput(ns("umap_metadata"), height = "auto"),
     shiny::plotOutput(ns("umap_metadata_legend"), height = "auto")
   )
@@ -356,6 +355,7 @@ server_dimensionality_stability <- function(id) {
             plt_width = plt_height(),
             axis_size = input$ecc_res_umap_axis_size,
             pt_size = input$ecc_res_umap_pt_size,
+            sort_cells = input$ecc_res_umap_pt_order,
             pch = ifelse(input$ecc_res_umap_pt_type == "Pixel", ".", 19),
             legend_text_size = input$ecc_res_umap_legend_size,
             text_size = input$ecc_res_umap_text_size
@@ -599,6 +599,14 @@ server_dimensionality_distribution <- function(id) {
 
 
       expr_matrix <- shiny::reactive({
+        if ("genes" %in% names(pkg_env)) {
+          index_gene <- pkg_env$genes[input$gene_expr]
+          index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+
+          return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+        }
+
+        # for backward-compatibility purposes
         index_interest <- pkg_env$genes_of_interest[input$gene_expr]
         index_interest <- index_interest[!is.na(index_interest)]
 
@@ -676,6 +684,7 @@ server_dimensionality_distribution <- function(id) {
           input$gene_legend_size
           input$gene_axis_size
           input$gene_pt_size
+          input$gene_pt_order
 
           shiny::isolate({
             if (is.na(expr_threshold) || is.null(expr_threshold)) {
@@ -723,6 +732,7 @@ server_dimensionality_distribution <- function(id) {
               pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
               pt_size = input$gene_pt_size,
               axis = input$gene_axis_size,
+              sort_cells = input$gene_pt_order,
               legend_text_size = input$gene_legend_size,
               text_size = input$gene_legend_size
             )
@@ -745,6 +755,7 @@ server_dimensionality_distribution <- function(id) {
           input$metadata_text_size
           input$metadata_labels
           input$metadata_pt_type
+          input$metadata_pt_order
           input$metadata_legend_size
           input$feature_type
           input$feature_steps
@@ -801,6 +812,7 @@ server_dimensionality_distribution <- function(id) {
               plt_width = plt_height(),
               pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
               pt_size = input$metadata_pt_size,
+              sort_cells = input$metadata_pt_order,
               text_size = input$metadata_text_size,
               axis_size = input$metadata_axis_size,
               labels = input$metadata_labels,
@@ -1027,12 +1039,17 @@ update_sliders <- function(session) {
       server = FALSE
     )
 
+    if ("genes" %in% names(pkg_env)) {
+      gene_choices <- names(pkg_env$genes)
+    } else { # for backward-compatibility purposes
+      gene_choices <- c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others))
+    }
+
     shiny::updateSelectizeInput(
       session,
       inputId = glue::glue("distribution_{panels}-gene_expr"),
-      choices = c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others)),
-      # selected = NULL,
-      selected = names(pkg_env$genes_of_interest[1]),
+      choices = gene_choices,
+      selected = gene_choices[1],
       server = TRUE,
       options = list(
         maxOptions = 7,
