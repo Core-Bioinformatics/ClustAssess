@@ -988,6 +988,8 @@ calculate_markers <- function(expression_matrix,
     if (is.null(rownames(expression_matrix))) {
       rownames(expression_matrix) <- paste0("gene_", seq_len(nrow(expression_matrix)))
     }
+
+    feature_names <- rownames(expression_matrix)
   } else {
     rownames(expression_matrix) <- feature_names
   }
