@@ -51,6 +51,7 @@ Imports:
     shinyWidgets,
     styler,
     uwot,
+    vioplot,
     viridis
 RoxygenNote: 7.2.3
 LinkingTo: 
