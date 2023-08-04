@@ -3,10 +3,10 @@
 
 algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
 algorithm_names_mapping <- list(
-  Louvain = 1,
-  Louvain.refined = 2,
-  SLM = 3,
-  Leiden = 4
+    Louvain = 1,
+    Louvain.refined = 2,
+    SLM = 3,
+    Leiden = 4
 )
 
 #' Merge Resolutions
@@ -25,66 +25,67 @@ algorithm_names_mapping <- list(
 #' `merged_partitions` with threshold 1 is applied.
 #'
 #' @md
-#' @keywords internal
 merge_resolutions <- function(res_obj,
                               object_name) {
-  clusters_obj <- list()
+    clusters_obj <- list()
+    ncores <- foreach::getDoParWorkers()
 
-  # concatenate all partitions having the same number of clusters into a list
-  for (res.val in names(res_obj)) {
-    for (k in names(res_obj[[res.val]]$clusters)) {
-      if (!(k %in% names(clusters_obj))) {
-        clusters_obj[[k]] <- res_obj[[res.val]]$clusters[[k]]$partitions
-      } else {
-        clusters_obj[[k]] <- c(
-          clusters_obj[[k]],
-          res_obj[[res.val]]$clusters[[k]]$partitions
-        )
-      }
+    # concatenate all partitions having the same number of clusters into a list
+    for (res.val in names(res_obj)) {
+        for (k in names(res_obj[[res.val]]$clusters)) {
+            if (!(k %in% names(clusters_obj))) {
+                clusters_obj[[k]] <- res_obj[[res.val]]$clusters[[k]]$partitions
+            } else {
+                clusters_obj[[k]] <- c(
+                    clusters_obj[[k]],
+                    res_obj[[res.val]]$clusters[[k]]$partitions
+                )
+            }
+        }
     }
-  }
 
-  k_vals <- names(clusters_obj)
+    k_vals <- names(clusters_obj)
 
-  all_vars <- ls()
-  needed_vars <- c("clusters_obj")
+    # if (ncores > 1) {
+    #     shared_clusters_obj <- SharedObject::share(clusters_obj)
+    # } else {
+    #     shared_clusters_obj <- clusters_obj
+    # }
 
-  i <- 1
+    all_vars <- ls()
+    needed_vars <- c("shared_clusters_obj")
 
-  merge_identical_partitions <- merge_identical_partitions
-  are_identical_memberships <- are_identical_memberships
+    i <- 1
 
+    # merge identical partitions from each list for a fixed k
+    clusters_obj <- foreach::foreach(
+        i = seq_along(clusters_obj),
+        .inorder = TRUE,
+        .noexport = all_vars[!(all_vars %in% needed_vars)]
+        # .export = c("merge_partitions", "merge_identical_partitions", "are_identical_memberships")
+    ) %do% {
+        ClustAssess::merge_partitions(clusters_obj[[i]], check_ties = TRUE)
+    }
 
-  # merge identical partitions from each list for a fixed k
-  clusters_obj <- foreach::foreach(
-    i = seq_along(clusters_obj),
-    .inorder = TRUE,
-    .noexport = all_vars[!(all_vars %in% needed_vars)],
-    .export = c("merge_identical_partitions", "are_identical_memberships")
-  ) %dopar% {
-    merge_identical_partitions(clusters_obj[[i]])
-  }
+    names(clusters_obj) <- k_vals
 
-  names(clusters_obj) <- k_vals
+    # for (k in names(clusters_obj)) {
+    #   clusters_obj[[k]] <- list(partitions = clusters_obj[[k]])
 
+    #   # compute the EC-consistency of the partition list
+    #   ec_consistency <- weighted_element_consistency(
+    #     lapply(clusters_obj[[k]]$partitions, function(x) {
+    #       x$mb
+    #     }),
+    #     sapply(clusters_obj[[k]]$partitions, function(x) {
+    #       x$freq
+    #     })
+    #   )
 
-  for (k in names(clusters_obj)) {
-    clusters_obj[[k]] <- list(partitions = clusters_obj[[k]])
+    #   clusters_obj[[k]][["ecc"]] <- ec_consistency
+    # }
 
-    # compute the EC-consistency of the partition list
-    ec_consistency <- weighted_element_consistency(
-      lapply(clusters_obj[[k]]$partitions, function(x) {
-        x$mb
-      }),
-      sapply(clusters_obj[[k]]$partitions, function(x) {
-        x$freq
-      })
-    )
-
-    clusters_obj[[k]][["ecc"]] <- ec_consistency
-  }
-
-  clusters_obj
+    clusters_obj
 }
 
 #' Assessment of Stability for Graph Clustering
@@ -128,17 +129,17 @@ merge_resolutions <- function(res_obj,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_clustering_overall_stability(clust_diff_obj)
 assess_clustering_stability <- function(graph_adjacency_matrix,
@@ -150,195 +151,201 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                                         verbose = TRUE,
                                         clustering_arguments = list(),
                                         ...) {
-  # BUG there are some performance issues, make sure the main runtime is caused by the clustering method
-  # TODO add leidenbase implementation for the algorithm = 4
-  ncores <- foreach::getDoParWorkers()
-  # check the parameters
-  if (!is.numeric(resolution)) {
-    stop("resolution parameter should be numeric")
-  }
+    # BUG there are some performance issues, make sure the main runtime is caused by the clustering method
+    # TODO add leidenbase implementation for the algorithm = 4
+    ncores <- foreach::getDoParWorkers()
+    # check the parameters
+    if (!is.numeric(resolution)) {
+        stop("resolution parameter should be numeric")
+    }
 
-  if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
-    stop("ecs_thresh pa              ld be numer,
+    if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
+        stop("ecs_thresh pa              ld be numer,
               algorithm = alg_index                        ic")
-  }
-
-  if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
-    stop("n_repetitions parameter should be numeric")
-  }
-  # convert n_repetitions to an integer
-  n_repetitions <- as.integer(n_repetitions)
-
-  if (!is.numeric(algorithm) || !(all(algorithm %in% 1:4))) {
-    stop("algorithm should be a vector of numbers between 1 and 4")
-  }
-
-  if (!is.logical(verbose)) {
-    stop("verbose parameter should be logical")
-  }
-
-  # create a seed sequence if it's not provided
-  if (is.null(seed_sequence)) {
-    seed_sequence <- seq(
-      from = 1,
-      by = 100,
-      length.out = n_repetitions
-    )
-  } else {
-    if (!is.numeric(seed_sequence)) {
-      stop("seed_sequence parameter should be numeric")
     }
 
-    seed_sequence <- as.integer(seed_sequence)
-  }
+    if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
+        stop("n_repetitions parameter should be numeric")
+    }
+    # convert n_repetitions to an integer
+    n_repetitions <- as.integer(n_repetitions)
 
-  result_object <- list()
-
-  # additional arguments used by the clustering method
-
-  if (ncores > 1) {
-    graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
-  } else {
-    graph_adjacency_matrix_shared <- graph_adjacency_matrix
-  }
-
-  # the variables needed in the PSOCK processes
-  seurat_clustering <- seurat_clustering
-  needed_vars <- c(
-    "res",
-    "seurat_clustering",
-    "graph_adjacency_matrix_shared",
-    "alg_index",
-    "clustering_arguments"
-  )
-  all_vars <- ls()
-  seed <- 0
-
-  for (alg_index in algorithm) {
-    alg_name <- algorithm_names[alg_index]
-
-    if (verbose) {
-      pb <- progress::progress_bar$new(
-        format = glue::glue("{alg_name} - res :res [:bar] eta: :eta  total elapsed: :elapsed"),
-        total = length(resolution),
-        clear = FALSE,
-        width = 80
-      )
-      pb$tick(0)
+    if (!is.numeric(algorithm) || !(all(algorithm %in% 1:4))) {
+        stop("algorithm should be a vector of numbers between 1 and 4")
     }
 
-    result_object[[alg_name]] <- list()
-    for (res in resolution) {
-      if (verbose) {
-        pb$tick(0, tokens = list(res = res))
-      }
+    if (!is.logical(verbose)) {
+        stop("verbose parameter should be logical")
+    }
 
-      different_partitions_temp <- foreach::foreach(
-        seed = seed_sequence,
-        .inorder = FALSE,
-        .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = needed_vars
-      ) %dopar% {
-        # apply the clustering, which should return a membership vector
-        do.call(seurat_clustering, c(
-          list(
-            object = graph_adjacency_matrix_shared,
-            resolution = res,
-            seed = seed,
-            algorithm = alg_index
-          ),
-          clustering_arguments
-        ))
-      }
-      different_partitions <- list()
-
-      # group the partitions by the number of clusters
-      for (i in seq_along(seed_sequence)) {
-        k <- as.character(length(unique(different_partitions_temp[[i]])))
-
-        if (!(k %in% names(different_partitions))) {
-          different_partitions[[k]] <- list()
-          different_partitions[[k]][[1]] <- list(
-            mb = different_partitions_temp[[i]],
-            freq = 1,
-            seed = seed_sequence[i]
-          )
-        } else {
-          index <- length(different_partitions[[k]])
-          different_partitions[[k]][[index + 1]] <- list(
-            mb = different_partitions_temp[[i]],
-            freq = 1,
-            seed = seed_sequence[i]
-          )
+    # create a seed sequence if it's not provided
+    if (is.null(seed_sequence)) {
+        seed_sequence <- seq(
+            from = 1,
+            by = 100,
+            length.out = n_repetitions
+        )
+    } else {
+        if (!is.numeric(seed_sequence)) {
+            stop("seed_sequence parameter should be numeric")
         }
-      }
 
-      different_partitions <- different_partitions[sort(names(different_partitions))]
-
-      # merge the partitions using the ecs threshold
-      # print("merge partitions")
-      unique_partitions <- list()
-      for (k in names(different_partitions)) {
-        different_partitions[[k]] <- list(
-          partitions = merge_partitions(different_partitions[[k]],
-            ecs_thresh = ecs_thresh,
-            order = TRUE
-          )
-        )
-
-        unique_partitions <- c(
-          unique_partitions,
-          different_partitions[[k]]$partitions
-        )
-
-        # compute the EC-consistency of the partition list
-        ec_consistency <- weighted_element_consistency(
-          lapply(different_partitions[[k]]$partitions, function(x) {
-            x$mb
-          }),
-          sapply(different_partitions[[k]]$partitions, function(x) {
-            x$freq
-          })
-        )
-
-        different_partitions[[k]][["ecc"]] <- ec_consistency
-      }
-
-      result_object[[alg_name]][[as.character(res)]] <- list(
-        clusters = different_partitions,
-        ecc = weighted_element_consistency(
-          lapply(unique_partitions, function(x) {
-            x$mb
-          }),
-          sapply(unique_partitions, function(x) {
-            x$freq
-          })
-        )
-      )
-
-      if (verbose) {
-        pb$tick(tokens = list(res = res))
-      }
+        seed_sequence <- as.integer(seed_sequence)
     }
-  }
 
-  if (ncores > 1) {
-    graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
-    rm(graph_adjacency_matrix_shared)
-  }
-  rm(graph_adjacency_matrix)
-  gc()
+    result_object <- list()
 
-  split_by_k <- lapply(algorithm_names[algorithm], function(alg_name) {
-    merge_resolutions(result_object[[alg_name]], alg_name)
-  })
+    # additional arguments used by the clustering method
 
-  names(split_by_k) <- algorithm_names[algorithm]
+    if (ncores > 1) {
+        graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
+    } else {
+        graph_adjacency_matrix_shared <- graph_adjacency_matrix
+    }
 
-  list(
-    split_by_resolution = result_object,
-    split_by_k = split_by_k
-  )
+    # the variables needed in the PSOCK processes
+    seurat_clustering <- seurat_clustering
+    needed_vars <- c(
+        "res",
+        "seurat_clustering",
+        "graph_adjacency_matrix_shared",
+        "alg_index",
+        "clustering_arguments"
+    )
+    all_vars <- ls()
+    seed <- 0
+
+    for (alg_index in algorithm) {
+        alg_name <- algorithm_names[alg_index]
+
+        if (verbose) {
+            pb <- progress::progress_bar$new(
+                format = glue::glue("{alg_name} - res :res [:bar] eta: :eta  total elapsed: :elapsed"),
+                total = length(resolution),
+                clear = FALSE,
+                width = 80
+            )
+            pb$tick(0)
+        }
+
+        result_object[[alg_name]] <- list()
+        for (res in resolution) {
+            if (verbose) {
+                pb$tick(0, tokens = list(res = res))
+            }
+
+            different_partitions_temp <- foreach::foreach(
+                seed = seed_sequence,
+                .inorder = FALSE,
+                .noexport = all_vars[!(all_vars %in% needed_vars)],
+                .export = needed_vars
+            ) %dopar% {
+                # apply the clustering, which should return a membership vector
+                do.call(seurat_clustering, c(
+                    list(
+                        object = graph_adjacency_matrix_shared,
+                        resolution = res,
+                        seed = seed,
+                        algorithm = alg_index
+                    ),
+                    clustering_arguments
+                ))
+            }
+            different_partitions <- list()
+
+            # group the partitions by the number of clusters
+            for (i in seq_along(seed_sequence)) {
+                k <- as.character(length(unique(different_partitions_temp[[i]])))
+
+                if (!(k %in% names(different_partitions))) {
+                    different_partitions[[k]] <- list()
+                    different_partitions[[k]][[1]] <- list(
+                        mb = different_partitions_temp[[i]],
+                        freq = 1,
+                        seed = seed_sequence[i]
+                    )
+                } else {
+                    index <- length(different_partitions[[k]])
+                    different_partitions[[k]][[index + 1]] <- list(
+                        mb = different_partitions_temp[[i]],
+                        freq = 1,
+                        seed = seed_sequence[i]
+                    )
+                }
+            }
+
+            different_partitions <- different_partitions[stringr::str_sort(names(different_partitions), numeric = TRUE)]
+
+            # merge the partitions using the ecs threshold
+            # print("merge partitions")
+            unique_partitions <- list()
+            for (k in names(different_partitions)) {
+                different_partitions[[k]] <- merge_partitions(
+                    partition_list = different_partitions[[k]],
+                    ecs_thresh = ecs_thresh,
+                    order = TRUE,
+                    check_ties = TRUE
+                )
+
+                unique_partitions <- c(
+                    unique_partitions,
+                    different_partitions[[k]]$partitions
+                )
+
+                # compute the EC-consistency of the partition list
+                # ec_consistency <- weighted_element_consistency(
+                #   clustering_list = lapply(different_partitions[[k]]$partitions, function(x) {
+                #     x$mb
+                #   }),
+                #   weights = sapply(different_partitions[[k]]$partitions, function(x) {
+                #     x$freq
+                #   }),
+                #   calculate_sim_matrix = TRUE
+                # )
+
+                # different_partitions[[k]][["ecc"]] <- ec_consistency
+            }
+
+            result_object[[alg_name]][[as.character(res)]] <- list(
+                clusters = different_partitions,
+                ecc = weighted_element_consistency(
+                    lapply(unique_partitions, function(x) {
+                        x$mb
+                    }),
+                    sapply(unique_partitions, function(x) {
+                        x$freq
+                    })
+                )
+            )
+
+            if (verbose) {
+                pb$tick(tokens = list(res = res))
+            }
+        }
+    }
+
+    on.exit(
+        {
+            if (ncores > 1) {
+                graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
+                rm(graph_adjacency_matrix_shared)
+            }
+            rm(graph_adjacency_matrix)
+            gc()
+        },
+        add = TRUE
+    )
+
+    split_by_k <- lapply(algorithm_names[algorithm], function(alg_name) {
+        merge_resolutions(result_object[[alg_name]], alg_name)
+    })
+
+    names(split_by_k) <- algorithm_names[algorithm]
+
+    list(
+        split_by_resolution = result_object,
+        split_by_k = split_by_k
+    )
 }
 
 #' Clustering Method Stability Facet Plot
@@ -369,50 +376,50 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_clustering_per_value_stability(clust_diff_obj)
 plot_clustering_per_value_stability <- function(clust_object,
                                                 value_type = c("k", "resolution")) {
-  value_type <- value_type[value_type %in% c("k", "resolution")]
-  # TODO add empty boxplots for the missing values for k at least to help differentiate
+    value_type <- value_type[value_type %in% c("k", "resolution")]
+    # TODO add empty boxplots for the missing values for k at least to help differentiate
 
-  if (length(value_type) > 1) {
-    value_type <- value_type[1]
-  }
+    if (length(value_type) > 1) {
+        value_type <- value_type[1]
+    }
 
-  if (length(value_type) == 0) {
-    stop("`value_type` should contain either `k` or `resolution`")
-  }
+    if (length(value_type) == 0) {
+        stop("`value_type` should contain either `k` or `resolution`")
+    }
 
-  ecc_vals <- lapply(clust_object[[paste0("split_by_", value_type)]], function(by_alg) {
-    lapply(by_alg, function(by_value) {
-      by_value$ecc
+    ecc_vals <- lapply(clust_object[[paste0("split_by_", value_type)]], function(by_alg) {
+        lapply(by_alg, function(by_value) {
+            by_value$ecc
+        })
     })
-  })
 
-  melted_df <- reshape2::melt(ecc_vals)
-  colnames(melted_df) <- c("ecc", value_type, "method")
-  melted_df$method <- factor(melted_df$method)
-  melted_df[[value_type]] <- factor(melted_df[[value_type]])
+    melted_df <- reshape2::melt(ecc_vals)
+    colnames(melted_df) <- c("ecc", value_type, "method")
+    melted_df$method <- factor(melted_df$method)
+    melted_df[[value_type]] <- factor(melted_df[[value_type]])
 
-  ggplot2::ggplot(
-    melted_df,
-    ggplot2::aes(x = .data[[value_type]], y = .data$ecc, fill = .data$method)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste0("Clustering stability per ", value_type))
+    ggplot2::ggplot(
+        melted_df,
+        ggplot2::aes(x = .data[[value_type]], y = .data$ecc, fill = .data$method)
+    ) +
+        ggplot2::geom_boxplot() +
+        ggplot2::theme_bw() +
+        ggplot2::ggtitle(paste0("Clustering stability per ", value_type))
 }
 
 
@@ -444,53 +451,53 @@ plot_clustering_per_value_stability <- function(clust_object,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_clustering_overall_stability(clust_diff_obj)
 plot_clustering_overall_stability <- function(clust_object,
                                               value_type = c("k", "resolution"),
                                               summary_function = median) {
-  value_type <- value_type[value_type %in% c("k", "resolution")]
+    value_type <- value_type[value_type %in% c("k", "resolution")]
 
-  if (length(value_type) > 1) {
-    value_type <- value_type[1]
-  }
-
-  if (length(value_type) == 0) {
-    stop("`value_type` should contain either `k` or `resolution`")
-  }
-
-  ecc_vals <- lapply(
-    clust_object[[paste0("split_by_", value_type)]],
-    function(by_alg) {
-      lapply(by_alg, function(by_value) {
-        summary_function(by_value$ecc)
-      })
+    if (length(value_type) > 1) {
+        value_type <- value_type[1]
     }
-  )
 
-  melted_df <- reshape2::melt(ecc_vals)
-  colnames(melted_df) <- c("ecc", value_type, "method")
-  melted_df$method <- factor(melted_df$method)
-  melted_df[[value_type]] <- factor(melted_df[[value_type]])
+    if (length(value_type) == 0) {
+        stop("`value_type` should contain either `k` or `resolution`")
+    }
 
-  ggplot2::ggplot(
-    melted_df,
-    ggplot2::aes(x = .data$method, y = .data$ecc, fill = .data$method)
-  ) +
-    ggplot2::geom_boxplot() +
-    ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste0("Overall clustering stability grouped by ", value_type))
+    ecc_vals <- lapply(
+        clust_object[[paste0("split_by_", value_type)]],
+        function(by_alg) {
+            lapply(by_alg, function(by_value) {
+                summary_function(by_value$ecc)
+            })
+        }
+    )
+
+    melted_df <- reshape2::melt(ecc_vals)
+    colnames(melted_df) <- c("ecc", value_type, "method")
+    melted_df$method <- factor(melted_df$method)
+    melted_df[[value_type]] <- factor(melted_df[[value_type]])
+
+    ggplot2::ggplot(
+        melted_df,
+        ggplot2::aes(x = .data$method, y = .data$ecc, fill = .data$method)
+    ) +
+        ggplot2::geom_boxplot() +
+        ggplot2::theme_bw() +
+        ggplot2::ggtitle(paste0("Overall clustering stability grouped by ", value_type))
 }
 
 #' Clustering Method Stability Facet Plot
@@ -521,17 +528,17 @@ plot_clustering_overall_stability <- function(clust_object,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_clustering_difference_facet(clust_diff_obj, pca_embedding)
 plot_clustering_difference_facet <- function(clust_object,
@@ -539,67 +546,67 @@ plot_clustering_difference_facet <- function(clust_object,
                                              low_limit = 0,
                                              high_limit = 1,
                                              grid = TRUE) {
-  # check parameters
+    # check parameters
 
-  # TODO adapt to the new object
-  return(1)
-  if (!is.logical(grid)) {
-    stop("grid parameter should be logical")
-  }
+    # TODO adapt to the new object
+    return(1)
+    if (!is.logical(grid)) {
+        stop("grid parameter should be logical")
+    }
 
-  if (!is.numeric(low_limit)) {
-    stop("low_limit parameter should be numeric")
-  }
+    if (!is.numeric(low_limit)) {
+        stop("low_limit parameter should be numeric")
+    }
 
-  if (!is.numeric(high_limit)) {
-    stop("high_limit parameter should be numeric")
-  }
+    if (!is.numeric(high_limit)) {
+        stop("high_limit parameter should be numeric")
+    }
 
-  npoints <- nrow(embedding)
-  if (length(clust_object$all[[1]][[1]]) != npoints) {
-    stop("The provided embedding and the consistency arrays must have the same number of elements!")
-  }
+    npoints <- nrow(embedding)
+    if (length(clust_object$all[[1]][[1]]) != npoints) {
+        stop("The provided embedding and the consistency arrays must have the same number of elements!")
+    }
 
-  if (ncol(embedding) < 2) {
-    stop("The embedding should have at least two dimensions!")
-  }
+    if (ncol(embedding) < 2) {
+        stop("The embedding should have at least two dimensions!")
+    }
 
-  melt_obj <- reshape2::melt(clust_object$all)
+    melt_obj <- reshape2::melt(clust_object$all)
 
-  n_embeeding_repetitions <- nrow(melt_obj) / npoints
+    n_embeeding_repetitions <- nrow(melt_obj) / npoints
 
-  melt_obj["x"] <- rep(embedding[, 1], n_embeeding_repetitions)
-  melt_obj["y"] <- rep(embedding[, 2], n_embeeding_repetitions)
+    melt_obj["x"] <- rep(embedding[, 1], n_embeeding_repetitions)
+    melt_obj["y"] <- rep(embedding[, 2], n_embeeding_repetitions)
 
-  melt_obj["value"][melt_obj["value"] < low_limit] <- low_limit
-  melt_obj["value"][melt_obj["value"] > high_limit] <- high_limit
+    melt_obj["value"][melt_obj["value"] < low_limit] <- low_limit
+    melt_obj["value"][melt_obj["value"] > high_limit] <- high_limit
 
-  return_plot <- ggplot2::ggplot(
-    melt_obj,
-    ggplot2::aes(
-      x = .data$x,
-      y = .data$y,
-      color = .data$value
-    )
-  ) +
-    ggplot2::geom_point() +
-    ggplot2::scale_color_viridis_c() +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      panel.grid.major = ggplot2::element_blank(),
-      panel.grid.minor = ggplot2::element_blank()
+    return_plot <- ggplot2::ggplot(
+        melt_obj,
+        ggplot2::aes(
+            x = .data$x,
+            y = .data$y,
+            color = .data$value
+        )
     ) +
-    ggplot2::labs(
-      color = "ECC",
-      x = colnames(embedding)[1],
-      y = colnames(embedding)[2]
-    )
+        ggplot2::geom_point() +
+        ggplot2::scale_color_viridis_c() +
+        ggplot2::theme_bw() +
+        ggplot2::theme(
+            panel.grid.major = ggplot2::element_blank(),
+            panel.grid.minor = ggplot2::element_blank()
+        ) +
+        ggplot2::labs(
+            color = "ECC",
+            x = colnames(embedding)[1],
+            y = colnames(embedding)[2]
+        )
 
-  if (grid) {
-    return(return_plot + ggplot2::facet_grid(L2 ~ L1))
-  }
+    if (grid) {
+        return(return_plot + ggplot2::facet_grid(L2 ~ L1))
+    }
 
-  return_plot + ggplot2::facet_wrap(~ L2 + L1)
+    return_plot + ggplot2::facet_wrap(~ L2 + L1)
 }
 
 
@@ -640,17 +647,17 @@ plot_clustering_difference_facet <- function(clust_object,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_k_resolution_corresp(clust_diff_obj, "ecc")
 #' plot_k_resolution_corresp(clust_diff_obj, "freq_k")
@@ -659,114 +666,114 @@ plot_k_resolution_corresp <- function(clust_object,
                                       dodge_width = 0.3,
                                       summary_function = median,
                                       pt_size_range = c(1.5, 4)) {
-  # TODO check the colors and the vertical lines, try to help the user
-  if (length(colour_information) > 1) {
-    colour_information <- colour_information[1]
-  }
-
-  if (!(colour_information %in% c("ecc", "freq_k"))) {
-    stop("colour_information can be either `ecc` or `freq_k`")
-  }
-
-  clust_object <- clust_object$split_by_resolution
-
-  # use the names of the fields from the list
-  res_object_names <- names(clust_object)
-
-  # create a dataframe that contains the number of cases when,
-  # for a given resolution, a number of clusters was obtained
-  for (i in seq_along(clust_object)) {
-    res_object <- clust_object[[i]]
-
-    n_runs <- sum(sapply(res_object[[names(res_object)[1]]]$clusters, function(x) {
-      sum(sapply(x$partitions, function(y) {
-        y$freq
-      }))
-    }))
-
-    list_appereances <- lapply(res_object, function(x) {
-      lapply(x$clusters, function(y) {
-        y$partitions[[1]]$freq
-      })
-    })
-    temp_appereances <- reshape2::melt(list_appereances)
-    colnames(temp_appereances) <- c(
-      "freq_partition",
-      "number_clusters",
-      "resolution_value"
-    )
-
-    temp_appereances[["freq_k"]] <- unlist(lapply(res_object, function(x) {
-      lapply(x$clusters, function(y) {
-        sum(sapply(y$partitions, function(z) {
-          z$freq
-        }))
-      })
-    }))
-
-    temp_appereances[["configuration"]] <- rep(res_object_names[i], nrow(temp_appereances))
-    temp_appereances$freq_partition <- temp_appereances$freq_partition / temp_appereances$freq_k
-    temp_appereances$freq_k <- temp_appereances$freq_k / n_runs
-    temp_appereances$ecc <- unlist(lapply(res_object, function(x) {
-      sapply(x$clusters, function(k) {
-        summary_function(k$ecc)
-      })
-    }))
-
-    if (i == 1) {
-      appearances_df <- temp_appereances
-    } else {
-      appearances_df <- rbind(appearances_df, temp_appereances)
+    # TODO check the colors and the vertical lines, try to help the user
+    if (length(colour_information) > 1) {
+        colour_information <- colour_information[1]
     }
-  }
 
-  appearances_df[["configuration"]] <- factor(appearances_df[["configuration"]])
-  appearances_df[["number_clusters"]] <- factor(as.numeric(appearances_df[["number_clusters"]]))
+    if (!(colour_information %in% c("ecc", "freq_k"))) {
+        stop("colour_information can be either `ecc` or `freq_k`")
+    }
 
-  main_plot <- ggplot2::ggplot(
-    appearances_df,
-    ggplot2::aes(
-      y = .data$number_clusters,
-      x = .data$resolution_value,
-      size = .data$freq_partition,
-      fill = .data[[colour_information]],
-      shape = .data$configuration,
-      group = .data$configuration
-    )
-  ) +
-    ggplot2::geom_hline(
-      yintercept = unique(appearances_df$number_clusters),
-      linetype = "dashed",
-      color = "#e3e3e3"
-    ) +
-    ggplot2::geom_vline(
-      xintercept = unique(appearances_df$resolution_value),
-      linetype = "dashed",
-      color = "#e3e3e3"
-    ) +
-    ggplot2::geom_point(position = ggplot2::position_dodge(width = dodge_width)) +
-    ggplot2::theme_classic() +
-    ggplot2::scale_fill_viridis_c(guide = "colorbar") +
-    ggplot2::scale_shape_manual(
-      name = "Clustering method",
-      values = 21:24,
-      guide = "legend"
-    ) +
-    ggplot2::labs(
-      x = "resolution",
-      y = "k"
-    ) +
-    ggplot2::scale_size_continuous(range = pt_size_range, guide = "legend") +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(
-      angle = 90,
-      vjust = 0.5,
-      hjust = 1
-    )) +
-    ggplot2::guides(
-      shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
-    )
+    clust_object <- clust_object$split_by_resolution
 
-  return(main_plot)
+    # use the names of the fields from the list
+    res_object_names <- names(clust_object)
+
+    # create a dataframe that contains the number of cases when,
+    # for a given resolution, a number of clusters was obtained
+    for (i in seq_along(clust_object)) {
+        res_object <- clust_object[[i]]
+
+        n_runs <- sum(sapply(res_object[[names(res_object)[1]]]$clusters, function(x) {
+            sum(sapply(x$partitions, function(y) {
+                y$freq
+            }))
+        }))
+
+        list_appereances <- lapply(res_object, function(x) {
+            lapply(x$clusters, function(y) {
+                y$partitions[[1]]$freq
+            })
+        })
+        temp_appereances <- reshape2::melt(list_appereances)
+        colnames(temp_appereances) <- c(
+            "freq_partition",
+            "number_clusters",
+            "resolution_value"
+        )
+
+        temp_appereances[["freq_k"]] <- unlist(lapply(res_object, function(x) {
+            lapply(x$clusters, function(y) {
+                sum(sapply(y$partitions, function(z) {
+                    z$freq
+                }))
+            })
+        }))
+
+        temp_appereances[["configuration"]] <- rep(res_object_names[i], nrow(temp_appereances))
+        temp_appereances$freq_partition <- temp_appereances$freq_partition / temp_appereances$freq_k
+        temp_appereances$freq_k <- temp_appereances$freq_k / n_runs
+        temp_appereances$ecc <- unlist(lapply(res_object, function(x) {
+            sapply(x$clusters, function(k) {
+                summary_function(k$ecc)
+            })
+        }))
+
+        if (i == 1) {
+            appearances_df <- temp_appereances
+        } else {
+            appearances_df <- rbind(appearances_df, temp_appereances)
+        }
+    }
+
+    appearances_df[["configuration"]] <- factor(appearances_df[["configuration"]])
+    appearances_df[["number_clusters"]] <- factor(as.numeric(appearances_df[["number_clusters"]]))
+
+    main_plot <- ggplot2::ggplot(
+        appearances_df,
+        ggplot2::aes(
+            y = .data$number_clusters,
+            x = .data$resolution_value,
+            size = .data$freq_partition,
+            fill = .data[[colour_information]],
+            shape = .data$configuration,
+            group = .data$configuration
+        )
+    ) +
+        ggplot2::geom_hline(
+            yintercept = unique(appearances_df$number_clusters),
+            linetype = "dashed",
+            color = "#e3e3e3"
+        ) +
+        ggplot2::geom_vline(
+            xintercept = unique(appearances_df$resolution_value),
+            linetype = "dashed",
+            color = "#e3e3e3"
+        ) +
+        ggplot2::geom_point(position = ggplot2::position_dodge(width = dodge_width)) +
+        ggplot2::theme_classic() +
+        ggplot2::scale_fill_viridis_c(guide = "colorbar") +
+        ggplot2::scale_shape_manual(
+            name = "Clustering method",
+            values = 21:24,
+            guide = "legend"
+        ) +
+        ggplot2::labs(
+            x = "resolution",
+            y = "k"
+        ) +
+        ggplot2::scale_size_continuous(range = pt_size_range, guide = "legend") +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(
+            angle = 90,
+            vjust = 0.5,
+            hjust = 1
+        )) +
+        ggplot2::guides(
+            shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
+        )
+
+    return(main_plot)
 }
 
 #' Relationship Between the Number of Clusters and the Number of Unique Partitions
@@ -802,17 +809,17 @@ plot_k_resolution_corresp <- function(clust_object,
 #' colnames(pca_embedding) <- paste0("PCA_", 1:30)
 #'
 #' adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-#'   k.param = 10,
-#'   nn.method = "rann",
-#'   verbose = FALSE,
-#'   compute.SNN = FALSE
+#'     k.param = 10,
+#'     nn.method = "rann",
+#'     verbose = FALSE,
+#'     compute.SNN = FALSE
 #' )$nn
 #' clust_diff_obj <- assess_clustering_stability(
-#'   graph_adjacency_matrix = adj_matrix,
-#'   resolution = c(0.5, 1),
-#'   n_repetitions = 10,
-#'   algorithm = 1:2,
-#'   verbose = FALSE
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     algorithm = 1:2,
+#'     verbose = FALSE
 #' )
 #' plot_k_n_partitions(clust_diff_obj)
 plot_k_n_partitions <- function(clust_object,
@@ -821,112 +828,115 @@ plot_k_n_partitions <- function(clust_object,
                                 pt_size_range = c(1.5, 4),
                                 summary_function = median,
                                 y_step = 5) {
-  if (length(colour_information) > 1) {
-    colour_information <- colour_information[1]
-  }
-
-  if (!(colour_information %in% c("ecc", "freq_part"))) {
-    stop("colour_information can be either `ecc` or `freq_part`")
-  }
-
-  clust_object <- clust_object$split_by_k
-
-  # use the names of the fields from the list
-  object_names <- names(clust_object)
-
-  max_n_part <- 0
-
-  # creates a dataframe that contains, for each configuration
-  # the number of different partitions with a given number of clusters
-  for (i in seq_along(clust_object)) {
-    partition_object <- clust_object[[i]]
-
-    unique_parts_temp <- reshape2::melt(lapply(partition_object, function(x) {
-      length(x$partitions)
-    }))
-    colnames(unique_parts_temp) <- c("n.partitions", "n.clusters")
-
-    unique_parts_temp[["configuration"]] <- rep(object_names[i], nrow(unique_parts_temp))
-
-    unique_parts_temp[["first.occ"]] <- as.numeric(lapply(partition_object, function(x) {
-      max(sapply(x$partitions, function(y) {
-        y$freq
-      }))
-    }))
-    unique_parts_temp[["total.occ"]] <- as.numeric(lapply(partition_object, function(x) {
-      sum(sapply(x$partitions, function(y) {
-        y$freq
-      }))
-    }))
-    unique_parts_temp[["freq_part"]] <- unique_parts_temp$first.occ / unique_parts_temp$total.occ
-    unique_parts_temp[["ecc"]] <- sapply(partition_object, function(x) {
-      summary_function(x$ecc)
-    })
-    overall_total_occ <- sum(unique_parts_temp$total.occ)
-    unique_parts_temp[["frequency_k"]] <- unique_parts_temp$total.occ / overall_total_occ
-
-    max_n_part <- max(c(max(
-      unique_parts_temp$n.partitions
-    ), max_n_part))
-
-    if (i == 1) {
-      unique_parts <- unique_parts_temp
-    } else {
-      unique_parts <- rbind(unique_parts, unique_parts_temp)
+    if (length(colour_information) > 1) {
+        colour_information <- colour_information[1]
     }
-  }
 
-  unique_parts$configuration <- factor(unique_parts$configuration)
-  unique_parts$n.clusters <- factor(unique_parts$n.clusters,
-    levels = stringr::str_sort(unique(
-      unique_parts$n.clusters
-    ), numeric = TRUE)
-  )
+    if ("split_by_k" %in% names(clust_object)) {
+        clust_object <- clust_object$split_by_k
+    }
 
-  main_plot <- ggplot2::ggplot(
-    unique_parts,
-    ggplot2::aes(
-      x = .data$n.clusters,
-      y = .data$n.partitions,
-      shape = .data$configuration,
-      size = .data$frequency_k,
-      fill = .data[[colour_information]],
-      group = .data$configuration
+    if (!(colour_information %in% c("ecc", "freq_part"))) {
+        stop("colour_information can be either `ecc` or `freq_part`")
+    }
+
+
+    # use the names of the fields from the list
+    object_names <- names(clust_object)
+
+    max_n_part <- 0
+
+    # creates a dataframe that contains, for each configuration
+    # the number of different partitions with a given number of clusters
+    for (i in seq_along(clust_object)) {
+        partition_object <- clust_object[[i]]
+
+        unique_parts_temp <- reshape2::melt(lapply(partition_object, function(x) {
+            length(x$partitions)
+        }))
+        colnames(unique_parts_temp) <- c("n.partitions", "n.clusters")
+
+        unique_parts_temp[["configuration"]] <- rep(object_names[i], nrow(unique_parts_temp))
+
+        unique_parts_temp[["first.occ"]] <- as.numeric(lapply(partition_object, function(x) {
+            max(sapply(x$partitions, function(y) {
+                y$freq
+            }))
+        }))
+        unique_parts_temp[["total.occ"]] <- as.numeric(lapply(partition_object, function(x) {
+            sum(sapply(x$partitions, function(y) {
+                y$freq
+            }))
+        }))
+        unique_parts_temp[["freq_part"]] <- unique_parts_temp$first.occ / unique_parts_temp$total.occ
+        unique_parts_temp[["ecc"]] <- sapply(partition_object, function(x) {
+            summary_function(x$ecc)
+        })
+        overall_total_occ <- sum(unique_parts_temp$total.occ)
+        unique_parts_temp[["frequency_k"]] <- unique_parts_temp$total.occ / overall_total_occ
+
+        max_n_part <- max(c(max(
+            unique_parts_temp$n.partitions
+        ), max_n_part))
+
+        if (i == 1) {
+            unique_parts <- unique_parts_temp
+        } else {
+            unique_parts <- rbind(unique_parts, unique_parts_temp)
+        }
+    }
+
+    unique_parts$configuration <- factor(unique_parts$configuration)
+    unique_parts$n.clusters <- factor(unique_parts$n.clusters,
+        levels = stringr::str_sort(unique(
+            unique_parts$n.clusters
+        ), numeric = TRUE)
     )
-  ) +
-    ggplot2::scale_y_continuous(breaks = seq(
-      from = 0,
-      to = max_n_part,
-      by = y_step
-    )) +
-    ggplot2::scale_size_continuous(range = pt_size_range, guide = "legend") +
-    ggplot2::geom_hline(
-      yintercept = seq(from = 0, to = max_n_part, by = y_step),
-      linetype = "dashed",
-      color = "#C3C3d3"
+
+    main_plot <- ggplot2::ggplot(
+        unique_parts,
+        ggplot2::aes(
+            x = .data$n.clusters,
+            y = .data$n.partitions,
+            shape = .data$configuration,
+            size = .data$frequency_k,
+            fill = .data[[colour_information]],
+            group = .data$configuration
+        )
     ) +
-    ggplot2::geom_vline(
-      xintercept = unique(unique_parts$n.clusters),
-      linetype = "dashed",
-      color = "#c3c3c3d3"
-    ) +
-    ggplot2::geom_point(position = ggplot2::position_dodge(dodge_width)) +
-    ggplot2::theme_classic() +
-    ggplot2::scale_shape_manual(name = "Clustering method", values = 21:24, guide = "legend") +
-    ggplot2::scale_fill_viridis_c(
-      name = ifelse(colour_information == "ecc",
-        "ECC",
-        "partition\nfrequency"
-      ),
-      guide = "colorbar"
-    ) +
-    ggplot2::theme_classic() +
-    ggplot2::xlab("k") +
-    ggplot2::ylab("# partitions") +
-    ggplot2::guides(
-      shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
-    )
+        ggplot2::scale_y_continuous(breaks = seq(
+            from = 0,
+            to = max_n_part,
+            by = y_step
+        )) +
+        ggplot2::scale_size_continuous(range = pt_size_range, guide = "legend") +
+        ggplot2::geom_hline(
+            yintercept = seq(from = 0, to = max_n_part, by = y_step),
+            linetype = "dashed",
+            color = "#C3C3d3"
+        ) +
+        ggplot2::geom_vline(
+            xintercept = unique(unique_parts$n.clusters),
+            linetype = "dashed",
+            color = "#c3c3c3d3"
+        ) +
+        ggplot2::geom_point(position = ggplot2::position_dodge(dodge_width)) +
+        ggplot2::theme_classic() +
+        ggplot2::scale_shape_manual(name = "Clustering method", values = 21:24, guide = "legend") +
+        ggplot2::scale_fill_viridis_c(
+            name = ifelse(colour_information == "ecc",
+                "ECC",
+                "partition\nfrequency"
+            ),
+            guide = "colorbar"
+        ) +
+        ggplot2::theme_classic() +
+        ggplot2::xlab("k") +
+        ggplot2::ylab("# partitions") +
+        ggplot2::guides(
+            shape = ggplot2::guide_legend(override.aes = list(size = max(pt_size_range)))
+        )
 
 
-  return(main_plot)
+    return(main_plot)
 }

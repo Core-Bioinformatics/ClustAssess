@@ -17,7 +17,6 @@ IntegerMatrix myContTable(IntegerVector &a, IntegerVector &b, int minim_mb1, int
 	return(result);
 }
 
-
 // [[Rcpp::export]]
 NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
 	int minim_mb1 = min(mb1), minim_mb2 = min(mb2);

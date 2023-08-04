@@ -3,19 +3,19 @@
 NULL
 
 calculate_dist <- function(x, dist_method, p = 2) {
-  if (dist_method %in% c(
-    "euclidean", "maximum", "manhattan", "canberra",
-    "binary", "minkowski"
-  )) {
-    d <- stats::dist(x, method = dist_method, p = p)
-  } else if (dist_method == "pearson") {
-    d <- 1 - stats::cor(x, method = "pearson")
-  } else {
-    stop("Distance measure not recognized. Please choose one of euclidean,
+    if (dist_method %in% c(
+        "euclidean", "maximum", "manhattan", "canberra",
+        "binary", "minkowski"
+    )) {
+        d <- stats::dist(x, method = dist_method, p = p)
+    } else if (dist_method == "pearson") {
+        d <- 1 - stats::cor(x, method = "pearson")
+    } else {
+        stop("Distance measure not recognized. Please choose one of euclidean,
          maximum, canberra, binary, minkowski and pearson")
-  }
+    }
 
-  return(d)
+    return(d)
 }
 
 #' Consensus Clustering and Proportion of Ambiguously Clustered Pairs
@@ -66,81 +66,81 @@ consensus_cluster <- function(x, k_min = 3, k_max = 100, n_reps = 100, p_sample 
                               dist_method = "euclidean", linkage = "complete",
                               lower_lim = 0.1, upper_lim = 0.9,
                               verbose = TRUE) {
-  n.samples <- floor(p_sample * nrow(x))
-  n.features <- floor(p_feature * ncol(x))
-  # threshold for k_max so we don't accidentally look for too many clusters
-  if (k_max > n.samples) {
-    k_max <- n.samples
-  }
+    n.samples <- floor(p_sample * nrow(x))
+    n.features <- floor(p_feature * ncol(x))
+    # threshold for k_max so we don't accidentally look for too many clusters
+    if (k_max > n.samples) {
+        k_max <- n.samples
+    }
 
-  indicator <- matrix(0, nrow = nrow(x), ncol = nrow(x))
+    indicator <- matrix(0, nrow = nrow(x), ncol = nrow(x))
 
-  # initialize connectivity matrices
-  connectivity <- list()
-  for (i in k_min:k_max) {
-    connectivity[[i]] <- matrix(0, nrow = nrow(x), ncol = nrow(x))
-  }
+    # initialize connectivity matrices
+    connectivity <- list()
+    for (i in k_min:k_max) {
+        connectivity[[i]] <- matrix(0, nrow = nrow(x), ncol = nrow(x))
+    }
 
-  pac.matrix <- matrix(0, nrow = (k_max - k_min + 1), ncol = n_reps)
+    pac.matrix <- matrix(0, nrow = (k_max - k_min + 1), ncol = n_reps)
 
-  if (verbose) {
-    message("Calculating consensus clustering")
-    pb <- progress::progress_bar$new(
-      format = "[:bar] :current/:total eta: :eta  total elapsed:  :elapsed",
-      total = n_reps,
-      clear = FALSE,
-      width = 80
-    )
-
-    pb$tick(0)
-  }
-
-  for (i in 1:n_reps) {
     if (verbose) {
-      pb$tick()
+        message("Calculating consensus clustering")
+        pb <- progress::progress_bar$new(
+            format = "[:bar] :current/:total eta: :eta  total elapsed:  :elapsed",
+            total = n_reps,
+            clear = FALSE,
+            width = 80
+        )
+
+        pb$tick(0)
     }
 
-    sample.indices <- sample(x = nrow(x), size = n.samples, replace = FALSE)
-    indicator[sample.indices, sample.indices] <-
-      indicator[sample.indices, sample.indices] + 1
+    for (i in 1:n_reps) {
+        if (verbose) {
+            pb$tick()
+        }
 
-    feature.indices <- sample(x = ncol(x), size = n.features, replace = FALSE)
-    d <- calculate_dist(
-      x[sample.indices, feature.indices], dist_method,
-      p_minkowski
+        sample.indices <- sample(x = nrow(x), size = n.samples, replace = FALSE)
+        indicator[sample.indices, sample.indices] <-
+            indicator[sample.indices, sample.indices] + 1
+
+        feature.indices <- sample(x = ncol(x), size = n.features, replace = FALSE)
+        d <- calculate_dist(
+            x[sample.indices, feature.indices], dist_method,
+            p_minkowski
+        )
+        tree <- fastcluster::hclust(d, method = linkage)
+
+        for (k in k_min:k_max) {
+            res <- stats::cutree(tree, k = k)
+
+            connectivity[[k]] <- update_connectivity_cpp(
+                connectivity[[k]],
+                sample.indices,
+                res
+            )
+
+            pac.value <- calculate_pac_cpp(
+                indicator, connectivity[[k]], lower_lim,
+                upper_lim
+            )
+            pac.matrix[(k - k_min + 1), i] <- pac.value
+        }
+    }
+
+    convergence <- data.frame(
+        dist_method = dist_method,
+        linkage = linkage,
+        iteration = rep(1:n_reps, each = (k_max - k_min + 1)),
+        pac = as.vector(pac.matrix),
+        lower_lim = lower_lim,
+        upper_lim = upper_lim,
+        n.clusters = rep(k_min:k_max, times = n_reps),
+        p_sample = p_sample,
+        p_feature = p_feature
     )
-    tree <- fastcluster::hclust(d, method = linkage)
 
-    for (k in k_min:k_max) {
-      res <- stats::cutree(tree, k = k)
-
-      connectivity[[k]] <- update_connectivity_cpp(
-        connectivity[[k]],
-        sample.indices,
-        res
-      )
-
-      pac.value <- calculate_pac_cpp(
-        indicator, connectivity[[k]], lower_lim,
-        upper_lim
-      )
-      pac.matrix[(k - k_min + 1), i] <- pac.value
-    }
-  }
-
-  convergence <- data.frame(
-    dist_method = dist_method,
-    linkage = linkage,
-    iteration = rep(1:n_reps, each = (k_max - k_min + 1)),
-    pac = as.vector(pac.matrix),
-    lower_lim = lower_lim,
-    upper_lim = upper_lim,
-    n.clusters = rep(k_min:k_max, times = n_reps),
-    p_sample = p_sample,
-    p_feature = p_feature
-  )
-
-  return(convergence)
+    return(convergence)
 }
 
 
@@ -161,19 +161,19 @@ consensus_cluster <- function(x, k_min = 3, k_max = 100, n_reps = 100, p_sample 
 #' pac.res <- consensus_cluster(iris[, 1:4], k_max = 20)
 #' pac_convergence(pac.res, k_plot = c(3, 5, 7, 9))
 pac_convergence <- function(pac_res, k_plot) {
-  conv <- pac_res %>% dplyr::filter(.data$n.clusters %in% k_plot)
-  conv$n.clusters <- as.factor(conv$n.clusters)
+    conv <- pac_res %>% dplyr::filter(.data$n.clusters %in% k_plot)
+    conv$n.clusters <- as.factor(conv$n.clusters)
 
-  ggplot2::ggplot(
-    data = conv,
-    ggplot2::aes(
-      x = .data$iteration, y = .data$pac,
-      color = .data$n.clusters,
-      group = .data$n.clusters
-    )
-  ) +
-    ggplot2::geom_line() +
-    ggplot2::labs(title = "PAC convergence")
+    ggplot2::ggplot(
+        data = conv,
+        ggplot2::aes(
+            x = .data$iteration, y = .data$pac,
+            color = .data$n.clusters,
+            group = .data$n.clusters
+        )
+    ) +
+        ggplot2::geom_line() +
+        ggplot2::labs(title = "PAC convergence")
 }
 
 
@@ -195,24 +195,24 @@ pac_convergence <- function(pac_res, k_plot) {
 #' pac.res <- consensus_cluster(iris[, 1:4], k_max = 20)
 #' pac_landscape(pac.res)
 pac_landscape <- function(pac_res, n_shade = max(pac_res$iteration) / 5) {
-  # threshold n_shade
-  if (n_shade > max(pac_res$iteration)) {
-    n_shade <- max(pac_res$iteration)
-  }
+    # threshold n_shade
+    if (n_shade > max(pac_res$iteration)) {
+        n_shade <- max(pac_res$iteration)
+    }
 
-  # create data frame with shaded regions
-  pac.df <- pac_res %>%
-    dplyr::group_by(.data$n.clusters) %>%
-    dplyr::top_n(n_shade, wt = .data$iteration) %>%
-    dplyr::mutate(pmin = min(.data$pac), pmax = max(.data$pac)) %>%
-    dplyr::top_n(1, wt = .data$iteration)
+    # create data frame with shaded regions
+    pac.df <- pac_res %>%
+        dplyr::group_by(.data$n.clusters) %>%
+        dplyr::top_n(n_shade, wt = .data$iteration) %>%
+        dplyr::mutate(pmin = min(.data$pac), pmax = max(.data$pac)) %>%
+        dplyr::top_n(1, wt = .data$iteration)
 
-  ggplot2::ggplot(
-    data = pac.df,
-    ggplot2::aes(x = .data$n.clusters, y = .data$pac)
-  ) +
-    ggplot2::geom_line(color = "blue") +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = pmin, ymax = pmax), alpha = 0.2) +
-    ggplot2::scale_color_gradient() +
-    ggplot2::labs(title = "Final PAC values")
+    ggplot2::ggplot(
+        data = pac.df,
+        ggplot2::aes(x = .data$n.clusters, y = .data$pac)
+    ) +
+        ggplot2::geom_line(color = "blue") +
+        ggplot2::geom_ribbon(ggplot2::aes(ymin = pmin, ymax = pmax), alpha = 0.2) +
+        ggplot2::scale_color_gradient() +
+        ggplot2::labs(title = "Final PAC values")
 }
