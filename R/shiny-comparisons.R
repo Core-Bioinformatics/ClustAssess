@@ -1,607 +1,1667 @@
 ####### UI #######
 
-ui_comparisons_ <- function(id){
-  ns <- shiny::NS(id)
-  shiny::tabPanel(
-    "Comparison",
-    shiny::fluidRow(
-      shiny::splitLayout(cellWidths = c('50%','50%'),
-                         shiny::div(style="width:90%; overflow-wrap: break-word;",shiny::h1('Compare your current configuration',style="margin-bottom:10px "),
-                                    shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info_UMAPs"), status = 'success', icon = shiny::icon('info'),size='sm'),
-                                                           shiny::h3(shiny::strong('Compare your current configuration')),
-                                                           shiny::div(style="white-space: pre-wrap; /* css-3 */
-                                                                      white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
-                                                                      white-space: -pre-wrap; /* Opera 4-6 */
-                                                                      white-space: -o-pre-wrap; /* Opera 7 */
-                                                                      word-wrap: break-word; /* Internet Explorer 5.5+ */",
-                                                                      shiny::h5('In this plot you can compare the configuration you have selected in the previous tabs to any other configuration. Here, you can also colour each configuration by the ECC, clusters, as well as any other metadata features that you have previously specified. You should choose the number of clusters that makes the most sense to you.')),
-                                                           shiny::h5('For more information please go to:'),
-                                                           shiny::tagList("", shiny::a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
-                                                           placement = "right",
-                                                           arrow = F,
-                                                           maxWidth = '700px'),
-                                    shiny::uiOutput(ns('k_selection_fixed')),
-                                    shiny::verticalLayout(shiny::h1('Configuration 1'),
-                                                          shiny::plotOutput(ns("umap_fixed")),
-                                                          shiny::splitLayout(cellWidths = c('50%','50%'),
-                                                                             shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('render_meta_1')),
-                                                                                                                                 shiny::uiOutput(ns('render_meta_2')))),
-                                                                             shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1(),
-                                                                                                                                 shinyWidgets::dropdownButton(
-                                                                                                                                   label = "",
-                                                                                                                                   icon = shiny::icon("download"),
-                                                                                                                                   status = "success",
-                                                                                                                                   size='sm',
-                                                                                                                                   shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                   shiny::textInput(ns("filename_umap_1"), "File name:", width = "80%"),
-                                                                                                                                   shiny::numericInput(ns("width_umap_1"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::numericInput(ns("height_umap_1"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::selectInput(ns('umap_filetype_1'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                   shiny::downloadButton(ns('download_umap_1'), label="Download Plot")
-                                                                                                                                   
-                                                                                                                                 ),
-                                                                                                                                 shiny::h1(),
-                                                                                                                                 shiny::h1(),
-                                                                                                                                 shinyWidgets::dropdownButton(
-                                                                                                                                   label = "",
-                                                                                                                                   icon = shiny::icon("download"),
-                                                                                                                                   status = "success",
-                                                                                                                                   size='sm',
-                                                                                                                                   shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                   shiny::textInput(ns("filename_umap_3"), "File name:", width = "80%"),
-                                                                                                                                   shiny::numericInput(ns("width_umap_3"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::numericInput(ns("height_umap_3"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                   shiny::selectInput(ns('umap_filetype_3'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                   shiny::downloadButton(ns('download_umap_3'), label="Download Plot")
-                                                                                                                                   
-                                                                                                                                 )))),
-                                                          shiny::plotOutput(ns("umap_fixed_2"))),style="border-right:5px solid;"),
-                         shiny::div(style="width:90%;",shiny::verticalLayout(shiny::splitLayout(cellWidths = c("50%","50%"),
-                                                                                                shiny::verticalLayout(shiny::uiOutput(ns("compare_sel_fset_render")),
-                                                                                                                      shiny::uiOutput(ns('compare_sel_steps_render'))),
-                                                                                                shiny::verticalLayout(shiny::uiOutput(ns('clustering_method_choice_render')),
-                                                                                                                      shiny::uiOutput(ns('k_selection')))),
-                                                                             shiny::h1('Configuration 2'),
-                                                                             shiny::plotOutput(ns("umap_choice")),
-                                                                             shiny::splitLayout(cellWidths = c('33%','33%','33%'),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::uiOutput(ns('render_meta_3')),
-                                                                                                                                                    shiny::uiOutput(ns('render_meta_4')))),
-                                                                                                shiny::div(style="width:90%;",shiny::verticalLayout(shiny::h1(),
-                                                                                                                                                    shinyWidgets::dropdownButton(
-                                                                                                                                                      label = "",
-                                                                                                                                                      icon = shiny::icon("download"),
-                                                                                                                                                      status = "success",
-                                                                                                                                                      size='sm',
-                                                                                                                                                      shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                                      shiny::textInput(ns("filename_umap_2"), "File name:", width = "80%"),
-                                                                                                                                                      shiny::numericInput(ns("width_umap_2"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::numericInput(ns("height_umap_2"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::selectInput(ns('umap_filetype_2'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                                      shiny::downloadButton(ns('download_umap_2'), label="Download Plot")
-                                                                                                                                                      
-                                                                                                                                                    ),
-                                                                                                                                                    shiny::h1(),
-                                                                                                                                                    shiny::h1(),
-                                                                                                                                                    shinyWidgets::dropdownButton(
-                                                                                                                                                      label = "",
-                                                                                                                                                      icon = shiny::icon("download"),
-                                                                                                                                                      status = "success",
-                                                                                                                                                      size='sm',
-                                                                                                                                                      shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-                                                                                                                                                      shiny::textInput(ns("filename_umap_4"), "File name:", width = "80%"),
-                                                                                                                                                      shiny::numericInput(ns("width_umap_4"), "Width (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::numericInput(ns("height_umap_4"), "Height (in):", 7, 3, 100, 0.1),
-                                                                                                                                                      shiny::selectInput(ns('umap_filetype_4'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-                                                                                                                                                      shiny::downloadButton(ns('download_umap_4'), label="Download Plot")
-                                                                                                                                                      
-                                                                                                                                                    )))),
-                                                                             shiny::plotOutput(ns("umap_choice_2")))
-                         ),
-      ),
-      shiny::h1('Jaccard Simmilarity Index (JSI)/Cells per cluster'),
-      shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = 'success', icon = shiny::icon('info'),size='sm'),
-                             shiny::h3(shiny::strong('Jaccard Simmilarity Index (JSI) between clusters')),
-                             shiny::br(),
-                             shiny::h5('This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner.'),
-                             shiny::h1('\n'),
-                             shiny::h5('For more information please go to:'),
-                             shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href="https://github.com/Core-Bioinformatics/ClustAssess",target="_blank")),
-                             placement = "right",
-                             arrow = F,
-                             maxWidth = '700px'),
-      shinyWidgets::dropdownButton(
-        label = "",
-        icon = shiny::icon("download"),
-        status = "success",
-        size='sm',
-        shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-        shiny::textInput(ns("filename_heatmap"), "File name:", width = "80%"),
-        shiny::numericInput(ns("width_heatmap"), "Width (in):", 7, 3, 100, 0.1),
-        shiny::numericInput(ns("height_heatmap"), "Height (in):", 7, 3, 100, 0.1),
-        shiny::selectInput(ns('heatmap_filetype'),'Filetype',choices = c('PDF','PNG','SVG'),selected='PDF',width='100%'),
-        shiny::downloadButton(ns('download_heatmap'), label="Download Plot")
-        
-      ),
-      shinyWidgets::dropdownButton(
-        label = "",
-        icon = shiny::icon("cog"),
-        status = "success",
-        size='sm',
-        shiny::radioButtons(ns('heatmap_type'),'Calculate similarity',choices=c('JSI','Cells per cluster'), width='100%')
-      ),
-      
-      shiny::plotOutput(ns('barcode_heatmap'))
-      
-    ),style = "margin-left: 25px;margin-top:72px;")
+ui_comparison_markers <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::h2("Identification of markers"),
+        shiny::splitLayout(
+            cellWidths = c("90%", "10%"),
+            shiny::plotOutput(ns("avg_expression_violin"), height = "auto"),
+            shiny::tableOutput(ns("avg_expression_table"))
+        ),
+        shinyWidgets::dropdownButton(
+            shiny::tagList(
+                shiny::sliderInput(
+                    inputId = ns("logfc"),
+                    label = "logFC threshold",
+                    min = 0.00, max = 10.00, value = 0.50, step = 0.01
+                ),
+                shiny::sliderInput(
+                    inputId = ns("avg_expr_thresh"),
+                    label = "Average expression threshold",
+                    min = 0.00, max = 0.01, value = 0.00
+                ),
+                shiny::sliderInput(
+                    inputId = ns("min_pct"),
+                    label = "Minimum gene frequency",
+                    min = 0.01, max = 1.00, value = 0.10, step = 0.01
+                ),
+                shiny::sliderInput(
+                    inputId = ns("pval"),
+                    label = "Maximum adj-pval",
+                    min = 0.001, max = 1.00, value = 0.01, step = 0.001
+                ),
+                shinyWidgets::prettySwitch(
+                    inputId = ns("norm_type"),
+                    label = "Data is normalised",
+                    value = TRUE,
+                    status = "success",
+                    fill = TRUE
+                )
+            ),
+            circle = TRUE,
+            status = "success",
+            size = "sm",
+            icon = shiny::icon("cog")
+        ),
+        shiny::htmlOutput(ns("marker_text")),
+        shiny::actionButton(ns("enable_markers"),
+            "Enable DEG analysis",
+            style = "font-size:20px;",
+            class = "btn-danger"
+        ),
+        shiny::fluidRow(
+            shiny::column(
+                6,
+                ui_comparison_markers_panel(ns("group_left"))
+            ),
+            shiny::column(
+                6,
+                ui_comparison_markers_panel(ns("group_right"))
+            )
+        ),
+        shiny::actionButton(ns("markers_button"), "Find markers!", class = "btn-danger"),
+        DT::dataTableOutput(ns("markers_dt")),
+        shiny::downloadButton(ns("markers_download_button"), "Download markers!")
+    )
 }
+
+ui_comparison_markers_panel <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::selectInput(
+            inputId = ns("select_k_markers"),
+            label = "Select the number of clusters (k) or metadata",
+            choices = ""
+        ),
+        shinyWidgets::pickerInput(
+            inputId = ns("select_clusters_markers"),
+            label = "Select the groups of cells",
+            choices = "",
+            inline = FALSE,
+            options = list(
+                `actions-box` = TRUE,
+                title = "Select/deselect subgroups",
+                size = 10,
+                width = "90%",
+                `selected-text-format` = "count > 3"
+            ),
+            multiple = TRUE
+        )
+    )
+}
+
+ui_comparison_metadata_panel <- function(id, draw_line) {
+    ns <- shiny::NS(id)
+    style <- ifelse(draw_line, "border-right:5px solid", "")
+
+    shinyWidgets::panel(
+        style = style,
+        shiny::selectizeInput(
+            inputId = ns("metadata"),
+            label = "Metadata",
+            choices = NULL
+        ),
+        shiny::splitLayout(
+            shiny::selectInput(
+                inputId = ns("metadata_subset"),
+                choices = NULL,
+                label = "Subset by metadata"
+            ),
+            shiny::verticalLayout(
+                shiny::tags$b("Select groups"),
+                shinyWidgets::pickerInput(
+                    inputId = ns("metadata_groups_subset"),
+                    choices = NULL,
+                    options = list(
+                        `actions-box` = TRUE,
+                        title = "Select/deselect groups",
+                        size = 10,
+                        width = "90%",
+                        `selected-text-format` = "count > 3"
+                    ),
+                    multiple = TRUE
+                )
+            )
+        ),
+        shiny::splitLayout(
+            cellWidths = c("40px", "40px"),
+            gear_umaps(ns, "metadata"),
+            gear_download(ns, "metadata", "metadata")
+        ),
+        shiny::plotOutput(ns("umap_metadata"), height = "auto"),
+        shiny::plotOutput(ns("umap_metadata_legend"), height = "auto")
+    )
+}
+
+
+ui_comparison_gene_panel <- function(id, draw_line) {
+    ns <- shiny::NS(id)
+    style <- ifelse(draw_line, "border-right:5px solid", "")
+
+    shinyWidgets::panel(
+        style = style,
+        shiny::selectizeInput(
+            inputId = ns("gene_expr"),
+            choices = NULL,
+            label = "Gene name(s)",
+            width = "95%",
+            multiple = TRUE
+        ),
+        shiny::verticalLayout(
+            shiny::splitLayout(
+                shiny::numericInput(
+                    inputId = ns("expr_threshold"),
+                    label = "Gene expression threshold",
+                    min = 0, max = 10, value = 0, step = 0.01,
+                    width = "95%"
+                ),
+                shiny::numericInput(
+                    inputId = ns("relaxation"),
+                    label = "#genes not expressed",
+                    min = 0, max = 10, value = 0, step = 1,
+                    width = "95%"
+                )
+            ),
+            shiny::splitLayout(
+                shiny::selectInput(
+                    inputId = ns("metadata_subset"),
+                    choices = NULL,
+                    label = "Subset by metadata"
+                ),
+                shiny::verticalLayout(
+                    shiny::tags$b("Select groups"),
+                    shinyWidgets::pickerInput(
+                        inputId = ns("metadata_groups_subset"),
+                        choices = NULL,
+                        options = list(
+                            `actions-box` = TRUE,
+                            title = "Select/deselect groups",
+                            size = 10,
+                            width = "90%",
+                            `selected-text-format` = "count > 3"
+                        ),
+                        multiple = TRUE
+                    )
+                )
+            )
+        ),
+        shiny::splitLayout(
+            cellWidths = c("40px", "40px"),
+            gear_umaps(ns, "gene", FALSE, "highest"),
+            gear_download(ns, "gene", "gene"),
+        ),
+        shiny::plotOutput(ns("umap_gene"), height = "auto"),
+        shiny::plotOutput(ns("umap_gene_legend"), height = "auto")
+    )
+}
+
+ui_comparison_jsi_panel <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::h1("Jaccard Simmilarity Index (JSI)/Cells per cluster"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "40px"),
+            shinyWidgets::dropdownButton(
+                label = "",
+                icon = shiny::icon("cog"),
+                status = "success",
+                size = "sm",
+                shiny::radioButtons(ns("heatmap_type"), "Calculate similarity", choices = c("JSI", "Cells per cluster"), width = "100%")
+            ),
+            shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = "success", icon = shiny::icon("info"), size = "sm"),
+                shiny::h3(shiny::strong("Jaccard Simmilarity Index (JSI) between clusters")),
+                shiny::br(),
+                shiny::h5("This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner."),
+                shiny::h1("\n"),
+                shiny::h5("For more information please go to:"),
+                shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
+                placement = "right",
+                arrow = FALSE
+            ),
+            #  maxWidth = '700px'),
+            shinyWidgets::dropdownButton(
+                label = "",
+                icon = shiny::icon("download"),
+                status = "success",
+                size = "sm",
+                shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
+                shiny::textInput(ns("filename_heatmap"), "File name:", width = "80%"),
+                shiny::numericInput(ns("width_heatmap"), "Width (in):", 7, 3, 100, 0.1),
+                shiny::numericInput(ns("height_heatmap"), "Height (in):", 7, 3, 100, 0.1),
+                shiny::selectInput(ns("heatmap_filetype"), "Filetype", choices = c("PDF", "PNG", "SVG"), selected = "PDF", width = "100%"),
+                shiny::downloadButton(ns("download_heatmap"), label = "Download Plot")
+            )
+        ),
+        shiny::selectInput(
+            inputId = ns("jsi_k_1"),
+            label = "Select the number of clusters (k) for the first comparison",
+            choices = ""
+        ),
+        shiny::selectInput(
+            inputId = ns("jsi_k_2"),
+            label = "Select the number of clusters (k) for the second comparison",
+            choices = ""
+        ),
+        shiny::plotOutput(ns("barcode_heatmap"), height = "auto", width = "98%")
+    )
+}
+
+ui_comparison_violin_gene <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::h2("Violin Plots - Gene expression"),
+        shiny::splitLayout(
+            cellWidths = "40px",
+            shinyWidgets::dropdownButton(
+                shiny::sliderInput(
+                    inputId = ns("text_size"),
+                    label = "Text size",
+                    min = 5, max = 30, value = 10, step = 0.5
+                ),
+                shinyWidgets::prettySwitch(
+                    inputId = ns("log_scale"),
+                    label = "Use log transform",
+                    status = "success",
+                    fill = TRUE,
+                    value = FALSE
+                ),
+                shiny::sliderInput(
+                    inputId = ns("boxplot_width"),
+                    label = "Boxplot width",
+                    min = 0.01, max = 1, value = 0.1, step = 0.01
+                ),
+                circle = TRUE,
+                status = "success",
+                size = "sm",
+                icon = shiny::icon("cog")
+            ),
+            gear_download(ns, "violin", "violin")
+        ),
+        shiny::splitLayout(
+            shiny::selectizeInput(
+                inputId = ns("gene_expr"),
+                choices = NULL,
+                label = "Select a metadata or a gene",
+                width = "95%",
+                multiple = FALSE
+            ),
+            shiny::selectInput(
+                inputId = ns("metadata"),
+                choices = NULL,
+                label = "Split by metadata"
+            )
+        ),
+        shiny::plotOutput(ns("violin_gene"), height = "auto"),
+        shiny::tableOutput(ns("stats"))
+    )
+}
+
+ui_comparison_enrichment <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::div(
+        shiny::h2("Enrichment analysis"),
+        shiny::splitLayout(
+            shinyWidgets::pickerInput(
+                inputId = ns("gprofilerSources"),
+                label = "Select data sources",
+                choices = c("GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC", "TF", "MIRNA", "CORUM", "HP", "HPA", "WP"),
+                selected = c("GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC", "TF", "MIRNA"),
+                multiple = TRUE,
+                options = list(
+                    title = "Select data sources"
+                )
+            ),
+            shinyWidgets::radioGroupButtons(
+                inputId = ns("group"),
+                label = "Select the group containing the target markers",
+                choices = c("group 1", "group 2")
+            )
+        ),
+        shiny::actionButton(
+            inputId = ns("enrichment_button"),
+            label = "Perform enrichment analysis!",
+            style = "font-size:20px;",
+            class = "btn-danger"
+        ),
+        plotly::plotlyOutput(
+            outputId = ns("gost_plot"),
+            height = "auto"
+        ),
+        DT::DTOutput(outputId = ns("gost_table")),
+        shiny::downloadButton(
+            outputId = ns("download_gost"),
+            label = "Download enriched terms as CSV",
+            class = "btn-info"
+        ),
+        id = ns("enrichment_id")
+    )
+}
+
+#' Writing objects
+#'
+#' @description to be completed
+#'
+#' @export
+ui_comparisons <- function(id) {
+    ns <- shiny::NS(id)
+    shiny::tabPanel(
+        "Comparison",
+        shinyWidgets::circleButton(ns("info_title"),
+            icon = shiny::icon("info"),
+            size = "sm",
+            status = "info",
+            class = "page-info"
+        ),
+        shiny::actionButton(ns("show_config"), "Show config", type = "info", class = "btn-info show_config"),
+        shiny::h2("Compare your current configuration", class = "first-element-tab"), # style = "margin-bottom:10px ")
+        shiny::splitLayout(
+            cellWidths = c("48%", "48%"),
+            ui_comparison_metadata_panel(ns("metadata_panel_left"), TRUE),
+            ui_comparison_metadata_panel(ns("metadata_panel_right"), FALSE)
+        ),
+        shiny::splitLayout(
+            cellWidths = c("48%", "48%"),
+            ui_comparison_gene_panel(ns("gene_panel_left"), TRUE),
+            ui_comparison_gene_panel(ns("gene_panel_right"), FALSE)
+        ),
+        ui_comparison_jsi_panel(ns("jsi_plot")),
+        ui_comparison_violin_gene(ns("violin_gene")),
+        ui_comparison_markers(ns("markers")),
+        ui_comparison_enrichment(ns("enrichment")),
+        style = "margin-bottom:30px;"
+    )
+}
+
 ####### SERVER #######
+server_comparison_markers <- function(id, k_choices) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            if ("genes" %in% names(pkg_env)) { # for backward-compatibility purposes
+                output$avg_expression_violin <- shiny::renderPlot({
+                    vioplot::vioplot(
+                        x = rhdf5::h5read("expression.h5", "average_expression"),
+                        horizontal = TRUE,
+                        xlab = "Average expression",
+                        main = "Average gene expression",
+                        ylab = "",
+                        xaxt = "n"
+                    )
+                },
+                height = function() {
+                    400
+                }
+                )
 
-server_comparisons_ <- function(id,chosen_config,chosen_method){
-  shiny::moduleServer(
-    id,
-    function(input, output, session) {
-      chosen_config <- shiny::isolate(chosen_config())
-      chosen_method <- shiny::isolate(chosen_method())
+                avg_stats <- fivenum(rhdf5::h5read("expression.h5", "average_expression"))
 
-      # metadata <- readRDS('metadata.rds') # already done in `shiny_landing_page.R`
-      temp_list <- rhdf5::h5read("stability.h5",'/')
-      temp_list$feature_stability <- NULL
-      obj_fsets <- names(temp_list$feature_ordering$stable)
-      
-      slim_obj <- function(x){
-        temp_list[[fset]][[x]]$nn_con_comps <- NULL
-        temp_list[[fset]][[x]]$pca <- NULL
-        temp_list[[fset]][[x]]$clustering_stability$split_by_resolution <- NULL
-        temp_list[[fset]][[x]]$feature_list <- NULL
-      }
-      
-      for (fset in obj_fsets){
-        lapply(temp_list$feature_ordering$stable[[1]], slim_obj)
-      }
-      
-      add_env_variable("stab_obj_1", temp_list)
-      rm(temp_list)
-      gc()
-      # Render UI 
-      ns <- shiny::NS(id)
-      options <- names(pkg_env$stab_obj_1$feature_ordering$stable)
-      output$compare_sel_fset_render <- shiny::renderUI({
-        ns <- session$ns
-        shiny::selectInput(
-          inputId = ns("compare_sel_fset"),
-          label = "Select feature - set:",
-          choices = options,
-          selected = options[1],
-          multiple = FALSE
-        )
-      })
-      outputOptions(output, "compare_sel_fset_render", suspendWhenHidden=FALSE)
-      
-      options_2 <- pkg_env$stab_obj_1$feature_ordering$stable[[1]]
-      output$compare_sel_steps_render <- shiny::renderUI({
-        ns <- session$ns
-        shiny::selectInput(
-          inputId = ns("compare_sel_steps"),
-          label = "Select feature - size:",
-          choices = options_2,
-          selected = options_2[1],
-          multiple = FALSE
-        )
-      })
-      outputOptions(output, "compare_sel_steps_render", suspendWhenHidden=FALSE)
-      
-      options_3 <- names(pkg_env$stab_obj_1[[1]][[1]]$clustering_stability$split_by_k$mbs)
-      output$clustering_method_choice_render <- shiny::renderUI({
-        ns <- session$ns
-        shiny::radioButtons(
-          inputId = ns("clustering_method_choice"),
-          label = "Select clustering Method:",
-          choices = options_3,
-          selected = options_3[1],
-          width='50%'
-        )
-      })
-      outputOptions(output, "clustering_method_choice_render", suspendWhenHidden=FALSE)
-      
-      
-      #Set the dropdown menu depending on the available clusters
-      
-      chosen_config <- pkg_env$stab_obj_1[[unlist(chosen_config[1])]][[unlist(chosen_config[2])]]
-      embedding_fixed <- chosen_config$umap
-      chosen_method <- chosen_config$clustering_stability$split_by_k$mbs[[chosen_method]]
-      output$k_selection_fixed <- shiny::renderUI({
-        shiny::selectInput(ns("k_fixed"), "Select a number of clusters:", choices = names(chosen_method), selected = names(chosen_method)[1], multiple = FALSE)
-      })
-      output$render_meta_1 <- shiny::renderUI({
-        shiny::selectInput(ns("col_by_fixed"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='ECC', multiple = FALSE)
-      })
-      output$render_meta_2 <- shiny::renderUI({
-        shiny::selectInput(ns("col_by_fixed_2"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='Clusters', multiple = FALSE)
-      })
-      output$render_meta_3 <- shiny::renderUI({
-        shiny::selectInput(ns("col_by_choice"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='ECC', multiple = FALSE)
-      })
-      output$render_meta_4 <- shiny::renderUI({
-        shiny::selectInput(ns("col_by_choice_2"), "Colour by:", choices = c('ECC','Clusters',colnames(metadata$metadata)), selected='Clusters', multiple = FALSE)
-      })
-      output$k_selection <- shiny::renderUI({
-        shiny::selectInput(ns("k"), "Select a number of clusters:", choices = names(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_stability$split_by_k$mbs[[input$clustering_method_choice]]), multiple = FALSE)
-      })
-      
-      #Set all UMAPs: 1,3 belong to the fixed selection, 2,4 are the UMAPs that change depending on the users choice
-      stable_graph_fixed <- paste0(toupper(chosen_config$stable_config$base_embedding),'_',chosen_config$stable_config$graph_type)
-      stable_nn_fixed <- as.character(chosen_config$stable_config$n_neighbours)
-      stable_ecc_fixed <- chosen_config$nn_stability$n_neigh_ec_consistency[[stable_graph_fixed]][[stable_nn_fixed]]
-      
-      umap_1 <- shiny::reactive({
-        if (input$col_by_fixed=='ECC'){
-          ECC <- stable_ecc_fixed
-          ggplot2::ggplot(data.frame(
-            chosen_config$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = ECC)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else if(input$col_by_fixed=='Clusters'){
-          Clusters <- as.factor(as.matrix(chosen_method[[input$k_fixed]]))
-          ggplot2::ggplot(data.frame(
-            embedding_fixed),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Clusters)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else{
-          Feat <- metadata$metadata[[input$col_by_fixed]]
-          ggplot2::ggplot(data.frame(
-            embedding_fixed),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Feat)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }
-      })
-      umap_3 <- shiny::reactive({
-        if (input$col_by_fixed_2=='ECC'){
-          ECC <- stable_ecc_fixed
-          ggplot2::ggplot(data.frame(
-            embedding_fixed),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = ECC)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else if(input$col_by_fixed_2=='Clusters'){
-          if(is.null(input$k_fixed)) {
-            return(ggplot2::ggplot() + ggplot2::theme_void())
-          }else{
-            Clusters <- as.factor(as.matrix(chosen_method[[input$k_fixed]]))
-            ggplot2::ggplot(data.frame(
-              embedding_fixed),
-              ggplot2::aes(x = .data$X1,
-                           y = .data$X2,
-                           color = Clusters)) +
-              ggplot2::xlab('UMAP 1') +
-              ggplot2::ylab('UMAP 2') +
-              ggplot2::geom_point() +
-              ggplot2::theme_bw() + 
-              ggplot2::coord_fixed()
-          }
-        }else{
-          Feat <- metadata$metadata[[input$col_by_fixed_2]]
-          ggplot2::ggplot(data.frame(
-            embedding_fixed),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Feat)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }
-      })
-      umap_2 <- shiny::reactive({
-        if(is.null(input$k)) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        if (input$col_by_choice=='ECC'){
-          ECC <- pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$nn_stability$n_neigh_ec_consistency[[paste0(toupper(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$stable_config$base_embedding),'_',pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$stable_config$graph_type)]][[as.character(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$stable_config$n_neighbours)]]
-          ggplot2::ggplot(data.frame(
-            pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = ECC)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else if(input$col_by_choice=='Clusters'){
-          Clusters <- as.factor(as.matrix(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_stability$split_by_k$mbs[[input$clustering_method_choice]][[input$k]]))
-          ggplot2::ggplot(data.frame(
-            pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Clusters)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else{
-          Feat <- metadata$metadata[[input$col_by_choice]]
-          ggplot2::ggplot(data.frame(
-            pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Feat)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }
-      })
-      umap_4 <- shiny::reactive({
-        if(is.null(input$k)) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        if (input$col_by_choice_2=='ECC'){
-          ECC <- stable_ecc_choice()
-          ggplot2::ggplot(data.frame(
-            pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = ECC)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::scale_color_viridis_c() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }else if(input$col_by_choice_2=='Clusters'){
-          if(is.null(input$k)) {
-            return(ggplot2::ggplot() + ggplot2::theme_void())
-          }else{
-            Clusters <- as.factor(as.matrix(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_stability$split_by_k$mbs[[input$clustering_method_choice]][[input$k]]))
-            ggplot2::ggplot(data.frame(
-              pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-              ggplot2::aes(x = .data$X1,
-                           y = .data$X2,
-                           color = Clusters)) +
-              ggplot2::xlab('UMAP 1') +
-              ggplot2::ylab('UMAP 2') +
-              ggplot2::geom_point() +
-              ggplot2::theme_bw() + 
-              ggplot2::coord_fixed()
-          }
-        }else{
-          Feat <- metadata$metadata[[input$col_by_choice_2]]
-          ggplot2::ggplot(data.frame(
-            pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$umap),
-            ggplot2::aes(x = .data$X1,
-                         y = .data$X2,
-                         color = Feat)) +
-            ggplot2::xlab('UMAP 1') +
-            ggplot2::ylab('UMAP 2') +
-            ggplot2::geom_point() +
-            ggplot2::theme_bw() + 
-            ggplot2::coord_fixed()
-        }
-      })
-      #Output all of the UMAPs
-      output$umap_fixed <- shiny::renderPlot({
-        if(is.null(umap_1())) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        umap_1()
-      })
-      output$umap_choice <- shiny::renderPlot({
-        if(is.null(umap_2())) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        umap_2()
-      })
-      output$umap_fixed_2 <- shiny::renderPlot({
-        if(is.null(umap_3())) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        umap_3()
-      })
-      output$umap_choice_2 <- shiny::renderPlot({
-        if(is.null(umap_4())) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        umap_4()
-      })
-      
-      umap_filetype_1 <- shiny::reactive({
-        if (input$umap_filetype_1=='PDF'){
-          filename <- paste0(input$filename_umap_1,'.pdf')
-          return(filename)
-        }else if (input$umap_filetype_1=='PNG'){
-          filename <- paste0(input$filename_umap_1,'.png')
-          return(filename)
-        }else{
-          filename <- paste0(input$filename_umap_1,'.svg')
-          return(filename)
-        }
-      })
-      output$download_umap_1 <- shiny::downloadHandler(
-        filename = function() {umap_filetype_1()},
-        content = function(file) {
-          ggplot2::ggsave(file, umap_1(),width = input$width_umap_1,
-                          height = input$height_umap_1,
-                          units = "in",
-                          limitsize = FALSE)
-        }
-      )
-      umap_filetype_2 <- shiny::reactive({
-        if (input$umap_filetype_2=='PDF'){
-          filename <- paste0(input$filename_umap_2,'.pdf')
-          return(filename)
-        }else if (input$umap_filetype_2=='PNG'){
-          filename <- paste0(input$filename_umap_2,'.png')
-          return(filename)
-        }else{
-          filename <- paste0(input$filename_umap_2,'.svg')
-          return(filename)
-        }
-      })
-      output$download_umap_2 <- shiny::downloadHandler(
-        filename = function() {umap_filetype_2()},
-        content = function(file) {
-          ggplot2::ggsave(file, umap_2(),width = input$width_umap_2,
-                          height = input$height_umap_2,
-                          units = "in",
-                          limitsize = FALSE)
-        }
-      )
-      umap_filetype_3 <- shiny::reactive({
-        if (input$umap_filetype_3=='PDF'){
-          filename <- paste0(input$filename_umap_3,'.pdf')
-          return(filename)
-        }else if (input$umap_filetype_3=='PNG'){
-          filename <- paste0(input$filename_umap_3,'.png')
-          return(filename)
-        }else{
-          filename <- paste0(input$filename_umap_3,'.svg')
-          return(filename)
-        }
-      })
-      output$download_umap_3 <- shiny::downloadHandler(
-        filename = function() {umap_filetype_3()},
-        content = function(file) {
-          ggplot2::ggsave(file, umap_3(),width = input$width_umap_3,
-                          height = input$height_umap_3,
-                          units = "in",
-                          limitsize = FALSE)
-        }
-      )
-      
-      umap_filetype_4 <- shiny::reactive({
-        if (input$umap_filetype_4=='PDF'){
-          filename <- paste0(input$filename_umap_4,'.pdf')
-          return(filename)
-        }else if (input$umap_filetype_4=='PNG'){
-          filename <- paste0(input$filename_umap_4,'.png')
-          return(filename)
-        }else{
-          filename <- paste0(input$filename_umap_4,'.svg')
-          return(filename)
-        }
-      })
-      output$download_umap_4 <- shiny::downloadHandler(
-        filename = function() {umap_filetype_4()},
-        content = function(file) {
-          ggplot2::ggsave(file, umap_4(),width = input$width_umap_4,
-                          height = input$height_umap_4,
-                          units = "in",
-                          limitsize = FALSE)
-        }
-      )
-      
-      #JSI heatmap
-      barcode_heatmap <- shiny::reactive({
-        if(is.null(input$k)) {
-          return(ggplot2::ggplot() + ggplot2::theme_void())
-        }
-        df_fixed <- data.frame(as.matrix(chosen_method[[input$k_fixed]])) 
-        df_fixed$cell <- rownames(df_fixed)
-        clustering_choice <- as.matrix(pkg_env$stab_obj_1[[input$compare_sel_fset]][[input$compare_sel_steps]]$clustering_stability$split_by_k$mbs[[input$clustering_method_choice]][[input$k]])
-        df_choice <- data.frame(clustering_choice) 
-        df_choice$cell <- rownames(df_choice)
-        all_clusters_1 <- unique(df_fixed[,1])
-        all_clusters_2 <- unique(df_choice[,1])
-        
-        mat = matrix(, nrow = length(all_clusters_2), 
-                     ncol = length(all_clusters_1))
-        colnames(mat) <- as.factor(sort(all_clusters_1))
-        rownames(mat) <- as.factor(sort(all_clusters_2))
-        if (input$heatmap_type=='JSI'){
-          for (m in all_clusters_1){
-            cluster_1 <- rownames(df_fixed[df_fixed[,1]==m,])
-            for (n in all_clusters_2){
-              cluster_2 <- rownames(df_choice[df_choice[,1]==n,])
-              mat[as.character(n),as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
-              label <- 'JSI'
+                output$avg_expression_table <- shiny::renderTable(
+                    {
+                        data.frame(
+                            row.names = c("min", "Q1", "median", "Q3", "max"),
+                            b = as.character(trunc(avg_stats * 1e5) / 1e5)
+                        )
+                    },
+                    colnames = FALSE,
+                    rownames = TRUE
+                )
+
+                shiny::updateSliderInput(
+                    session = session,
+                    inputId = "avg_expr_thresh",
+                    min = round(avg_stats[1], digits = 3),
+                    max = round(avg_stats[5], digits = 3),
+                    step = 0.01
+                )
             }
-          }
-        }else{
-          for (m in all_clusters_1){
-            cluster_1 <- rownames(df_fixed[df_fixed[,1]==m,])
-            for (n in all_clusters_2){
-              cluster_2 <- rownames(df_choice[df_choice[,1]==n,])
-              mat[as.character(n),as.character(m)] <- length(intersect(cluster_1, cluster_2))
-              label <- 'Shared cells'
+            
+            marker_genes <- shiny::reactiveVal(NULL)
+
+            # it would be nice to have gene umaps
+            shinyjs::html("marker_text", "Warning: Enabling DEG analysis will results into loading the memory. This process might take some time.")
+            shinyjs::hide("group_left-select_k_markers")
+            shinyjs::hide("group_left-select_clusters_markers")
+            shinyjs::hide("group_right-select_k_markers")
+            shinyjs::hide("group_right-select_clusters_markers")
+            shinyjs::hide("markers_download_button")
+            shinyjs::hide("markers_button")
+            shinyjs::hide("markers_dt")
+            shinyjs::show("enable_markers")
+
+            server_comparison_markers_panels("group_left", k_choices)
+            server_comparison_markers_panels("group_right", k_choices)
+
+            shiny::observe({
+                current_button_value <- as.integer(shiny::isolate(input$enable_markers))
+                shiny::req(pkg_env$enable_markers_button() != current_button_value)
+                pkg_env$enable_markers_button(current_button_value)
+                shinyjs::html("marker_text", "Preparing the objects for the analysis...")
+
+                if (!("genes" %in% names(pkg_env))) {
+                    expr_matrix <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL))
+                    rownames(expr_matrix) <- pkg_env$used_genes
+
+                    add_env_variable("rank_matrix", rhdf5::h5read("expression.h5", "rank_of_interest", index = list(pkg_env$genes_of_interest[pkg_env$used_genes], NULL)))
+                    add_env_variable("expr_matrix", expr_matrix)
+                }
+                shinyjs::hide("enable_markers")
+                shinyjs::show("group_left-select_k_markers")
+                shinyjs::show("group_left-select_clusters_markers")
+                shinyjs::show("group_right-select_k_markers")
+                shinyjs::show("group_right-select_clusters_markers")
+                shinyjs::show("markers_button")
+                shinyjs::html("marker_text", "")
+            }) %>% shiny::bindEvent(input$enable_markers)
+
+
+            markers_val <- shiny::reactive({
+                current_button_value <- as.integer(shiny::isolate(input$markers_button))
+                shiny::req(
+                    input$"group_left-select_clusters_markers",
+                    input$"group_right-select_clusters_markers",
+                    pkg_env$find_markers_button() != current_button_value
+                )
+                pkg_env$find_markers_button(current_button_value)
+
+                shinyjs::disable("markers_button")
+                shinyjs::html("marker_text", "Calculating the markers...")
+                subgroup_left <- input$"group_left-select_k_markers"
+                subgroup_right <- input$"group_right-select_k_markers"
+
+                if (is.na(as.numeric(subgroup_left))) {
+                    mb1 <- pkg_env$metadata[[subgroup_left]]
+                } else {
+                    mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
+                }
+
+                if (is.na(as.numeric(subgroup_right))) {
+                    mb2 <- pkg_env$metadata[[subgroup_right]]
+                } else {
+                    mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
+                }
+
+                cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
+                cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
+
+                if ("genes" %in% names(pkg_env)) {
+                    markers_result <- calculate_markers_shiny(
+                        cells1 = cells_index_left,
+                        cells2 = cells_index_right,
+                        norm_method = ifelse(input$norm_type, "LogNormalize", ""),
+                        used_slot = "data",
+                        min_pct_threshold = input$min_pct,
+                        logfc_threshold = input$logfc,
+                        average_expression_threshold = input$avg_expr_thresh
+                    )
+                } else { # for backward-compatibility reasons
+                    markers_result <- calculate_markers(
+                        expression_matrix = pkg_env$expr_matrix, # expression matrix
+                        cells1 = cells_index_left,
+                        cells2 = cells_index_right,
+                        rank_matrix = pkg_env$rank_matrix, # rank matrix
+                        norm_method = ifelse(input$norm_type, "LogNormalize", ""),
+                        min_pct_threshold = input$min_pct,
+                        logfc_threshold = input$logfc
+                    ) 
+                }
+
+                all_genes <- as.vector(markers_result$gene)
+
+                markers_result <- markers_result %>% dplyr::filter(.data$p_val_adj <= input$pval) %>% dplyr::arrange(dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
+                genes_group1 <- (markers_result %>% dplyr::filter(.data$avg_log2FC >= 0))$gene
+ 
+                marker_genes(list(
+                    all_genes = all_genes,
+                    group_1 = as.vector(genes_group1),
+                    group_2 = as.vector(markers_result$gene[seq(from = length(genes_group1) + 1, to = nrow(markers_result))])
+                ))
+
+                shinyjs::show("markers_dt")
+                shinyjs::show("markers_download_button")
+                shinyjs::enable("markers_button")
+                shinyjs::html("marker_text", "")
+
+                return(markers_result)
+            }) %>% shiny::bindEvent(input$markers_button)
+
+
+            shiny::observe(
+                output$markers_dt <- DT::renderDataTable(
+                    {
+                        shiny::req(markers_val())
+                        markers_val()
+                    },
+                    rownames = FALSE
+                )
+            ) %>% shiny::bindEvent(markers_val())
+
+            output$markers_download_button <- shiny::downloadHandler(
+                filename = function() {
+                    "markers.csv"
+                },
+                content = function(file) {
+                    write.csv(markers_val(), file)
+                }
+            )
+
+
+            shiny::observe({
+                shiny::req(markers_val())
+                shinyjs::show("markers_download_button")
+            }) %>% shiny::bindEvent(markers_val())
+
+            return(shiny::reactive(marker_genes()))
+        }
+    )
+}
+
+server_comparison_markers_panels <- function(id, k_choices) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            # also add categorical metadata
+            available_choices <- c(names(pkg_env$metadata_unique), k_choices)
+
+            shiny::updateSelectInput(
+                session = session,
+                inputId = "select_k_markers",
+                choices = available_choices,
+                selected = available_choices[1]
+            )
+
+            shiny::observe({
+                shiny::req(input$select_k_markers %in% available_choices)
+
+                if (is.na(as.numeric(input$select_k_markers))) {
+                    available_subgroups <- pkg_env$metadata_unique[[input$select_k_markers]]
+                } else {
+                    available_subgroups <- seq_len(as.numeric(input$select_k_markers))
+                }
+
+                shinyWidgets::updatePickerInput(
+                    session = session,
+                    inputId = "select_clusters_markers",
+                    choices = available_subgroups,
+                    selected = available_subgroups[1]
+                )
+            }) %>% shiny::bindEvent(input$select_k_markers)
+        }
+    )
+}
+
+server_comparison_metadata_panel <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            plt_height <- shiny::reactive(
+                floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.43))
+            )
+            changed_metadata <- shiny::reactiveVal(FALSE)
+
+            shiny::observe({
+                shiny::req(input$metadata_subset)
+                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+
+                if (is_cluster) {
+                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                    shinyWidgets::updatePickerInput(
+                        session,
+                        inputId = "metadata_groups_subset",
+                        choices = seq_len(k_value),
+                        selected = seq_len(k_value),
+                        clearOptions = TRUE
+                    )
+                    changed_metadata(TRUE)
+
+                    return()
+                }
+
+                mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
+
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "metadata_groups_subset",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                changed_metadata(TRUE)
+            }) %>% shiny::bindEvent(input$metadata_subset)
+
+            metadata_mask <- shiny::reactive({
+                shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
+                shiny::isolate({
+                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    if (is_cluster) {
+                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        all_unique_values <- as.character(seq_len(k))
+                    } else {
+                        all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
+                    }
+
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+
+                        changed_metadata(FALSE)
+                    }
+
+                    if (is_cluster) {
+                        return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    }
+                    return(pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                })
+            })
+
+            metadata_legend_height <- shiny::reactiveVal(0)
+
+            plot_data <- shiny::reactive({
+                shiny::req(input$metadata)
+
+                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+                is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
+
+                if (is_cluster || is_ecc) {
+                    k <- strsplit(input$metadata, "_")[[1]][2]
+                    if (is_ecc) {
+                        cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
+                        unique_values <- NULL
+                        color_values <- NULL
+                        color_info <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+                        color_info <- color_info[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
+                    } else {
+                        color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
+                        unique_values <- seq_len(as.integer(k))
+                        color_info <- factor(pkg_env$stab_obj$mbs[[k]])
+                    }
+                } else {
+                    unique_values <- pkg_env$metadata_unique[[input$metadata]]
+                    color_values <- pkg_env$metadata_colors[[input$metadata]]
+                    color_info <- pkg_env$metadata[[input$metadata]]
+                }
+
+                list(
+                    unique_values = unique_values,
+                    color_values = color_values,
+                    color_info = color_info
+                )
+            }) %>% shiny::bindEvent(input$metadata)
+
+            output$umap_metadata <- shiny::renderPlot(
+                height = function() {
+                    plt_height()
+                },
+                width = function() {
+                    plt_height()
+                },
+                {
+                    shiny::req(metadata_mask(), input$metadata_groups_subset, cancelOutput = TRUE)
+                    plot_data()
+                    input$metadata_subset
+                    input$metadata_pt_size
+                    input$metadata_axis_size
+                    input$metadata_text_size
+                    input$metadata_labels
+                    input$metadata_pt_type
+                    input$metadata_pt_order
+                    input$metadata_legend_size
+                    plt_height()
+
+                    shiny::isolate({
+                        if (is.null(plot_data()$unique_values)) {
+                            old_par <- par(mai = c(0.1, 0, 0.1, 0))
+                            text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
+                        } else {
+                            old_par <- par(mar = c(0, 0, 0, 0))
+                            predicted_width <- strwidth(c(" ", plot_data()$unique_values), units = "inches", cex = input$metadata_legend_size) * ppi
+                            space_width <- predicted_width[1]
+                            predicted_width <- predicted_width[2:length(predicted_width)]
+
+                            number_columns <- min(
+                                max(
+                                    plt_height() %/% (6 * space_width + max(predicted_width)),
+                                    1
+                                ),
+                                length(plot_data()$unique_values)
+                            )
+                            number_rows <- ceiling(length(plot_data()$unique_values) / number_columns)
+
+                            text_height <- strheight(
+                                paste(
+                                    rep("TEXT", number_rows + 1),
+                                    collapse = "\n"
+                                ),
+                                units = "inches",
+                                cex = input$metadata_legend_size
+                            )
+                        }
+                        par(old_par)
+                        metadata_legend_height(text_height * ppi)
+                        color_plot2(
+                            embedding = pkg_env$stab_obj$umap,
+                            color_info = plot_data()$color_info,
+                            color_values = plot_data()$color_values,
+                            unique_values = plot_data()$unique_values,
+                            plt_height = plt_height(),
+                            plt_width = plt_height(),
+                            display_legend = FALSE,
+                            pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
+                            pt_size = input$metadata_pt_size,
+                            sort_cells = input$metadata_pt_order,
+                            text_size = input$metadata_text_size,
+                            axis_size = input$metadata_axis_size,
+                            labels = input$metadata_labels,
+                            cell_mask = metadata_mask()
+                        )
+                    })
+                }
+            )
+
+
+            shiny::observe({
+                shiny::req(input$metadata, metadata_legend_height() > 0)
+                output$umap_metadata_legend <- shiny::renderPlot(
+                    height = function() {
+                        metadata_legend_height()
+                    },
+                    width = function() {
+                        plt_height()
+                    },
+                    {
+                        shiny::req(metadata_mask(), input$metadata_groups_subset, cancelOutput = TRUE)
+                        plot_data()
+                        plt_height()
+                        input$select_groups
+                        input$metadata_legend_size
+
+                        shiny::isolate({
+                            if (!is.null(plot_data()$unique_values)) {
+                                unique_values <- unique(plot_data()$color_info[metadata_mask()])
+                                unique_values <- plot_data()$unique_values[plot_data()$unique_values %in% unique_values]
+                                color_values <- plot_data()$color_values[which(plot_data()$unique_values %in% unique_values)]
+                            } else {
+                                color_values <- NULL
+                                unique_values <- NULL
+                            }
+
+
+                            only_legend_plot(
+                                unique_values = unique_values,
+                                color_values = color_values,
+                                color_info = plot_data()$color_info,
+                                plt_width = plt_height(),
+                                text_size = input$metadata_legend_size
+                            )
+                        })
+                    }
+                )
+            })
+
+            output$download_metadata <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_metadata, ".", tolower(input$filetype_metadata))
+                },
+                content = function(file) {
+                    shiny::req(input$metadata, input$width_metadata, input$height_metadata)
+
+                    ggplot_obj <- color_ggplot(
+                        embedding = pkg_env$stab_obj$umap,
+                        color_info = plot_data()$color_info,
+                        sort_cells = input$metadata_pt_order,
+                        cell_mask = metadata_mask(),
+                        legend_text_size = input$metadata_legend_size * 10,
+                        axis_text_size = input$metadata_axis_size * 10,
+                        text_size = input$metadata_text_size * 3,
+                        labels = input$metadata_labels,
+                        pt_size = input$metadata_pt_size
+                    ) + ggplot2::ggtitle(input$metadata)
+
+                    if (!is.null(plot_data()$unique_values)) {
+                        color_vector <- plot_data()$color_values
+                        names(color_vector) <- plot_data()$unique_values
+                        ggplot_obj <- ggplot_obj +
+                            ggplot2::scale_colour_manual(values = color_vector) +
+                            ggplot2::guides(color = ggplot2::guide_legend(
+                                override.aes = list(
+                                    size = input$metadata_pt_size * 10,
+                                    shape = 15
+                                )
+                            ))
+                    } else {
+                        ggplot_obj <- ggplot_obj +
+                            ggplot2::scale_colour_gradientn(colours = viridis::viridis(50)) +
+                            ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_metadata * 3 / 4, "inches")))
+                    }
+
+                    ggplot2::ggsave(
+                        filename = file,
+                        plot = ggplot_obj,
+                        height = input$height_metadata,
+                        width = input$width_metadata
+                    )
+                }
+            )
+        }
+    )
+}
+
+server_comparison_gene_panel <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            gene_legend_height <- shiny::reactiveVal(0)
+            expr_matrix <- shiny::reactive({
+                if ("genes" %in% names(pkg_env)) {
+                    index_gene <- pkg_env$genes[input$gene_expr]
+                    index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+
+                    return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+                }
+
+                # for backward-compatibility purposes
+                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+                index_interest <- index_interest[!is.na(index_interest)]
+
+                index_others <- pkg_env$genes_others[input$gene_expr]
+                index_others <- index_others[!is.na(index_others)]
+
+                rbind(
+                    rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+                    rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+                )
+            }) %>% shiny::bindEvent(input$gene_expr)
+
+            max_level_expr <- shiny::reactive(max(expr_matrix()))
+
+            changed_metadata <- shiny::reactiveVal(FALSE)
+
+            shiny::observe({
+                shiny::req(input$metadata_subset)
+                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+
+                if (is_cluster) {
+                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                    shinyWidgets::updatePickerInput(
+                        session,
+                        inputId = "metadata_groups_subset",
+                        choices = seq_len(k_value),
+                        selected = seq_len(k_value),
+                        clearOptions = TRUE
+                    )
+                    changed_metadata(TRUE)
+
+                    return()
+                }
+
+                mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
+
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "metadata_groups_subset",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                changed_metadata(TRUE)
+            }) %>% shiny::bindEvent(input$metadata_subset)
+
+            shiny::observe({
+                shiny::updateNumericInput(session,
+                    inputId = "expr_threshold",
+                    max = round(max_level_expr(), 3)
+                    # step = round(max_level_expr() / 10, 3)
+                )
+
+                shiny::updateNumericInput(
+                    session,
+                    inputId = "relaxation",
+                    max = length(input$gene_expr) - 1
+                )
+
+                if (length(input$gene_expr) > 1) {
+                    shinyjs::show("relaxation")
+                } else {
+                    shinyjs::hide("relaxation")
+                }
+            }) %>% shiny::bindEvent(input$gene_expr)
+
+            plt_height <- shiny::reactive(
+                floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] * 0.43))
+            )
+
+            output$umap_gene <- shiny::renderPlot(
+                height = function() {
+                    plt_height()
+                },
+                width = function() {
+                    plt_height()
+                },
+                {
+                    shiny::req(input$gene_expr, input$metadata_groups_subset, cancelOutput = TRUE)
+                    plt_height()
+                    relaxation <- input$relaxation
+                    expr_threshold <- input$expr_threshold
+                    input$gene_pt_type
+                    input$gene_legend_size
+                    input$gene_axis_size
+                    input$gene_pt_size
+                    input$gene_pt_order
+                    input$metadata_groups_subset
+
+                    shiny::isolate({
+                        is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                        if (is_cluster) {
+                            k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                            all_unique_values <- as.character(seq_len(k))
+                        } else {
+                            all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
+                        }
+
+                        if (changed_metadata()) {
+                            shiny::req(
+                                all(input$metadata_groups_subset %in% all_unique_values),
+                                cancelOutput = TRUE
+                            )
+
+                            changed_metadata(FALSE)
+                        }
+
+                        if (is_cluster) {
+                            metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                        } else {
+                            metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                        }
+
+
+                        if (is.na(expr_threshold) || is.null(expr_threshold)) {
+                            expr_threshold <- 0
+                        }
+
+                        if (is.na(relaxation) || is.null(relaxation)) {
+                            relaxation <- 0
+                        }
+
+                        unique_values <- NULL
+                        used_matrix <- expr_matrix()
+                        color_values <- function(n) {
+                            grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                        }
+                        if (length(input$gene_expr) > 1) {
+                            unique_values <- c("other", "cells above threshold")
+                            color_values <- c("FALSE" = "lightgray", "TRUE" = "red")
+                            used_matrix <- matrixStats::colSums2(used_matrix > expr_threshold) >= (length(input$gene_expr) - relaxation)
+                        } else if (expr_threshold > 0) {
+                            unique_values <- c("other", "cells above threshold")
+                            color_values <- c("FALSE" = "lightgray", "TRUE" = "red")
+                            used_matrix <- used_matrix > expr_threshold
+                        }
+
+                        old_par <- par(mai = c(0.1, 0, 0.1, 0))
+                        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
+                        par(old_par)
+                        gene_legend_height(text_height * ppi)
+
+                        color_plot2(
+                            embedding = pkg_env$stab_obj$umap,
+                            color_info = used_matrix,
+                            plt_height = plt_height(),
+                            plt_width = plt_height(),
+                            display_legend = FALSE,
+                            cell_mask = metadata_mask,
+                            unique_values = unique_values,
+                            color_values = color_values,
+                            pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
+                            pt_size = input$gene_pt_size,
+                            axis = input$gene_axis_size,
+                            sort_cells = input$gene_pt_order,
+                            legend_text_size = input$gene_legend_size,
+                            text_size = input$gene_legend_size
+                        )
+                    })
+                }
+            )
+
+            shiny::observe({
+                shiny::req(input$gene_expr, gene_legend_height() > 0)
+                output$umap_gene_legend <- shiny::renderPlot(
+                    height = function() {
+                        gene_legend_height()
+                    },
+                    width = function() {
+                        plt_height()
+                    },
+                    {
+                        shiny::req(input$metadata_groups_subset, cancelOutput = TRUE)
+                        plt_height()
+                        input$select_groups
+                        expr_threshold <- input$expr_threshold
+                        relaxation <- input$relaxation
+                        input$gene_expr
+                        input$gene_legend_size
+                        input$metadata_groups_subset
+
+                        shiny::isolate({
+                            is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                            if (is_cluster) {
+                                k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                                all_unique_values <- as.character(seq_len(k))
+                            } else {
+                                all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
+                            }
+
+                            if (changed_metadata()) {
+                                shiny::req(
+                                    all(input$metadata_groups_subset %in% all_unique_values),
+                                    cancelOutput = TRUE
+                                )
+                            }
+
+                            if (is_cluster) {
+                                metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                            } else {
+                                metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                            }
+
+                            if (is.na(expr_threshold) || is.null(expr_threshold)) {
+                                expr_threshold <- 0
+                            }
+
+                            if (is.na(relaxation) || is.null(relaxation)) {
+                                relaxation <- 0
+                            }
+
+                            unique_values <- NULL
+                            used_matrix <- expr_matrix()
+                            color_values <- function(n) {
+                                grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                            }
+                            if (length(input$gene_expr) > 1) {
+                                unique_values <- c("other", "cells above threshold")
+                                color_values <- c("#e3e3e3", "red")
+                                used_matrix <- matrixStats::colSums2(used_matrix > expr_threshold) >= (length(input$gene_expr) - relaxation)
+                            } else if (expr_threshold > 0) {
+                                unique_values <- c("other", "cells above threshold")
+                                color_values <- c("#e3e3e3", "red")
+                                used_matrix <- used_matrix > expr_threshold
+                            }
+
+
+                            only_legend_plot(
+                                unique_values = unique_values,
+                                color_values = color_values,
+                                color_info = used_matrix[metadata_mask],
+                                plt_width = plt_height(),
+                                text_size = input$gene_legend_size
+                            )
+                        })
+                    }
+                )
+            })
+
+            output$download_gene <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_gene, ".", tolower(input$filetype_gene))
+                },
+                content = function(file) {
+                    shiny::req(input$expr_threshold, input$gene_expr, input$width_gene, input$height_gene, expr_matrix())
+                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    if (is_cluster) {
+                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        all_unique_values <- as.character(seq_len(k))
+                    } else {
+                        all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
+                    }
+
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+                    }
+
+                    if (is_cluster) {
+                        metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    } else {
+                        metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                    }
+
+                    # filetypes[[input$filetype_gene]](file, width = input$width_gene, height = input$height_gene)
+                    unique_values <- NULL
+                    used_matrix <- expr_matrix()
+                    color_values <- function(n) {
+                        grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                    }
+                    if (length(input$gene_expr) > 1) {
+                        unique_values <- c("other", "cells above threshold")
+                        color_values <- c("other" = "lightgray", "cells above threshold" = "red")
+                        used_matrix <- factor(ifelse(matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation), "cells above threshold", "other"))
+                    } else if (input$expr_threshold > 0) {
+                        unique_values <- c("other", "cells above threshold")
+                        color_values <- c("other" = "lightgray", "cells above threshold" = "red")
+                        used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"))
+                    } else {
+                        used_matrix <- as.numeric(used_matrix)
+                    }
+
+
+                    ggplot_obj <- color_ggplot(
+                        embedding = pkg_env$stab_obj$umap,
+                        color_info = used_matrix,
+                        sort_cells = input$gene_pt_order,
+                        cell_mask = metadata_mask,
+                        pt_size = input$gene_pt_size
+                    ) + ggplot2::ggtitle(paste(input$gene_expr, collapse = " ")) +
+                        ggplot2::theme(
+                            legend.position = "bottom",
+                            legend.title = ggplot2::element_blank(),
+                            legend.text = ggplot2::element_text(size = input$gene_legend_size * 10),
+                            axis.text = ggplot2::element_text(size = input$gene_axis_size * 10),
+                            axis.title = ggplot2::element_text(size = input$gene_axis_size * 10),
+                            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 10 * 1.5),
+                            aspect.ratio = 1
+                        )
+
+
+                    if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
+                        ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
+                    } else {
+                        ggplot_obj <- ggplot_obj +
+                            ggplot2::scale_colour_gradientn(colours = color_values(50)) +
+                            ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
+                    }
+
+                    ggplot2::ggsave(
+                        filename = file,
+                        plot = ggplot_obj,
+                        height = input$height_gene,
+                        width = input$width_gene
+                    )
+                }
+            )
+        }
+    )
+}
+
+server_comparison_jsi <- function(id, k_choices) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            shiny::updateSelectInput(
+                session = session,
+                inputId = "jsi_k_1",
+                choices = k_choices,
+                selected = k_choices[1]
+            )
+
+            shiny::updateSelectInput(
+                session = session,
+                inputId = "jsi_k_2",
+                choices = k_choices,
+                selected = k_choices[1]
+            )
+
+
+
+            plt_height <- shiny::reactive(
+                floor(pkg_env$height_ratio * pkg_env$dimension()[2])
+            )
+
+            barcode_heatmap <- shiny::reactive({
+                shiny::req(input$jsi_k_1, input$jsi_k_2)
+                clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
+                df_1 <- data.frame(clustering_1)
+                df_1$cell <- rownames(df_1)
+                clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
+                df_2 <- data.frame(clustering_2)
+                df_2$cell <- rownames(df_2)
+                all_clusters_1 <- unique(df_1[, 1])
+                all_clusters_2 <- unique(df_2[, 1])
+
+                mat <- matrix(,
+                    nrow = length(all_clusters_2),
+                    ncol = length(all_clusters_1)
+                )
+                colnames(mat) <- sort(all_clusters_1)
+                rownames(mat) <- sort(all_clusters_2)
+                if (input$heatmap_type == "JSI") {
+                    for (m in all_clusters_1) {
+                        cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
+                        for (n in all_clusters_2) {
+                            cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
+                            mat[as.character(n), as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
+                            label <- "JSI"
+                        }
+                    }
+                } else {
+                    for (m in all_clusters_1) {
+                        cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
+                        for (n in all_clusters_2) {
+                            cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
+                            mat[as.character(n), as.character(m)] <- length(intersect(cluster_1, cluster_2))
+                            label <- "Shared cells"
+                        }
+                    }
+                }
+                df_mat <- reshape2::melt(mat)
+
+                ggplot2::ggplot(df_mat, ggplot2::aes(Var1, Var2)) +
+                    ggplot2::geom_tile(ggplot2::aes(fill = value)) +
+                    ggplot2::geom_text(ggplot2::aes(label = round(value, 2))) +
+                    ggplot2::scale_fill_gradient2(
+                        low = scales::muted("darkred"),
+                        mid = "white",
+                        high = scales::muted("green"),
+                        midpoint = 0
+                    ) +
+                    ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +
+                    ggplot2::scale_y_continuous(breaks = pretty(df_mat$Var2, n = length(all_clusters_1))) +
+                    ggplot2::theme(
+                        panel.background = ggplot2::element_rect(fill = "white"),
+                        axis.text.x = ggplot2::element_text(hjust = 1, vjust = 1, size = 10, face = "bold"),
+                        axis.text.y = ggplot2::element_text(size = 10, face = "bold"),
+                        axis.title = ggplot2::element_text(size = 14, face = "bold"),
+                        axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
+                        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))
+                    ) +
+                    ggplot2::xlab("Clusters in Configuration 2") +
+                    ggplot2::ylab("Clusters in Configuration 1") +
+                    ggplot2::labs(fill = label)
+            })
+
+            output$barcode_heatmap <- shiny::renderPlot(
+                {
+                    if (is.null(input$jsi_k_1) | is.null(input$jsi_k_2)) {
+                        return(ggplot2::ggplot() +
+                            ggplot2::theme_void())
+                    } else {
+                        barcode_heatmap()
+                    }
+                },
+                height = plt_height()
+            )
+
+            heatmap_filetype <- shiny::reactive({
+                if (input$heatmap_filetype == "PDF") {
+                    filename <- paste0(input$filename_heatmap, ".pdf")
+                    return(filename)
+                } else if (input$heatmap_filetype == "PNG") {
+                    filename <- paste0(input$filename_heatmap, ".png")
+                    return(filename)
+                } else {
+                    filename <- paste0(input$filename_heatmap, ".svg")
+                    return(filename)
+                }
+            })
+
+            output$download_heatmap <- shiny::downloadHandler(
+                filename = function() {
+                    heatmap_filetype()
+                },
+                content = function(file) {
+                    ggplot2::ggsave(file, barcode_heatmap(),
+                        width = input$width_heatmap,
+                        height = input$height_heatmap,
+                        units = "in",
+                        limitsize = FALSE
+                    )
+                }
+            )
+        }
+    )
+}
+
+server_comparison_violin_gene <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            distr_val <- shiny::reactive({
+                shiny::req(input$gene_expr, length(input$gene_expr) == 1, cancelOutput = TRUE)
+
+                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+
+                if (is_ecc) {
+                    k <- strsplit(input$gene_expr, "_")[[1]][2]
+                    cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
+                    temp_val <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+                    return(temp_val[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]])
+                }
+
+                if (is_continuous) {
+                    return(pkg_env$metadata[[input$gene_expr]])
+                }
+
+                if ("genes" %in% names(pkg_env)) {
+                    index_gene <- pkg_env$genes[input$gene_expr]
+                    return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL))[1, ])
+                }
+
+                # for backward-compatibility purposes
+                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+                index_others <- pkg_env$genes_others[input$gene_expr]
+
+                if (is.na(index_interest)) {
+                    return(rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))[1, ])
+                }
+                return(rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL))[1, ])
+            })
+
+            metadata_info <- shiny::reactive({
+                shiny::req(input$metadata, cancelOutput = TRUE)
+                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+
+                if (is_cluster) {
+                    k <- strsplit(input$metadata, "_")[[1]][2]
+                    return(list(
+                        color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        color_info = factor(pkg_env$stab_obj$mbs[[k]])
+                    ))
+                }
+
+                return(list(
+                    color_values = pkg_env$metadata_colors[[input$metadata]],
+                    color_info = pkg_env$metadata[[input$metadata]]
+                ))
+            })
+
+            ggplot_object <- shiny::reactive({
+                shiny::req(distr_val(), metadata_info(), cancelOutput = TRUE)
+
+                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+
+                function_applied <- ifelse(!input$log_scale,
+                    function(x) { x },
+                    function(x) { log10(x) }
+                )
+
+                df <- data.frame(
+                    gene_expr = function_applied(distr_val()),
+                    metadata = metadata_info()$color_info
+                )
+
+                ggplot2::ggplot(
+                    df,
+                    ggplot2::aes(x = .data$metadata, y = .data$gene_expr, fill = .data$metadata)
+                ) +
+                    ggplot2::geom_violin() +
+                    ggplot2::scale_fill_manual(values = metadata_info()$color_values) +
+                    ggplot2::geom_boxplot(width = input$boxplot_width, outlier.shape = NA) +
+                    ggplot2::theme(
+                        legend.position = "none",
+                        axis.text = ggplot2::element_text(size = input$text_size),
+                        axis.title = ggplot2::element_text(size = input$text_size)
+                    ) +
+                    # ggplot2::scale_y_continuous(trans = ifelse(input$log_scale, "log10", "identity")) +
+                    ggplot2::ylab(paste0(ifelse(
+                        is_ecc,
+                        "ECC",
+                        ifelse(
+                            is_continuous,
+                            input$gene_expr,
+                            "Gene Expression"
+                        )
+                    ), ifelse(input$log_scale, " (log10 scale)", "")))+
+                    ggplot2::xlab(input$metadata)
+            })
+
+            output$violin_gene <- shiny::renderPlot(
+                {
+                    shiny::req(ggplot_object(), cancelOutput = TRUE)
+                    ggplot_object()
+                },
+                height = function() {
+                    pkg_env$plt_height()
+                }
+            )
+
+            output$download_violin <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_violin, ".", tolower(input$filetype_violin))
+                },
+                content = function(file) {
+                    shiny::req(ggplot_object())
+
+                    ggplot2::ggsave(
+                        filename = file,
+                        plot = ggplot_object() + ggplot2::ggtitle(
+                            glue::glue("Distribution of {input$gene_expr} - Split by {input$metadata}")
+
+                        ),
+                        height = input$height_violin,
+                        width = input$width_violin
+                    )
+                }
+            )
+
+            output$stats <- shiny::renderTable({
+                shiny::req(distr_val(), metadata_info())
+
+                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                distr_stats <- fivenum(distr_val())
+                distance_breaks <- (distr_stats[5] - distr_stats[1]) / 4
+                break_points <- c(
+                    distr_stats[1],
+                    distr_stats[1] + distance_breaks,
+                    distr_stats[1] + 2 * distance_breaks,
+                    distr_stats[1] + 3 * distance_breaks,
+                    distr_stats[5]
+                )
+
+                split_vals <- split(
+                    distr_val(),
+                    metadata_info()$color_info
+                )
+
+                stats_df <- rbind(
+                    data.frame(sapply(seq_along(split_vals), function(i) {
+                        fivenum(split_vals[[i]])
+                    })),
+                    sapply(split_vals, length)
+                )
+
+                colnames(stats_df) <- names(split_vals)
+                rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells")
+                
+                breaks_df <- sapply(split_vals, function(x) {
+                    table(cut(x, breaks = break_points))
+                })
+
+                rbind(stats_df, breaks_df)
+            }, rownames = TRUE)
+        }
+    )
+}
+
+server_comparison_enrichment <- function(id, marker_genes) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            # isolated_marker_genes <- shiny::isolate(marker_genes())
+            shiny::observe({
+                shiny::req(marker_genes())
+                shinyjs::show("enrichment_id")
+                shinyjs::hide("download_gost")
+            }) %>% shiny::bindEvent(marker_genes(), once = TRUE)
+
+            gprof_result <- shiny::reactive({
+                shiny::req(marker_genes())
+                shinyjs::disable("enrichment_button")
+                selected_group <- stringr::str_replace(input$group, " ", "_")
+
+                if ("genes" %in% names(pkg_env)) {
+                    custom_bg <- names(pkg_env$genes)
+                } else { # backward-compatibility
+                    custom_bg <- c(names(pkg_env$genes_others), names(pkg_env$genes_of_interest))
+                }
+
+                gprf_res <- gprofiler2::gost(
+                    query = marker_genes()[[selected_group]],
+                    sources = input$gprofilerSources,
+                    organism = pkg_env$organism,
+                    evcodes = TRUE,
+                    domain_scope = "custom",
+                    custom_bg = custom_bg
+                )
+                
+                gprf_res$result$parents <- sapply(gprf_res$result$parents, toString)
+                
+                shinyjs::enable("enrichment_button")
+                shinyjs::show("download_gost")
+
+                gprf_res
+            }) %>% shiny::bindEvent(input$enrichment_button)
+
+            shiny::observe({
+                shiny::req(gprof_result())
+
+                output$gost_table <- DT::renderDT({
+                    gprof_result()$result[, seq_len(ncol(gprof_result()$result) - 2)]
+                })
+
+                output$gost_plot <- plotly::renderPlotly(
+                    gprofiler2::gostplot(gprof_result())
+                )
+
+                output$download_gost <- shiny::downloadHandler(
+                    filename = function() {
+                        "enrichment_results.csv"
+                    },
+                    content = function(file) {
+                        write.csv(gprof_result()$result, file)
+                    }
+                )
+            })
+        }
+    )
+}
+
+#' Writing objects
+#'
+#' @description to be completed
+#'
+#' @export
+server_comparisons <- function(id, chosen_config, chosen_method) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            shinyjs::hide("enrichment-enrichment_id")
+            isolated_chosen_config <- shiny::isolate(chosen_config())
+            ftype <- isolated_chosen_config$chosen_feature_type
+            fsize <- isolated_chosen_config$chosen_set_size
+
+            isolated_chosen_method <- shiny::isolate(chosen_method())
+            cl_method <- isolated_chosen_method$method_name
+            k_values <- isolated_chosen_method$n_clusters
+            stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
+
+            add_env_variable("stab_obj", list(
+                mbs = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "mbs", cl_method, sep = "/"))[k_values],
+                ecc = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
+                ecc_order = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc_order", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
+                umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
+            ))
+
+            add_env_variable("used_genes", rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))])
+            add_env_variable("current_tab", "Comparison")
+
+            for (panels in c("left", "right")) {
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("metadata_panel_{panels}-metadata"),
+                    server = FALSE,
+                    choices = c(colnames(pkg_env$metadata), paste0("stable_", k_values, "_clusters"), paste0("ecc_", k_values)),
+                    selected = paste0("stable_", k_values[1], "_clusters")
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("gene_panel_{panels}-metadata_subset"),
+                    server = FALSE,
+                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    selected = paste0("stable_", k_values[1], "_clusters")
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("metadata_panel_{panels}-metadata_subset"),
+                    server = FALSE,
+                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    selected = paste0("stable_", k_values[1], "_clusters")
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("violin_gene-metadata"),
+                    server = FALSE,
+                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    selected = paste0("stable_", k_values[1], "_clusters")
+                )
+
+                if ("genes" %in% names(pkg_env)) {
+                    gene_choices <- names(pkg_env$genes)
+                } else { # for backward-compatibility purposes
+                    gene_choices <- c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others))
+                }
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("gene_panel_{panels}-gene_expr"),
+                    choices = gene_choices,
+                    selected = gene_choices[1],
+                    server = TRUE,
+                    options = list(
+                        maxOptions = 7
+                    )
+                )
+
+                continuous_metadata <- c(
+                    setdiff(colnames(pkg_env$metadata), names(pkg_env$metadata_unique)),
+                    paste0("ecc_", k_values)
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("violin_gene-gene_expr"),
+                    choices = c(continuous_metadata, gene_choices),
+                    selected = continuous_metadata[1],
+                    server = TRUE,
+                    options = list(
+                        maxOptions = length(continuous_metadata)
+                    )
+                )
             }
-          }
+            server_comparison_metadata_panel("metadata_panel_left")
+            server_comparison_metadata_panel("metadata_panel_right")
+            server_comparison_gene_panel("gene_panel_left")
+            server_comparison_gene_panel("gene_panel_right")
+            server_comparison_jsi("jsi_plot", k_values)
+            server_comparison_violin_gene("violin_gene")
+            marker_genes <- server_comparison_markers("markers", k_values)
+            server_comparison_enrichment("enrichment", marker_genes)
+
+            shiny::observe({
+                shiny::showModal(
+                    stable_config_info(stable_config),
+                    session = session
+                )
+            }) %>% shiny::bindEvent(input$show_config, ignoreInit = TRUE)
+
+            shiny::observe(compar_info(session)) %>% shiny::bindEvent(input$info_title, ignoreInit = TRUE)
+
+            shiny::observe({
+                gc()
+            }) %>% shiny::bindEvent(input$"metadata_panel_right-metadata_groups_subset", once = TRUE)
         }
-        
-        df_mat <- reshape::melt(mat)
-        
-        ggplot2::ggplot(df_mat, ggplot2::aes(X1, X2)) + 
-          ggplot2::geom_tile(ggplot2::aes(fill = value)) + 
-          ggplot2::geom_text(ggplot2::aes(fill = value, label = round(value, 2))) +
-          ggplot2::scale_fill_gradient2(low = scales::muted("darkred"), 
-                                        mid = "white", 
-                                        high = scales::muted("midnightblue"), 
-                                        midpoint = 0) + 
-          ggplot2::scale_x_continuous(breaks = pretty(df_mat$X1, n = length(all_clusters_2))) +
-          ggplot2::scale_y_continuous(breaks = pretty(df_mat$X2, n = length(all_clusters_1))) +
-          ggplot2::theme(
-            panel.background=ggplot2::element_rect(fill="white"), 
-            axis.text.x = ggplot2::element_text(hjust = 1,vjust=1,size = 10,face = "bold"),
-            axis.text.y = ggplot2::element_text(size = 10,face = "bold"),
-            axis.title = ggplot2::element_text(size=14,face="bold"),
-            axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
-            axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))) + 
-          ggplot2::xlab("Clusters in Configuration 2") +
-          ggplot2::ylab("Clusters in Configuration 1") +
-          ggplot2::labs(fill=label) 
-      })
-      output$barcode_heatmap <- shiny::renderPlot({
-        barcode_heatmap()
-      },height=500)
-      heatmap_filetype <- shiny::reactive({
-        if (input$heatmap_filetype=='PDF'){
-          filename <- paste0(input$filename_heatmap,'.pdf')
-          return(filename)
-        }else if (input$heatmap_filetype=='PNG'){
-          filename <- paste0(input$filename_heatmap,'.png')
-          return(filename)
-        }else{
-          filename <- paste0(input$filename_heatmap,'.svg')
-          return(filename)
-        }
-      })
-      output$download_heatmap <- shiny::downloadHandler(
-        filename = function() {heatmap_filetype()},
-        content = function(file) {
-          ggplot2::ggsave(file,barcode_heatmap(),width = input$width_heatmap,
-                          height = input$height_heatmap,
-                          units = "in",
-                          limitsize = FALSE)
-        }
-      )
-    }
-  )
+    )
 }
