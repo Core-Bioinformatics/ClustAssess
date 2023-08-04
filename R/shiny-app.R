@@ -483,18 +483,27 @@ write_objects <- function(clustassess_object,
     }
 
     index_list <- seq(from = chunk_size * (nchunks - 1) + 1, by = 1, to = nrow(expression_matrix))
-    rhdf5::h5write(
-        t(apply(
-            expression_matrix[index_list, ],
-            1,
-            function(x) {
-                rank(x, ties.method = "min")
-            }
-        )),
-        expr_file_name,
-        "rank_matrix",
-        index = list(index_list, NULL)
-    )
+    if (length(index_list) == 1) {
+        rhdf5::h5write(
+            rank(expression_matrix[index_list, ], ties.method = "min"),
+            expr_file_name,
+            "rank_matrix",
+            index = list(index_list, NULL)
+        )
+    } else {
+        rhdf5::h5write(
+            t(apply(
+                expression_matrix[index_list, ],
+                1,
+                function(x) {
+                    rank(x, ties.method = "min")
+                }
+            )),
+            expr_file_name,
+            "rank_matrix",
+            index = list(index_list, NULL)
+        )
+    }
 
     # rank_matrix <- matrix(nrow = length(genes_of_interest), ncol = ncol(expression_matrix))
 
