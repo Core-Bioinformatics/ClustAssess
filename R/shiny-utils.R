@@ -996,7 +996,6 @@ calculate_markers_shiny <- function(cells1,
                 base = base,
                 check_cells_set_diff = FALSE,
                 adjust_pvals = FALSE
-                # calculate_pvals = FALSE
             )
         }
     )
@@ -1058,7 +1057,7 @@ calculate_markers <- function(expression_matrix,
     indices <- c(cells1, cells2)
     n <- length(feature_names)
 
-    expression_matrix <- expression_matrix[, indices]
+    expression_matrix <- expression_matrix[, indices, drop = FALSE]
 
     base_text <- ifelse(test = base == exp(1), yes = "", no = base)
     fc_name <- ifelse(
@@ -1099,7 +1098,7 @@ calculate_markers <- function(expression_matrix,
         return(data.frame())
     }
 
-    expression_matrix <- expression_matrix[mask, ]
+    expression_matrix <- expression_matrix[mask, , drop = FALSE]
     fc_results <- fc_results[mask, ]
     feature_names <- feature_names[mask]
 
@@ -1112,7 +1111,7 @@ calculate_markers <- function(expression_matrix,
             rank_matrix[i, ] <- rank(expression_matrix[i, ], ties.method = "min")
         }
     } else {
-        rank_matrix <- rank_matrix[mask, indices]
+        rank_matrix <- rank_matrix[mask, indices, drop = FALSE]
     }
 
     if (length(mask) == 1) {
