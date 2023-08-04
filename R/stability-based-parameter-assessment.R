@@ -4,29 +4,42 @@
 NULL
 
 ranking_functions <- list(
-  "median" = median,
-  "max" = max,
-  "top_qt" = function(arr) {
-    summary(arr)[5]
-  },
-  "top_qt_max" = function(arr) {
-    summary(arr)[5] + summary(arr)[6]
-  },
-  "mean" = mean
+    "median" = median,
+    "max" = max,
+    "top_qt" = function(arr) {
+        fivenum(arr)[4]
+    },
+    "top_qt_max" = function(arr) {
+        arr_summary <- fivenum(arr)
+        arr_summary[4] + arr_summary[5]
+    },
+    "iqr" = function(arr) {
+        arr_summary <- fivenum(arr)
+        arr_summary[2] - arr_summary[4]
+    },
+    "iqr_median" = function(arr) {
+        arr_summary <- fivenum(arr)
+        arr_summary[3] - (arr_summary[4] - arr_summary[2])
+    },
+    "iqr_median_coeff" = function(arr) {
+        arr_summary <- fivenum(arr)
+        arr_summary[3] / (arr_summary[4] - arr_summary[2])
+    },
+    "mean" = mean
 )
 
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
 seurat_clustering <- function(object, resolution, seed, algorithm = 4, ...) {
-  cluster_result <- Seurat::FindClusters(
-    object,
-    resolution = resolution,
-    random.seed = seed,
-    algorithm = algorithm,
-    verbose = FALSE,
-    ...
-  )
-  cluster_result[[colnames(cluster_result)[1]]]
+    cluster_result <- Seurat::FindClusters(
+        object,
+        resolution = resolution,
+        random.seed = seed,
+        algorithm = algorithm,
+        verbose = FALSE,
+        ...
+    )
+    as.integer(cluster_result[[colnames(cluster_result)[1]]])
 }
 
 leiden_clustering <- function(object, resolution, seed, ...) {
@@ -34,20 +47,19 @@ leiden_clustering <- function(object, resolution, seed, ...) {
 
 #### Automatic ####
 rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order") {
-  if (!(rank_by %in% names(ranking_functions))) {
-    rank_by <- "top_qt_max"
-  }
+    if (!(rank_by %in% names(ranking_functions))) {
+        rank_by <- "top_qt_max"
+    }
 
-  ranking_fun <- ranking_functions[[rank_by]]
-  scores <- sapply(ecc_list, ranking_fun)
+    ranking_fun <- ranking_functions[[rank_by]]
+    scores <- sapply(ecc_list, ranking_fun)
 
-  if (return_type == "order") {
-    return(order(scores, decreasing = TRUE))
-  }
+    if (return_type == "order") {
+        return(order(scores, decreasing = TRUE))
+    }
 
-  return(length(ecc_list) + 1 - rank(scores, ties.method = "first"))
+    return(length(ecc_list) + 1 - rank(scores, ties.method = "first"))
 }
-
 
 #' Assessment of Stability for Graph Clustering
 #' @description Evaluates the stability of different graph clustering methods
@@ -91,339 +103,355 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            graph_reduction_embedding = "PCA",
                                            include_umap_nn_assessment = FALSE,
                                            n_top_configs = 3,
-                                           ranking_criterion = "median",
+                                           ranking_criterion = "iqr",
+                                           overall_summary = "median",
                                            npcs = 30,
                                            verbose = TRUE,
                                            ecs_threshold = 1, # do we really need it?,
                                            post_processing_dim_reduction = function(pca_emb) {
-                                             pca_emb
+                                               pca_emb
                                            },
                                            umap_arguments = list(),
                                            clustering_arguments = list(),
                                            save_temp = TRUE,
                                            ...) {
-  # store the additional arguments used by umap in a list
-  suppl_args <- list(...)
-  file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
-  cell_names <- colnames(expression_matrix)
-  if (is.null(cell_names)) {
-    cell_names <- paste0("cell_", seq_len(ncol(expression_matrix)))
-    colnames(expression_matrix) <- cell_names
-  }
+    # store the additional arguments used by umap in a list
+    suppl_args <- list(...)
+    file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
+    cell_names <- colnames(expression_matrix)
+    if (is.null(cell_names)) {
+        cell_names <- paste0("cell_", seq_len(ncol(expression_matrix)))
+        colnames(expression_matrix) <- cell_names
+    }
 
-  feature_set_names <- names(steps)
-  n_configs <- length(feature_set_names)
-  # TODO: check if the name of the feature sets are the same with the steps
+    feature_set_names <- names(steps)
+    n_configs <- length(feature_set_names)
+    # TODO: check if the name of the feature sets are the same with the steps
 
-  # FEATURE STABILITY
-  # sort the steps in an increasing order
-  for (set_name in feature_set_names) {
-    steps[[set_name]][steps[[set_name]] <= 0 |
-      steps[[set_name]] > length(features_sets[[set_name]])] <- length(features_sets[[set_name]])
-    steps[[set_name]] <- sort(unique(steps[[set_name]]))
-  }
+    # FEATURE STABILITY
+    # sort the steps in an increasing order
+    for (set_name in feature_set_names) {
+        steps[[set_name]][steps[[set_name]] <= 0 |
+            steps[[set_name]] > length(features_sets[[set_name]])] <- length(features_sets[[set_name]])
+        steps[[set_name]] <- sort(unique(steps[[set_name]]))
+    }
 
-  feature_stability_object <- list(
-    by_steps = list(),
-    incremental = list(),
-    embedding_list = list(),
-    pca_list = list()
-  )
+    feature_stability_object <- list(
+        by_steps = list(),
+        incremental = list(),
+        embedding_list = list(),
+        pca_list = list()
+    )
 
-  if (verbose) {
-    print(glue::glue("[{Sys.time()}] Assessing the stability of the dimensionality reduction"))
-  }
-
-  for (set_name in feature_set_names) {
     if (verbose) {
-      print(set_name)
-    }
-    temp_object <- assess_feature_stability(
-      data_matrix = expression_matrix,
-      feature_set = features_sets[[set_name]],
-      resolution = resolution_sequence,
-      steps = steps[[set_name]],
-      feature_type = set_name,
-      graph_reduction_type = graph_reduction_embedding,
-      n_repetitions = n_repetitions,
-      seed_sequence = seed_sequence,
-      npcs = npcs,
-      ecs_thresh = ecs_threshold,
-      algorithm = 1,
-      verbose = verbose,
-      post_processing = post_processing_dim_reduction,
-      umap_arguments = umap_arguments,
-      ...
-    )
-
-    feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
-    feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
-    feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
-
-    if (!is.null(temp_object$pca_list)) { # NOTE only for backwards compatability reasons
-      feature_stability_object$pca_list[[set_name]] <- temp_object$pca_list[[1]]
+        print(glue::glue("[{Sys.time()}] Assessing the stability of the dimensionality reduction"))
     }
 
-    if (!file_already_exists && save_temp) {
-      saveRDS(feature_stability_object, temp_file)
-    }
-  }
-
-  feature_configs <- list(feature_stability = feature_stability_object)
-  if (!file_already_exists && save_temp) {
-    saveRDS(feature_configs, temp_file)
-  }
-
-  if (verbose) {
-    print(glue::glue("[{Sys.time()}] Choosing the top {n_top_configs}"))
-  }
-
-  for (i in seq_along(feature_set_names)) {
-    set_name <- feature_set_names[i]
-    # rank the sizes based on the consistency and incremental stability
-    ecc_list <- lapply(feature_stability_object$by_steps[[set_name]], function(by_step) {
-      sapply(by_step, function(by_res) {
-        ranking_functions[[ranking_criterion]](by_res$ecc)
-      })
-    })
-
-    ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
-    incremental_list <- c(
-      list(sapply(
-        feature_stability_object$incremental[[set_name]][[1]],
-        function(by_res) {
-          ranking_functions[[ranking_criterion]](by_res)
+    for (set_name in feature_set_names) {
+        if (verbose) {
+            print(set_name)
         }
-      )),
-      lapply(
-        feature_stability_object$incremental[[set_name]],
-        function(by_step) {
-          sapply(by_step, function(by_res) {
-            ranking_functions[[ranking_criterion]](by_res)
-          })
-        }
-      )
-    )
-    incremental_ranking <- rank_configs(incremental_list, rank_by = ranking_criterion, return_type = "rank")
-    feature_stability_ranking <- order(incremental_ranking + ecc_ranking)
-
-    current_n_top <- min(n_top_configs, length(incremental_ranking))
-
-    feature_configs[[set_name]] <- list()
-
-    # generate the pca and umap embeddings for each config
-    for (j in 1:current_n_top) {
-      n_steps <- steps[[i]][feature_stability_ranking[j]]
-      current_features <- features_sets[[set_name]][1:n_steps]
-      if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
-        suppressWarnings(pca_emb <- Seurat::RunPCA(expression_matrix[current_features, ],
-          npcs = min(npcs, n_steps %/% 2),
-          approx = FALSE,
-          verbose = FALSE
-        )@cell.embeddings)
-        pca_emb <- post_processing_dim_reduction(pca_emb)
-      } else {
-        pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
-      }
-
-      umap_emb <- feature_stability_object$embedding_list[[set_name]][[as.character(n_steps)]]
-
-      feature_configs[[set_name]][[as.character(n_steps)]] <-
-        list(
-          pca = pca_emb,
-          umap = umap_emb,
-          stable_config = list(
-            feature_set = feature_set_names[i],
-            n_features = n_steps,
-            n_pcs = min(npcs, n_steps %/% 2)
-          )
-        )
-    }
-    feature_configs[[set_name]]$feature_list <- features_sets[[set_name]][seq_len(max(steps[[set_name]]))]
-  }
-
-  feature_configs$feature_stability$pca_list <- NULL
-  rm(feature_stability_object)
-  gc()
-
-
-  # GRAPH CONSTRUCTION: CONNECTED COMPS
-  if (verbose) {
-    print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
-    pb <- progress::progress_bar$new(
-      format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-      total = n_configs * n_top_configs,
-      show_after = 0,
-      clear = FALSE,
-      width = 80
-    )
-  }
-
-  for (set_name in feature_set_names) {
-    n_names <- length(feature_configs[[set_name]])
-    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-      if (verbose) {
-        pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
-      }
-
-      feature_configs[[set_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
-        embedding = feature_configs[[set_name]][[n_steps]]$pca,
-        n_neigh_sequence = n_neigh_sequence,
-        n_repetitions = n_repetitions,
-        seed_sequence = seed_sequence,
-        include_umap = include_umap_nn_assessment,
-        umap_arguments = umap_arguments,
-        ...
-      )
-      if (verbose) {
-        pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
-      }
-
-      if (!file_already_exists) {
-        saveRDS(feature_configs, temp_file)
-      }
-    }
-  }
-
-  # GRAPH CONSTRUCTION: NN STABILITY
-  if (verbose) {
-    print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
-    pb <- progress::progress_bar$new(
-      format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-      total = n_configs * n_top_configs,
-      show_after = 0,
-      clear = FALSE,
-      width = 80
-    )
-  }
-
-  for (set_name in feature_set_names) {
-    n_names <- length(feature_configs[[set_name]])
-    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-      if (verbose) {
-        pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
-      }
-
-      feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- assess_nn_stability(
-        embedding = feature_configs[[set_name]][[n_steps]]$pca,
-        n_neigh_sequence = n_neigh_sequence,
-        n_repetitions = n_repetitions,
-        graph_reduction_type = "PCA",
-        ecs_thresh = 1,
-        algorithm = 1
-      )
-
-      if (include_umap_nn_assessment) {
-        feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- mapply(c,
-          feature_configs[[set_name]][[n_steps]][["nn_stability"]],
-          assess_nn_stability(
-            embedding = feature_configs[[set_name]][[n_steps]]$pca,
-            n_neigh_sequence = n_neigh_sequence,
+        temp_object <- assess_feature_stability(
+            data_matrix = expression_matrix,
+            feature_set = features_sets[[set_name]],
+            resolution = resolution_sequence,
+            steps = steps[[set_name]],
+            feature_type = set_name,
+            graph_reduction_type = graph_reduction_embedding,
             n_repetitions = n_repetitions,
-            graph_reduction_type = "UMAP",
-            ecs_thresh = 1,
+            seed_sequence = seed_sequence,
+            npcs = npcs,
+            ecs_thresh = ecs_threshold,
             algorithm = 1,
+            verbose = verbose,
+            post_processing = post_processing_dim_reduction,
             umap_arguments = umap_arguments,
             ...
-          ),
-          SIMPLIFY = FALSE
         )
-      }
 
-      if (verbose) {
-        pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
-      }
+        feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
+        feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
+        feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
 
-      if (!file_already_exists) {
-        saveRDS(feature_configs, temp_file)
-      }
-    }
-  }
-
-  # choose best graph construction parameters for each config
-  for (set_name in feature_set_names) {
-    n_names <- length(feature_configs[[set_name]])
-    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-      best_ecc <- 0
-      best_config <- NULL
-      best_nn <- NULL
-      for (config_name in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency)) {
-        for (n_neigh in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]])) {
-          current_ecc <- ranking_functions[[ranking_criterion]](feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]][[n_neigh]])
-          if (current_ecc > best_ecc) {
-            best_ecc <- current_ecc
-            best_config <- config_name
-            best_nn <- as.numeric(n_neigh)
-          }
+        if (!is.null(temp_object$pca_list)) { # NOTE only for backwards compatability reasons
+            feature_stability_object$pca_list[[set_name]] <- temp_object$pca_list[[1]]
         }
-      }
 
-      split_configs <- strsplit(best_config, "_")[[1]]
-      base_embedding <- tolower(split_configs[length(split_configs) - 1])
-      graph_type <- split_configs[length(split_configs)] # NOTE update if you decide to remove ecs thresh
-      feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
-        object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
-        k.param = best_nn,
-        verbose = FALSE,
-        nn.method = "rann",
-        compute.SNN = FALSE
-      )$nn
-      highest_prune_param <- 0
+        if (!file_already_exists && save_temp) {
+            saveRDS(feature_stability_object, temp_file)
+        }
+    }
 
-      if (graph_type == "snn") {
-        highest_prune_param <- get_highest_prune_param(
-          feature_configs[[set_name]][[n_steps]][["adj_matrix"]],
-          best_nn
+    feature_configs <- list(feature_stability = feature_stability_object)
+    if (!file_already_exists && save_temp) {
+        saveRDS(feature_configs, temp_file)
+    }
+
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] Choosing the top {n_top_configs}"))
+    }
+
+    for (i in seq_along(feature_set_names)) {
+        set_name <- feature_set_names[i]
+        # rank the sizes based on the consistency and incremental stability
+        ecc_list <- lapply(feature_stability_object$by_steps[[set_name]], function(by_step) {
+            sapply(by_step, function(by_res) {
+                ranking_functions[[overall_summary]](by_res$ecc)
+            })
+        })
+        ecc_list_medians <- sapply(ecc_list, median)
+        ecc_above_median <- which(ecc_list_medians >= median(ecc_list_medians))
+
+        # ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
+        incremental_list <- c(
+            list(sapply(
+                feature_stability_object$incremental[[set_name]][[1]],
+                function(by_res) {
+                    ranking_functions[[overall_summary]](by_res)
+                }
+            )),
+            lapply(
+                feature_stability_object$incremental[[set_name]],
+                function(by_step) {
+                    sapply(by_step, function(by_res) {
+                        ranking_functions[[overall_summary]](by_res)
+                    })
+                }
+            )
         )
-        feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- highest_prune_param$adj_matrix
-        rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names 
-        colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names 
-        highest_prune_param <- highest_prune_param$prune_value
-        gc()
-      }
 
-      feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
-      feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
-      feature_configs[[set_name]][[n_steps]]$stable_config[["n_neighbours"]] <- as.numeric(best_nn)
-      feature_configs[[set_name]][[n_steps]]$stable_config[["prune_param"]] <- highest_prune_param
+        incremental_medians <- sapply(incremental_list, median)
+        incremental_above_median <- which(incremental_medians >= median(incremental_medians))
+        eligible_steps <- intersect(ecc_above_median, incremental_above_median)
+        n_top_configs <- min(n_top_configs, length(eligible_steps))
+        feature_stability_ranking <- rank_configs(lapply(eligible_steps, function(i) {
+            incremental_list[[i]] + ecc_list[[i]]
+        }), rank_by = ranking_criterion, return_type = "order")
+        # feature_stability_ranking <- order(
 
-      if (!file_already_exists && save_temp) {
-        saveRDS(feature_configs, temp_file)
-      }
+        feature_configs[[set_name]] <- list()
+
+        # generate the pca and umap embeddings for each config
+        for (j in seq_len(n_top_configs)) {
+            n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
+            current_features <- features_sets[[set_name]][seq_len(n_steps)]
+            if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
+                suppressWarnings(pca_emb <- Seurat::RunPCA(expression_matrix[current_features, ],
+                    npcs = min(npcs, n_steps %/% 2),
+                    approx = FALSE,
+                    verbose = FALSE
+                )@cell.embeddings)
+                pca_emb <- post_processing_dim_reduction(pca_emb)
+            } else {
+                pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
+            }
+
+            umap_emb <- feature_stability_object$embedding_list[[set_name]][[as.character(n_steps)]]
+
+            feature_configs[[set_name]][[as.character(n_steps)]] <-
+                list(
+                    pca = pca_emb,
+                    umap = umap_emb,
+                    stable_config = list(
+                        feature_set = feature_set_names[i],
+                        n_features = n_steps,
+                        n_pcs = min(npcs, n_steps %/% 2)
+                    )
+                )
+        }
+        feature_configs[[set_name]]$feature_list <- features_sets[[set_name]][seq_len(max(steps[[set_name]]))]
     }
-  }
 
-  # GRAPH CLUSTERING: CLUSTERING METHOD
-  if (verbose) {
-    print(glue::glue("[{Sys.time()}] Assessing the stability of the graph clustering method"))
-  }
-  for (set_name in feature_set_names) {
-    n_names <- length(feature_configs[[set_name]])
-    for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-      if (verbose) {
-        print(paste(set_name, n_steps))
-      }
-      feature_configs[[set_name]][[n_steps]][["clustering_stability"]] <- assess_clustering_stability(
-        graph_adjacency_matrix = feature_configs[[set_name]][[n_steps]]$adj_matrix,
-        resolution = resolution_sequence,
-        n_repetitions = n_repetitions,
-        ecs_thresh = ecs_threshold,
-        algorithm = 1:3,
-        verbose = verbose
-      )
+    feature_configs$feature_stability$pca_list <- NULL
+    rm(feature_stability_object)
+    gc()
 
-      if (!file_already_exists && save_temp) {
-        saveRDS(feature_configs, temp_file)
-      }
+    # GRAPH CONSTRUCTION: CONNECTED COMPS
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
+        pb <- progress::progress_bar$new(
+            format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+            total = n_configs * n_top_configs,
+            show_after = 0,
+            clear = FALSE,
+            width = 80
+        )
     }
-  }
+
+    for (set_name in feature_set_names) {
+        n_names <- length(feature_configs[[set_name]])
+        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+            if (verbose) {
+                pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+            }
+
+            feature_configs[[set_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
+                embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                n_neigh_sequence = n_neigh_sequence,
+                n_repetitions = n_repetitions,
+                seed_sequence = seed_sequence,
+                include_umap = include_umap_nn_assessment,
+                umap_arguments = umap_arguments,
+                ...
+            )
+            if (verbose) {
+                pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+            }
+
+            if (!file_already_exists) {
+                saveRDS(feature_configs, temp_file)
+            }
+        }
+    }
+
+    # GRAPH CONSTRUCTION: NN STABILITY
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
+        pb <- progress::progress_bar$new(
+            format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+            total = n_configs * n_top_configs,
+            show_after = 0,
+            clear = FALSE,
+            width = 80
+        )
+    }
+
+    for (set_name in feature_set_names) {
+        n_names <- length(feature_configs[[set_name]])
+        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+            if (verbose) {
+                pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+            }
+
+            feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- assess_nn_stability(
+                embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                n_neigh_sequence = n_neigh_sequence,
+                n_repetitions = n_repetitions,
+                graph_reduction_type = "PCA",
+                ecs_thresh = 1,
+                algorithm = 1
+            )
+
+            if (include_umap_nn_assessment) {
+                feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- mapply(c,
+                    feature_configs[[set_name]][[n_steps]][["nn_stability"]],
+                    assess_nn_stability(
+                        embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                        n_neigh_sequence = n_neigh_sequence,
+                        n_repetitions = n_repetitions,
+                        graph_reduction_type = "UMAP",
+                        ecs_thresh = 1,
+                        algorithm = 1,
+                        umap_arguments = umap_arguments,
+                        ...
+                    ),
+                    SIMPLIFY = FALSE
+                )
+            }
+
+            if (verbose) {
+                pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+            }
+
+            if (!file_already_exists) {
+                saveRDS(feature_configs, temp_file)
+            }
+        }
+    }
+
+    # choose best graph construction parameters for each config
+    for (set_name in feature_set_names) {
+        n_names <- length(feature_configs[[set_name]])
+        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+            nn_ecc_list <- list()
+            nn_config_list <- c()
+            nn_list <- c()
+            index <- 1
+            for (config_name in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency)) {
+                for (n_neigh in names(feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]])) {
+                    current_ecc <- feature_configs[[set_name]][[n_steps]]$nn_stability$n_neigh_ec_consistency[[config_name]][[n_neigh]]
+
+                    nn_ecc_list[[index]] <- current_ecc
+                    index <- index + 1
+                    nn_config_list <- c(nn_config_list, config_name)
+                    nn_list <- c(nn_list, n_neigh)
+                }
+            }
 
 
-  if (!file_already_exists && save_temp) {
-    saveRDS(feature_configs, temp_file)
-  }
+            ecc_medians <- sapply(nn_ecc_list, median)
+            eligible_configs <- which(ecc_medians >= fivenum(ecc_medians)[4])
+            best_config_index <- rank_configs(nn_ecc_list[eligible_configs], rank_by = ranking_criterion, return_type = "order")[1]
+            best_config <- nn_config_list[eligible_configs][best_config_index]
+            best_nn <- as.integer(nn_list[eligible_configs][best_config_index])
 
-  return(feature_configs)
+            split_configs <- strsplit(best_config, "_")[[1]]
+            base_embedding <- tolower(split_configs[length(split_configs) - 1])
+            graph_type <- split_configs[length(split_configs)] # NOTE update if you decide to remove ecs thresh
+            feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
+                object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
+                k.param = best_nn,
+                verbose = FALSE,
+                nn.method = "rann",
+                compute.SNN = FALSE
+            )$nn
+            highest_prune_param <- 0
+
+            if (graph_type == "snn") {
+                highest_prune_param <- get_highest_prune_param(
+                    feature_configs[[set_name]][[n_steps]][["adj_matrix"]],
+                    best_nn
+                )
+                feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- highest_prune_param$adj_matrix
+                rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
+                colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
+                highest_prune_param <- highest_prune_param$prune_value
+                gc()
+            }
+
+            feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
+            feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
+            feature_configs[[set_name]][[n_steps]]$stable_config[["n_neighbours"]] <- as.numeric(best_nn)
+            feature_configs[[set_name]][[n_steps]]$stable_config[["prune_param"]] <- highest_prune_param
+
+            if (!file_already_exists && save_temp) {
+                saveRDS(feature_configs, temp_file)
+            }
+        }
+    }
+
+
+    # GRAPH CLUSTERING: CLUSTERING METHOD
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] Assessing the stability of the graph clustering method"))
+    }
+    for (set_name in feature_set_names) {
+        n_names <- length(feature_configs[[set_name]])
+        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+            if (verbose) {
+                print(paste(set_name, n_steps))
+            }
+            feature_configs[[set_name]][[n_steps]][["clustering_stability"]] <- assess_clustering_stability(
+                graph_adjacency_matrix = feature_configs[[set_name]][[n_steps]]$adj_matrix,
+                resolution = resolution_sequence,
+                n_repetitions = n_repetitions,
+                ecs_thresh = ecs_threshold,
+                algorithm = 1:3,
+                verbose = verbose
+            )
+
+            if (!file_already_exists && save_temp) {
+                saveRDS(feature_configs, temp_file)
+            }
+        }
+    }
+
+
+    if (!file_already_exists && save_temp) {
+        saveRDS(feature_configs, temp_file)
+    }
+
+    return(feature_configs)
 }
 
 
@@ -455,107 +483,109 @@ create_monocle_object <- function(normalized_expression_matrix,
                                   cell_names = NULL,
                                   use_all_genes = FALSE,
                                   is_object_from_shinyapp = FALSE) {
-  if (is.null(gene_names)) {
-    gene_names <- rownames(normalized_expression_matrix)
-  }
-
-  if (is.null(gene_names)) {
-    stop("The gene names should be provided.")
-  }
-
-  if (is.null(cell_names)) {
-    cell_names <- colnames(normalized_expression_matrix)
-  }
-
-  if (is.null(cell_names)) {
-    stop("The cell names should be provided.")
-  }
-
-  rownames(normalized_expression_matrix) <- gene_names
-  colnames(normalized_expression_matrix) <- cell_names
-
-  if (is.null(count_matrix)) {
-    count_matrix <- normalized_expression_matrix
-  } else {
-    rownames(count_matrix) <- gene_names
-    colnames(count_matrix) <- cell_names
-  }
-
-  if (!use_all_genes) {
-    used_genes <- clustassess_object[[stable_feature_type]]$feature_list[seq_len(as.integer(stable_feature_set_size))]
-    normalized_expression_matrix <- normalized_expression_matrix[used_genes, ]
-    count_matrix <- count_matrix[used_genes, ]
-    gene_names <- used_genes
-  }
-
-  clustassess_object <- clustassess_object[[stable_feature_type]][[as.character(stable_feature_set_size)]]
-  gc()
-
-
-  if (is_object_from_shinyapp) {
-    available_n_clusters <- clustassess_object$clustering_stability$structure_list[[stable_clustering_method]]
-  } else {
-    available_n_clusters <- names(clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]])
-  }
-
-  if (is.null(stable_n_clusters)) {
-    stable_n_clusters <- available_n_clusters
-  } else {
-    stable_n_clusters <- as.character(stable_n_clusters)
-    which_present <- which(available_n_clusters %in% stable_n_clusters)
-
-    if (length(which_present) != length(available_n_clusters)) {
-      warning(paste0("Only the n clusters of ", paste(available_n_clusters[which_present], collapse = " "), " are obtained for the provided configuration."))
+    if (is.null(gene_names)) {
+        gene_names <- rownames(normalized_expression_matrix)
     }
 
-    stable_n_clusters <- available_n_clusters[which_present]
-  }
+    if (is.null(gene_names)) {
+        stop("The gene names should be provided.")
+    }
 
-  if (!is.data.frame(metadata) || nrow(metadata) == 0) {
-    metadata <- data.frame(identical_ident = rep(1, length(cell_names)))
-  } else {
-    metadata_values <- colnames(metadata)
-    metadata_values[which(metadata_values == "sample_name")] <- "sample_names"
-    colnames(metadata) <- metadata_values
-  }
+    if (is.null(cell_names)) {
+        cell_names <- colnames(normalized_expression_matrix)
+    }
 
-  for (k in stable_n_clusters) {
-    if (is_object_from_shinyapp) {
-      metadata[[paste0("stable_", k, "_clusters")]] <- factor(clustassess_object$clustering_stability$split_by_k$mbs[[stable_clustering_method]][[k]])
-      ecc <- clustassess_object$clustering_stability$split_by_k$ecc[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
-      ecc_order <- clustassess_object$clustering_stability$split_by_k$ecc_order[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
-      metadata[[paste0("ecc_", k)]] <- ecc[ecc_order]
+    if (is.null(cell_names)) {
+        stop("The cell names should be provided.")
+    }
+
+    rownames(normalized_expression_matrix) <- gene_names
+    colnames(normalized_expression_matrix) <- cell_names
+
+    if (is.null(count_matrix)) {
+        count_matrix <- normalized_expression_matrix
     } else {
-      metadata[[paste0("stable_", k, "_clusters")]] <- clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$partitions[[1]]$mb
-      metadata[[paste0("ecc_", k)]] <- clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$ecc
+        rownames(count_matrix) <- gene_names
+        colnames(count_matrix) <- cell_names
     }
-  }
 
-  rownames(metadata) <- cell_names
+    if (!use_all_genes) {
+        used_genes <- clustassess_object[[stable_feature_type]]$feature_list[seq_len(as.integer(stable_feature_set_size))]
+        normalized_expression_matrix <- normalized_expression_matrix[used_genes, ]
+        count_matrix <- count_matrix[used_genes, ]
+        gene_names <- used_genes
+    }
 
-  monocle_cds <- monocle3::new_cell_data_set(
-    expression_data = count_matrix,
-    cell_metadata = metadata,
-    gene_metadata = data.frame("gene_short_name" = gene_names, row.names = gene_names)
-  )
+    clustassess_object <- clustassess_object[[stable_feature_type]][[as.character(stable_feature_set_size)]]
+    gc()
 
-  monocle_cds <- monocle3::preprocess_cds(
-    cds = monocle_cds,
-    num_dim = ncol(clustassess_object$pca),
-    norm_method = "none",
-    scaling = FALSE
-  )
 
-  monocle_cds@assays@data$normalized_data <- normalized_expression_matrix
+    if (is_object_from_shinyapp) {
+        available_n_clusters <- clustassess_object$clustering_stability$structure_list[[stable_clustering_method]]
+    } else {
+        available_n_clusters <- names(clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]])
+    }
 
-  pca_embedding <- clustassess_object$pca
-  rownames(pca_embedding) <- cell_names
-  colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
-  SingleCellExperiment::reducedDims(monocle_cds)$PCA <- pca_embedding
-  umap_embedding <- clustassess_object$umap
-  rownames(umap_embedding) <- cell_names
-  colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
-  SingleCellExperiment::reducedDims(monocle_cds)$UMAP <- umap_embedding
+    if (is.null(stable_n_clusters)) {
+        stable_n_clusters <- available_n_clusters
+    } else {
+        stable_n_clusters <- as.character(stable_n_clusters)
+        which_present <- which(available_n_clusters %in% stable_n_clusters)
 
-  return(monocle_cds)
+        if (length(which_present) != length(available_n_clusters)) {
+            warning(paste0("Only the n clusters of ", paste(available_n_clusters[which_present], collapse = " "), " are obtained for the provided configuration."))
+        }
+
+        stable_n_clusters <- available_n_clusters[which_present]
+    }
+
+    if (!is.data.frame(metadata) || nrow(metadata) == 0) {
+        metadata <- data.frame(identical_ident = rep(1, length(cell_names)))
+    } else {
+        metadata_values <- colnames(metadata)
+        metadata_values[which(metadata_values == "sample_name")] <- "sample_names"
+        colnames(metadata) <- metadata_values
+    }
+
+    for (k in stable_n_clusters) {
+        if (is_object_from_shinyapp) {
+            metadata[[paste0("stable_", k, "_clusters")]] <- factor(clustassess_object$clustering_stability$split_by_k$mbs[[stable_clustering_method]][[k]])
+            ecc <- clustassess_object$clustering_stability$split_by_k$ecc[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
+            ecc_order <- clustassess_object$clustering_stability$split_by_k$ecc_order[[sprintf("%06d;%s", as.integer(k), stable_clustering_method)]]
+            metadata[[paste0("ecc_", k)]] <- ecc[ecc_order]
+        } else {
+            metadata[[paste0("stable_", k, "_clusters")]] <- factor(clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$partitions[[1]]$mb)
+            metadata[[paste0("ecc_", k)]] <- clustassess_object$clustering_stability$split_by_k[[stable_clustering_method]][[k]]$ecc
+        }
+    }
+
+    rownames(metadata) <- cell_names
+
+    monocle_cds <- monocle3::new_cell_data_set(
+        expression_data = count_matrix,
+        cell_metadata = metadata,
+        gene_metadata = data.frame("gene_short_name" = gene_names, row.names = gene_names)
+    )
+
+    monocle_cds <- monocle3::preprocess_cds(
+        cds = monocle_cds,
+        num_dim = ncol(clustassess_object$pca),
+        norm_method = "none",
+        scaling = FALSE
+    )
+
+    monocle_cds@assays@data$normalized_data <- normalized_expression_matrix
+
+    pca_embedding <- clustassess_object$pca
+    rownames(pca_embedding) <- cell_names
+    colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
+    # SingleCellExperiment::reducedDims(monocle_cds)$PCA <- pca_embedding
+    monocle_cds@int_colData$reducedDims$PCA <- pca_embedding
+    umap_embedding <- clustassess_object$umap
+    rownames(umap_embedding) <- cell_names
+    colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
+    # SingleCellExperiment::reducedDims(monocle_cds)$UMAP <- umap_embedding
+    monocle_cds@int_colData$reducedDims$UMAP <- umap_embedding
+
+    return(monocle_cds)
 }
