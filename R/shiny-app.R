@@ -1,6 +1,4 @@
-
-
-ppi <- 72 
+ppi <- 72
 single_color <- "#025147"
 # stab_obj <- readRDS("stability_object2.rds")
 # stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/clustassess_obj.rds")
@@ -29,7 +27,7 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
     if (n_unique_values > 99) {
         return(sample(grDevices::colors(), n_unique_values))
     }
-    
+
     if (n_unique_values > 1) {
         return(qualpalr::qualpal(n_unique_values, colorspace = qualpalr_colorspace)$hex)
     }
@@ -55,20 +53,21 @@ write_objects <- function(clustassess_object,
     stability_file_name <- file.path(project_folder, "stability.h5")
     expr_file_name <- file.path(project_folder, "expression.h5")
 
-    # if (file.exists(expr_file_name)) {
-    #     stop(glue::glue("File {expr_file_name} already exists!"))
-    # }
+    if (file.exists(expr_file_name)) {
+        stop(glue::glue("File {expr_file_name} already exists!"))
+    }
 
-    # if (file.exists(stability_file_name)) {
-    #     stop(glue::glue("File {stability_file_name} already exists!"))
-    # }
+    if (file.exists(stability_file_name)) {
+        stop(glue::glue("File {stability_file_name} already exists!"))
+    }
 
-    # if (file.exists(metadata_file_name)) {
-    #     stop(glue::glue("File {metadata_file_name} already exists!"))
-    # }
+    if (file.exists(metadata_file_name)) {
+        stop(glue::glue("File {metadata_file_name} already exists!"))
+    }
 
     # metadata file
     print(glue::glue("[{Sys.time()}] Writing the metadata"))
+    metadata$one_level <- factor(rep("one_level", nrow(metadata)))
     metadata_columns <- colnames(metadata)
     metadata_colors <- list()
     metadata_unique <- list()
@@ -79,8 +78,8 @@ write_objects <- function(clustassess_object,
             if (length(metadata_unique[[mtd_col]]) > 502) {
                 next
             }
-            
-            
+
+
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.character(metadata[, mtd_col])) {
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
@@ -88,7 +87,7 @@ write_objects <- function(clustassess_object,
             if (length(metadata_unique[[mtd_col]]) > 502) {
                 next
             }
-            
+
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.logical(metadata[, mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
@@ -96,10 +95,12 @@ write_objects <- function(clustassess_object,
         }
     }
 
-    saveRDS(list(
-        metadata = metadata,
-        metadata_colors = metadata_colors,
-        metadata_unique = metadata_unique),
+    saveRDS(
+        list(
+            metadata = metadata,
+            metadata_colors = metadata_colors,
+            metadata_unique = metadata_unique
+        ),
         metadata_file_name
     )
 
@@ -110,9 +111,9 @@ write_objects <- function(clustassess_object,
     ftype_index <- 1
     nftypes <- length(clustassess_object$feature_stability$by_steps)
     unique_n_colors <- c(nftypes)
-    
+
     clustassess_object$feature_stability$colours <- generate_colours(nftypes, qualpalr_colorspace)
-    
+
     for (ftype in names(clustassess_object$feature_stability$by_steps)) {
         feature_ordering$original[[ftype]] <- names(clustassess_object$feature_stability$by_steps[[ftype]])
         fsize_index <- 1
@@ -155,7 +156,7 @@ write_objects <- function(clustassess_object,
                 res_index <- res_index + 1
             }
 
-            size_dt_by_step[,"fsize"] <-  fsize_index
+            size_dt_by_step[, "fsize"] <- fsize_index
             summary_values_by_step <- data.frame(ecc = summary_values_by_step, fsize = fsize_index)
 
             if (fsize_index == 1) {
@@ -170,7 +171,7 @@ write_objects <- function(clustassess_object,
                 next
             }
 
-            size_dt_incremental[,"fsize"] <-  fsize_index
+            size_dt_incremental[, "fsize"] <- fsize_index
             summary_values_incremental <- data.frame(ecc = summary_values_incremental, fsize = fsize_index)
 
             if (fsize_index == 1) {
@@ -207,7 +208,7 @@ write_objects <- function(clustassess_object,
     feature_ordering$resolution <- stringr::str_sort(resolution_values, numeric = TRUE)
     # split the data tables by resolution
     clustassess_object$feature_stability$by_steps <- lapply(feature_ordering$resolution, function(resval) {
-        subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval) #%>% dplyr::arrange(order(.data$ecc))
+        subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval) # %>% dplyr::arrange(order(.data$ecc))
         subdt$fsize <- factor(subdt$fsize)
         subdt$resval <- NULL
 
@@ -215,8 +216,10 @@ write_objects <- function(clustassess_object,
     })
     names(clustassess_object$feature_stability$by_steps) <- feature_ordering$resolution
 
-    clustassess_object$feature_stability$incremental  <- lapply(feature_ordering$resolution, function(resval) {
-        subdt <- overall_dtable_incremental %>% dplyr::filter(.data$res == resval) %>% dplyr::arrange(order(.data$ecc))
+    clustassess_object$feature_stability$incremental <- lapply(feature_ordering$resolution, function(resval) {
+        subdt <- overall_dtable_incremental %>%
+            dplyr::filter(.data$res == resval) %>%
+            dplyr::arrange(order(.data$ecc))
         subdt$fsize <- factor(subdt$fsize)
 
         return(subdt)
@@ -233,12 +236,12 @@ write_objects <- function(clustassess_object,
         nsteps <- length(clustassess_object[[ftype]]) - 1
         feature_ordering$stable[[ftype]] <- names(clustassess_object[[ftype]])[seq_len(nsteps)]
 
-        feature_ordering$original_incremental[[ftype]] <- rep(0, length(feature_ordering$original[[ftype]])-1)
+        feature_ordering$original_incremental[[ftype]] <- rep(0, length(feature_ordering$original[[ftype]]) - 1)
 
         for (fsize_index in seq_len(length(feature_ordering$original[[ftype]]) - 1)) {
             feature_ordering$original_incremental[[ftype]][fsize_index] <- paste(
                 feature_ordering$original[[ftype]][fsize_index],
-                feature_ordering$original[[ftype]][fsize_index+1],
+                feature_ordering$original[[ftype]][fsize_index + 1],
                 sep = "-"
             )
         }
@@ -298,10 +301,12 @@ write_objects <- function(clustassess_object,
                             res = as.numeric(res),
                             cl_method = cl_method,
                             first_freq = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$freq,
-                            total_freq =  sum(
+                            total_freq = sum(
                                 sapply(
                                     clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions,
-                                    function(x) { x$freq }
+                                    function(x) {
+                                        x$freq
+                                    }
                                 )
                             ),
                             ecc = summary_function(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$ecc)
@@ -348,10 +353,12 @@ write_objects <- function(clustassess_object,
                         k = as.integer(n_clusters),
                         cl_method = cl_method,
                         n_partitions = length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions),
-                        total_freq =  sum(
+                        total_freq = sum(
                             sapply(
                                 clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions,
-                                function(x) { x$freq }
+                                function(x) {
+                                    x$freq
+                                }
                             )
                         ),
                         first_freq = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq,
@@ -365,7 +372,6 @@ write_objects <- function(clustassess_object,
                     } else {
                         by_k_summary <- rbind(by_k_summary, temp_by_k_summary)
                     }
-
                 }
             }
 
@@ -439,7 +445,7 @@ write_objects <- function(clustassess_object,
         storage.mode = "integer",
         chunk = c(chunk_size, ncol(expression_matrix))
     )
-    
+
     rhdf5::h5createDataset(expr_file_name, "expression_matrix",
         level = compression_level,
         dims = c(nrow(expression_matrix), ncol(expression_matrix)),
@@ -519,36 +525,87 @@ write_objects <- function(clustassess_object,
     rhdf5::h5closeAll()
 }
 
-
+#' Writing the shiny app folder
+#'
+#' @description  to be completed
+#'
+#' @rdname write_shiny_app
+#' @export
+write_shiny_app.Seurat <- function(object,
+                                   assay_name,
+                                   clustassess_object,
+                                   project_folder,
+                                   compression_level = 6,
+                                   summary_function = median,
+                                   shiny_app_title = "",
+                                   organism_enrichment = "hsapiens",
+                                   height_ratio = 0.6,
+                                   qualpalr_colorspace = "pretty") {
+    write_shiny_app(
+        object = object@assays[[assay_name]]@data,
+        metadata = object@meta.data,
+        clustassess_object = clustassess_object,
+        project_folder = project_folder,
+        compression_level = compression_level,
+        summary_function = summary_function,
+        shiny_app_title = shiny_app_title,
+        organism_enrichment = organism_enrichment,
+        height_ratio = height_ratio,
+        qualpalr_colorspace = qualpalr_colorspace
+    )
+}
 
 #' Writing the shiny app folder
-#' 
+#'
 #' @description  to be completed
-#' 
+#'
+#' @rdname write_shiny_app
 #' @export
-write_shiny_app <- function(seurat_object,
-                            assay_name,
-                            clustassess_object,
-                            project_folder,
-                            compression_level = 6,
-                            summary_function = median,
-                            qualpalr_colorspace = "pretty") {
+write_shiny_app.default <- function(object,
+                                    metadata,
+                                    clustassess_object,
+                                    project_folder,
+                                    compression_level = 6,
+                                    summary_function = median,
+                                    shiny_app_title = "",
+                                    organism_enrichment = "hsapiens",
+                                    height_ratio = 0.6,
+                                    qualpalr_colorspace = "pretty") {
+    nFeature <- DelayedMatrixStats::colSums2(object > 0)
+    warning_message <- ""
+    shiny_app_title <- paste("ClustAssess ShinyApp -", shiny_app_title)
+
+    for (ftype in names(clustassess_object$feature_stability$by_steps)) {
+        fsizes <- as.integer(names(clustassess_object$feature_stability$by_steps[[ftype]]))
+        fsizes <- fsizes[which(fsizes > median(nFeature))]
+        if (length(fsizes) > 0) {
+            warning_message <- paste0(warning_message, ftype, " - ", paste(fsizes, collapse = ", "), "; ")
+        }
+    }
+
+    if (stringr::str_length(warning_message) > 0) {
+        warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nIf you still want to create the shiny app, please type `yes`."), immediate. = TRUE)
+        user_input <- readline()
+        if (user_input != "yes") {
+            return()
+        }
+    }
 
     if (!dir.exists(project_folder)) {
         dir.create(project_folder)
     }
 
-   write_objects(
+    write_objects(
         clustassess_object = clustassess_object,
-        expression_matrix = seurat_object@assays[[assay_name]]@data,
-        metadata = seurat_object@meta.data,
+        expression_matrix = object,
+        metadata = metadata,
         project_folder = project_folder,
         compression_level = compression_level,
         summary_function = summary_function,
         qualpalr_colorspace = qualpalr_colorspace
     )
 
-    file_content <- "
+    file_content <- paste0("
         library(ggplot2)
         library(shiny)
         library(shinyjs)
@@ -557,146 +614,154 @@ write_shiny_app <- function(seurat_object,
 
         tabs_numbers <- seq_len(6)
         names(tabs_numbers) <- c(
-        \"Home\",
-        \"Dimensionality Reduction\",
-        \"Graph Construction\",
-        \"Graph Clustering\",
-        \"Comparison\",
-        \"Sandbox\"
+            \"Home\",
+            \"Dimensionality Reduction\",
+            \"Graph Construction\",
+            \"Graph Clustering\",
+            \"Comparison\",
+            \"Sandbox\"
         )
 
         ui <- fluidPage(
-            tags$head(
-                tags$style(
-                    HTML(
+        tags$head(
+            tags$style(
+            HTML(
+                \".first-element-tab {
+                margin-top: 150px;
+                }\",
+                \".page-info {
+                top: 0px;
+                margin-top: 55px;
+                position: fixed;
+                z-index: 100;
+                }\",
                 \"#tabset_id {
-                    position: fixed;
-                    width: 100%;
-                    background-color: white;
-                    top: 0;
-                    z-index: 100;
-                    font-size: 25px;
-                    # margin-top: 72px;
-                    }\",
-                \"#graph_clust-show_config {
-                    z-index: 900;
-                    position: fixed;
-                    top: 10px;
-                    font-size: 15px;
-                    right: 25px;
-                }\",
+                            position: fixed;
+                            width: 100%;
+                            background-color: white;
+                            top: 0;
+                            z-index: 100;
+                            font-size: 20px;
+                            margin-left: 40px;
+                            margin-top: 50px;
+                            }\",
+                \".show_config {
+                            z-index: 10000;
+                            position: fixed;
+                            top: 10px;
+                            font-size: 15px;
+                            right: 25px;
+                        }\",
                 \".shiny-split-layout > div {
-                    overflow: visible;
-                }\",
+                            overflow: visible;
+                            white-space: normal;
+                        }\",
                 \"div.vertical-line{
-                width: 1px; /* Line width */
-                background-color: black; /* Line color */
-                height: 100%; /* Override in-line if you want specific height. */
-                float: left; /* Causes the line to float to left of content. 
-                    You can instead use position:absolute or display:inline-block
-                    if this fits better with your design */
-                }\"
-                )
-                )
-            ),
-            tags$head(tags$script(HTML('
-            var dimension = [0, 0];
-            var resizeId;
-            $(document).on(\"shiny:connected\", function(e) {
-                dimension[0] = Math.max(window.innerWidth - 20, 400);
-                dimension[1] = Math.max(window.innerHeight - 30, 400);
-                Shiny.onInputChange(\"dimension\", dimension);
-            });
+                        width: 1px; /* Line width */
+                        background-color: black; /* Line color */
+                        height: 100%; /* Override in-line if you want specific height. */
+                        float: left; /* Causes the line to float to left of content.
+                            You can instead use position:absolute or display:inline-block
+                            if this fits better with your design */
+                        }\"
+            )
+            )
+        ),
+        tags$head(tags$script(HTML('
+                    var dimension = [0, 0];
+                    var resizeId;
+                    $(document).on(\"shiny:connected\", function(e) {
+                        dimension[0] = Math.max(window.innerWidth - 20, 400);
+                        dimension[1] = Math.max(window.innerHeight - 30, 400);
+                        Shiny.onInputChange(\"dimension\", dimension);
+                    });
 
-            function transferWindowSize() {
-                console.log(dimension);
-                console.log(window.innerHeight);
+                    function transferWindowSize() {
+                        console.log(dimension);
+                        console.log(window.innerHeight);
 
-                let dif_width = Math.abs(Math.max(window.innerWidth - 20, 400) - dimension[0]);
-                let dif_height = Math.abs(Math.max(window.innerHeight - 30, 400) - dimension[1]);
-                console.log(dif_height);
+                        let dif_width = Math.abs(Math.max(window.innerWidth - 20, 400) - dimension[0]);
+                        let dif_height = Math.abs(Math.max(window.innerHeight - 30, 400) - dimension[1]);
+                        console.log(dif_height);
 
-                if (dif_width >= 200 || dif_height >= 200) {
-                console.log(\"Changed\")
-                dimension[0] = Math.max(window.innerWidth - 20, 400);
-                dimension[1] = Math.max(window.innerHeight - 30, 400);
-                Shiny.onInputChange(\"dimension\", dimension);
-                }
+                        if (dif_width >= 200 || dif_height >= 200) {
+                        console.log(\"Changed\")
+                        dimension[0] = Math.max(window.innerWidth - 20, 400);
+                        dimension[1] = Math.max(window.innerHeight - 30, 400);
+                        Shiny.onInputChange(\"dimension\", dimension);
+                        }
+                    }
+
+                    $(window).resize(function() {
+                        clearTimeout(resizeId);
+                        resizeId = setTimeout(transferWindowSize, 500);
+                    });
+                    '))),
+        tags$head(
+            tags$link(rel = \"stylesheet\", type = \"text/css\", href = \"www/shiny.css\")
+        ),
+        useShinyjs(),
+        navbarPage(\"", shiny_app_title, "\", windowTitle = \"", shiny_app_title, "\", position = \"fixed-top\", inverse = TRUE),
+        tabsetPanel(
+            id = \"tabset_id\",
+            ui_landing_page(\"landing_page\"),
+            ui_dimensionality_reduction(\"dim_reduc\"),
+            ui_graph_construction(\"graph_constr\"),
+            ui_graph_clustering(\"graph_clust\"),
+            ui_comparisons(\"comparison\"),
+            ui_sandbox(\"sandbox\")
+        )
+        )
+
+        server <- function(input, output, session) {
+        hideTab(\"tabset_id\", \"Dimensionality Reduction\")
+        hideTab(\"tabset_id\", \"Graph Construction\")
+        hideTab(\"tabset_id\", \"Graph Clustering\")
+        hideTab(\"tabset_id\", \"Comparison\")
+        hideTab(\"tabset_id\", \"Sandbox\")
+        fchoice <- reactiveVal(
+            list(
+            chosen_feature_type = \"Highly_Variable\",
+            chosen_set_size = \"1500\"
+            )
+        )
+        cchoice <- reactiveVal()
+        height_ratio <- ", height_ratio, " # used to control the height of the plot proportional to the window's height
+        observe({
+            runjs(\"window.scrollTo(0, 0)\")
+            tab_number <- as.integer(tabs_numbers[input$tabset_id])
+            print(tab_number)
+
+            if (tab_number == 1) {
+            server_landing_page(\"landing_page\", height_ratio, reactive(input$dimension), session, \"", organism_enrichment, "\")
             }
 
-            $(window).resize(function() {
-                clearTimeout(resizeId);
-                resizeId = setTimeout(transferWindowSize, 500);
-            });
-            '))),
-            tags$head(
-                tags$link(rel = \"stylesheet\", type = \"text/css\", href = \"www/shiny.css\")
-
-            ),
-            # theme = bslib::bs_theme(version = 4),
-            useShinyjs(),
-            tabsetPanel(
-                id = \"tabset_id\",
-                ui_landing_page(\"landing_page\"),
-                ui_dimensionality_reduction(\"dim_reduc\"),
-                ui_graph_construction(\"graph_constr\"),
-                ui_graph_clustering(\"graph_clust\"),
-                ui_comparisons(\"comparison\"),
-                ui_sandbox(\"sandbox\")
-            )
-            )
-
-            server <- function(input, output, session) {
-            hideTab(\"tabset_id\", \"Dimensionality Reduction\")
-            hideTab(\"tabset_id\", \"Graph Construction\")
-            hideTab(\"tabset_id\", \"Graph Clustering\")
-            hideTab(\"tabset_id\", \"Comparison\")
-            hideTab(\"tabset_id\", \"Sandbox\")
-            fchoice <- reactiveVal(
-                list(
-                chosen_feature_type = \"Highly_Variable\",
-                chosen_set_size = \"1500\"
-                )
-            )
-            cchoice <- reactiveVal()
-            height_ratio <- 0.6 # used to control the height of the plot proportional to the window's height
-            observe({
-                runjs(\"window.scrollTo(0, 0)\")
-                tab_number <- as.integer(tabs_numbers[input$tabset_id])
-                print(tab_number)
-
-                if (tab_number == 1) {
-                server_landing_page(\"landing_page\", height_ratio, reactive(input$dimension), session)
-                }
-
-                if (tab_number == 2) {
-                fchoice(server_dimensionality_reduction(\"dim_reduc\", session))
-                }
-
-                if (tab_number == 3) {
-                server_graph_construction(\"graph_constr\", fchoice())
-                }
-
-                if (tab_number == 4) {
-                cchoice(server_graph_clustering(\"graph_clust\", fchoice(), session))
-                }
-
-                if (tab_number == 5) {
-                server_comparisons(\"comparison\", fchoice(), cchoice())
-                }
-
-                if (tab_number == 6) {
-                server_sandbox(\"sandbox\")
-                }
-            }) %>% bindEvent(input$tabset_id)
+            if (tab_number == 2) {
+            fchoice(server_dimensionality_reduction(\"dim_reduc\", session))
             }
 
-            shinyApp(ui, server)
-    
-    "
+            if (tab_number == 3) {
+            server_graph_construction(\"graph_constr\", fchoice())
+            }
+
+            if (tab_number == 4) {
+            cchoice(server_graph_clustering(\"graph_clust\", fchoice(), session))
+            }
+
+            if (tab_number == 5) {
+            server_comparisons(\"comparison\", fchoice(), cchoice())
+            }
+
+            if (tab_number == 6) {
+            server_sandbox(\"sandbox\")
+            }
+        }) %>% bindEvent(input$tabset_id)
+        }
+
+        shinyApp(ui, server)
+    ")
 
 
     write(file_content, file.path(project_folder, "app.R"))
     styler::style_file(file.path(project_folder, "app.R"))
-
 }
