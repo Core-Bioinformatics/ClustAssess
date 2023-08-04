@@ -28,12 +28,12 @@ rownames(pca_emb) <- as.character(1:100)
 colnames(pca_emb) <- paste0("PCA_", 1:30)
 
 nn_conn_comps_obj <- get_nn_conn_comps(
-  embedding = pca_emb,
-  n_neigh_sequence = c(2, 5),
-  n_repetitions = 3,
-  # arguments that are passed to the uwot function
-  min_dist = 0.3,
-  metric = "cosine"
+    embedding = pca_emb,
+    n_neigh_sequence = c(2, 5),
+    n_repetitions = 3,
+    # arguments that are passed to the uwot function
+    min_dist = 0.3,
+    metric = "cosine"
 )
 plot_connected_comps_evolution(nn_conn_comps_obj)
 }

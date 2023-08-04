@@ -4,7 +4,13 @@
 \alias{server_landing_page}
 \title{Landing page - server side}
 \usage{
-server_landing_page(id, height_ratio, dimension, parent_session)
+server_landing_page(
+  id,
+  height_ratio,
+  dimension,
+  parent_session,
+  organism = "hsapiens"
+)
 }
 \description{
 to be completed

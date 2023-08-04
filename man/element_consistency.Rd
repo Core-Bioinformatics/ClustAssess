@@ -11,7 +11,8 @@ element_consistency(
   rescale_path_type = "max",
   ppr_implementation = "prpack",
   dist_rescaled = FALSE,
-  row_normalize = TRUE
+  row_normalize = TRUE,
+  calculate_sim_matrix = FALSE
 )
 }
 \arguments{

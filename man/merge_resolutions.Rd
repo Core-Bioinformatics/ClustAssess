@@ -22,4 +22,3 @@ of cluster will contain a list of all merged partitions. To avoid duplicates,
 Merge partitions obtained with different resolution values
 that have the same number of clusters.
 }
-\keyword{internal}

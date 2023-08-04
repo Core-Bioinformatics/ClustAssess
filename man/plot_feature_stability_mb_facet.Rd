@@ -41,24 +41,24 @@ umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
 rownames(umap_embedding) <- rownames(expr_matrix)
 
 feature_stability_result <- assess_feature_stability(
-  data_matrix = t(expr_matrix),
-  feature_set = colnames(expr_matrix),
-  feature_type = "feature_name",
-  resolution = c(0.1, 0.5, 1),
-  steps = c(5, 10),
-  npcs = 2,
-  n_repetitions = 3,
-  algorithm = 1,
-  # the following parameters are used by the umap function and are not mandatory
-  n_neighbors = 3,
-  approx_pow = TRUE,
-  n_epochs = 0,
-  init = "random",
-  min_dist = 0.3
+    data_matrix = t(expr_matrix),
+    feature_set = colnames(expr_matrix),
+    feature_type = "feature_name",
+    resolution = c(0.1, 0.5, 1),
+    steps = c(5, 10),
+    npcs = 2,
+    n_repetitions = 3,
+    algorithm = 1,
+    # the following parameters are used by the umap function and are not mandatory
+    n_neighbors = 3,
+    approx_pow = TRUE,
+    n_epochs = 0,
+    init = "random",
+    min_dist = 0.3
 )
 plot_feature_stability_mb_facet(
-  feature_stability_result,
-  umap_embedding,
-  0.1
+    feature_stability_result,
+    umap_embedding,
+    0.1
 )
 }

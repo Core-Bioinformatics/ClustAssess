@@ -41,20 +41,20 @@ rownames(expr_matrix) <- as.character(1:100)
 colnames(expr_matrix) <- paste("feature", 1:10)
 
 feature_stability_result <- assess_feature_stability(
-  data_matrix = t(expr_matrix),
-  feature_set = colnames(expr_matrix),
-  feature_type = "feature_name",
-  steps = c(5, 10),
-  resolution = c(0.1, 0.5, 1),
-  npcs = 2,
-  n_repetitions = 3,
-  algorithm = 1,
-  # the following parameters are used by the umap function and are not mandatory
-  n_neighbors = 3,
-  approx_pow = TRUE,
-  n_epochs = 0,
-  init = "random",
-  min_dist = 0.3
+    data_matrix = t(expr_matrix),
+    feature_set = colnames(expr_matrix),
+    feature_type = "feature_name",
+    steps = c(5, 10),
+    resolution = c(0.1, 0.5, 1),
+    npcs = 2,
+    n_repetitions = 3,
+    algorithm = 1,
+    # the following parameters are used by the umap function and are not mandatory
+    n_neighbors = 3,
+    approx_pow = TRUE,
+    n_epochs = 0,
+    init = "random",
+    min_dist = 0.3
 )
 plot_feature_overall_stability_incremental(feature_stability_result)
 }

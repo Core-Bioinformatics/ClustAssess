@@ -29,11 +29,11 @@ rownames(pca_emb) <- as.character(1:100)
 colnames(pca_emb) <- paste0("PCA_", 1:30)
 
 nn_stability_obj <- assess_nn_stability(
-  embedding = pca_emb,
-  n_neigh_sequence = c(10, 15, 20),
-  n_repetitions = 10,
-  graph_reduction_type = "PCA",
-  algorithm = 1
+    embedding = pca_emb,
+    n_neigh_sequence = c(10, 15, 20),
+    n_repetitions = 10,
+    graph_reduction_type = "PCA",
+    algorithm = 1
 )
 plot_n_neigh_ecs(nn_stability_obj)
 }
