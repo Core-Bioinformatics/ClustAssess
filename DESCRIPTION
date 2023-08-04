@@ -1,7 +1,7 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 0.4.1
+Version: 0.4.0
 Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
                   role = c("aut", "cre")), person("Andi", "Munteanu",
                   email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
@@ -21,11 +21,15 @@ Imports:
     ggplot2,
     bulkAnalyseR,
     dplyr,
+    DelayedMatrixStats,
     DT,
     fastcluster,
     rlang,
     Matrix,
     Gmedian,
+    ggrepel,
+    ggtext,
+    gprofiler2,
     igraph,
     magrittr,
     matrixStats,
@@ -42,6 +46,8 @@ Imports:
     SharedObject,
     stringr,
     gtable,
+    paletteer,
+    plotly,
     qualpalr,
     RColorBrewer,
     glue,
@@ -65,7 +71,10 @@ Suggests:
     e1071,
     dbscan,
     dendextend,
+    monocle3,
+    scales,
     Seurat,
+    svglite,
     ragg,
     readr,
     reactlog,
