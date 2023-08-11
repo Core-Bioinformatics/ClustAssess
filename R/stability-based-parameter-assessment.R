@@ -126,6 +126,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
 
     feature_set_names <- names(steps)
     n_configs <- length(feature_set_names)
+    total_nconfigs <- 0
     # TODO: check if the name of the feature sets are the same with the steps
 
     # FEATURE STABILITY
@@ -199,8 +200,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 ranking_functions[[overall_summary]](by_res$ecc)
             })
         })
-        ecc_list_medians <- sapply(ecc_list, median)
-        ecc_above_median <- which(ecc_list_medians >= median(ecc_list_medians))
+        ecc_list_medians <- order(sapply(ecc_list, median), decreasing = TRUE)
+        ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))]#which(ecc_list_medians >= median(ecc_list_medians))
 
         # ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
         incremental_list <- c(
@@ -220,10 +221,11 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             )
         )
 
-        incremental_medians <- sapply(incremental_list, median)
-        incremental_above_median <- which(incremental_medians >= median(incremental_medians))
+        incremental_medians <- order(sapply(incremental_list, median), decreasing = TRUE)
+        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))] #which(incremental_medians >= median(incremental_medians))
         eligible_steps <- intersect(ecc_above_median, incremental_above_median)
         n_top_configs <- min(n_top_configs, length(eligible_steps))
+        total_nconfigs <- total_nconfigs + n_top_configs
         feature_stability_ranking <- rank_configs(lapply(eligible_steps, function(i) {
             incremental_list[[i]] + ecc_list[[i]]
         }), rank_by = ranking_criterion, return_type = "order")
@@ -271,7 +273,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
         pb <- progress::progress_bar$new(
             format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-            total = n_configs * n_top_configs,
+            total = total_nconfigs,
             show_after = 0,
             clear = FALSE,
             width = 80
@@ -309,7 +311,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
         pb <- progress::progress_bar$new(
             format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-            total = n_configs * n_top_configs,
+            total = total_nconfigs,
             show_after = 0,
             clear = FALSE,
             width = 80
