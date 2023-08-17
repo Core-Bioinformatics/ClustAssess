@@ -774,3 +774,52 @@ write_shiny_app.default <- function(object,
     write(file_content, file.path(project_folder, "app.R"))
     styler::style_file(file.path(project_folder, "app.R"))
 }
+
+#' Add metadata to ClustAssess ShinyApp
+#' 
+#' @description to be ccompleted
+#' 
+#' @export
+add_metadata <- function(app_folder,
+                         metadata,
+                         qualpalr_colorspace = "pretty") {
+    metadata_file_name <- file.path(app_folder, "metadata.rds")
+
+    if (!file.exists(metadata_file_name)) {
+        quit(glue::glue("The app folder {app_folder} should contain a file named `metadata.rds`!"))
+    }
+
+    if (!is.data.frame(app_folder)) {
+        quit("The `metadata` object should be a dataframe!")
+    }
+
+    existing_metadata <- readRDS(metadata_file_name)
+    metadata_columns <- colnames(metadata)
+    for (mtd_col in metadata_columns) {
+        if (is.factor(metadata[, mtd_col])) {
+            metadata[, mtd_col] <- droplevels(metadata[, mtd_col])
+            existing_metadata$metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
+            if (length(existing_metadata$metadata_unique[[mtd_col]]) > 502) {
+                next
+            }
+
+
+            existing_metadata$metadata_colors[[mtd_col]] <- generate_colours(length(existing_metadata$metadata_unique[[mtd_col]]), qualpalr_colorspace)
+        } else if (is.character(metadata[, mtd_col])) {
+            metadata[, mtd_col] <- factor(metadata[, mtd_col])
+            existing_metadata$metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
+            if (length(existing_metadata$metadata_unique[[mtd_col]]) > 502) {
+                next
+            }
+
+            existing_metadata$metadata_colors[[mtd_col]] <- generate_colours(length(existing_metadata$metadata_unique[[mtd_col]]), qualpalr_colorspace)
+        } else if (is.logical(metadata[, mtd_col])) {
+            existing_metadata$metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
+            existing_metadata$metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
+        }
+
+        existing_metadata$metadata[[mtd_col]] <- metadata[, mtd_col]
+    }
+
+    saveRDS(existing_metadata, metadata_file_name)
+}
