@@ -6,7 +6,7 @@ output: html_notebook
 Make sure you have Rtools installed: https://cran.r-project.org/bin/windows/Rtools/rtools42/rtools.html
 In case some packages cannot be installed because of the locks, remove and reinstall them.
 
-```{r eval = TRUE}
+```{r eval = FALSE}
 install.packages(c("devtools", "readr", "RhpcBLASctl"))
 devtools::install_github("Core-Bioinformatics/ClustAssess@release-0.4.0")
 ```
@@ -186,7 +186,7 @@ ggplot(data.frame(raw_umap), aes(x = UMAP_1, y = UMAP_2, colour = clustering_lis
 *Note*: The following sections provide an example of applying the ClustAssess summary assessment methods. The values of the parameters should be varied and critically assessed for each individual dataset. Also, we recommend increasing the number of repetitions used for stability inference, to ensure reliable and robust conclusions.
 
 ```{r nrep}
-n_repetitions <- 10
+n_repetitions <- 30
 ```
 
 The following analysis is performed by varying the seed multiple times. The pipeline can be run in parallel, so by initialising a backend with multiple number of cores, the task will be split into the processess. Setting the value of 1 will result in a sequential run of all iterations. We encourage the usage of a higher number of cores when possible, as it will decrease the runtime of the assessment pipeline. Please note that the number of cores should be chosen carefully, as each newly created process will add to the memory usage.
@@ -194,12 +194,14 @@ The following analysis is performed by varying the seed multiple times. The pipe
 ```{r ncores}
 RhpcBLASctl::blas_set_num_threads(1)
 ncores <- 1
-my_cluster <- parallel::makeCluster(
-  ncores,
-  type = "PSOCK"
-)
+if (ncores > 1) {
+  my_cluster <- parallel::makeCluster(
+    ncores,
+    type = "PSOCK"
+  )
 
-doParallel::registerDoParallel(cl = my_cluster)
+  doParallel::registerDoParallel(cl = my_cluster)
+}
 ```
 
 ### Dimensionality reduction
