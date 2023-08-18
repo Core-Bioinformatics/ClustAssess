@@ -3,6 +3,7 @@
 S3method(write_shiny_app,Seurat)
 S3method(write_shiny_app,default)
 export("%>%")
+export(add_metadata)
 export(assess_clustering_stability)
 export(assess_feature_stability)
 export(assess_nn_stability)
