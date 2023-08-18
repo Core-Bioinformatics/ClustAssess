@@ -165,7 +165,7 @@ To illustrate the necessity of obtaining reproducible and robust clustering outp
 cuomo <- FindNeighbors(cuomo)
 clustering_list <- lapply(seq(from = 1, by = 100, length.out = 10), function(i) {
   cuomo <- FindClusters(cuomo, algorithm = 3, random.seed = i)
-  cuomo$seurat_clusters
+  as.integer(cuomo$seurat_clusters)
 })
 ```
 
