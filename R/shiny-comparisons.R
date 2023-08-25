@@ -23,6 +23,11 @@ ui_comparison_markers <- function(id) {
                     min = 0.00, max = 0.01, value = 0.00
                 ),
                 shiny::sliderInput(
+                    inputId = ns("avg_expr_thresh_gr1"),
+                    label = "Average expression threshold - group 1",
+                    min = 0.00, max = 0.01, value = 0.00
+                ),
+                shiny::sliderInput(
                     inputId = ns("min_pct"),
                     label = "Minimum gene frequency",
                     min = 0.01, max = 1.00, value = 0.10, step = 0.01
@@ -419,6 +424,14 @@ server_comparison_markers <- function(id, k_choices) {
                     max = round(avg_stats[5], digits = 3),
                     step = 0.01
                 )
+
+                shiny::updateSliderInput(
+                    session = session,
+                    inputId = "avg_expr_thresh_gr1",
+                    min = round(avg_stats[1], digits = 3),
+                    max = round(avg_stats[5], digits = 3),
+                    step = 0.01
+                )
             }
             
             marker_genes <- shiny::reactiveVal(NULL)
@@ -497,7 +510,8 @@ server_comparison_markers <- function(id, k_choices) {
                         used_slot = "data",
                         min_pct_threshold = input$min_pct,
                         logfc_threshold = input$logfc,
-                        average_expression_threshold = input$avg_expr_thresh
+                        average_expression_threshold = input$avg_expr_thresh,
+                        average_expression_group1_threshold = input$avg_expr_thresh_gr1
                     )
                 } else { # for backward-compatibility reasons
                     markers_result <- calculate_markers(
@@ -549,7 +563,6 @@ server_comparison_markers <- function(id, k_choices) {
                     write.csv(markers_val(), file)
                 }
             )
-
 
             shiny::observe({
                 shiny::req(markers_val())
@@ -1499,6 +1512,7 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 shinyjs::disable("enrichment_button")
                 selected_group <- stringr::str_replace(input$group, " ", "_")
 
+                # TODO use as background only the genes with avg expression over a specific
                 if ("genes" %in% names(pkg_env)) {
                     custom_bg <- names(pkg_env$genes)
                 } else { # backward-compatibility
@@ -1513,8 +1527,10 @@ server_comparison_enrichment <- function(id, marker_genes) {
                     domain_scope = "custom",
                     custom_bg = custom_bg
                 )
-                
-                gprf_res$result$parents <- sapply(gprf_res$result$parents, toString)
+
+                if (!is.null(gprf_res)) {
+                    gprf_res$result$parents <- sapply(gprf_res$result$parents, toString)
+                }
                 
                 shinyjs::enable("enrichment_button")
                 shinyjs::show("download_gost")
