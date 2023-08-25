@@ -940,11 +940,11 @@ calculate_markers_shiny <- function(cells1,
                                     logfc_threshold = 0,
                                     min_pct_threshold = 0.1,
                                     average_expression_threshold = 0,
+                                    average_expression_group1_threshold = 0,
                                     min_diff_pct_threshold = -Inf,
-                                    rank_matrix = NULL,
-                                    feature_names = NULL,
                                     used_slot = "data",
                                     norm_method = "LogNormalize",
+                                    expression_h5_path = "expression.h5",
                                     pseudocount_use = 1,
                                     base = 2) {
     cells2 <- setdiff(cells2, cells1)
@@ -954,10 +954,10 @@ calculate_markers_shiny <- function(cells1,
         return()
     }
 
-    average_expressions <- rhdf5::h5read("expression.h5", "average_expression")
+    average_expressions <- rhdf5::h5read(expression_h5_path, "average_expression")
     nfiltered_genes <- sum(average_expressions >= average_expression_threshold)
-    chunk_size <- as.integer(rhdf5::h5read("expression.h5", "chunk_size"))
-    genes <- rhdf5::h5read("expression.h5", "genes")[seq_len(nfiltered_genes)]
+    chunk_size <- as.integer(rhdf5::h5read(expression_h5_path, "chunk_size"))
+    genes <- rhdf5::h5read(expression_h5_path, "genes")[seq_len(nfiltered_genes)]
 
     average_expressions <- average_expressions[seq_len(nfiltered_genes)]
     names(average_expressions) <- genes
@@ -975,12 +975,12 @@ calculate_markers_shiny <- function(cells1,
             }
             calculate_markers(
                 expression_matrix = rhdf5::h5read(
-                    "expression.h5",
+                    expression_h5_path,
                     "expression_matrix",
                     index = list(index_list, NULL)
                 ),
                 rank_matrix = rhdf5::h5read(
-                    "expression.h5",
+                    expression_h5_path,
                     "rank_matrix",
                     index = list(index_list, NULL)
                 ),
@@ -989,6 +989,7 @@ calculate_markers_shiny <- function(cells1,
                 logfc_threshold = logfc_threshold,
                 min_pct_threshold = min_pct_threshold,
                 min_diff_pct_threshold = min_diff_pct_threshold,
+                avg_expr_threshold_group1 = average_expression_group1_threshold,
                 feature_names = genes[index_list],
                 used_slot = used_slot,
                 norm_method = norm_method,
@@ -1009,7 +1010,6 @@ calculate_markers_shiny <- function(cells1,
 
     print(glue::glue("[{Sys.time()}] DEG analysis - Done"))
 
-
     df_list
 }
 
@@ -1023,6 +1023,7 @@ calculate_markers <- function(expression_matrix,
                               cells2,
                               logfc_threshold = 0,
                               min_pct_threshold = 0.1,
+                              avg_expr_threshold_group1 = 0,
                               min_diff_pct_threshold = -Inf,
                               rank_matrix = NULL,
                               feature_names = NULL,
@@ -1076,6 +1077,21 @@ calculate_markers <- function(expression_matrix,
         default_mean_fxn
     )
 
+    # TODO a bit redundant; this is also done in FoldChange; check if you can combine the two steps
+    avg_expr_group1 <- rowMeans(expression_matrix[ , seq_along(cells1), drop = FALSE])
+    if (avg_expr_threshold_group1 > 0) {
+
+        mask <- which(avg_expr_group1 >= avg_expr_threshold_group1)
+
+        if (length(mask) == 0) {
+            return(data.frame())
+        }
+
+        expression_matrix <- expression_matrix[mask, , drop = FALSE]
+        feature_names <- feature_names[mask]
+        avg_expr_group1 <- avg_expr_group1[mask]
+    }
+
     fc_results <- Seurat::FoldChange(
         object = expression_matrix,
         cells.1 = seq_along(cells1),
@@ -1101,6 +1117,7 @@ calculate_markers <- function(expression_matrix,
     expression_matrix <- expression_matrix[mask, , drop = FALSE]
     fc_results <- fc_results[mask, ]
     feature_names <- feature_names[mask]
+    avg_expr_group1 <- avg_expr_group1[mask]
 
     # return(expression_matrix)
 
@@ -1119,7 +1136,6 @@ calculate_markers <- function(expression_matrix,
         rank_matrix <- matrix(rank_matrix, nrow = 1)
     }
 
-
     fc_results$gene <- feature_names
     fc_results$p_val <- wilcox_test(rank_matrix, length(cells1), max(rank_matrix))
 
@@ -1131,11 +1147,13 @@ calculate_markers <- function(expression_matrix,
         )
 
         fc_results <- fc_results[, c(4, 1, 2, 3, 5, 6)]
+        fc_results$avg_expr_group1 <- avg_expr_group1
 
         return(fc_results)
     }
 
     fc_results <- fc_results[, c(4, 1, 2, 3, 5)]
+        fc_results$avg_expr_group1 <- avg_expr_group1
 
     return(fc_results)
 }
