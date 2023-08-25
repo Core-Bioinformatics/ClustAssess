@@ -13,8 +13,7 @@ assess_nn_stability(
   ecs_thresh = 1,
   graph_type = 2,
   algorithm = 1,
-  umap_arguments = list(),
-  ...
+  umap_arguments = list()
 )
 }
 \arguments{
@@ -41,10 +40,10 @@ unweighted (0), weighted (1) or both (2).}
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
 details can be found in the Seurat's \code{FindClusters} function.}
 
-\item{...}{Additional arguments passed to the the \code{uwot::umap} method.}
-
 \item{ncores}{The number of parallel R instances that will run the code.
 If the value is set to 1, the code will be run sequentially.}
+
+\item{...}{Additional arguments passed to the the \code{uwot::umap} method.}
 }
 \value{
 A list having three fields:

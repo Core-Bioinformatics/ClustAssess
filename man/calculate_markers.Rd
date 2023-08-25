@@ -10,6 +10,7 @@ calculate_markers(
   cells2,
   logfc_threshold = 0,
   min_pct_threshold = 0.1,
+  avg_expr_threshold_group1 = 0,
   min_diff_pct_threshold = -Inf,
   rank_matrix = NULL,
   feature_names = NULL,

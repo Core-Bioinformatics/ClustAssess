@@ -10,11 +10,11 @@ calculate_markers_shiny(
   logfc_threshold = 0,
   min_pct_threshold = 0.1,
   average_expression_threshold = 0,
+  average_expression_group1_threshold = 0,
   min_diff_pct_threshold = -Inf,
-  rank_matrix = NULL,
-  feature_names = NULL,
   used_slot = "data",
   norm_method = "LogNormalize",
+  expression_h5_path = "expression.h5",
   pseudocount_use = 1,
   base = 2
 )
