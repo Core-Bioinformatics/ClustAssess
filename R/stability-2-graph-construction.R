@@ -3,12 +3,18 @@ get_nn_conn_comps_umap <- function(embedding,
                                    n_neigh_sequence,
                                    n_repetitions = 100,
                                    seed_sequence = NULL,
-                                   umap_arguments = list(),
-                                   ...) {
+                                   umap_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
 
     umap_arguments[["n_threads"]] <- 1
     umap_arguments[["n_sgd_threads"]] <- 1
+
+    ncells <- nrow(embedding)
+    if (!("n_neighbors" %in% umap_arguments)) {
+        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
+    }
+
+    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
 
     nn_conn_comps_list <- list()
     if (ncores == 1) {
@@ -217,8 +223,7 @@ get_nn_conn_comps <- function(embedding,
                               n_repetitions = 100,
                               seed_sequence = NULL,
                               include_umap = FALSE,
-                              umap_arguments = list(),
-                              ...) {
+                              umap_arguments = list()) {
     # check parameters
     if (!is.numeric(n_neigh_sequence)) {
         stop("n_neigh_sequence parameter should be numeric")
@@ -234,6 +239,14 @@ get_nn_conn_comps <- function(embedding,
 
     if (!is.matrix(embedding) && !methods::is(embedding, "Matrix")) {
         stop("embedding parameter should be a matrix")
+    }
+
+    ncells <- nrow(embedding)
+    n_neigh_sequence <- n_neigh_sequence[which(n_neigh_sequence < ncells)]
+
+    if (length(n_neigh_sequence) == 0) {
+        warning(glue::glue("The provided values for the `n_neigh_sequence` are greater than the number of cells ({ncells}). For the downstream analysis, we will set `n_neigh` to {ncells}."))
+        n_neigh_sequence <- c(ncells - 1)
     }
 
     # create a seed sequence if it's not provided
@@ -267,8 +280,7 @@ get_nn_conn_comps <- function(embedding,
             n_neigh_sequence = n_neigh_sequence,
             n_repetitions = n_repetitions,
             seed_sequence = seed_sequence,
-            umap_arguments = umap_arguments,
-            ...
+            umap_arguments = umap_arguments
         )
     ))
 }
@@ -701,8 +713,7 @@ assess_nn_stability_umap <- function(embedding,
                                      ecs_thresh = 1,
                                      graph_type = 2,
                                      algorithm = 1,
-                                     umap_arguments = list(),
-                                     ...) {
+                                     umap_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
 
     object_names <- c("snn", "nn")
@@ -712,6 +723,14 @@ assess_nn_stability_umap <- function(embedding,
 
     umap_arguments[["n_threads"]] <- 1
     umap_arguments[["n_sgd_threads"]] <- 1
+
+    ncells <- nrow(embedding)
+    if (!("n_neighbors" %in% umap_arguments)) {
+        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
+    }
+
+    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+
 
     if (ncores > 1) {
         shared_embedding <- SharedObject::share(embedding)
@@ -936,8 +955,7 @@ assess_nn_stability <- function(embedding,
                                 ecs_thresh = 1,
                                 graph_type = 2,
                                 algorithm = 1,
-                                umap_arguments = list(),
-                                ...) {
+                                umap_arguments = list()) {
     # TODO vary by resolution
     # TODO add option to use pruning
     # TODO add UMAP variant
@@ -976,6 +994,14 @@ assess_nn_stability <- function(embedding,
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
     }
 
+    ncells <- nrow(embedding)
+    n_neigh_sequence <- n_neigh_sequence[which(n_neigh_sequence < ncells)]
+
+    if (length(n_neigh_sequence) == 0) {
+        warning(glue::glue("The provided values for the `n_neigh_sequence` are greater than the number of cells ({ncells}). For the downstream analysis, we will set `n_neigh` to {ncells - 1}."))
+        n_neigh_sequence <- c(ncells - 1)
+    }
+
     # create a seed sequence if it's not provided
     if (is.null(seed_sequence)) {
         seed_sequence <- seq(
@@ -1011,8 +1037,7 @@ assess_nn_stability <- function(embedding,
         ecs_thresh = ecs_thresh,
         graph_type = graph_type,
         algorithm = algorithm,
-        umap_arguments = umap_arguments,
-        ...
+        umap_arguments = umap_arguments
     ))
 }
 

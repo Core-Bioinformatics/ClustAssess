@@ -93,6 +93,7 @@ assess_feature_stability <- function(data_matrix,
 
     # transpose the matrix to have observations on rows and features on columns
     data_matrix <- t(data_matrix)
+    ncells <- nrow(data_matrix)
 
     if (!is.character(feature_set)) {
         stop("feature_set parameter should be a vector of strings")
@@ -176,6 +177,12 @@ assess_feature_stability <- function(data_matrix,
         umap_arguments[["n_sgd_threads"]] <- 1
     }
 
+    if (!("n_neighbors" %in% names(umap_arguments))) {
+        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
+    }
+
+    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+
     if (verbose) {
         pb <- progress::progress_bar$new(
             format = glue::glue("{feature_type} - :featuresize [:bar] eta: :eta  total elapsed: :elapsed"),
@@ -215,9 +222,10 @@ assess_feature_stability <- function(data_matrix,
                     embedding,
                     nn.method = "rann",
                     compute.SNN = FALSE,
-                    verbose = FALSE
+                    verbose = FALSE,
+                    k.param = min(20, ncells - 1)
                 )$nn,
-                n_neigh = 20
+                n_neigh = min(20, ncells - 1)
             )$adj_matrix
             rownames(neigh_matrix) <- rownames(embedding)
             colnames(neigh_matrix) <- rownames(embedding)
@@ -284,7 +292,7 @@ assess_feature_stability <- function(data_matrix,
                         compute.SNN = FALSE,
                         verbose = FALSE
                     )$nn,
-                    n_neigh = 20
+                    n_neigh = min(20, ncells)
                 )$adj_matrix
             }
 

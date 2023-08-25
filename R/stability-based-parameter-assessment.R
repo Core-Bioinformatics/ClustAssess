@@ -344,8 +344,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                         graph_reduction_type = "UMAP",
                         ecs_thresh = 1,
                         algorithm = 1,
-                        umap_arguments = umap_arguments,
-                        ...
+                        umap_arguments = umap_arguments
                     ),
                     SIMPLIFY = FALSE
                 )
