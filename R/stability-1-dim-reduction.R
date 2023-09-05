@@ -208,9 +208,11 @@ assess_feature_stability <- function(data_matrix,
         trimmed_matrix <- data_matrix[, used_features]
 
         # calculate the precise PCA embedding using prcomp
+        RhpcBLASctl::blas_set_num_threads(ncores) # WARNING using more threads will lead to slightly different results
         embedding <- prcomp(x = trimmed_matrix, rank. = actual_npcs)
         embedding <- embedding$x
         embedding <- post_processing(embedding)
+        RhpcBLASctl::blas_set_num_threads(1)
         colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
         rownames(embedding) <- rownames(trimmed_matrix)
         pca_list[[object_name]][[step]] <- embedding
