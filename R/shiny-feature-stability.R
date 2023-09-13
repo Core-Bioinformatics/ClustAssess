@@ -675,11 +675,11 @@ server_dimensionality_distribution <- function(id) {
                         }
                         if (length(input$gene_expr) > 1) {
                             unique_values <- c("other", "cells above threshold")
-                            color_values <- c("lightgray", "red")
+                            color_values <- c("FALSE" = "lightgray", "TRUE" = "red")
                             used_matrix <- matrixStats::colSums2(used_matrix > expr_threshold) >= (length(input$gene_expr) - relaxation)
                         } else if (expr_threshold > 0) {
                             unique_values <- c("other", "cells above threshold")
-                            color_values <- c("lightgray", "red")
+                            color_values <- c("FALSE" = "lightgray", "TRUE" = "red")
                             used_matrix <- used_matrix > expr_threshold
                         }
 

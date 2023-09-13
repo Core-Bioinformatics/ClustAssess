@@ -348,8 +348,7 @@ metadata_plot <- function(embedding,
                           display_legend = FALSE,
                           predicted_height = NULL,
                           labels = FALSE) {
-    # print(pkg_env$metadata[[metadata_name]])
-    # print(embedding)
+    metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
 
     color_plot2(
         embedding = embedding,
@@ -358,7 +357,7 @@ metadata_plot <- function(embedding,
         unique_values = pkg_env$metadata_unique[[metadata_name]],
         plt_height = plt_height,
         plt_width = plt_width,
-        groups_highlight = groups_highlight,
+        cell_mask = metadata_mask,
         pt_size = pt_size,
         pch = pch,
         text_size = text_size,
