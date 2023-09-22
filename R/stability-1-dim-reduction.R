@@ -1,6 +1,6 @@
 # TODO close the socket connections in case of interruptions
 
-#' Evaluate Feature Set Stability
+#' Assess the stability for configurations of feature types and sizes
 #'
 #' @description Evaluate the stability of clusterings obtained
 #' based on incremental subsets of a given feature set.
@@ -79,6 +79,16 @@ assess_feature_stability <- function(data_matrix,
                                      ecs_thresh = 1,
                                      algorithm = 1,
                                      verbose = FALSE,
+                                     matrix_processing = function(dt_mtx) {
+                                        RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) # WARNING using more threads will lead to slightly different results
+                                        embedding <- prcomp(x = dt_mtx, rank. = 30)$x
+                                        RhpcBLASctl::blas_set_num_threads(1)
+
+                                        rownames(embedding) <- rownames(dt_mtx)
+                                        colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+
+                                        return(embedding)
+                                     },
                                      post_processing = function(pca_emb) {
                                          pca_emb
                                      },
@@ -205,16 +215,17 @@ assess_feature_stability <- function(data_matrix,
         steps_ecc_list[[object_name]][[step]] <- list()
 
         # keep only the features that we are using
-        trimmed_matrix <- data_matrix[, used_features]
+        # trimmed_matrix <- data_matrix[, used_features]
 
         # calculate the precise PCA embedding using prcomp
-        RhpcBLASctl::blas_set_num_threads(ncores) # WARNING using more threads will lead to slightly different results
-        embedding <- prcomp(x = trimmed_matrix, rank. = actual_npcs)
-        embedding <- embedding$x
-        embedding <- post_processing(embedding)
-        RhpcBLASctl::blas_set_num_threads(1)
-        colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
-        rownames(embedding) <- rownames(trimmed_matrix)
+        # RhpcBLASctl::blas_set_num_threads(ncores) # WARNING using more threads will lead to slightly different results
+        # embedding <- prcomp(x = trimmed_matrix, rank. = actual_npcs)
+        # embedding <- embedding$x
+        # embedding <- post_processing(embedding)
+        # RhpcBLASctl::blas_set_num_threads(1)
+        # colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+        # rownames(embedding) <- rownames(trimmed_matrix)
+        embedding <- matrix_processing(data_matrix[ , used_features])
         pca_list[[object_name]][[step]] <- embedding
 
         # build the SNN graph before if PCA
@@ -267,7 +278,7 @@ assess_feature_stability <- function(data_matrix,
             .noexport = all_vars[!(all_vars %in% needed_vars)]
         ) %dopar% {
             if (graph_reduction_type == "UMAP") {
-                row_names <- rownames(embedding)
+                row_names <- rownames(shared_embedding)
                 # calculate the umap embedding
                 # set.seed(seed)
                 # TODO check if set.seed is equivalent with sending the seed as param; if so, change the set.seed(42) as well
@@ -275,27 +286,51 @@ assess_feature_stability <- function(data_matrix,
                     umap_arguments$seed <- seed
                 }
 
-                embedding <- do.call(
+                ump_embedding <- do.call(
                     uwot::umap,
                     c(
                         list(X = shared_embedding),
                         umap_arguments
                     )
                 )
-                colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
-                rownames(embedding) <- row_names
+                colnames(ump_embedding) <- paste0("UMAP_", seq_len(ncol(ump_embedding)))
+                rownames(ump_embedding) <- row_names
                 gc()
 
-                # build the nn and snn graphs
-                shared_neigh_matrix <- get_highest_prune_param(
+                # build the nn and snn graphs and apply graph clustering
+                umap_neigh_matrix <- get_highest_prune_param(
                     nn_matrix = Seurat::FindNeighbors(
-                        embedding,
+                        ump_embedding,
                         nn.method = "rann",
                         compute.SNN = FALSE,
                         verbose = FALSE
                     )$nn,
                     n_neigh = min(20, ncells)
                 )$adj_matrix
+
+                # apply graph clustering to the snn graph
+                cluster_results <- lapply(resolution, function(r) {
+                    cl_res <- Seurat::FindClusters(
+                        umap_neigh_matrix,
+                        random.seed = seed,
+                        algorithm = algorithm,
+                        resolution = r,
+                        n.start = 1,
+                        verbose = FALSE
+                    )
+
+                    cl_res <- cl_res[, names(cl_res)[1]]
+
+                    # return the clustering
+                    list(
+                        mb = as.integer(cl_res),
+                        freq = 1,
+                        seed = seed
+                    )
+                })
+
+                names(cluster_results) <- as.character(resolution)
+                return(cluster_results)
             }
 
             # apply graph clustering to the snn graph
@@ -344,7 +379,6 @@ assess_feature_stability <- function(data_matrix,
         embedding_list[[object_name]][[step]] <- embedding
 
         # merge the identical partitions into the same object
-        # TODO similar to graph clustering, merge the partitions by treating the tie cases as well
         partitions_list[[step]] <- lapply(as.character(resolution), function(r) {
             merge_partitions(
                 lapply(partitions_list[[step]], function(x) {
