@@ -27,6 +27,7 @@ automatic_stability_assessment(
   umap_arguments = list(),
   clustering_arguments = list(),
   save_temp = TRUE,
+  algorithms_clustering_assessment = 1:3,
   ...
 )
 }
