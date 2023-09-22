@@ -114,6 +114,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            umap_arguments = list(),
                                            clustering_arguments = list(),
                                            save_temp = TRUE,
+                                           algorithms_clustering_assessment = 1:3,
                                            ...) {
     # store the additional arguments used by umap in a list
     suppl_args <- list(...)
@@ -437,7 +438,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 resolution = resolution_sequence,
                 n_repetitions = n_repetitions,
                 ecs_thresh = ecs_threshold,
-                algorithm = 1:3,
+                algorithm = algorithms_clustering_assessment,
                 verbose = verbose
             )
 
