@@ -108,6 +108,16 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            npcs = 30,
                                            verbose = TRUE,
                                            ecs_threshold = 1, # do we really need it?,
+                                           matrix_processing_dim_reduction = function(dt_mtx) {
+                                            RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) # WARNING using more threads will lead to slightly different results
+                                                embedding <- prcomp(x = dt_mtx, rank. = 30)$x
+                                                RhpcBLASctl::blas_set_num_threads(1)
+
+                                                rownames(embedding) <- rownames(dt_mtx)
+                                                colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+
+                                                return(embedding)
+                                            },
                                            post_processing_dim_reduction = function(pca_emb) {
                                                pca_emb
                                            },
@@ -167,6 +177,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             algorithm = 1,
             verbose = verbose,
             post_processing = post_processing_dim_reduction,
+            matrix_processing = matrix_processing_dim_reduction,
             umap_arguments = umap_arguments,
             ...
         )
