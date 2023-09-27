@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-1-dim-reduction.R
 \name{assess_feature_stability}
 \alias{assess_feature_stability}
-\title{Evaluate Feature Set Stability}
+\title{Assess the stability for configurations of feature types and sizes}
 \usage{
 assess_feature_stability(
   data_matrix,
@@ -17,6 +17,18 @@ assess_feature_stability(
   ecs_thresh = 1,
   algorithm = 1,
   verbose = FALSE,
+  matrix_processing = function(dt_mtx) {
+    
+    RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+     embedding <-
+    prcomp(x = dt_mtx, rank. = 30)$x
+     RhpcBLASctl::blas_set_num_threads(1)
+    
+    rownames(embedding) <- rownames(dt_mtx)
+     colnames(embedding) <- paste0("PC_",
+    seq_len(ncol(embedding)))
+     return(embedding)
+ },
   post_processing = function(pca_emb) {
      pca_emb
  },
