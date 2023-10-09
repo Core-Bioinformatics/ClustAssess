@@ -1520,7 +1520,7 @@ shiny_plot_k_n_partitions <- function(summary_df,
         # point colour
         unique_values <- c(min(summary_df$ecc), max(summary_df$ecc))
         legend_image <- as.raster(matrix(color_values, nrow = 1))
-        plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "", main = "Acerage ECC", cex.main = text_size)
+        plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "", main = "Average ECC", cex.main = text_size)
         text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
         rasterImage(legend_image, 0, 0, 1, 1)
     }
