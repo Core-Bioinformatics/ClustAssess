@@ -411,15 +411,24 @@ write_objects <- function(clustassess_object,
     # advantages: lower required space
     # disadvantages: would the rows be as easily accesible as in a normal matrix?
     print(glue::glue("[{Sys.time()}] Removing the genes from the expression matrix with low variance"))
-    expression_matrix <- as.matrix(expression_matrix)
+    num_rows <- nrow(expression_matrix)
+    num_chunks <- ceiling(num_rows / chunk_size)
+    dense_chunks <- lapply(seq_len(num_chunks), function(i) {
+      start_row <- (i - 1) * chunk_size + 1
+      end_row <- min(i * chunk_size, num_rows)
+      chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
+      gene_vars <- matrixStats::rowVars(chunk_matrix)
+        # filter by var threshold
+      chunk_matrix[gene_vars >= gene_variance_threshold, ]
+    })
+
+    print("merging chunks")
+    expression_matrix <- do.call(rbind, dense_chunks)
+    print("chunks merged")
 
     # others_sorted <- sort(rownames(expression_matrix)[!(rownames(expression_matrix) %in% genes_of_interest)])
     # genes <- rownames(expression_matrix) #c(genes_of_interest, others_sorted)
     # cells <- colnames(expression_matrix)
-
-    gene_vars <- matrixStats::rowVars(expression_matrix)
-    # filter by var threshold
-    expression_matrix <- expression_matrix[gene_vars >= gene_variance_threshold, ]
 
     gene_avg_expression <- matrixStats::rowMeans2(expression_matrix)
     order_expression <- order(gene_avg_expression, decreasing = TRUE)
@@ -593,10 +602,16 @@ write_shiny_app.default <- function(object,
     }
 
     if (stringr::str_length(warning_message) > 0) {
-        warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nIf you still want to create the shiny app, please type `yes`."), immediate. = TRUE)
-        user_input <- readline()
-        if (user_input != "yes") {
-            return()
+        while (TRUE) {
+            warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nPlease type `yes` or `no` if you want to continue creating the ClustAssess shiny app."), immediate. = TRUE)
+            user_input <- readline()
+            if (user_input == "no") {
+                return()
+            }
+
+            if (user_input == "yes") {
+                break
+            }
         }
     }
 
