@@ -348,7 +348,12 @@ metadata_plot <- function(embedding,
                           display_legend = FALSE,
                           predicted_height = NULL,
                           labels = FALSE) {
-    metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
+
+    if (is.null(groups_highlight)) {
+        metadata_mask <- rep(TRUE, nrow(embedding))
+    } else {
+        metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
+    }
 
     color_plot2(
         embedding = embedding,

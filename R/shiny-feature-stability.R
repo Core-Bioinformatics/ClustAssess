@@ -622,7 +622,8 @@ server_dimensionality_distribution <- function(id) {
                     shinyWidgets::updatePickerInput(
                         session,
                         inputId = "select_groups",
-                        choices = NULL
+                        choices = NULL,
+                        selected = NULL
                     )
                 } else {
                     shinyjs::show(id = "select_groups")
@@ -745,6 +746,7 @@ server_dimensionality_distribution <- function(id) {
                         if (is.null(pkg_env$metadata_unique[[current_metadata]])) {
                             old_par <- par(mai = c(0.1, 0, 0.1, 0))
                             text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
+                            groups <- NULL
                         } else {
                             old_par <- par(mar = c(0, 0, 0, 0))
                             predicted_width <- strwidth(c(" ", pkg_env$metadata_unique[[current_metadata]]), units = "inches", cex = input$metadata_legend_size) * ppi
