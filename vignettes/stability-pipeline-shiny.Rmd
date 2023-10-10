@@ -61,14 +61,14 @@ automm_output = automatic_stability_assessment(expression_matrix = cuomo@assays$
                                              n_neigh_sequence = seq(from = 5, to = 50, by = 5),
                                              resolution_sequence = seq(from = 0.1, to = 2, by = 0.1),
                                              features_sets = list(
-                                               "HV" = var_features,
-                                               "MA" = most_abundant_genes[1:3000],
-                                               "MA_HV" = ma_hv_genes_intersection
+                                              #  "HV" = var_features,
+                                               "MA" = most_abundant_genes[1:3000]
+                                              #  "MA_HV" = ma_hv_genes_intersection
                                              ),
                                              steps = list(
-                                               "HV" = steps,
-                                               "MA" = steps,
-                                               "MA_HV" = ma_hv_steps
+                                              #  "HV" = steps,
+                                               "MA" = steps
+                                              #  "MA_HV" = ma_hv_steps
                                              ),
                                              n_top_configs = 2,
                                              npcs = 30,
@@ -90,11 +90,14 @@ Create the shiny app based on the ClustAssess output.
 *Note*: Please make sure that the directory mentioned in the parameter `project_folder` is empty / doesn't exist.
 
 ```{r}
+# automm_output <- readRDS("test_ca.rds")
+```
+```{r}
 write_shiny_app(
-  seurat_object = cuomo,
+  object = cuomo,
   assay_name = "RNA",
-  clustassess_object = autom_output,
-  project_folder = "test_clustassess"
+  clustassess_object = automm_output,
+  project_folder = "test_clustassess_new_high"
 )
 ```
 

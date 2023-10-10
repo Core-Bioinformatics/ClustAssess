@@ -433,7 +433,7 @@ server_comparison_markers <- function(id, k_choices) {
                     step = 0.01
                 )
             }
-            
+
             marker_genes <- shiny::reactiveVal(NULL)
 
             # it would be nice to have gene umaps
@@ -447,8 +447,9 @@ server_comparison_markers <- function(id, k_choices) {
             shinyjs::hide("markers_dt")
             shinyjs::show("enable_markers")
 
-            server_comparison_markers_panels("group_left", k_choices)
-            server_comparison_markers_panels("group_right", k_choices)
+            print(id)
+            server_comparison_markers_panels(session, k_choices)
+            # server_comparison_markers_panels("group_left", k_choices)
 
             shiny::observe({
                 current_button_value <- as.integer(shiny::isolate(input$enable_markers))
@@ -471,7 +472,6 @@ server_comparison_markers <- function(id, k_choices) {
                 shinyjs::show("markers_button")
                 shinyjs::html("marker_text", "")
             }) %>% shiny::bindEvent(input$enable_markers)
-
 
             markers_val <- shiny::reactive({
                 current_button_value <- as.integer(shiny::isolate(input$markers_button))
@@ -574,38 +574,74 @@ server_comparison_markers <- function(id, k_choices) {
     )
 }
 
-server_comparison_markers_panels <- function(id, k_choices) {
-    shiny::moduleServer(
-        id,
-        function(input, output, session) {
-            # also add categorical metadata
-            available_choices <- c(names(pkg_env$metadata_unique), k_choices)
+server_comparison_markers_panels <- function(session, k_choices) {
+        available_choices <- c(names(pkg_env$metadata_unique), k_choices)
+        input <- session$input
+
+        shiny::updateSelectInput(
+            session = session,
+            inputId = "group_left-select_k_markers",
+            choices = available_choices,
+            selected = available_choices[1]
+        )
+
+        shiny::observe({
+            shiny::req(input$"group_left-select_k_markers" %in% available_choices)
+
+            if (is.na(as.numeric(input$"group_left-select_k_markers"))) {
+                available_subgroups <- pkg_env$metadata_unique[[input$"group_left-select_k_markers"]]
+            } else {
+                available_subgroups <- seq_len(as.numeric(input$"group_left-select_k_markers"))
+            }
+
+            shinyWidgets::updatePickerInput(
+                session = session,
+                inputId = "group_left-select_clusters_markers",
+                choices = available_subgroups,
+                selected = available_subgroups[1]
+            )
 
             shiny::updateSelectInput(
                 session = session,
-                inputId = "select_k_markers",
+                inputId = "group_right-select_k_markers",
                 choices = available_choices,
-                selected = available_choices[1]
+                selected = input$"group_left-select_k_markers"
+            )
+        }) %>% shiny::bindEvent(input$"group_left-select_k_markers")
+
+
+        shiny::observe({
+            shiny::req(input$"group_right-select_k_markers" %in% available_choices)
+
+            if (is.na(as.numeric(input$"group_right-select_k_markers"))) {
+                available_subgroups <- pkg_env$metadata_unique[[input$"group_right-select_k_markers"]]
+            } else {
+                available_subgroups <- seq_len(as.numeric(input$"group_right-select_k_markers"))
+            }
+
+            if (input$"group_left-select_k_markers" == input$"group_right-select_k_markers") {
+                selected_groups <- available_subgroups[!(available_subgroups %in% input$"group_left-select_clusters_markers")]
+            } else {
+                selected_groups <- available_subgroups[1]
+            }
+
+            shinyWidgets::updatePickerInput(
+                session = session,
+                inputId = "group_right-select_clusters_markers",
+                choices = available_subgroups,
+                selected = selected_groups
             )
 
-            shiny::observe({
-                shiny::req(input$select_k_markers %in% available_choices)
+        })
 
-                if (is.na(as.numeric(input$select_k_markers))) {
-                    available_subgroups <- pkg_env$metadata_unique[[input$select_k_markers]]
-                } else {
-                    available_subgroups <- seq_len(as.numeric(input$select_k_markers))
-                }
-
-                shinyWidgets::updatePickerInput(
-                    session = session,
-                    inputId = "select_clusters_markers",
-                    choices = available_subgroups,
-                    selected = available_subgroups[1]
-                )
-            }) %>% shiny::bindEvent(input$select_k_markers)
-        }
-    )
+        shiny::observe({
+            shiny::updateSelectInput(
+                session = session,
+                inputId = "group_right-select_k_markers",
+                choices = available_choices,
+                selected = input$"group_left-select_k_markers"
+            )
+        }) %>% shiny::bindEvent(input$"group_left-select_clusters_markers")
 }
 
 server_comparison_metadata_panel <- function(id) {
