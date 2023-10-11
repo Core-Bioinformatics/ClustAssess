@@ -243,12 +243,12 @@ ui_comparison_jsi_panel <- function(id) {
         ),
         shiny::selectInput(
             inputId = ns("jsi_k_1"),
-            label = "Select the number of clusters (k) for the first comparison",
+            label = "Select the number of clusters (k) or metadata, for the first comparison",
             choices = ""
         ),
         shiny::selectInput(
             inputId = ns("jsi_k_2"),
-            label = "Select the number of clusters (k) for the second comparison",
+            label = "Select the number of clusters (k)or metadata, for the second comparison",
             choices = ""
         ),
         shiny::plotOutput(ns("barcode_heatmap"), height = "auto", width = "98%")
@@ -1265,11 +1265,21 @@ server_comparison_jsi <- function(id, k_choices) {
 
             barcode_heatmap <- shiny::reactive({
                 shiny::req(input$jsi_k_1, input$jsi_k_2)
+              if(!is.na(as.numeric(input$jsi_k_1))){
                 clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
                 df_1 <- data.frame(clustering_1)
+              }else{
+                meta_category <- pkg_env$metadata[,input$jsi_k_1]
+                df_1 <- data.frame(meta_category)
+              }
                 df_1$cell <- rownames(df_1)
+              if(!is.na(as.numeric(input$jsi_k_2))){
                 clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
                 df_2 <- data.frame(clustering_2)
+              }else{
+                meta_category <- pkg_env$metadata[,input$jsi_k_2]
+                df_2 <- data.frame(meta_category)
+              }
                 df_2$cell <- rownames(df_2)
                 all_clusters_1 <- unique(df_1[, 1])
                 all_clusters_2 <- unique(df_2[, 1])
@@ -1301,7 +1311,7 @@ server_comparison_jsi <- function(id, k_choices) {
                 }
                 df_mat <- reshape2::melt(mat)
 
-                ggplot2::ggplot(df_mat, ggplot2::aes(Var1, Var2)) +
+                ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(Var1), as.factor(Var2))) +
                     ggplot2::geom_tile(ggplot2::aes(fill = value)) +
                     ggplot2::geom_text(ggplot2::aes(label = round(value, 2))) +
                     ggplot2::scale_fill_gradient2(
@@ -1310,8 +1320,6 @@ server_comparison_jsi <- function(id, k_choices) {
                         high = scales::muted("green"),
                         midpoint = 0
                     ) +
-                    ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +
-                    ggplot2::scale_y_continuous(breaks = pretty(df_mat$Var2, n = length(all_clusters_1))) +
                     ggplot2::theme(
                         panel.background = ggplot2::element_rect(fill = "white"),
                         axis.text.x = ggplot2::element_text(hjust = 1, vjust = 1, size = 10, face = "bold"),
@@ -1320,8 +1328,8 @@ server_comparison_jsi <- function(id, k_choices) {
                         axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
                         axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))
                     ) +
-                    ggplot2::xlab("Clusters in Configuration 2") +
-                    ggplot2::ylab("Clusters in Configuration 1") +
+                    ggplot2::xlab("Configuration 2") +
+                    ggplot2::ylab("Configuration 1") +
                     ggplot2::labs(fill = label)
             })
 
@@ -1614,6 +1622,14 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
 
             isolated_chosen_method <- shiny::isolate(chosen_method())
             cl_method <- isolated_chosen_method$method_name
+            
+            discrete <- c()
+            for (category in colnames(pkg_env$metadata)){
+              if(length(unique(pkg_env$metadata[,category]))<20){
+                
+                discrete <- append(discrete,category)
+              }
+            }
             k_values <- isolated_chosen_method$n_clusters
             stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
 
@@ -1697,7 +1713,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
             server_comparison_gene_panel("gene_panel_right")
-            server_comparison_jsi("jsi_plot", k_values)
+            server_comparison_jsi("jsi_plot", append(k_values,discrete))
             server_comparison_violin_gene("violin_gene")
             marker_genes <- server_comparison_markers("markers", k_values)
             server_comparison_enrichment("enrichment", marker_genes)
