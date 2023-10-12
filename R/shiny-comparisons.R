@@ -1295,7 +1295,7 @@ server_comparison_jsi <- function(id, k_choices) {
                         cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
                         for (n in all_clusters_2) {
                             cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
-                            mat[as.character(n), as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
+                            mat[as.character(n), as.character(m)] <- jaccard_index(cluster_1, cluster_2)
                             label <- "JSI"
                         }
                     }
