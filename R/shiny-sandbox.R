@@ -977,11 +977,22 @@ server_sandbox_jsi <- function(id) {
             )
 
             barcode_heatmap <- shiny::reactive({
-                clustering_1 <- as.matrix(stab_obj_left$mbs[[as.character(input$jsi_k_1)]])
+              shiny::req(input$jsi_k_1, input$jsi_k_2)
+              if(!is.na(as.numeric(input$jsi_k_1))){
+                clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
                 df_1 <- data.frame(clustering_1)
-                df_1$cell <- rownames(df_1)
-                clustering_2 <- as.matrix(stab_obj_right$mbs[[as.character(input$jsi_k_2)]])
+              }else{
+                meta_category <- pkg_env$metadata[,input$jsi_k_1]
+                df_1 <- data.frame(meta_category)
+              }
+              df_1$cell <- rownames(df_1)
+              if(!is.na(as.numeric(input$jsi_k_2))){
+                clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
                 df_2 <- data.frame(clustering_2)
+              }else{
+                meta_category <- pkg_env$metadata[,input$jsi_k_2]
+                df_2 <- data.frame(meta_category)
+              }
                 df_2$cell <- rownames(df_2)
                 all_clusters_1 <- unique(df_1[, 1])
                 all_clusters_2 <- unique(df_2[, 1])
@@ -997,7 +1008,7 @@ server_sandbox_jsi <- function(id) {
                         cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
                         for (n in all_clusters_2) {
                             cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
-                            mat[as.character(n), as.character(m)] <- bulkAnalyseR::jaccard_index(cluster_1, cluster_2)
+                            mat[as.character(n), as.character(m)] <- jaccard_index(cluster_1, cluster_2)
                             label <- "JSI"
                         }
                     }
@@ -1013,7 +1024,7 @@ server_sandbox_jsi <- function(id) {
                 }
                 df_mat <- reshape2::melt(mat)
 
-                ggplot2::ggplot(df_mat, ggplot2::aes(.data$Var1, .data$Var2)) +
+                ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(.data$Var1), as.factor(.data$Var2))) +
                     ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
                     ggplot2::geom_text(ggplot2::aes(label = round(.data$value, 2))) +
                     ggplot2::scale_fill_gradient2(
@@ -1022,8 +1033,6 @@ server_sandbox_jsi <- function(id) {
                         high = scales::muted("green"),
                         midpoint = 0
                     ) +
-                    ggplot2::scale_x_continuous(breaks = pretty(df_mat$Var1, n = length(all_clusters_2))) +
-                    ggplot2::scale_y_continuous(breaks = pretty(df_mat$Var2, n = length(all_clusters_1))) +
                     ggplot2::theme(
                         panel.background = ggplot2::element_rect(fill = "white"),
                         axis.text.x = ggplot2::element_text(hjust = 1, vjust = 1, size = 10, face = "bold"),
@@ -1079,7 +1088,6 @@ server_sandbox_jsi <- function(id) {
         }
     )
 }
-
 #' server sandbox
 #'
 #' @description to be completed
@@ -1152,6 +1160,14 @@ server_sandbox <- function(id) {
             server_sandbox_metadata_panel_right("sbx_metadata_panel_right")
             server_sandbox_gene_panel_left("sbx_gene_panel_left")
             server_sandbox_gene_panel_right("sbx_gene_panel_right")
+            
+            discrete <- c()
+            for (category in colnames(pkg_env$metadata)){
+              if(length(unique(pkg_env$metadata[,category]))<20){
+                
+                discrete <- append(discrete,category)
+              }
+            }
 
             # And the JSI
             shiny::observeEvent(input$"config_choice_left-fix_config", {
@@ -1159,7 +1175,7 @@ server_sandbox <- function(id) {
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_1",
-                    choices = pkg_env$selected_kvals_left,
+                    choices = append(pkg_env$selected_kvals_left,discrete),
                     selected = pkg_env$selected_kvals_left[1]
                 )
             })
@@ -1168,7 +1184,7 @@ server_sandbox <- function(id) {
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_2",
-                    choices = pkg_env$selected_kvals_right,
+                    choices = append(pkg_env$selected_kvals_left,discrete),
                     selected = pkg_env$selected_kvals_right[1]
                 )
             })
