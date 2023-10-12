@@ -1100,7 +1100,10 @@ server_sandbox <- function(id) {
             add_env_variable("fsets", list(
                 fsets = rhdf5::h5read("stability.h5", "feature_ordering/stable")
             ))
-
+          genes <- rhdf5::h5read("expression.h5", "genes")
+          index <- seq_along(genes)
+          names(index) <- genes
+          add_env_variable("genes", index)
 
 
             server_sandbox_config_choice("config_choice_left", "left")
@@ -1118,9 +1121,9 @@ server_sandbox <- function(id) {
                 shiny::updateSelectizeInput(
                     session,
                     inputId = glue::glue("sbx_gene_panel_left-gene_expr"),
-                    choices = c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others)),
+                    choices = c(names(pkg_env$genes)),
                     # selected = NULL,
-                    selected = names(pkg_env$genes_of_interest[1]),
+                    selected = names(pkg_env$genes[1]),
                     server = TRUE,
                     options = list(
                         maxOptions = 7,
@@ -1144,9 +1147,9 @@ server_sandbox <- function(id) {
                 shiny::updateSelectizeInput(
                     session,
                     inputId = glue::glue("sbx_gene_panel_right-gene_expr"),
-                    choices = c(names(pkg_env$genes_of_interest), names(pkg_env$genes_others)),
+                    choices = c(names(pkg_env$genes)),
                     # selected = NULL,
-                    selected = names(pkg_env$genes_of_interest[1]),
+                    selected = names(pkg_env$genes[1]),
                     server = TRUE,
                     options = list(
                         maxOptions = 7,
