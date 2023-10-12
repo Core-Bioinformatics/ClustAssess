@@ -1273,6 +1273,14 @@ gear_download <- function(ns, id, label = "") {
     )
 }
 
+jaccard_index <- function(a, b){
+  if (length(a) == 0 && length(b) == 0) {
+    return(1)
+  } else {
+    return(length(intersect(a, b)) / length(union(a, b)))
+  }
+}
+
 # split_vector_by_metadata <- function(vec, metadata) {
 #     if (is.factor(metadata)) {
 #         unique_values <- levels(metadata)
