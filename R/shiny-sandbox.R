@@ -1191,6 +1191,7 @@ server_sandbox <- function(id) {
             # And the JSI
             shiny::observeEvent(input$"config_choice_left-fix_config", {
                 shiny::req(pkg_env$selected_kvals_left)
+              shiny::req(pkg_env$clustering_options)
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_1",
@@ -1200,10 +1201,11 @@ server_sandbox <- function(id) {
             })
             shiny::observeEvent(input$"config_choice_right-fix_config", {
                 shiny::req(pkg_env$selected_kvals_right)
+              shiny::req(pkg_env$clustering_options)
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_2",
-                    choices = append(pkg_env$selected_kvals_left,discrete),
+                    choices = append(pkg_env$selected_kvals_right,discrete),
                     selected = pkg_env$selected_kvals_right[1]
                 )
             })
