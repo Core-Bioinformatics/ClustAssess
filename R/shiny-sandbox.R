@@ -717,18 +717,26 @@ server_sandbox_gene_panel_left <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-            expr_matrix <- shiny::reactive({
-                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
-                index_interest <- index_interest[!is.na(index_interest)]
-
-                index_others <- pkg_env$genes_others[input$gene_expr]
-                index_others <- index_others[!is.na(index_others)]
-
-                rbind(
-                    rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
-                    rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
-                )
-            }) %>% shiny::bindEvent(input$gene_expr)
+          expr_matrix <- shiny::reactive({
+            if ("genes" %in% names(pkg_env)) {
+              index_gene <- pkg_env$genes[input$gene_expr]
+              index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+              
+              return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+            }
+            
+            # for backward-compatibility purposes
+            index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+            index_interest <- index_interest[!is.na(index_interest)]
+            
+            index_others <- pkg_env$genes_others[input$gene_expr]
+            index_others <- index_others[!is.na(index_others)]
+            
+            rbind(
+              rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+              rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+            )
+          }) %>% shiny::bindEvent(input$gene_expr)
 
             max_level_expr <- shiny::reactive(max(expr_matrix()))
 
@@ -842,18 +850,26 @@ server_sandbox_gene_panel_right <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-            expr_matrix <- shiny::reactive({
-                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
-                index_interest <- index_interest[!is.na(index_interest)]
-
-                index_others <- pkg_env$genes_others[input$gene_expr]
-                index_others <- index_others[!is.na(index_others)]
-
-                rbind(
-                    rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
-                    rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
-                )
-            }) %>% shiny::bindEvent(input$gene_expr)
+          expr_matrix <- shiny::reactive({
+            if ("genes" %in% names(pkg_env)) {
+              index_gene <- pkg_env$genes[input$gene_expr]
+              index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+              
+              return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+            }
+            
+            # for backward-compatibility purposes
+            index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+            index_interest <- index_interest[!is.na(index_interest)]
+            
+            index_others <- pkg_env$genes_others[input$gene_expr]
+            index_others <- index_others[!is.na(index_others)]
+            
+            rbind(
+              rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+              rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+            )
+          }) %>% shiny::bindEvent(input$gene_expr)
 
             max_level_expr <- shiny::reactive(max(expr_matrix()))
 
