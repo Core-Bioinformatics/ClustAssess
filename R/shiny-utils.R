@@ -1229,12 +1229,12 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
             shiny::sliderInput(
                 inputId = ns(paste0(id, "_pt_size")),
                 label = "Point size",
-                min = 0.05, max = 5.00, value = 0.10, step = 0.05
+                min = 0.05, max = 5.00, value = 0.30, step = 0.05
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_type")),
                 label = "Point type",
-                choices = c("Pixel", "Circle")
+                choices = c("Circle","Pixel")
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_order")),
