@@ -1,12 +1,12 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 0.4.0
+Version: 1.0.0
 Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
                   role = c("aut", "cre")), person("Andi", "Munteanu",
                   email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
                   email="iim22@cam.ac.uk", role="aut"))
-Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
+Maintainer: Andi Munteanu <am3019@cam.ac.uk>
 Description: A set of tools for evaluating clustering robustness using 
     proportion of ambiguously clustered pairs (Senbabaoglu et al. (2014) 
     <doi:10.1038/srep06207>), as well as similarity across methods 
@@ -19,13 +19,12 @@ Encoding: UTF-8
 biocViews:
 Imports: 
     ggplot2,
-    bulkAnalyseR,
     dplyr,
     DelayedMatrixStats,
     DT,
     fastcluster,
     rlang,
-    Matrix,
+    Matrix (>= 1.5.0),
     Gmedian,
     ggrepel,
     ggtext,
@@ -74,6 +73,7 @@ Suggests:
     monocle3,
     scales,
     Seurat,
+    sf,
     svglite,
     ragg,
     readr,
