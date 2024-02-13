@@ -149,8 +149,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                                         ecs_thresh = 1,
                                         algorithm = 1:3,
                                         verbose = TRUE,
-                                        clustering_arguments = list(),
-                                        ...) {
+                                        clustering_arguments = list()
+                                        ) {
     # BUG there are some performance issues, make sure the main runtime is caused by the clustering method
     # TODO add leidenbase implementation for the algorithm = 4
     ncores <- foreach::getDoParWorkers()
@@ -197,11 +197,13 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
 
     # additional arguments used by the clustering method
 
-    if (ncores > 1) {
-        graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
-    } else {
-        graph_adjacency_matrix_shared <- graph_adjacency_matrix
-    }
+    # if (min(algorithm) < 4) {
+        if (ncores > 1) {
+            graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
+        } else {
+            graph_adjacency_matrix_shared <- graph_adjacency_matrix
+        }
+    # }
 
     # the variables needed in the PSOCK processes
     seurat_clustering <- seurat_clustering
@@ -216,6 +218,21 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     seed <- 0
 
     for (alg_index in algorithm) {
+        # FIXME edit this once you will be able to share an igraph
+        # if (algorithm == 4) {
+        #     g <- igraph::graph_from_adjacency_matrix(
+        #         adjmatrix = graph_adjacency_matrix,
+        #         mode = ifelse(Matrix::isSymmetric(graph_adjacency_matrix), "undirected", "directed"),
+        #         weighted = TRUE
+        #     )
+
+        #     if (ncores > 1) {
+        #         graph_adjacency_matrix_shared <- SharedObject::share(g)
+        #     } else {
+        #         graph_adjacency_matrix_shared <- g
+        #     }
+        # }
+
         alg_name <- algorithm_names[alg_index]
 
         if (verbose) {
@@ -246,7 +263,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                         object = graph_adjacency_matrix_shared,
                         resolution = res,
                         seed = seed,
-                        algorithm = alg_index
+                        algorithm = alg_index,
+                        verbose = FALSE
                     ),
                     clustering_arguments
                 ))
