@@ -21,26 +21,23 @@ automatic_stability_assessment(
   npcs = 30,
   verbose = TRUE,
   ecs_threshold = 1,
-  matrix_processing_dim_reduction = function(dt_mtx) {
+  matrix_processing_dim_reduction = function(dt_mtx, actual_npcs, ...) {
     
     RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
      embedding <-
-    prcomp(x = dt_mtx, rank. = 30)$x
+    prcomp(x = dt_mtx, rank. = actual_npcs)$x
      RhpcBLASctl::blas_set_num_threads(1)
-    
-    rownames(embedding) <- rownames(dt_mtx)
+ 
+       rownames(embedding) <- rownames(dt_mtx)
      colnames(embedding) <- paste0("PC_",
     seq_len(ncol(embedding)))
      return(embedding)
  },
-  post_processing_dim_reduction = function(pca_emb) {
-     pca_emb
- },
   umap_arguments = list(),
   clustering_arguments = list(),
+  matrix_processing_arguments = list(),
   save_temp = TRUE,
-  algorithms_clustering_assessment = 1:3,
-  ...
+  algorithms_clustering_assessment = 1:3
 )
 }
 \arguments{

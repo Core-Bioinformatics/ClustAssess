@@ -12,8 +12,7 @@ assess_clustering_stability(
   ecs_thresh = 1,
   algorithm = 1:3,
   verbose = TRUE,
-  clustering_arguments = list(),
-  ...
+  clustering_arguments = list()
 )
 }
 \arguments{

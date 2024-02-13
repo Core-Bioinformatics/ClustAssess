@@ -17,23 +17,20 @@ assess_feature_stability(
   ecs_thresh = 1,
   algorithm = 1,
   verbose = FALSE,
-  matrix_processing = function(dt_mtx) {
+  matrix_processing = function(dt_mtx, actual_npcs, ...) {
     
     RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
      embedding <-
-    prcomp(x = dt_mtx, rank. = 30)$x
+    prcomp(x = dt_mtx, rank. = actual_npcs)$x
      RhpcBLASctl::blas_set_num_threads(1)
-    
-    rownames(embedding) <- rownames(dt_mtx)
+ 
+       rownames(embedding) <- rownames(dt_mtx)
      colnames(embedding) <- paste0("PC_",
     seq_len(ncol(embedding)))
      return(embedding)
  },
-  post_processing = function(pca_emb) {
-     pca_emb
- },
   umap_arguments = list(),
-  ...
+  matrix_processing_arguments = list()
 )
 }
 \arguments{
@@ -65,10 +62,10 @@ should be built on either the PCA or the UMAP embedding.}
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
 can be found in the Seurat's \code{FindClusters} function.}
 
-\item{...}{additional arguments passed to the umap method.}
-
 \item{ncores}{The number of parallel R instances that will run the code. If
 the value is set to 1, the code will be run sequentially.}
+
+\item{...}{additional arguments passed to the umap method.}
 }
 \value{
 A list having one field associated with a step value. Each step
