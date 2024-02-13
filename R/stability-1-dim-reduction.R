@@ -79,9 +79,11 @@ assess_feature_stability <- function(data_matrix,
                                      ecs_thresh = 1,
                                      algorithm = 1,
                                      verbose = FALSE,
-                                     matrix_processing = function(dt_mtx) {
-                                        RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) # WARNING using more threads will lead to slightly different results
-                                        embedding <- prcomp(x = dt_mtx, rank. = 30)$x
+                                     matrix_processing = function(dt_mtx, actual_npcs, ...) {
+                                        # WARNING using more threads will lead to slightly different results
+                                        # initial_ncores <- RhpcBLASctl::blas_get_num_procs()
+                                        RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) 
+                                        embedding <- prcomp(x = dt_mtx, rank. = actual_npcs)$x
                                         RhpcBLASctl::blas_set_num_threads(1)
 
                                         rownames(embedding) <- rownames(dt_mtx)
@@ -89,13 +91,11 @@ assess_feature_stability <- function(data_matrix,
 
                                         return(embedding)
                                      },
-                                     post_processing = function(pca_emb) {
-                                         pca_emb
-                                     },
                                      umap_arguments = list(),
-                                     ...) {
+                                     matrix_processing_arguments = list()
+                                    ) {
     # TODO create a function that does checks of the parameters
-    # BUG irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)?
+    # NOTE irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)? seems to be fixed, keep under observation
     # check parameters
     if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix")) {
         stop("the data matrix parameter should be a matrix")
@@ -170,12 +170,6 @@ assess_feature_stability <- function(data_matrix,
         n_repetitions <- length(seed_sequence)
     }
 
-    if (is.null(post_processing) || !is.function(post_processing)) {
-        post_processing <- function(x) {
-            x
-        }
-    }
-
     # convert the negative steps to the size of the feature
     steps[steps <= 0 |
         steps > length(feature_set)] <- length(feature_set)
@@ -214,18 +208,22 @@ assess_feature_stability <- function(data_matrix,
         partitions_list[[step]] <- list()
         steps_ecc_list[[object_name]][[step]] <- list()
 
-        # keep only the features that we are using
-        # trimmed_matrix <- data_matrix[, used_features]
+        embedding <- do.call(
+            matrix_processing,
+            c(
+                list(dt_mtx = data_matrix[, used_features], actual_npcs = actual_npcs),
+                matrix_processing_arguments
+            )
+        )
 
-        # calculate the precise PCA embedding using prcomp
-        # RhpcBLASctl::blas_set_num_threads(ncores) # WARNING using more threads will lead to slightly different results
-        # embedding <- prcomp(x = trimmed_matrix, rank. = actual_npcs)
-        # embedding <- embedding$x
-        # embedding <- post_processing(embedding)
-        # RhpcBLASctl::blas_set_num_threads(1)
-        # colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
-        # rownames(embedding) <- rownames(trimmed_matrix)
-        embedding <- matrix_processing(data_matrix[ , used_features])
+        if (is.null(rownames(embedding))) {
+            rownames(embedding) <- rownames(data_matrix)
+        }
+
+        if (is.null(colnames(embedding))) {
+            colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+        }
+
         pca_list[[object_name]][[step]] <- embedding
 
         # build the SNN graph before if PCA
@@ -365,12 +363,14 @@ assess_feature_stability <- function(data_matrix,
         }
 
         set.seed(42) # to match Seurat's default
-        embedding <- do.call(
+        # FIXME find a way to solve the issue of duplicate "dict" class (from BiocGeneric and spam packages)
+        capture.output(embedding <- base::do.call(
             uwot::umap,
             c(
                 list(X = embedding),
                 umap_arguments
             )
+            ), type = "message"
         )
 
         colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))

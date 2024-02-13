@@ -30,19 +30,89 @@ ranking_functions <- list(
 
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
-seurat_clustering <- function(object, resolution, seed, algorithm = 4, ...) {
+seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_starts = 10, num_iter = 10, ...) {
     cluster_result <- Seurat::FindClusters(
         object,
         resolution = resolution,
         random.seed = seed,
         algorithm = algorithm,
-        verbose = FALSE,
+        n.start = num_starts,
+        n.iter = num_iter,
         ...
     )
     as.integer(cluster_result[[colnames(cluster_result)[1]]])
 }
 
-leiden_clustering <- function(object, resolution, seed, ...) {
+leiden_clustering <- function(g,
+                              resolution,
+                              seed,
+                              initial_membership = NULL,
+                              num_iter = 10,
+                              num_starts = 1,
+                              ...) {
+
+    best_mb <- NULL
+    best_quality <- NULL
+    # g <- igraph::graph_from_adjacency_matrix(
+    #     adjmatrix = object,
+    #     mode = graph_mode,
+    #     weighted = TRUE
+    # )
+
+    if (num_starts > 1) {
+        set.seed(seed)
+    }
+
+    for (i in seq_len(num_starts)) {
+        cluster_result <- leidenbase::leiden_find_partition(
+            igraph = g,
+            edge_weights = igraph::E(g)$weight,
+            resolution_parameter = resolution,
+            num_iter = num_iter,
+            seed = ifelse(num_starts == 1, seed, NULL),
+            initial_membership = initial_membership,
+            ...
+        )
+
+        if (is.null(best_quality) || cluster_result$quality > best_quality) {
+            best_quality <- cluster_result$quality
+            best_mb <- cluster_result$membership
+        }
+    }
+
+    return(best_mb)
+}
+
+clustering_functions <- function(object,
+                                 resolution,
+                                 seed,
+                                 algorithm = 4,
+                                 num_iter = 10,
+                                 num_starts = 10,
+                                 ...) {
+    # FIXME change it to 1:3 once you will be able to share an igraph
+    if (algorithm %in% 1:4) {
+        return(seurat_clustering(
+            object = object,
+            resolution = resolution,
+            seed = seed,
+            algorithm = algorithm,
+            # n.start = num_starts,
+            # n.iter = num_iter,
+            ...
+        ))
+    }
+
+    return(
+        leiden_clustering(
+            g = object,
+            resolution = resolution,
+            seed = seed,
+            num_iter = num_iter,
+            num_starts = num_starts,
+            ...
+        )
+    )
 }
 
 #### Automatic ####
@@ -108,9 +178,10 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                                            npcs = 30,
                                            verbose = TRUE,
                                            ecs_threshold = 1, # do we really need it?,
-                                           matrix_processing_dim_reduction = function(dt_mtx) {
-                                            RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) # WARNING using more threads will lead to slightly different results
-                                                embedding <- prcomp(x = dt_mtx, rank. = 30)$x
+                                           matrix_processing_dim_reduction = function(dt_mtx, actual_npcs, ...) {
+                                                # WARNING using more threads will lead to slightly different results
+                                                RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+                                                embedding <- prcomp(x = dt_mtx, rank. = actual_npcs)$x
                                                 RhpcBLASctl::blas_set_num_threads(1)
 
                                                 rownames(embedding) <- rownames(dt_mtx)
@@ -118,16 +189,12 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
 
                                                 return(embedding)
                                             },
-                                           post_processing_dim_reduction = function(pca_emb) {
-                                               pca_emb
-                                           },
                                            umap_arguments = list(),
                                            clustering_arguments = list(),
+                                           matrix_processing_arguments = list(),
                                            save_temp = TRUE,
-                                           algorithms_clustering_assessment = 1:3,
-                                           ...) {
-    # store the additional arguments used by umap in a list
-    suppl_args <- list(...)
+                                           algorithms_clustering_assessment = 1:3
+                                        ) {
     file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
     cell_names <- colnames(expression_matrix)
     if (is.null(cell_names)) {
@@ -176,10 +243,9 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             ecs_thresh = ecs_threshold,
             algorithm = 1,
             verbose = verbose,
-            post_processing = post_processing_dim_reduction,
             matrix_processing = matrix_processing_dim_reduction,
-            umap_arguments = umap_arguments,
-            ...
+            matrix_processing_arguments = matrix_processing_arguments,
+            umap_arguments = umap_arguments
         )
 
         feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
@@ -250,12 +316,16 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
             current_features <- features_sets[[set_name]][seq_len(n_steps)]
             if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
-                suppressWarnings(pca_emb <- Seurat::RunPCA(expression_matrix[current_features, ],
-                    npcs = min(npcs, n_steps %/% 2),
-                    approx = FALSE,
-                    verbose = FALSE
-                )@cell.embeddings)
-                pca_emb <- post_processing_dim_reduction(pca_emb)
+                pca_emb <- do.call(
+                    matrix_processing_dim_reduction,
+                    c(
+                        list(
+                            dt_mtx = expression_matrix[current_features, ],
+                            actual_npcs = min(npcs, n_steps %/% 2)
+                        ),
+                        matrix_processing_arguments
+                    )
+                )
             } else {
                 pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
             }
@@ -305,8 +375,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 n_repetitions = n_repetitions,
                 seed_sequence = seed_sequence,
                 include_umap = include_umap_nn_assessment,
-                umap_arguments = umap_arguments,
-                ...
+                umap_arguments = umap_arguments
             )
             if (verbose) {
                 pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
