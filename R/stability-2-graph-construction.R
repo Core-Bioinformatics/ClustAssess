@@ -583,6 +583,11 @@ assess_nn_stability_pca <- function(embedding,
     rm(nn2_res)
     gc()
 
+    # if (ncores > 1) {
+    #     shared_neigh_matrix <- SharedObject::share(neigh_matrices)
+    # } else {
+    #     shared_neigh_matrix <- neigh_matrices
+    # }
 
     for (n_neigh in as.character(n_neigh_sequence)) {
         partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
@@ -593,10 +598,10 @@ assess_nn_stability_pca <- function(embedding,
             shared_neigh_matrix <- neigh_matrices[[n_neigh]]
         }
 
+        gc()
         # the variables needed in the PSOCK processes
         seed <- NA
         needed_vars <- c(
-            # "n_neigh",
             "graph_type",
             "algorithm",
             "shared_neigh_matrix"
@@ -617,6 +622,7 @@ assess_nn_stability_pca <- function(embedding,
                     n.start = 1,
                     verbose = FALSE
                 )
+
                 cluster_results_nn <- list(
                     mb = as.integer(cluster_results_nn[, names(cluster_results_nn)[1]]),
                     freq = 1,
@@ -648,16 +654,10 @@ assess_nn_stability_pca <- function(embedding,
 
             return(list(cluster_results_snn, cluster_results_nn))
         }
-
-        if (ncores > 1) {
-            shared_neigh_matrix <- SharedObject::unshare(neigh_matrices[[n_neigh]])
-        }
-
+       
         neigh_matrices[[n_neigh]] <- NULL
-        gc()
 
         # merge the partitions that are considered similar by a given ecs threshold
-        # TODO mearge the partitions by treating the ties as well
         for (i in seq_along(partitions_list)) {
             partitions_list[[i]][[n_neigh]] <- merge_partitions(
                 lapply(partitions_list_temp, function(x) {
@@ -667,6 +667,13 @@ assess_nn_stability_pca <- function(embedding,
             )
         }
     }
+
+    # TODO raise a github issue for SharedObject: is it necesarry to unshare objects??
+    # if (ncores > 1) {
+    #     shared_neigh_matrix <- SharedObject::unshare(neigh_matrices)
+    #     # rm(shared_neigh_matrix)
+    #     gc()
+    # }
 
     # create an object showing the number of clusters obtained for each number of
     # neighbours
@@ -959,6 +966,7 @@ assess_nn_stability <- function(embedding,
     # TODO vary by resolution
     # TODO add option to use pruning
     # TODO add UMAP variant
+    # TODO add clustering parameters
     # BUG check the performance
     # [ ] optimise the way the nn matrices are built
     # check parameters
