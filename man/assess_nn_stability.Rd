@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-2-graph-construction.R
 \name{assess_nn_stability}
 \alias{assess_nn_stability}
-\title{Assess Graph Building Parameters}
+\title{Assess the stability for Graph Building Parameters}
 \usage{
 assess_nn_stability(
   embedding,
@@ -12,7 +12,8 @@ assess_nn_stability(
   graph_reduction_type = "PCA",
   ecs_thresh = 1,
   graph_type = 2,
-  algorithm = 1,
+  clustering_algorithm = 1,
+  clustering_arguments = list(),
   umap_arguments = list()
 )
 }
@@ -36,24 +37,24 @@ should be built on either the PCA or the UMAP embedding.}
 \item{graph_type}{Argument indicating whether the graph should be
 unweighted (0), weighted (1) or both (2).}
 
-\item{algorithm}{An index indicating which community detection algorithm will
+\item{clustering_algorithm}{An index indicating which community detection algorithm will
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
 details can be found in the Seurat's \code{FindClusters} function.}
 
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
+\item{clustering_arguments}{A list of arguments that will be passed to the
+clustering algorithm. See the \code{FindClusters} function in Seurat for more details.}
 
-\item{...}{Additional arguments passed to the the \code{uwot::umap} method.}
+\item{umap_arguments}{Additional arguments passed to the the \code{uwot::umap} method.}
 }
 \value{
 A list having three fields:
 \itemize{
-\item n_neigh_k_corresp - list containing the number of the clusters obtained by running
-the pipeline multiple times with different seed, number of neighbors and graph type (weighted vs unweigted)
-\item n_neigh_ec_consistency - list containing the EC consistency of the partitions obtained
-at multiple runs when changing the number of neighbors or the graph type
-\item n_different_partitions - the number of different partitions obtained by each
-number of neighbors
+\item \code{n_neigh_k_corresp} - list containing the number of the clusters obtained by running
+the pipeline multiple times with different seed, number of neighbours and graph type (weighted vs unweigted)
+\item \code{n_neigh_ec_consistency} - list containing the EC consistency of the partitions obtained
+at multiple runs when changing the number of neighbours or the graph type
+\item \code{n_different_partitions} - the number of different partitions obtained by each
+number of neighbours
 }
 }
 \description{
@@ -62,18 +63,18 @@ parameters involved in the graph building step,
 namely the base embedding, the graph type and the number of neighbours.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 rownames(pca_emb) <- as.character(1:100)
-colnames(pca_emb) <- paste0("PCA_", 1:30)
+colnames(pca_emb) <- paste0("PC_", 1:30)
 
 nn_stability_obj <- assess_nn_stability(
     embedding = pca_emb,
     n_neigh_sequence = c(10, 15, 20),
     n_repetitions = 10,
     graph_reduction_type = "PCA",
-    algorithm = 1
+    clustering_algorithm = 1
 )
 plot_n_neigh_ecs(nn_stability_obj)
 }

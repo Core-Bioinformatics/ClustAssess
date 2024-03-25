@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny-landing-page.R
 \name{server_landing_page}
 \alias{server_landing_page}
-\title{Landing page - server side}
+\title{Server - Landing page module}
 \usage{
 server_landing_page(
   id,
@@ -12,6 +12,27 @@ server_landing_page(
   organism = "hsapiens"
 )
 }
+\arguments{
+\item{id}{The id of the module, used to acess the UI elements.}
+
+\item{height_ratio}{A reactive object that contains the height ratio of the
+plots in the application (the height of the plot is calculated using the
+height ratio and the height of the webpage).}
+
+\item{dimension}{A reactive object that contains the dimensions of the
+webpage.}
+
+\item{parent_session}{The session of the parent module, used to control the
+tabs of the application.}
+
+\item{organism}{The organism of the dataset, which will be used in the
+enrichment analysis.}
+}
 \description{
-to be completed
+Creates the backend interface for the landing page module inside
+the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }

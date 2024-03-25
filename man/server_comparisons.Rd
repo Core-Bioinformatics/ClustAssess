@@ -2,10 +2,24 @@
 % Please edit documentation in R/shiny-comparisons.R
 \name{server_comparisons}
 \alias{server_comparisons}
-\title{Writing objects}
+\title{Server - Comparison module}
 \usage{
 server_comparisons(id, chosen_config, chosen_method)
 }
+\arguments{
+\item{id}{The id of the module, used to acess the UI elements.}
+
+\item{chosen_config}{A reactive object that contains the chosen configuration
+from the Dimensionality Reduction tab.}
+
+\item{chosen_method}{A reactive object that contains the chosen method from
+the Clustering tab.}
+}
 \description{
-to be completed
+Creates the backend interface for the comparison module inside
+the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }

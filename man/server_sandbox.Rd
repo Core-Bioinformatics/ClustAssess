@@ -2,10 +2,18 @@
 % Please edit documentation in R/shiny-sandbox.R
 \name{server_sandbox}
 \alias{server_sandbox}
-\title{server sandbox}
+\title{Server - Sandbox module}
 \usage{
 server_sandbox(id)
 }
+\arguments{
+\item{id}{The id of the module, used to acess the UI elements.}
+}
 \description{
-to be completed
+Creates the backend interface for the sandbox module inside
+the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }

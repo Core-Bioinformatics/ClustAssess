@@ -49,11 +49,14 @@ rescaled to be in-between 0 and 1.}
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.}
 
-\item{ncores}{the number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
+\item{calculate_sim_matrix}{A logical value that indicates whether to
+calculate the similarity matrix or not along with the consistency score.
+Defaults to \code{FALSE}.}
 }
 \value{
-a vector containing the element-wise consistency.
+A vector containing the element-wise consistency. If
+\code{calculate_sim_matrix} is set to \code{TRUE}, the element similarity matrix
+will be returned as well.
 }
 \description{
 Inspect the consistency of a set of clusterings by calculating

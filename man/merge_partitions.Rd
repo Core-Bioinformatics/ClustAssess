@@ -18,8 +18,10 @@ merge_partitions(
 
 \item{order}{A logical: if TRUE, order the partitions based on their frequencies.}
 
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
+\item{check_ties}{A logical value that indicates whether to check for ties
+in the highest frequency partitions or not. If TRUE, the function will put
+at the first position the partition that has the highest similarity
+with the other partitions. Defaults to \code{FALSE}.}
 }
 \value{
 a list of the merged partitions

@@ -2,54 +2,60 @@
 % Please edit documentation in R/stability-3-graph-clustering.R
 \name{plot_clustering_overall_stability}
 \alias{plot_clustering_overall_stability}
-\title{Clustering Method Stability Boxplot}
+\title{Clustering Method Overall Stability Boxplot}
 \usage{
 plot_clustering_overall_stability(
   clust_object,
   value_type = c("k", "resolution"),
-  summary_function = median
+  summary_function = stats::median
 )
 }
 \arguments{
 \item{clust_object}{An object returned by the
-`get_clustering_difference_object` method.}
+\code{assess_clustering_stability} method.}
 
-\item{text_size}{The size of the labels above boxplots.}
+\item{value_type}{A string that specifies the type of value that was used
+for grouping the partitions and calculating the ECC score. It can be either
+\code{k} or \code{resolution}. Defaults to \code{k}.}
 
-\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
-be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
-
-\item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
-will be passed to the `width` argument of the `ggplot2::position_dodge` method.}
+\item{summary_function}{The function that will be used to summarize the
+distribution of the ECC values obtained for each number of clusters. Defaults
+to \code{median}.}
 }
 \value{
-A ggplot2 object with the EC consistency distributions. Higher
-consistency indicates a more stable clustering.
+A ggplot2 object with the EC consistency distributions grouped by
+the clustering methods. Higher consistency indicates
+a more stable clustering.
 }
 \description{
-Display EC consistency across clustering method and resolution
-values. The `filtered` field of the object returned by the
-`get_clustering_difference_object` method is used.
-Above each boxplot, the number of clusters is displayed.
+Display EC consistency across clustering methods by summarising
+the distribution of the EC consistency for each number of clusters.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_embedding <- matrix(runif(100 * 30), nrow = 100)
-rownames(pca_embedding) <- as.character(1:100)
-colnames(pca_embedding) <- paste0("PCA_", 1:30)
+rownames(pca_embedding) <- paste0("cell_", seq_len(nrow(pca_embedding)))
+colnames(pca_embedding) <- paste0("PC_", 1:30)
 
-adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-    k.param = 10,
-    nn.method = "rann",
-    verbose = FALSE,
-    compute.SNN = FALSE
+
+adj_matrix <- getNNmatrix(
+    RANN::nn2(pca_embedding, k = 10)$nn.idx,
+    10,
+    0,
+    -1
 )$nn
+rownames(adj_matrix) <- paste0("cell_", seq_len(nrow(adj_matrix)))
+colnames(adj_matrix) <- paste0("cell_", seq_len(ncol(adj_matrix)))
+
+# alternatively, the adj_matrix can be calculated
+# using the `Seurat::FindNeighbors` function.
+
 clust_diff_obj <- assess_clustering_stability(
     graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
     n_repetitions = 10,
-    algorithm = 1:2,
+    clustering_algorithm = 1:2,
     verbose = FALSE
 )
 plot_clustering_overall_stability(clust_diff_obj)

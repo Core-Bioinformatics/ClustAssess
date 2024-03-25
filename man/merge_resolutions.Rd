@@ -2,23 +2,24 @@
 % Please edit documentation in R/stability-3-graph-clustering.R
 \name{merge_resolutions}
 \alias{merge_resolutions}
-\title{Merge Resolutions}
+\title{Merge Partitions from different Resolutions}
 \usage{
-merge_resolutions(res_obj, object_name)
+merge_resolutions(res_obj)
 }
 \arguments{
 \item{res_obj}{A list associated to a configuration field from the object
 returned by the \code{get_resolution_importance} method.}
-
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A list having one field assigned to each number of clusters. A number
 of cluster will contain a list of all merged partitions. To avoid duplicates,
 \code{merged_partitions} with threshold 1 is applied.
+
+#TODO add example
 }
 \description{
-Merge partitions obtained with different resolution values
-that have the same number of clusters.
+Merge partitions obtained with different resolution values. The
+partitions will be grouped based on the number of clusters. The identical
+partitions will be merged into a single partition by updating the frequency
+using the \code{merge_partitions} method.
 }

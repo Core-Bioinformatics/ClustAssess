@@ -8,32 +8,32 @@ plot_n_neigh_ecs(nn_ecs_object, boxplot_width = 0.5)
 }
 \arguments{
 \item{nn_ecs_object}{An object or a concatenation of objects returned by the
-`get_nn_importance` method.}
+\code{get_nn_importance} method.}
 
 \item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
-be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
+be passed to the \code{width} argument of the \code{ggplot2::geom_boxplot} method.}
 }
 \value{
 A ggplot2 object.
 }
 \description{
 Display, for all configurations consisting in different number
-of neighbors, graph types and base embeddings, the EC Consistency of the partitions
+of neighbours, graph types and base embeddings, the EC Consistency of the partitions
 obtained over multiple runs on an UMAP embedding.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 rownames(pca_emb) <- as.character(1:100)
-colnames(pca_emb) <- paste0("PCA_", 1:30)
+colnames(pca_emb) <- paste0("PC_", 1:30)
 
 nn_stability_obj <- assess_nn_stability(
     embedding = pca_emb,
     n_neigh_sequence = c(10, 15, 20),
     n_repetitions = 10,
     graph_reduction_type = "PCA",
-    algorithm = 1
+    clustering_algorithm = 1
 )
 plot_n_neigh_ecs(nn_stability_obj)
 }

@@ -13,6 +13,9 @@ plot_clustering_difference_facet(
 )
 }
 \arguments{
+\item{clust_object}{An object returned by the
+\code{assess_clustering_stability} method.}
+
 \item{embedding}{An embedding (only the first two dimensions will be used for
 visualization).}
 
@@ -23,37 +26,36 @@ visualization).}
 \item{grid}{Boolean value indicating whether the facet should be a grid (where each
 row is associated with a resolution value and each column with a clustering method) or
 a wrap.}
-
-\item{clustering_difference_object}{An object returned by the
-`get_clustering_difference_object` method.}
 }
 \value{
 A ggplot2 object.
+#TODO should export
 }
 \description{
 Display the distribution of the EC consistency for each
-clustering method and each resolution value on a given embedding The `all`
-field of the object returned by the `get_clustering_difference_object` method is used.
+clustering method and each resolution value on a given embedding The \code{all}
+field of the object returned by the \code{get_clustering_difference_object} method is used.
 }
 \examples{
-set.seed(2021)
-# create an artificial PCA embedding
-pca_embedding <- matrix(runif(100 * 30), nrow = 100)
-rownames(pca_embedding) <- as.character(1:100)
-colnames(pca_embedding) <- paste0("PCA_", 1:30)
+# FIXME fix the examples
+# set.seed(2021)
+# # create an artificial PCA embedding
+# pca_embedding <- matrix(runif(100 * 30), nrow = 100)
+# rownames(pca_embedding) <- as.character(1:100)
+# colnames(pca_embedding) <- paste0("PCA_", 1:30)
 
-adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-    k.param = 10,
-    nn.method = "rann",
-    verbose = FALSE,
-    compute.SNN = FALSE
-)$nn
-clust_diff_obj <- assess_clustering_stability(
-    graph_adjacency_matrix = adj_matrix,
-    resolution = c(0.5, 1),
-    n_repetitions = 10,
-    algorithm = 1:2,
-    verbose = FALSE
-)
-plot_clustering_difference_facet(clust_diff_obj, pca_embedding)
+# adj_matrix <- Seurat::FindNeighbors(pca_embedding,
+#     k.param = 10,
+#     nn.method = "rann",
+#     verbose = FALSE,
+#     compute.SNN = FALSE
+# )$nn
+# clust_diff_obj <- assess_clustering_stability(
+#     graph_adjacency_matrix = adj_matrix,
+#     resolution = c(0.5, 1),
+#     n_repetitions = 10,
+#     algorithm = 1:2,
+#     verbose = FALSE
+# )
+# plot_clustering_difference_facet(clust_diff_obj, pca_embedding)
 }

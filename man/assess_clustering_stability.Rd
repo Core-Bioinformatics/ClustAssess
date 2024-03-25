@@ -10,40 +10,44 @@ assess_clustering_stability(
   n_repetitions = 100,
   seed_sequence = NULL,
   ecs_thresh = 1,
-  algorithm = 1:3,
-  verbose = TRUE,
-  clustering_arguments = list()
+  clustering_algorithm = 1:3,
+  clustering_arguments = list(),
+  verbose = TRUE
 )
 }
 \arguments{
 \item{graph_adjacency_matrix}{A square adjacency matrix based on which an igraph
-object will be built.}
+object will be built. The matrix should have rownames and colnames that correspond
+to the names of the cells.}
 
-\item{resolution}{A sequence of resolution values.}
+\item{resolution}{A sequence of resolution values. The resolution parameter
+controls the coarseness of the clustering. The higher the resolution, the more
+clusters will be obtained. The resolution parameter is used in the community
+detection algorithms.}
 
 \item{n_repetitions}{The number of repetitions of applying the pipeline with
-different seeds; ignored if seed_sequence is provided by the user.}
+different seeds; ignored if seed_sequence is provided by the user. Defaults to \code{100}.}
 
 \item{seed_sequence}{A custom seed sequence; if the value is NULL, the
 sequence will be built starting from 1 with a step of 100.}
 
 \item{ecs_thresh}{The ECS threshold used for merging similar clusterings.}
 
-\item{algorithm}{An index or a list of indexes indicating which community detection
+\item{clustering_algorithm}{An index or a list of indexes indicating which community detection
 algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
-More details can be found in the Seurat's \code{FindClusters} function.}
+More details can be found in the Seurat's \code{FindClusters} function. Defaults to \code{1:3}.}
+
+\item{clustering_arguments}{A list of additional arguments that will be passed to the
+clustering method. More details can be found in the Seurat's \code{FindClusters} function.}
 
 \item{verbose}{Boolean value used for displaying the progress bar.}
-
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A list having two fields:
 \itemize{
-\item all - a list that contains, for each clustering method and each resolution
+\item \code{all} - a list that contains, for each clustering method and each resolution
 value, the EC consistency between the partitions obtained by changing the seed
-\item filtered - similar to \code{all}, but for each configuration, we determine the
+\item \code{filtered} - similar to \code{all}, but for each configuration, we determine the
 number of clusters that appears the most and use only the partitions with this
 size
 }
@@ -55,24 +59,31 @@ the resolution parameter and compare, using the EC Consistency score, the
 partitions obtained at different seeds.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_embedding <- matrix(runif(100 * 30), nrow = 100)
-rownames(pca_embedding) <- as.character(1:100)
-colnames(pca_embedding) <- paste0("PCA_", 1:30)
+rownames(pca_embedding) <- paste0("cell_", seq_len(nrow(pca_embedding)))
+colnames(pca_embedding) <- paste0("PC_", 1:30)
 
-adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-    k.param = 10,
-    nn.method = "rann",
-    verbose = FALSE,
-    compute.SNN = FALSE
+
+adj_matrix <- getNNmatrix(
+    RANN::nn2(pca_embedding, k = 10)$nn.idx,
+    10,
+    0,
+    -1
 )$nn
+rownames(adj_matrix) <- paste0("cell_", seq_len(nrow(adj_matrix)))
+colnames(adj_matrix) <- paste0("cell_", seq_len(ncol(adj_matrix)))
+
+# alternatively, the adj_matrix can be calculated
+# using the `Seurat::FindNeighbors` function.
+
 clust_diff_obj <- assess_clustering_stability(
     graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
     n_repetitions = 10,
-    algorithm = 1:2,
-    verbose = FALSE
+    clustering_algorithm = 1:2,
+    verbose = TRUE
 )
 plot_clustering_overall_stability(clust_diff_obj)
 }

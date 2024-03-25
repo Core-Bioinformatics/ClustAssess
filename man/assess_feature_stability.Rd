@@ -13,59 +13,79 @@ assess_feature_stability(
   n_repetitions = 100,
   seed_sequence = NULL,
   graph_reduction_type = "PCA",
-  npcs = 30,
   ecs_thresh = 1,
-  algorithm = 1,
-  verbose = FALSE,
-  matrix_processing = function(dt_mtx, actual_npcs, ...) {
+  matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
+     actual_npcs <-
+    min(actual_npcs, ncol(dt_mtx)\%/\%2)
     
     RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
      embedding <-
-    prcomp(x = dt_mtx, rank. = actual_npcs)$x
-     RhpcBLASctl::blas_set_num_threads(1)
- 
-       rownames(embedding) <- rownames(dt_mtx)
-     colnames(embedding) <- paste0("PC_",
-    seq_len(ncol(embedding)))
-     return(embedding)
+    stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
+    
+    RhpcBLASctl::blas_set_num_threads(1)
+     rownames(embedding) <- rownames(dt_mtx)
+   
+     colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+    
+    return(embedding)
  },
   umap_arguments = list(),
-  matrix_processing_arguments = list()
+  clustering_algorithm = 1,
+  clustering_arguments = list(),
+  verbose = FALSE
 )
 }
 \arguments{
 \item{data_matrix}{A data matrix having the features on the rows
 and the observations on the columns.}
 
-\item{feature_set}{A set of feature names that can be found on the rownames of
-the data matrix.}
+\item{feature_set}{A set of feature names that can be found on the rownames
+of the data matrix.}
 
 \item{steps}{Vector containing the sizes of the subsets; negative values will
 be interpreted as using all features.}
 
 \item{feature_type}{A name associated to the feature_set.}
 
+\item{resolution}{A vector containing the resolution values used for
+clustering.}
+
 \item{n_repetitions}{The number of repetitions of applying the pipeline with
-different seeds; ignored if seed_sequence is provided by the user.}
+different seeds; ignored if seed_sequence is provided by the user. Defaults
+to \code{100}.}
 
 \item{seed_sequence}{A custom seed sequence; if the value is NULL, the
-sequence will be built starting from 1 with a step of 100.}
+sequence will be built starting from 1 with a step of 100. Defaults to
+\code{NULL}.}
 
 \item{graph_reduction_type}{The graph reduction type, denoting if the graph
-should be built on either the PCA or the UMAP embedding.}
+should be built on either the PCA or the UMAP embedding. Defaults to \code{PCA}.}
 
-\item{npcs}{The number of principal components.}
+\item{ecs_thresh}{The ECS threshold used for merging similar clusterings. We
+recommend using the 1 value. Defaults to \code{1}.}
 
-\item{ecs_thresh}{The ECS threshold used for merging similar clusterings.}
+\item{matrix_processing}{A function that will be used to process the data
+matrix
+by using a dimensionality reduction technique. The function should have
+one parameter, the data matrix, and should return an embedding describing the
+reduced space. By default, the function will use the precise PCA method with
+\code{prcomp}.}
 
-\item{algorithm}{An index indicating which community detection algorithm will
-be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
-can be found in the Seurat's \code{FindClusters} function.}
+\item{umap_arguments}{A list containing the arguments that will be passed
+to the UMAP function. Refer to the \code{uwot::umap} function for more details.}
 
-\item{ncores}{The number of parallel R instances that will run the code. If
-the value is set to 1, the code will be run sequentially.}
+\item{clustering_algorithm}{An index indicating which community detection
+algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or
+Leiden (4). More details can be found in the Seurat's
+\code{FindClusters} function.}
 
-\item{...}{additional arguments passed to the umap method.}
+\item{clustering_arguments}{A list containing the arguments that will be
+passed to the community detection algorithm, such as the number of iterations
+and the number of starts. Refer to the Seurat's \code{FindClusters} function
+for more details.}
+
+\item{verbose}{A boolean indicating if the intermediate progress will
+be printed or not.}
 }
 \value{
 A list having one field associated with a step value. Each step
@@ -73,7 +93,8 @@ contains a list with three fields:
 \itemize{
 \item ecc - the EC-Consistency of the partitions obtained on all repetitions
 \item embedding - one UMAP embedding generated on the feature subset
-\item most_frequent_partition - the most common partition obtained across repetitions
+\item most_frequent_partition - the most common partition obtained across
+repetitions
 }
 }
 \description{
@@ -81,32 +102,38 @@ Evaluate the stability of clusterings obtained
 based on incremental subsets of a given feature set.
 }
 \note{
-The algorithm assumes that the feature_set is already sorted when performing
-the subsetting. For example, if the user wants to analyze highly variable feature set,
-they should provide them sorted by their variability.
+The algorithm assumes that the feature_set is already sorted when
+performing the subsetting based on the steps values. For example, if the
+user wants to analyze highly variable feature set, they should provide them
+sorted by their variability.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial expression matrix
-expr_matrix <- matrix(c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+expr_matrix <- matrix(
+    c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+    nrow = 200, byrow = TRUE
+)
 rownames(expr_matrix) <- as.character(1:200)
 colnames(expr_matrix) <- paste("feature", 1:10)
 
 feature_stability_result <- assess_feature_stability(
     data_matrix = t(expr_matrix),
     feature_set = colnames(expr_matrix),
+    steps = 5,
     feature_type = "feature_name",
     resolution = c(0.1, 0.5, 1),
-    steps = 5,
-    npcs = 2,
     n_repetitions = 10,
-    algorithm = 1,
-    # the following parameters are used by the umap function and are not mandatory
-    n_neighbors = 3,
-    approx_pow = TRUE,
-    n_epochs = 0,
-    init = "random",
-    min_dist = 0.3
+    umap_arguments = list(
+        # the following parameters are used by the umap function
+        # and are not mandatory
+        n_neighbors = 3,
+        approx_pow = TRUE,
+        n_epochs = 0,
+        init = "random",
+        min_dist = 0.3
+    ),
+    clustering_algorithm = 1
 )
 plot_feature_overall_stability_boxplot(feature_stability_result)
 }

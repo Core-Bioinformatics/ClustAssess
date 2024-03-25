@@ -12,8 +12,10 @@ plot_feature_stability_ecs_facet(
 )
 }
 \arguments{
-\item{feature_object_list}{An object or a concatenation of objects returned by the
-`get_feature_stability` method}
+\item{feature_object_list}{An object or a concatenation of objects returned
+by the \code{assess_feature_stability} method}
+
+\item{resolution}{The resolution value for which the ECS will be extracted.}
 
 \item{n_facet_cols}{The number of facet's columns.}
 
@@ -23,39 +25,32 @@ plot_feature_stability_ecs_facet(
 A ggplot2 object
 }
 \description{
-Display a facet of plots where each subpanel is associated with a
-feature set and illustrates the distribution of the EC consistency score
+Display a facet of plots where each subpanel is associated with
+a feature set and illustrates the distribution of the EC consistency score
 over the UMAP embedding.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial expression matrix
-expr_matrix <- matrix(c(runif(100 * 10), runif(50 * 10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+expr_matrix <- matrix(
+    c(runif(100 * 10), runif(50 * 10, min = 3, max = 4)),
+    nrow = 150, byrow = TRUE
+)
 rownames(expr_matrix) <- as.character(1:150)
 colnames(expr_matrix) <- paste("feature", 1:10)
-
-umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
-rownames(umap_embedding) <- rownames(expr_matrix)
 
 feature_stability_result <- assess_feature_stability(
     data_matrix = t(expr_matrix),
     feature_set = colnames(expr_matrix),
+    steps = 5,
     feature_type = "feature_name",
     resolution = c(0.1, 0.5, 1),
-    steps = c(5, 10),
-    npcs = 2,
-    n_repetitions = 3,
-    algorithm = 1,
-    # the following parameters are used by the umap function and are not mandatory
-    n_neighbors = 3,
-    approx_pow = TRUE,
-    n_epochs = 0,
-    init = "random",
-    min_dist = 0.3
+    n_repetitions = 10,
+    clustering_algorithm = 1
 )
 plot_feature_stability_ecs_facet(
     feature_stability_result,
-    umap_embedding,
-    0.1
+    0.5,
+    point_size = 2
 )
 }

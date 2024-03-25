@@ -8,23 +8,29 @@ plot_k_resolution_corresp(
   clust_object,
   colour_information = c("ecc", "freq_k"),
   dodge_width = 0.3,
-  summary_function = median,
-  pt_size_range = c(1.5, 4)
+  pt_size_range = c(1.5, 4),
+  summary_function = stats::median
 )
 }
 \arguments{
 \item{clust_object}{An object returned by the
-`get_resolution_importance` method.}
+\code{assess_clustering_stability} method.}
 
-\item{colour_information}{String that specifies the information type that will be
-illustrated using gradient colour: either `freq_k` for the frequency of the number
-of clusters or `ecc` for the Element-Centric Consistency
-of the partitions obtained when the resolution is fixed.}
+\item{colour_information}{String that specifies the information type that
+will be illustrated using gradient colour: either \code{freq_part} for the
+frequency of the most common partition or \code{ecc} for the
+Element-Centric Consistency of the partitions obtained when the the number
+of clusters is fixed. Defaults to \code{ecc}.}
 
-\item{dodge_width}{Used for adjusting the vertical position of the boxplot; the value
-will be passed in the `width` argument of the `ggplot::position_dodge` method.}
+\item{dodge_width}{Used for adjusting the distance between the boxplots
+representing a clustering method. Defaults to \code{0.3}.}
 
-\item{pt_size_range}{Indicates the minimum and the maximum size a point on the plot can have.}
+\item{pt_size_range}{Indicates the minimum and the maximum size a point
+on the plot can have. Defaults to \code{c(1.5, 4)}.}
+
+\item{summary_function}{The function that will be used to summarize the
+distribution of the ECC values obtained for each number of clusters. Defaults
+to \code{median}.}
 }
 \value{
 A ggplot2 object. Different shapes of points indicate different
@@ -34,33 +40,40 @@ of the partitions. The frequency is calculated
 as the fraction between the number of total appearances of partitions with a specific
 number of clusters and resolution value and the number of
 runs. The size
-illustrates the frequency of the most common partition with *k* clusters relative to the
-partitions obtained with the same resolution value and have *k* clusters.
+illustrates the frequency of the most common partition with \emph{k} clusters relative to the
+partitions obtained with the same resolution value and have \emph{k} clusters.
 }
 \description{
-For each configuration provided in the clust_object, display what
-number of clusters appear for different values of the resolution parameters.
+For each configuration provided in the clust_object, display
+what number of clusters appear for different values of the
+resolution parameters.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_embedding <- matrix(runif(100 * 30), nrow = 100)
-rownames(pca_embedding) <- as.character(1:100)
-colnames(pca_embedding) <- paste0("PCA_", 1:30)
+rownames(pca_embedding) <- paste0("cell_", seq_len(nrow(pca_embedding)))
+colnames(pca_embedding) <- paste0("PC_", 1:30)
 
-adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-    k.param = 10,
-    nn.method = "rann",
-    verbose = FALSE,
-    compute.SNN = FALSE
+
+adj_matrix <- getNNmatrix(
+    RANN::nn2(pca_embedding, k = 10)$nn.idx,
+    10,
+    0,
+    -1
 )$nn
+rownames(adj_matrix) <- paste0("cell_", seq_len(nrow(adj_matrix)))
+colnames(adj_matrix) <- paste0("cell_", seq_len(ncol(adj_matrix)))
+
+# alternatively, the adj_matrix can be calculated
+# using the `Seurat::FindNeighbors` function.
+
 clust_diff_obj <- assess_clustering_stability(
     graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
     n_repetitions = 10,
-    algorithm = 1:2,
+    clustering_algorithm = 1:2,
     verbose = FALSE
 )
-plot_k_resolution_corresp(clust_diff_obj, "ecc")
-plot_k_resolution_corresp(clust_diff_obj, "freq_k")
+plot_k_resolution_corresp(clust_diff_obj)
 }

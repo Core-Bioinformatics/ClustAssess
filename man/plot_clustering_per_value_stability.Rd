@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-3-graph-clustering.R
 \name{plot_clustering_per_value_stability}
 \alias{plot_clustering_per_value_stability}
-\title{Clustering Method Stability Facet Plot}
+\title{Clustering Method per value Stability Boxplot}
 \usage{
 plot_clustering_per_value_stability(
   clust_object,
@@ -10,46 +10,47 @@ plot_clustering_per_value_stability(
 )
 }
 \arguments{
-\item{clustering_difference_object}{An object returned by the
-`get_clustering_difference_object` method.}
+\item{clust_object}{An object returned by the
+\code{assess_clustering_stability} method.}
 
-\item{embedding}{An embedding (only the first two dimensions will be used for
-visualization).}
-
-\item{low_limit}{The lowest value of ECC that will be displayed on the embedding.}
-
-\item{high_limit}{The highest value of ECC that will be displayed on the embedding.}
-
-\item{grid}{Boolean value indicating whether the facet should be a grid (where each
-row is associated with a resolution value and each column with a clustering method) or
-a wrap.}
+\item{value_type}{A string that specifies the type of value that was used
+for grouping the partitions and calculating the ECC score. It can be either
+\code{k} or \code{resolution}. Defaults to \code{k}.}
 }
 \value{
-A ggplot2 object.
+A ggplot2 object with the EC consistency distributions grouped by
+the clustering methods. Higher consistency indicates a more stable clustering.
+The X axis is decided by the \code{value_type} parameter.
 }
 \description{
-Display the distribution of the EC consistency for each
-clustering method and each resolution value on a given embedding The `all`
-field of the object returned by the `get_clustering_difference_object` method is used.
+Display EC consistency across clustering methods, calculated
+for each value of the resolution parameter or the number of clusters.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_embedding <- matrix(runif(100 * 30), nrow = 100)
-rownames(pca_embedding) <- as.character(1:100)
-colnames(pca_embedding) <- paste0("PCA_", 1:30)
+rownames(pca_embedding) <- paste0("cell_", seq_len(nrow(pca_embedding)))
+colnames(pca_embedding) <- paste0("PC_", 1:30)
 
-adj_matrix <- Seurat::FindNeighbors(pca_embedding,
-    k.param = 10,
-    nn.method = "rann",
-    verbose = FALSE,
-    compute.SNN = FALSE
+
+adj_matrix <- getNNmatrix(
+    RANN::nn2(pca_embedding, k = 10)$nn.idx,
+    10,
+    0,
+    -1
 )$nn
+rownames(adj_matrix) <- paste0("cell_", seq_len(nrow(adj_matrix)))
+colnames(adj_matrix) <- paste0("cell_", seq_len(ncol(adj_matrix)))
+
+# alternatively, the adj_matrix can be calculated
+# using the `Seurat::FindNeighbors` function.
+
 clust_diff_obj <- assess_clustering_stability(
     graph_adjacency_matrix = adj_matrix,
     resolution = c(0.5, 1),
     n_repetitions = 10,
-    algorithm = 1:2,
+    clustering_algorithm = 1:2,
     verbose = FALSE
 )
 plot_clustering_per_value_stability(clust_diff_obj)

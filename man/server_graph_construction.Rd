@@ -2,10 +2,21 @@
 % Please edit documentation in R/shiny-graph-construction.R
 \name{server_graph_construction}
 \alias{server_graph_construction}
-\title{Server graph construction}
+\title{Server - Graph construction module}
 \usage{
 server_graph_construction(id, chosen_config)
 }
+\arguments{
+\item{id}{The id of the module, used to acess the UI elements.}
+
+\item{chosen_config}{A reactive object that contains the chosen configuration
+from the Dimensionality Reduction tab.}
+}
 \description{
-to be completed
+Creates the backend interface for the graph construction
+module inside the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }

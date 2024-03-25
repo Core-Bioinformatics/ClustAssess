@@ -19,6 +19,100 @@ create_monocle_object(
   is_object_from_shinyapp = FALSE
 )
 }
+\arguments{
+\item{normalized_expression_matrix}{The normalized expression matrix
+having genes on rows and cells on columns.}
+
+\item{count_matrix}{The count matrix having genes on rows and cells on
+columns. If NULL, the normalized_expression_matrix will be used.}
+
+\item{clustassess_object}{The output of the \code{automatic_stability_assessment}.}
+
+\item{metadata}{The metadata dataframe having the cell names as rownames. If
+NULL, a dataframe with a single column named \code{identical_ident} will be
+created.}
+
+\item{stable_feature_type}{The feature type which leads to stable clusters.}
+
+\item{stable_feature_set_size}{The feature size which leads to stable
+clusters.}
+
+\item{stable_clustering_method}{The clustering method which leads to stable
+clusters.}
+
+\item{stable_n_clusters}{The number of clusters that are stable. If NULL,
+all the clusters will be provided. Defaults to \code{NULL}.}
+
+\item{gene_names}{The gene names that will be used in the Monocle object.
+If NULL, the rownames of the normalized_expression_matrix will be used.
+Defaults to \code{NULL}.}
+
+\item{cell_names}{The cell names that will be used in the Monocle object.
+If NULL, the colnames of the normalized_expression_matrix will be used.
+Defaults to \code{NULL}.}
+
+\item{use_all_genes}{A boolean value indicating if the expression matrix
+should be truncated to the genes used in the stability assessment. Defaults
+to \code{FALSE}.}
+
+\item{is_object_from_shinyapp}{A boolean value indicating if the ClustAssess
+object is extracted from a ShinyApp directory, or is a direct output of the
+\code{automatic_stability_assessment} function. Defaults to \code{FALSE}.}
+}
+\value{
+A Monocle object of the expression matrix, having the stable number
+of clusters identified by ClustAssess.
+}
 \description{
-to be completed
+Use the expression matrix and the output of the
+\code{automatic_stability_assessment} function to create a Monocle object
+which has the stable numver of clusters.
+}
+\examples{
+set.seed(2024)
+# create an already-transposed artificial expression matrix
+expr_matrix <- matrix(
+    c(runif(20 * 10), runif(30 * 10, min = 3, max = 4)),
+    nrow = 10, byrow = FALSE
+)
+colnames(expr_matrix) <- as.character(seq_len(ncol(expr_matrix)))
+rownames(expr_matrix) <- paste("feature", seq_len(nrow(expr_matrix)))
+
+autom_object <- automatic_stability_assessment(
+    expression_matrix = expr_matrix,
+    n_repetitions = 3,
+    n_neigh_sequence = c(5),
+    resolution_sequence = c(0.1, 0.5),
+    features_sets = list(
+        "set1" = rownames(expr_matrix)
+    ),
+    steps = list(
+        "set1" = c(5, 7)
+    ),
+    umap_arguments = list(
+        # the following parameters have been modified
+        # from the default values to ensure that the function
+        # will run under 5 seconds
+        n_neighbors = 3,
+        approx_pow = TRUE,
+        n_epochs = 0,
+        init = "random",
+        min_dist = 0.3
+    ),
+    n_top_configs = 1,
+    algorithms_clustering_assessment = 1,
+    save_temp = FALSE,
+    verbose = FALSE
+)
+
+
+# uncomment to create the monocle object
+# mon_obj <- create_monocle_object(
+# normalized_expression_matrix = expr_matrix,
+# clustassess_object = autom_object,
+# metadata = NULL,
+# stable_feature_type = "set1",
+# stable_feature_set_size = "5",
+# stable_clustering_method = "Louvain"
+# )
 }

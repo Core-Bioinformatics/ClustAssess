@@ -6,6 +6,17 @@
 \usage{
 add_metadata(app_folder, metadata, qualpalr_colorspace = "pretty")
 }
+\arguments{
+\item{app_folder}{The folder containing the ClustAssess ShinyApp}
+
+\item{metadata}{The new metadata to be added}
+
+\item{qualpalr_colorspace}{The colorspace to be used for the metadata}
+}
+\value{
+NULL - the metadata object is updated in the app folder
+}
 \description{
-to be ccompleted
+Adds new metadata into the ClustAssess ShinyApp without having
+to update the object and re-create the app.
 }

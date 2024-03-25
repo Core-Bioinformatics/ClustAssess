@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability-2-graph-construction.R
 \name{get_nn_conn_comps}
 \alias{get_nn_conn_comps}
-\title{Relationship Between Nearest Neighbors and Connected Components}
+\title{Relationship Between Nearest Neighbours and Connected Components}
 \usage{
 get_nn_conn_comps(
   embedding,
@@ -17,38 +17,35 @@ get_nn_conn_comps(
 \item{embedding}{A matrix associated with a PCA embedding. Embeddings from
 other dimensionality reduction techniques (such as LSI) can be used.}
 
-\item{n_neigh_sequence}{A sequence of the number of nearest neighbors.}
+\item{n_neigh_sequence}{A sequence of the number of nearest neighbours.}
 
 \item{n_repetitions}{The number of repetitions of applying the pipeline with
-different seeds; ignored if seed_sequence is provided by the user.}
+different seeds; ignored if seed_sequence is provided by the user. Defaults to `100``.}
 
 \item{seed_sequence}{A custom seed sequence; if the value is NULL, the
 sequence will be built starting from 1 with a step of 100.}
 
-\item{config_name}{User specified string that uniquely describes the
-embedding characteristics.}
+\item{include_umap}{A boolean value indicating whether to calculate the number
+of connected components for the UMAP embedding. Defaults to \code{FALSE}.}
 
-\item{ncores}{The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
-
-\item{...}{Additional arguments passed to the the `uwot::umap` method.}
+\item{umap_arguments}{Additional arguments passed to the the \code{uwot::umap} method.}
 }
 \value{
-A list having one field associated with a number of nearest neighbors.
+A list having one field associated with a number of nearest neighbours.
 Each value contains an array of the number of connected components
 obtained on the specified number of repetitions.
 }
 \description{
 One of the steps in the clustering pipeline is building a
-k-nearest neighbor graph on a reduced-space embedding. This method assesses
+k-nearest neighbour graph on a reduced-space embedding. This method assesses
 the relationship between different number of nearest
-neighbors and the connectivity of the graph. In the context of graph clustering,
+neighbours and the connectivity of the graph. In the context of graph clustering,
 the number of connected components can be used as a
 lower bound for the number of clusters. The calculations are performed multiple
 times by changing the seed at each repetition.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 rownames(pca_emb) <- as.character(1:100)
@@ -59,8 +56,10 @@ nn_conn_comps_obj <- get_nn_conn_comps(
     n_neigh_sequence = c(2, 5),
     n_repetitions = 3,
     # arguments that are passed to the uwot function
-    min_dist = 0.3,
-    metric = "cosine"
+    umap_arguments = list(
+        min_dist = 0.3,
+        metric = "cosine"
+    )
 )
 plot_connected_comps_evolution(nn_conn_comps_obj)
 }

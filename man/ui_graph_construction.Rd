@@ -2,10 +2,18 @@
 % Please edit documentation in R/shiny-graph-construction.R
 \name{ui_graph_construction}
 \alias{ui_graph_construction}
-\title{Ui graph construction}
+\title{UI - Graph construction module}
 \usage{
 ui_graph_construction(id)
 }
+\arguments{
+\item{id}{The id of the module, used to identify the UI elements.}
+}
 \description{
-to be completed
+Creates the UI interface for the graph construction module inside
+the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }

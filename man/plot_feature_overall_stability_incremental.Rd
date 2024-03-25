@@ -2,11 +2,11 @@
 % Please edit documentation in R/stability-1-dim-reduction.R
 \name{plot_feature_overall_stability_incremental}
 \alias{plot_feature_overall_stability_incremental}
-\title{Feature Stability Incremental Boxplot}
+\title{Overall Feature Stability Incremental Boxplot}
 \usage{
 plot_feature_overall_stability_incremental(
   feature_object_list,
-  summary_function = median,
+  summary_function = stats::median,
   dodge_width = 0.7,
   text_size = 4,
   boxplot_width = 0.4,
@@ -14,16 +14,23 @@ plot_feature_overall_stability_incremental(
 )
 }
 \arguments{
-\item{feature_object_list}{An object or a concatenation of objects returned by the
-`get_feature_stability` method.}
+\item{feature_object_list}{An object or a concatenation of objects returned
+by the \code{assess_feature_stability} method.}
 
-\item{dodge_width}{Used for adjusting the horizontal position of the boxplot; the value
-will be passed to the `width` argument of the `ggplot2::position_dodge` method.}
+\item{summary_function}{The function used to summarize the ECS values.
+Default is \code{median}.}
+
+\item{dodge_width}{Used for adjusting the horizontal position of the boxplot;
+the value will be passed to the \code{width} argument of the
+\code{ggplot2::position_dodge} method.}
 
 \item{text_size}{The size of the labels above boxplots.}
 
-\item{boxplot_width}{Used for adjusting the width of the boxplots; the value will
-be passed to the `width` argument of the `ggplot2::geom_boxplot` method.}
+\item{boxplot_width}{Used for adjusting the width of the boxplots; the value
+will be passed to the \code{width} argument of the \code{ggplot2::geom_boxplot} method.}
+
+\item{return_df}{If TRUE, the function will return the ECS values as
+a dataframe. Default is \code{FALSE}.}
 }
 \value{
 A ggplot2 object with ECS distribution will be displayed as a
@@ -31,30 +38,37 @@ boxplot. Above each boxplot there will be a pair of numbers representing the
 two steps that are compared.
 }
 \description{
-Perform an incremental ECS between two consecutive feature steps.
+Perform an incremental ECS between two consecutive feature
+steps. The ECS values are extracted for every resolution value and summarized
+using a function (e.g. median, mean, etc.).
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial expression matrix
-expr_matrix <- matrix(c(runif(25 * 10), runif(75 * 10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+expr_matrix <- matrix(
+    c(runif(50 * 10), runif(50 * 10, min = 3, max = 4)),
+    nrow = 100, byrow = TRUE
+)
 rownames(expr_matrix) <- as.character(1:100)
 colnames(expr_matrix) <- paste("feature", 1:10)
 
 feature_stability_result <- assess_feature_stability(
     data_matrix = t(expr_matrix),
     feature_set = colnames(expr_matrix),
-    feature_type = "feature_name",
     steps = c(5, 10),
-    resolution = c(0.1, 0.5, 1),
-    npcs = 2,
+    feature_type = "feature_name",
+    resolution = c(0.1, 0.5),
     n_repetitions = 3,
-    algorithm = 1,
-    # the following parameters are used by the umap function and are not mandatory
-    n_neighbors = 3,
-    approx_pow = TRUE,
-    n_epochs = 0,
-    init = "random",
-    min_dist = 0.3
+    umap_arguments = list(
+        # the following parameters are used by the umap function
+        # and are not mandatory
+        n_neighbors = 3,
+        approx_pow = TRUE,
+        n_epochs = 0,
+        init = "random",
+        min_dist = 0.3
+    ),
+    clustering_algorithm = 1
 )
 plot_feature_overall_stability_incremental(feature_stability_result)
 }

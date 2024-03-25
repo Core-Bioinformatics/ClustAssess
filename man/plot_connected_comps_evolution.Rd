@@ -2,26 +2,26 @@
 % Please edit documentation in R/stability-2-graph-construction.R
 \name{plot_connected_comps_evolution}
 \alias{plot_connected_comps_evolution}
-\title{Relationship Between Number of Nearest Neighbors and Graph Connectivity}
+\title{Relationship Between Number of Nearest Neighbours and Graph Connectivity}
 \usage{
 plot_connected_comps_evolution(nn_conn_comps_object)
 }
 \arguments{
 \item{nn_conn_comps_object}{An object or a concatenation of objects returned
-by the `get_nn_conn_comps` method.}
+by the \code{get_nn_conn_comps} method.}
 }
 \value{
 A ggplot2 object with boxplots for the connected component distributions.
 }
 \description{
 Display the distribution of the number connected components
-obtained for each number of neighbors across random seeds.
+obtained for each number of neighbours across random seeds.
 }
 \note{
 The number of connected components is displayed on a logarithmic scale.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
 # create an artificial PCA embedding
 pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 rownames(pca_emb) <- as.character(1:100)
@@ -32,8 +32,10 @@ nn_conn_comps_obj <- get_nn_conn_comps(
     n_neigh_sequence = c(2, 5),
     n_repetitions = 3,
     # arguments that are passed to the uwot function
-    min_dist = 0.3,
-    metric = "cosine"
+    umap_arguments = list(
+        min_dist = 0.3,
+        metric = "cosine"
+    )
 )
 plot_connected_comps_evolution(nn_conn_comps_obj)
 }

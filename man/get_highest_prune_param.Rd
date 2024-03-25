@@ -2,25 +2,48 @@
 % Please edit documentation in R/stability-2-graph-construction.R
 \name{get_highest_prune_param}
 \alias{get_highest_prune_param}
-\title{Relationship Between Number of Nearest Neighbors and Graph Connectivity}
+\title{Calculate the highest pruning parameter for the SNN graph given NN matrix}
 \usage{
 get_highest_prune_param(nn_matrix, n_neigh)
 }
 \arguments{
-\item{embedding}{An object or a concatenation of objects returned
-by the `get_nn_conn_comps` method.}
+\item{nn_matrix}{The adjacency matrix of the nearest neighbour graph.}
+
+\item{n_neigh}{The number of nearest neighbours.}
 }
 \value{
-A ggplot2 object with boxplots for the connected component distributions.
+A list with the following fields:
+\itemize{
+\item \code{prune_value}: The value of the highest pruning parameter.
+\item \code{adj_matrix}: The adjacency matrix of the SNN graph after pruning.
+}
 }
 \description{
-Display the distribution of the number connected components
-obtained for each number of neighbors across random seeds.
+Given a NN adjacency matrix, the function calculates the highest pruning
+parameter for the SNN graph that preserves the connectivity of the graph.
 }
 \note{
-The number of connected components is displayed on a logarithmic scale.
+Given the way the SNN graph is built, the possible values for the pruning
+parameter are limited and can be determined by the formula \code{i / (2 * n_neigh - i)},
+where \code{i} is a number of nearest neighbours between 0 and \code{n_neigh}.
 }
 \examples{
-set.seed(2021)
+set.seed(2024)
+# create an artificial pca embedding
+pca_embedding <- matrix(
+    c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+    nrow = 200, byrow = TRUE
+)
+rownames(pca_embedding) <- as.character(1:200)
+colnames(pca_embedding) <- paste("PC", 1:10)
 
+# calculate the nn adjacency matrix
+nn_matrix <- getNNmatrix(
+    RANN::nn2(pca_embedding, k = 5)$nn.idx,
+    5,
+    0,
+    -1
+)$nn
+
+get_highest_prune_param(nn_matrix, 5)$prune_value
 }

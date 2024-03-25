@@ -56,9 +56,6 @@ rescaled to be in-between 0 and 1.}
 \item{row_normalize}{Whether to normalize all rows in clustering_result
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.}
-
-\item{ncores}{the number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A vector containing the element-wise average agreement.

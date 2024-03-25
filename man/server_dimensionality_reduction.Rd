@@ -2,10 +2,21 @@
 % Please edit documentation in R/shiny-feature-stability.R
 \name{server_dimensionality_reduction}
 \alias{server_dimensionality_reduction}
-\title{Dimensionality reduction - server side}
+\title{Server - Dimensionality reduction module}
 \usage{
 server_dimensionality_reduction(id, parent_session)
 }
+\arguments{
+\item{id}{The id of the module, used to acess the UI elements.}
+
+\item{parent_session}{The session of the parent module, used to control the
+tabs of the application.}
+}
 \description{
-to be completed
+Creates the backend interface for the dimensionality
+reduction module inside the ClustAssess Shiny application.
+}
+\note{
+This function should not be called directly, but in the context of the
+app that is created using the \code{write_shiny_app} function.
 }
