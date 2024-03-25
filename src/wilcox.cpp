@@ -23,9 +23,23 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
 
     NumericVector zuppertail(m), zlowertail(m); // result(m);
 
-    int unique_rankings[(int) n+1] = {0};
-    double new_ranks[(int) n+1] = {0};
-    int mappings[max_rank+1] = {0};
+    // int unique_rankings[(int) n+1] = {0};
+    int* unique_rankings = new int[(int) n+1];
+    for (int i = 0; i < n+1; i++) {
+        unique_rankings[i] = 0;
+    }
+    // double new_ranks[(int) n+1] = {0};
+    double* new_ranks = new double[(int) n+1];
+    for (int i = 0; i < n+1; i++) {
+        new_ranks[i] = 0;
+    }
+    // int mappings[max_rank+1] = {0};
+    int* mappings = new int[max_rank+1];
+    for (int i = 0; i < max_rank+1; i++) {
+        mappings[i] = 0;
+    }
+
+    int* freq = new int[max_rank+1];
 
 
     for (int j = 0; j < m; j++) {
@@ -35,7 +49,10 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
         int max = 0;
 
         n_unique = 0;
-        int freq[max_rank+1] = {0};
+        // int freq[max_rank+1] = {0};
+        for (int i = 0; i < max_rank+1; i++) {
+            freq[i] = 0;
+        }
         for(int i = 0; i < n; i++) {
             value = rank_values(j, i);
             freq[value]++;
