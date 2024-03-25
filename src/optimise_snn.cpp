@@ -79,6 +79,17 @@ Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double> &nnMatrix, in
 	return(SNN);
 }
 
+
+//' Computes the NN adjacency matrix given the neighbours
+//'
+//' @param nnRanked A matrix with the lists of the nearest neighbours for each point
+//' @param k The number of neighbours to consider. Defaults to `-1`, which means all neighbours.
+//' @param start The index of the first neighbour to consider. Defaults to `0`.
+//' @param prune The threshold to prune the SNN matrix. Defaults to `0`.
+//'
+//' @export
+//'
+//' @return A list with the NN and SNN adjacency matrices.
 // [[Rcpp::export(rng = false)]]
 List getNNmatrix(Eigen::MatrixXd nnRanked, int k = -1, int start = 0, double prune = 0) {
 	int nRows = nnRanked.rows(), nCols = nnRanked.cols();

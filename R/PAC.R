@@ -1,6 +1,4 @@
 #' @useDynLib ClustAssess
-#' @importFrom Rcpp sourceCpp
-NULL
 
 calculate_dist <- function(x, dist_method, p = 2) {
     if (dist_method %in% c(

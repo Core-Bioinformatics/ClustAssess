@@ -1,8 +1,14 @@
 ####### UI #######
 
-#' Ui graph construction
+#' UI - Graph construction module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the graph construction module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_graph_construction <- function(id) {
@@ -21,7 +27,7 @@ ui_graph_construction <- function(id) {
             status = "info",
             class = "page-info"
         ),
-        h2("Relationship between the number of neighbours and the number of connected components", class = "first-element-tab"),
+        shiny::h2("Relationship between the number of neighbours and the number of connected components", class = "first-element-tab"),
         shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = "success", icon = shiny::icon("info"), size = "sm"),
             shiny::h3(shiny::strong("Relationship between the number of neighbours and the number of connected components")),
             shiny::br(),
@@ -178,9 +184,17 @@ ui_graph_construction <- function(id) {
 }
 ####### SERVER #######
 
-#' Server graph construction
+#' Server - Graph construction module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the graph construction
+#' module inside the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#' @param chosen_config A reactive object that contains the chosen configuration
+#' from the Dimensionality Reduction tab.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_graph_construction <- function(id, chosen_config) {
@@ -211,7 +225,7 @@ server_graph_construction <- function(id, chosen_config) {
                     width = "50%"
                 )
             })
-            outputOptions(output, "sel_conn_comps_render", suspendWhenHidden = FALSE)
+            shiny::outputOptions(output, "sel_conn_comps_render", suspendWhenHidden = FALSE)
 
             options <- names(pkg_env$stab_obj$nn_stability$n_different_partitions)
             output$sel_stab_render <- shiny::renderUI({
@@ -224,7 +238,7 @@ server_graph_construction <- function(id, chosen_config) {
                     width = "50%"
                 )
             })
-            outputOptions(output, "sel_stab_render", suspendWhenHidden = FALSE)
+            shiny::outputOptions(output, "sel_stab_render", suspendWhenHidden = FALSE)
 
             plot_conn_comps_Input <- shiny::reactive({
                 if (input$palette_plot_conn_comps == "col_1") {
@@ -275,7 +289,7 @@ server_graph_construction <- function(id, chosen_config) {
             # Add hovering output for second plot, and add the text box
             output$hover_info <- shiny::renderUI({
                 if (is.null(input$nn_hover)) {
-                    HTML(paste(strong("Hover over the plot to see more")))
+                    shiny::HTML(paste(shiny::strong("Hover over the plot to see more")))
                 } else {
                     col <- round(input$nn_hover$x)
                     obj <- pkg_env$stab_obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
@@ -283,7 +297,7 @@ server_graph_construction <- function(id, chosen_config) {
                     val <- sort.int(as.integer(unique(obj$L2)))[col]
                     configs <- unique(obj$L1)
 
-                    out <- paste0(strong("Selected number of neighbours: "), val, "<br/>", "<br/>")
+                    out <- paste0(shiny::strong("Selected number of neighbours: "), val, "<br/>", "<br/>")
                     for (config in configs) {
                         filt_obj <- obj[obj$L1 == config, ]
 
@@ -291,10 +305,10 @@ server_graph_construction <- function(id, chosen_config) {
                         mini <- min(filt_obj$value[filt_obj$L2 == val])
                         iqr <- stats::IQR(filt_obj$value[filt_obj$L2 == val])
 
-                        tmp_out <- paste0(strong(config), "<br/>", "Max: ", maxi, "<br/>", "Min: ", mini, "<br/>", "IQR: ", iqr, "<br/>", "<br/>")
+                        tmp_out <- paste0(shiny::strong(config), "<br/>", "Max: ", maxi, "<br/>", "Min: ", mini, "<br/>", "IQR: ", iqr, "<br/>", "<br/>")
                         out <- paste0(out, tmp_out)
                     }
-                    HTML(paste(out, sep = ""))
+                    shiny::HTML(paste(out, sep = ""))
                 }
             })
             # Reactive for second plot
@@ -367,8 +381,8 @@ server_graph_construction <- function(id, chosen_config) {
             })
             output$umap_ecc <- shiny::renderPlot({
                 if (is.null(input$ecc_click)) {
-                    return(ggplot() +
-                        theme_void())
+                    return(ggplot2::ggplot() +
+                        ggplot2::theme_void())
                 }
                 # get click info for ecc
                 col <- round(input$ecc_click$x)
@@ -391,7 +405,7 @@ server_graph_construction <- function(id, chosen_config) {
                     data.frame(
                         pkg_env$stab_obj$umap
                     ),
-                    aes(
+                    ggplot2::aes(
                         x = .data$X1,
                         y = .data$X2,
                         color = ecc
@@ -446,7 +460,7 @@ server_graph_construction <- function(id, chosen_config) {
                     neigh_stability_filetype()
                 },
                 content = function(file) {
-                    ggsave(file, plot_neigh_stability_Input(),
+                    ggplot2::ggsave(file, plot_neigh_stability_Input(),
                         width = input$width_neigh_stability,
                         height = input$height_neigh_stability,
                         units = "in"
@@ -460,25 +474,25 @@ server_graph_construction <- function(id, chosen_config) {
 
             output$hover_info_nnstab <- shiny::renderUI({
                 if (is.null(input$nn_stability_hover)) {
-                    HTML(paste(strong("Hover over the plot to see more")))
+                    shiny::HTML(paste(shiny::strong("Hover over the plot to see more")))
                 } else {
                     col <- round(input$nn_stability_hover$x)
-                    obj <- subset(hoverdf, L1 == input$sel_stab)
+                    obj <- subset(hoverdf, .data$L1 == input$sel_stab)
                     val <- sort.int(as.integer(unique(obj$L2)))[col]
                     configs <- unique(obj$L1)
 
-                    out <- paste0(strong("Selected number of neighbours: "), val, "<br/>", "<br/>")
+                    out <- paste0(shiny::strong("Selected number of neighbours: "), val, "<br/>", "<br/>")
                     for (config in configs) {
                         filt_obj <- obj[obj$L1 == config, ]
 
                         maxi <- max(filt_obj$value[filt_obj$L2 == val])
                         mini <- min(filt_obj$value[filt_obj$L2 == val])
-                        iqr <- IQR(filt_obj$value[filt_obj$L2 == val])
+                        iqr <- stats::IQR(filt_obj$value[filt_obj$L2 == val])
 
-                        tmp_out <- paste0(strong(config), "<br/>", "Max: ", maxi, "<br/>", "Min: ", mini, "<br/>", "IQR: ", iqr, "<br/>", "<br/>")
+                        tmp_out <- paste0(shiny::strong(config), "<br/>", "Max: ", maxi, "<br/>", "Min: ", mini, "<br/>", "IQR: ", iqr, "<br/>", "<br/>")
                         out <- paste0(out, tmp_out)
                     }
-                    HTML(paste(out, sep = ""))
+                    shiny::HTML(paste(out, sep = ""))
                 }
             })
             # Plot UMAP + add some text on the chosen selection
@@ -503,8 +517,8 @@ server_graph_construction <- function(id, chosen_config) {
             })
             output$neigh_umap_ecc <- shiny::renderPlot({
                 if (is.null(input$neigh_stability_click)) {
-                    return(ggplot() +
-                        theme_void())
+                    return(ggplot2::ggplot() +
+                        ggplot2::theme_void())
                 }
                 # get click info for ecc
                 col <- round(input$neigh_stability_click$x)
@@ -527,7 +541,7 @@ server_graph_construction <- function(id, chosen_config) {
                     data.frame(
                         pkg_env$stab_obj$umap
                     ),
-                    aes(
+                    ggplot2::aes(
                         x = .data$X1,
                         y = .data$X2,
                         color = ecc

@@ -26,3 +26,50 @@ get_count_features <- function(counts_matrix) {
         nFeature = Matrix::colSums(counts_matrix > 0)
     ))
 }
+
+process_umap_arguments <- function(umap_arguments, ncells) {
+    umap_arguments[["n_threads"]] <- 1
+    umap_arguments[["n_sgd_threads"]] <- 1
+
+    if (!("n_neighbors" %in% umap_arguments)) {
+        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
+    }
+
+    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+    return(umap_arguments)
+}
+
+process_clustering_arguments <- function(clustering_arguments, clustering_method) {
+    num_starts <- 1
+    num_iters <- 10
+    if ("n.start" %in% names(clustering_arguments)) {
+        num_starts <- clustering_arguments$n.start
+        clustering_arguments$n.start <- NULL
+    }
+
+    if ("num_starts" %in% names(clustering_arguments)) {
+        num_starts <- clustering_arguments$num_starts
+        clustering_arguments$num_starts <- NULL
+    }
+
+    if ("n.iter" %in% names(clustering_arguments)) {
+        num_iters <- clustering_arguments$n.iter
+        clustering_arguments$n.iter <- NULL
+    }
+
+    if ("num_iter" %in% names(clustering_arguments)) {
+        num_iters <- clustering_arguments$num_iter
+        clustering_arguments$num_iter <- NULL
+    }
+
+    if (!("verbose" %in% names(clustering_arguments))) {
+        clustering_arguments$verbose <- FALSE
+    }
+
+    clustering_arguments$num_starts <- num_starts
+    clustering_arguments$num_iters <- num_iters
+
+    clustering_arguments$algorithm <- clustering_method
+
+    return(clustering_arguments)
+}

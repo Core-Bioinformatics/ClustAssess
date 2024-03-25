@@ -141,7 +141,6 @@ ui_comparison_metadata_panel <- function(id, draw_line) {
     )
 }
 
-
 ui_comparison_gene_panel <- function(id, draw_line) {
     ns <- shiny::NS(id)
     style <- ifelse(draw_line, "border-right:5px solid", "")
@@ -223,7 +222,7 @@ ui_comparison_jsi_panel <- function(id) {
                 shiny::h5("This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner."),
                 shiny::h1("\n"),
                 shiny::h5("For more information please go to:"),
-                shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
+                shiny::tagList("", shiny::a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
                 placement = "right",
                 arrow = FALSE
             ),
@@ -348,9 +347,15 @@ ui_comparison_enrichment <- function(id) {
     )
 }
 
-#' Writing objects
+#' UI - Comparison module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the comparison module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_comparisons <- function(id) {
@@ -389,22 +394,23 @@ server_comparison_markers <- function(id, k_choices) {
         id,
         function(input, output, session) {
             if ("genes" %in% names(pkg_env)) { # for backward-compatibility purposes
-                output$avg_expression_violin <- shiny::renderPlot({
-                    vioplot::vioplot(
-                        x = rhdf5::h5read("expression.h5", "average_expression"),
-                        horizontal = TRUE,
-                        xlab = "Average expression",
-                        main = "Average gene expression",
-                        ylab = "",
-                        xaxt = "n"
-                    )
-                },
-                height = function() {
-                    400
-                }
+                output$avg_expression_violin <- shiny::renderPlot(
+                    {
+                        vioplot::vioplot(
+                            x = rhdf5::h5read("expression.h5", "average_expression"),
+                            horizontal = TRUE,
+                            xlab = "Average expression",
+                            main = "Average gene expression",
+                            ylab = "",
+                            xaxt = "n"
+                        )
+                    },
+                    height = function() {
+                        400
+                    }
                 )
 
-                avg_stats <- fivenum(rhdf5::h5read("expression.h5", "average_expression"))
+                avg_stats <- stats::fivenum(rhdf5::h5read("expression.h5", "average_expression"))
 
                 output$avg_expression_table <- shiny::renderTable(
                     {
@@ -522,14 +528,16 @@ server_comparison_markers <- function(id, k_choices) {
                         norm_method = ifelse(input$norm_type, "LogNormalize", ""),
                         min_pct_threshold = input$min_pct,
                         logfc_threshold = input$logfc
-                    ) 
+                    )
                 }
 
                 all_genes <- as.vector(markers_result$gene)
 
-                markers_result <- markers_result %>% dplyr::filter(.data$p_val_adj <= input$pval) %>% dplyr::arrange(dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
+                markers_result <- markers_result %>%
+                    dplyr::filter(.data$p_val_adj <= input$pval) %>%
+                    dplyr::arrange(dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
                 genes_group1 <- (markers_result %>% dplyr::filter(.data$avg_log2FC >= 0))$gene
- 
+
                 marker_genes(list(
                     all_genes = all_genes,
                     group_1 = as.vector(genes_group1),
@@ -560,7 +568,7 @@ server_comparison_markers <- function(id, k_choices) {
                     "markers.csv"
                 },
                 content = function(file) {
-                    write.csv(markers_val(), file)
+                    utils::write.csv(markers_val(), file)
                 }
             )
 
@@ -575,73 +583,72 @@ server_comparison_markers <- function(id, k_choices) {
 }
 
 server_comparison_markers_panels <- function(session, k_choices) {
-        available_choices <- c(names(pkg_env$metadata_unique), k_choices)
-        input <- session$input
+    available_choices <- c(names(pkg_env$metadata_unique), k_choices)
+    input <- session$input
+
+    shiny::updateSelectInput(
+        session = session,
+        inputId = "group_left-select_k_markers",
+        choices = available_choices,
+        selected = available_choices[1]
+    )
+
+    shiny::observe({
+        shiny::req(input$"group_left-select_k_markers" %in% available_choices)
+
+        if (is.na(as.numeric(input$"group_left-select_k_markers"))) {
+            available_subgroups <- pkg_env$metadata_unique[[input$"group_left-select_k_markers"]]
+        } else {
+            available_subgroups <- seq_len(as.numeric(input$"group_left-select_k_markers"))
+        }
+
+        shinyWidgets::updatePickerInput(
+            session = session,
+            inputId = "group_left-select_clusters_markers",
+            choices = available_subgroups,
+            selected = available_subgroups[1]
+        )
 
         shiny::updateSelectInput(
             session = session,
-            inputId = "group_left-select_k_markers",
+            inputId = "group_right-select_k_markers",
             choices = available_choices,
-            selected = available_choices[1]
+            selected = input$"group_left-select_k_markers"
         )
-
-        shiny::observe({
-            shiny::req(input$"group_left-select_k_markers" %in% available_choices)
-
-            if (is.na(as.numeric(input$"group_left-select_k_markers"))) {
-                available_subgroups <- pkg_env$metadata_unique[[input$"group_left-select_k_markers"]]
-            } else {
-                available_subgroups <- seq_len(as.numeric(input$"group_left-select_k_markers"))
-            }
-
-            shinyWidgets::updatePickerInput(
-                session = session,
-                inputId = "group_left-select_clusters_markers",
-                choices = available_subgroups,
-                selected = available_subgroups[1]
-            )
-
-            shiny::updateSelectInput(
-                session = session,
-                inputId = "group_right-select_k_markers",
-                choices = available_choices,
-                selected = input$"group_left-select_k_markers"
-            )
-        }) %>% shiny::bindEvent(input$"group_left-select_k_markers")
+    }) %>% shiny::bindEvent(input$"group_left-select_k_markers")
 
 
-        shiny::observe({
-            shiny::req(input$"group_right-select_k_markers" %in% available_choices)
+    shiny::observe({
+        shiny::req(input$"group_right-select_k_markers" %in% available_choices)
 
-            if (is.na(as.numeric(input$"group_right-select_k_markers"))) {
-                available_subgroups <- pkg_env$metadata_unique[[input$"group_right-select_k_markers"]]
-            } else {
-                available_subgroups <- seq_len(as.numeric(input$"group_right-select_k_markers"))
-            }
+        if (is.na(as.numeric(input$"group_right-select_k_markers"))) {
+            available_subgroups <- pkg_env$metadata_unique[[input$"group_right-select_k_markers"]]
+        } else {
+            available_subgroups <- seq_len(as.numeric(input$"group_right-select_k_markers"))
+        }
 
-            if (input$"group_left-select_k_markers" == input$"group_right-select_k_markers") {
-                selected_groups <- available_subgroups[!(available_subgroups %in% input$"group_left-select_clusters_markers")]
-            } else {
-                selected_groups <- available_subgroups[1]
-            }
+        if (input$"group_left-select_k_markers" == input$"group_right-select_k_markers") {
+            selected_groups <- available_subgroups[!(available_subgroups %in% input$"group_left-select_clusters_markers")]
+        } else {
+            selected_groups <- available_subgroups[1]
+        }
 
-            shinyWidgets::updatePickerInput(
-                session = session,
-                inputId = "group_right-select_clusters_markers",
-                choices = available_subgroups,
-                selected = selected_groups
-            )
+        shinyWidgets::updatePickerInput(
+            session = session,
+            inputId = "group_right-select_clusters_markers",
+            choices = available_subgroups,
+            selected = selected_groups
+        )
+    })
 
-        })
-
-        shiny::observe({
-            shiny::updateSelectInput(
-                session = session,
-                inputId = "group_right-select_k_markers",
-                choices = available_choices,
-                selected = input$"group_left-select_k_markers"
-            )
-        }) %>% shiny::bindEvent(input$"group_left-select_clusters_markers")
+    shiny::observe({
+        shiny::updateSelectInput(
+            session = session,
+            inputId = "group_right-select_k_markers",
+            choices = available_choices,
+            selected = input$"group_left-select_k_markers"
+        )
+    }) %>% shiny::bindEvent(input$"group_left-select_clusters_markers")
 }
 
 server_comparison_metadata_panel <- function(id) {
@@ -766,11 +773,11 @@ server_comparison_metadata_panel <- function(id) {
 
                     shiny::isolate({
                         if (is.null(plot_data()$unique_values)) {
-                            old_par <- par(mai = c(0.1, 0, 0.1, 0))
-                            text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
+                            old_par <- graphics::par(mai = c(0.1, 0, 0.1, 0))
+                            text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
                         } else {
-                            old_par <- par(mar = c(0, 0, 0, 0))
-                            predicted_width <- strwidth(c(" ", plot_data()$unique_values), units = "inches", cex = input$metadata_legend_size) * ppi
+                            old_par <- graphics::par(mar = c(0, 0, 0, 0))
+                            predicted_width <- graphics::strwidth(c(" ", plot_data()$unique_values), units = "inches", cex = input$metadata_legend_size) * ppi
                             space_width <- predicted_width[1]
                             predicted_width <- predicted_width[2:length(predicted_width)]
 
@@ -783,7 +790,7 @@ server_comparison_metadata_panel <- function(id) {
                             )
                             number_rows <- ceiling(length(plot_data()$unique_values) / number_columns)
 
-                            text_height <- strheight(
+                            text_height <- graphics::strheight(
                                 paste(
                                     rep("TEXT", number_rows + 1),
                                     collapse = "\n"
@@ -792,7 +799,7 @@ server_comparison_metadata_panel <- function(id) {
                                 cex = input$metadata_legend_size
                             )
                         }
-                        par(old_par)
+                        graphics::par(old_par)
                         metadata_legend_height(text_height * ppi)
                         color_plot2(
                             embedding = pkg_env$stab_obj$umap,
@@ -1053,9 +1060,9 @@ server_comparison_gene_panel <- function(id) {
                             used_matrix <- used_matrix > expr_threshold
                         }
 
-                        old_par <- par(mai = c(0.1, 0, 0.1, 0))
-                        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
-                        par(old_par)
+                        old_par <- graphics::par(mai = c(0.1, 0, 0.1, 0))
+                        text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
+                        graphics::par(old_par)
                         gene_legend_height(text_height * ppi)
 
                         color_plot2(
@@ -1069,7 +1076,7 @@ server_comparison_gene_panel <- function(id) {
                             color_values = color_values,
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
-                            axis = input$gene_axis_size,
+                            axis_size = input$gene_axis_size,
                             sort_cells = input$gene_pt_order,
                             legend_text_size = input$gene_legend_size,
                             text_size = input$gene_legend_size
@@ -1265,21 +1272,21 @@ server_comparison_jsi <- function(id, k_choices) {
 
             barcode_heatmap <- shiny::reactive({
                 shiny::req(input$jsi_k_1, input$jsi_k_2)
-              if(!is.na(as.numeric(input$jsi_k_1))){
-                clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
-                df_1 <- data.frame(clustering_1)
-              }else{
-                meta_category <- pkg_env$metadata[,input$jsi_k_1]
-                df_1 <- data.frame(meta_category)
-              }
+                if (!is.na(as.numeric(input$jsi_k_1))) {
+                    clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
+                    df_1 <- data.frame(clustering_1)
+                } else {
+                    meta_category <- pkg_env$metadata[, input$jsi_k_1]
+                    df_1 <- data.frame(meta_category)
+                }
                 df_1$cell <- rownames(df_1)
-              if(!is.na(as.numeric(input$jsi_k_2))){
-                clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
-                df_2 <- data.frame(clustering_2)
-              }else{
-                meta_category <- pkg_env$metadata[,input$jsi_k_2]
-                df_2 <- data.frame(meta_category)
-              }
+                if (!is.na(as.numeric(input$jsi_k_2))) {
+                    clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
+                    df_2 <- data.frame(clustering_2)
+                } else {
+                    meta_category <- pkg_env$metadata[, input$jsi_k_2]
+                    df_2 <- data.frame(meta_category)
+                }
                 df_2$cell <- rownames(df_2)
                 all_clusters_1 <- unique(df_1[, 1])
                 all_clusters_2 <- unique(df_2[, 1])
@@ -1311,9 +1318,9 @@ server_comparison_jsi <- function(id, k_choices) {
                 }
                 df_mat <- reshape2::melt(mat)
 
-                ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(Var1), as.factor(Var2))) +
-                    ggplot2::geom_tile(ggplot2::aes(fill = value)) +
-                    ggplot2::geom_text(ggplot2::aes(label = round(value, 2))) +
+                ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(.data$Var1), as.factor(.data$Var2))) +
+                    ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
+                    ggplot2::geom_text(ggplot2::aes(label = round(.data$value, 2))) +
                     ggplot2::scale_fill_gradient2(
                         low = scales::muted("darkred"),
                         mid = "white",
@@ -1437,8 +1444,12 @@ server_comparison_violin_gene <- function(id) {
                 is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
 
                 function_applied <- ifelse(!input$log_scale,
-                    function(x) { x },
-                    function(x) { log10(x) }
+                    function(x) {
+                        x
+                    },
+                    function(x) {
+                        log10(x)
+                    }
                 )
 
                 df <- data.frame(
@@ -1467,7 +1478,7 @@ server_comparison_violin_gene <- function(id) {
                             input$gene_expr,
                             "Gene Expression"
                         )
-                    ), ifelse(input$log_scale, " (log10 scale)", "")))+
+                    ), ifelse(input$log_scale, " (log10 scale)", ""))) +
                     ggplot2::xlab(input$metadata)
             })
 
@@ -1492,7 +1503,6 @@ server_comparison_violin_gene <- function(id) {
                         filename = file,
                         plot = ggplot_object() + ggplot2::ggtitle(
                             glue::glue("Distribution of {input$gene_expr} - Split by {input$metadata}")
-
                         ),
                         height = input$height_violin,
                         width = input$width_violin
@@ -1500,42 +1510,45 @@ server_comparison_violin_gene <- function(id) {
                 }
             )
 
-            output$stats <- shiny::renderTable({
-                shiny::req(distr_val(), metadata_info())
+            output$stats <- shiny::renderTable(
+                {
+                    shiny::req(distr_val(), metadata_info())
 
-                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
-                is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
-                distr_stats <- fivenum(distr_val())
-                distance_breaks <- (distr_stats[5] - distr_stats[1]) / 4
-                break_points <- c(
-                    distr_stats[1],
-                    distr_stats[1] + distance_breaks,
-                    distr_stats[1] + 2 * distance_breaks,
-                    distr_stats[1] + 3 * distance_breaks,
-                    distr_stats[5]
-                )
+                    is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                    is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                    distr_stats <- stats::fivenum(distr_val())
+                    distance_breaks <- (distr_stats[5] - distr_stats[1]) / 4
+                    break_points <- c(
+                        distr_stats[1],
+                        distr_stats[1] + distance_breaks,
+                        distr_stats[1] + 2 * distance_breaks,
+                        distr_stats[1] + 3 * distance_breaks,
+                        distr_stats[5]
+                    )
 
-                split_vals <- split(
-                    distr_val(),
-                    metadata_info()$color_info
-                )
+                    split_vals <- split(
+                        distr_val(),
+                        metadata_info()$color_info
+                    )
 
-                stats_df <- rbind(
-                    data.frame(sapply(seq_along(split_vals), function(i) {
-                        fivenum(split_vals[[i]])
-                    })),
-                    sapply(split_vals, length)
-                )
+                    stats_df <- rbind(
+                        data.frame(sapply(seq_along(split_vals), function(i) {
+                            stats::fivenum(split_vals[[i]])
+                        })),
+                        sapply(split_vals, length)
+                    )
 
-                colnames(stats_df) <- names(split_vals)
-                rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells")
-                
-                breaks_df <- sapply(split_vals, function(x) {
-                    table(cut(x, breaks = break_points))
-                })
+                    colnames(stats_df) <- names(split_vals)
+                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells")
 
-                rbind(stats_df, breaks_df)
-            }, rownames = TRUE)
+                    breaks_df <- sapply(split_vals, function(x) {
+                        table(cut(x, breaks = break_points))
+                    })
+
+                    rbind(stats_df, breaks_df)
+                },
+                rownames = TRUE
+            )
         }
     )
 }
@@ -1575,7 +1588,7 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 if (!is.null(gprf_res)) {
                     gprf_res$result$parents <- sapply(gprf_res$result$parents, toString)
                 }
-                
+
                 shinyjs::enable("enrichment_button")
                 shinyjs::show("download_gost")
 
@@ -1598,7 +1611,7 @@ server_comparison_enrichment <- function(id, marker_genes) {
                         "enrichment_results.csv"
                     },
                     content = function(file) {
-                        write.csv(gprof_result()$result, file)
+                        utils::write.csv(gprof_result()$result, file)
                     }
                 )
             })
@@ -1606,9 +1619,19 @@ server_comparison_enrichment <- function(id, marker_genes) {
     )
 }
 
-#' Writing objects
+#' Server - Comparison module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the comparison module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#' @param chosen_config A reactive object that contains the chosen configuration
+#' from the Dimensionality Reduction tab.
+#' @param chosen_method A reactive object that contains the chosen method from
+#' the Clustering tab.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_comparisons <- function(id, chosen_config, chosen_method) {
@@ -1622,13 +1645,12 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
 
             isolated_chosen_method <- shiny::isolate(chosen_method())
             cl_method <- isolated_chosen_method$method_name
-            
+
             discrete <- c()
-            for (category in colnames(pkg_env$metadata)){
-              if(length(unique(pkg_env$metadata[,category]))<20){
-                
-                discrete <- append(discrete,category)
-              }
+            for (category in colnames(pkg_env$metadata)) {
+                if (length(unique(pkg_env$metadata[, category])) < 20) {
+                    discrete <- append(discrete, category)
+                }
             }
             k_values <- isolated_chosen_method$n_clusters
             stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
@@ -1713,7 +1735,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
             server_comparison_gene_panel("gene_panel_right")
-            server_comparison_jsi("jsi_plot", append(k_values,discrete))
+            server_comparison_jsi("jsi_plot", append(k_values, discrete))
             server_comparison_violin_gene("violin_gene")
             marker_genes <- server_comparison_markers("markers", k_values)
             server_comparison_enrichment("enrichment", marker_genes)

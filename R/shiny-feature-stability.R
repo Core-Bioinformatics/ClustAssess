@@ -219,9 +219,15 @@ ui_dimensionality_choice <- function(id) {
     )
 }
 
-#' Dimensionality reduction - ui side
+#' UI - Dimensionality reduction module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the dimensionality reduction
+#' module inside the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_dimensionality_reduction <- function(id) {
@@ -284,10 +290,10 @@ server_dimensionality_stability <- function(id) {
             })
 
             legend_height <- shiny::reactive({
-                pdf(file = NULL, width = plt_height(), height = plt_height())
-                par(mai = c(0.1, 0, 0.1, 0))
-                text_height <- strheight("TE\nXT\n", units = "inches", cex = input$by_step_res_text_size)
-                dev.off()
+                grDevices::pdf(file = NULL, width = plt_height(), height = plt_height())
+                graphics::par(mai = c(0.1, 0, 0.1, 0))
+                text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$by_step_res_text_size)
+                grDevices::dev.off()
                 return((0.2 + text_height) * ppi)
             })
 
@@ -476,7 +482,7 @@ server_dimensionality_stability <- function(id) {
                         plt_title = paste("res", input$by_step_resolution),
                         space_inter_groups = input$by_step_res_inter_distance
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -499,7 +505,7 @@ server_dimensionality_stability <- function(id) {
                         space_intra_groups = input$incremental_res_intra_distance,
                         space_inter_groups = input$incremental_res_inter_distance
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -520,7 +526,7 @@ server_dimensionality_stability <- function(id) {
                         space_intra_groups = input$by_step_intra_distance,
                         space_inter_groups = input$by_step_inter_distance
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -541,7 +547,7 @@ server_dimensionality_stability <- function(id) {
                         space_intra_groups = input$incremental_intra_distance,
                         space_inter_groups = input$incremental_inter_distance
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -684,9 +690,9 @@ server_dimensionality_distribution <- function(id) {
                             used_matrix <- used_matrix > expr_threshold
                         }
 
-                        old_par <- par(mai = c(0.1, 0, 0.1, 0))
-                        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
-                        par(old_par)
+                        old_par <- graphics::par(mai = c(0.1, 0, 0.1, 0))
+                        text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_legend_size)
+                        graphics::par(old_par)
                         gene_legend_height(text_height * ppi)
 
                         color_plot2(
@@ -705,7 +711,7 @@ server_dimensionality_distribution <- function(id) {
                             color_values = color_values,
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
-                            axis = input$gene_axis_size,
+                            axis_size = input$gene_axis_size,
                             sort_cells = input$gene_pt_order,
                             legend_text_size = input$gene_legend_size,
                             text_size = input$gene_legend_size
@@ -744,12 +750,12 @@ server_dimensionality_distribution <- function(id) {
                         }
 
                         if (is.null(pkg_env$metadata_unique[[current_metadata]])) {
-                            old_par <- par(mai = c(0.1, 0, 0.1, 0))
-                            text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
+                            old_par <- graphics::par(mai = c(0.1, 0, 0.1, 0))
+                            text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$metadata_legend_size)
                             groups <- NULL
                         } else {
-                            old_par <- par(mar = c(0, 0, 0, 0))
-                            predicted_width <- strwidth(c(" ", pkg_env$metadata_unique[[current_metadata]]), units = "inches", cex = input$metadata_legend_size) * ppi
+                            old_par <- graphics::par(mar = c(0, 0, 0, 0))
+                            predicted_width <- graphics::strwidth(c(" ", pkg_env$metadata_unique[[current_metadata]]), units = "inches", cex = input$metadata_legend_size) * ppi
                             space_width <- predicted_width[1]
                             predicted_width <- predicted_width[2:length(predicted_width)]
 
@@ -762,7 +768,7 @@ server_dimensionality_distribution <- function(id) {
                             )
                             number_rows <- ceiling(length(pkg_env$metadata_unique[[current_metadata]]) / number_columns)
 
-                            text_height <- strheight(
+                            text_height <- graphics::strheight(
                                 paste(
                                     rep("TEXT", number_rows + 1),
                                     collapse = "\n"
@@ -771,7 +777,7 @@ server_dimensionality_distribution <- function(id) {
                                 cex = input$metadata_legend_size
                             )
                         }
-                        par(old_par)
+                        graphics::par(old_par)
                         metadata_legend_height(text_height * ppi)
 
                         metadata_plot(
@@ -955,9 +961,17 @@ server_dimensionality_choice <- function(id, parent_session) {
     )
 }
 
-#' Dimensionality reduction - server side
+#' Server - Dimensionality reduction module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the dimensionality
+#' reduction module inside the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#' @param parent_session The session of the parent module, used to control the
+#' tabs of the application.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_dimensionality_reduction <- function(id, parent_session) {
@@ -1051,14 +1065,14 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     plt_width <- plt_width / 96
     # calculate space needed for the legend
     fgroups <- names(feature_ordering$original)
-    predicted_width <- strwidth(fgroups, units = "inches", cex = text_size)
-    predicted_height <- strheight(fgroups[1], units = "inches", cex = text_size)
+    predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = text_size)
+    predicted_height <- graphics::strheight(fgroups[1], units = "inches", cex = text_size)
     number_columns <- plt_width %/% (1.5 * max(predicted_width))
     number_rows <- ceiling(length(fgroups) / number_columns)
-    current_margins <- par("mai")
+    current_margins <- graphics::par("mai")
     old_margin <- current_margins[1]
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
-    par(mai = current_margins)
+    graphics::par(mai = current_margins)
 
     col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
@@ -1085,7 +1099,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         abline_coords[i - 1] <- n_groups * space_intra_groups + (n_groups * space_intra_groups + space_inter_groups) * (i - 2) + (space_inter_groups + space_intra_groups) / 2
     }
 
-    boundaries <- boxplot(
+    boundaries <- graphics::boxplot(
         formula = ecc ~ ftype + fsize,
         data = rhdf5::h5read("stability.h5", ifelse(resval == "overall",
             "feature_stability/overall/by_step",
@@ -1104,12 +1118,12 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         main = plt_title
     )
 
-    abline(v = abline_coords, lty = "dashed", col = "grey")
+    graphics::abline(v = abline_coords, lty = "dashed", col = "grey")
 
     y_text <- boundaries$stats[nrow(boundaries$stats), ]
     y_text[is.na(y_text)] <- 0
 
-    axis(
+    graphics::axis(
         side = 1,
         at = at_values,
         labels = name_values,
@@ -1118,7 +1132,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         xpd = NA
     )
 
-    legend(
+    graphics::legend(
         "bottomleft",
         legend = fgroups,
         col = col,
@@ -1146,14 +1160,14 @@ shiny_plot_feature_stability_incremental <- function(resval,
     plt_width <- plt_width / 96
     # calculate space needed for the legend
     fgroups <- names(feature_ordering$original_incremental)
-    predicted_width <- strwidth(fgroups, units = "inches", cex = text_size)
-    predicted_height <- strheight(fgroups[1], units = "inches", cex = text_size)
+    predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = text_size)
+    predicted_height <- graphics::strheight(fgroups[1], units = "inches", cex = text_size)
     number_columns <- plt_width %/% (1.2 * max(predicted_width))
     number_rows <- ceiling(length(fgroups) / number_columns)
-    current_margins <- par("mai")
+    current_margins <- graphics::par("mai")
     old_margin <- current_margins[1]
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
-    par(mai = current_margins)
+    graphics::par(mai = current_margins)
 
     col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
@@ -1180,7 +1194,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
         abline_coords[i - 1] <- n_groups * space_intra_groups + (n_groups * space_intra_groups + space_inter_groups) * (i - 2) + (space_inter_groups + space_intra_groups) / 2
     }
 
-    boundaries <- boxplot(
+    boundaries <- graphics::boxplot(
         formula = ecc ~ ftype + fsize,
         data = rhdf5::h5read("stability.h5", ifelse(resval == "overall",
             "feature_stability/overall/incremental",
@@ -1199,12 +1213,12 @@ shiny_plot_feature_stability_incremental <- function(resval,
         main = plt_title
     )
 
-    abline(v = abline_coords, lty = "dashed", col = "grey")
+    graphics::abline(v = abline_coords, lty = "dashed", col = "grey")
 
     y_text <- boundaries$stats[nrow(boundaries$stats), ]
     y_text[is.na(y_text)] <- 0
 
-    axis(
+    graphics::axis(
         side = 1,
         at = at_values,
         labels = name_values,
@@ -1212,7 +1226,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
         las = 2
     )
 
-    legend(
+    graphics::legend(
         "bottomleft",
         legend = fgroups,
         col = col,

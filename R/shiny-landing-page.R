@@ -1,8 +1,14 @@
 ####### UI #######
 
-#' Writing objects
+#' UI - Landing page module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the landing page module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_landing_page <- function(id) {
@@ -71,7 +77,7 @@ ui_landing_page <- function(id) {
             shiny::column(6, shinyLP::panel_div(
                 class_type = "info",
                 panel_title = "Our website",
-                content = HTML(
+                content = shiny::HTML(
                     "Wellcome MRC - Cambridge Stem Cell Institute Core Bioinformatics Group:
           <br>
           <a href='https://www.corebioinf.stemcells.cam.ac.uk'>
@@ -106,9 +112,24 @@ ui_landing_page <- function(id) {
     )
 }
 
-#' Landing page - server side
+#' Server - Landing page module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the landing page module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#' @param height_ratio A reactive object that contains the height ratio of the
+#' plots in the application (the height of the plot is calculated using the
+#' height ratio and the height of the webpage).
+#' @param dimension A reactive object that contains the dimensions of the
+#' webpage.
+#' @param parent_session The session of the parent module, used to control the
+#' tabs of the application.
+#' @param organism The organism of the dataset, which will be used in the
+#' enrichment analysis.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_landing_page <- function(id, height_ratio, dimension, parent_session, organism = "hsapiens") {

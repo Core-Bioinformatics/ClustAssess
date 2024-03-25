@@ -56,7 +56,6 @@ ui_sandbox_config_choice <- function(id, draw_line) {
     )
 }
 
-
 ui_sandbox_metadata_panel <- function(id, draw_line) {
     ns <- shiny::NS(id)
     style <- ifelse(draw_line, "border-right:5px solid", "")
@@ -140,9 +139,9 @@ ui_sandbox_jsi_panel <- function(id) {
             shiny::h5("This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner."),
             shiny::h1("\n"),
             shiny::h5("For more information please go to:"),
-            shiny::tagList("", a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
+            shiny::tagList("", shiny::a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
             placement = "right",
-            arrow = F,
+            arrow = FALSE,
             maxWidth = "700px"
         ),
         shinyWidgets::dropdownButton(
@@ -178,9 +177,15 @@ ui_sandbox_jsi_panel <- function(id) {
     )
 }
 
-#' UI sandbox
+#' UI - Sandbox module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the sandbox module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_sandbox <- function(id) {
@@ -219,8 +224,8 @@ server_sandbox_config_choice <- function(id, side) {
                 shiny::selectInput(
                     inputId = ns("sandbox_sel_fset"),
                     label = "Select feature - set:",
-                    choices = names(fsets$fsets),
-                    selected = names(fsets$fsets)[1],
+                    choices = names(pkg_env$fsets$fsets),
+                    selected = names(pkg_env$fsets$fsets)[1],
                     multiple = FALSE
                 )
             })
@@ -232,8 +237,8 @@ server_sandbox_config_choice <- function(id, side) {
                 shiny::selectInput(
                     inputId = ns("sandbox_sel_steps"),
                     label = "Select feature - size:",
-                    choices = fsets$fsets[input$sandbox_sel_fset][[1]],
-                    selected = fsets$fsets[input$sandbox_sel_fset][[1]][1],
+                    choices = pkg_env$fsets$fsets[input$sandbox_sel_fset][[1]],
+                    selected = pkg_env$fsets$fsets[input$sandbox_sel_fset][[1]][1],
                     multiple = FALSE
                 )
             })
@@ -368,16 +373,16 @@ server_sandbox_metadata_panel_left <- function(id) {
             metadata_legend_height <- shiny::reactive({
                 unique_values <- pkg_env$metadata_unique[[input$metadata]]
                 # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-                pdf(file = NULL, width = plt_height(), height = plt_height())
+                grDevices::pdf(file = NULL, width = plt_height(), height = plt_height())
                 if (is.null(unique_values)) {
-                    par(mai = c(0.1, 0, 0.1, 0))
-                    text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
-                    dev.off()
+                    graphics::par(mai = c(0.1, 0, 0.1, 0))
+                    text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
+                    grDevices::dev.off()
                     return(text_height * ppi * 1.25)
                 }
 
-                par(mar = c(0, 0, 0, 0))
-                predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = input$metadata_text_size) * ppi
+                graphics::par(mar = c(0, 0, 0, 0))
+                predicted_width <- graphics::strwidth(c(" ", unique_values), units = "inches", cex = input$metadata_text_size) * ppi
                 space_width <- predicted_width[1]
                 predicted_width <- predicted_width[2:length(predicted_width)]
 
@@ -391,7 +396,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                 number_rows <- ceiling(length(unique_values) / number_columns)
                 print(number_rows)
 
-                text_height <- strheight(
+                text_height <- graphics::strheight(
                     paste(
                         rep("TEXT", number_rows + 1),
                         collapse = "\n"
@@ -400,7 +405,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                     cex = input$metadata_text_size
                 )
 
-                dev.off()
+                grDevices::dev.off()
 
                 return(text_height * ppi * 1.25)
             })
@@ -511,7 +516,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                         groups_highlight = input$select_groups,
                         display_legend = TRUE
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
         }
@@ -562,16 +567,16 @@ server_sandbox_metadata_panel_right <- function(id) {
             metadata_legend_height <- shiny::reactive({
                 unique_values <- pkg_env$metadata_unique[[input$metadata]]
                 # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-                pdf(file = NULL, width = plt_height(), height = plt_height())
+                grDevices::pdf(file = NULL, width = plt_height(), height = plt_height())
                 if (is.null(unique_values)) {
-                    par(mai = c(0.1, 0, 0.1, 0))
-                    text_height <- strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
-                    dev.off()
+                    graphics::par(mai = c(0.1, 0, 0.1, 0))
+                    text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$metadata_text_size)
+                    grDevices::dev.off()
                     return(text_height * ppi * 1.25)
                 }
 
-                par(mar = c(0, 0, 0, 0))
-                predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = input$metadata_text_size) * ppi
+                graphics::par(mar = c(0, 0, 0, 0))
+                predicted_width <- graphics::strwidth(c(" ", unique_values), units = "inches", cex = input$metadata_text_size) * ppi
                 space_width <- predicted_width[1]
                 predicted_width <- predicted_width[2:length(predicted_width)]
 
@@ -585,7 +590,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                 number_rows <- ceiling(length(unique_values) / number_columns)
                 print(number_rows)
 
-                text_height <- strheight(
+                text_height <- graphics::strheight(
                     paste(
                         rep("TEXT", number_rows + 1),
                         collapse = "\n"
@@ -594,7 +599,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                     cex = input$metadata_text_size
                 )
 
-                dev.off()
+                grDevices::dev.off()
 
                 return(text_height * ppi * 1.25)
             })
@@ -706,7 +711,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                         groups_highlight = input$select_groups,
                         display_legend = TRUE
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
         }
@@ -717,26 +722,26 @@ server_sandbox_gene_panel_left <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-          expr_matrix <- shiny::reactive({
-            if ("genes" %in% names(pkg_env)) {
-              index_gene <- pkg_env$genes[input$gene_expr]
-              index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
-              
-              return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
-            }
-            
-            # for backward-compatibility purposes
-            index_interest <- pkg_env$genes_of_interest[input$gene_expr]
-            index_interest <- index_interest[!is.na(index_interest)]
-            
-            index_others <- pkg_env$genes_others[input$gene_expr]
-            index_others <- index_others[!is.na(index_others)]
-            
-            rbind(
-              rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
-              rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
-            )
-          }) %>% shiny::bindEvent(input$gene_expr)
+            expr_matrix <- shiny::reactive({
+                if ("genes" %in% names(pkg_env)) {
+                    index_gene <- pkg_env$genes[input$gene_expr]
+                    index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+
+                    return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+                }
+
+                # for backward-compatibility purposes
+                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+                index_interest <- index_interest[!is.na(index_interest)]
+
+                index_others <- pkg_env$genes_others[input$gene_expr]
+                index_others <- index_others[!is.na(index_others)]
+
+                rbind(
+                    rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+                    rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+                )
+            }) %>% shiny::bindEvent(input$gene_expr)
 
             max_level_expr <- shiny::reactive(max(expr_matrix()))
 
@@ -754,10 +759,10 @@ server_sandbox_gene_panel_left <- function(id) {
 
             gene_legend_height <- shiny::reactive({
                 # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-                pdf(NULL, width = plt_height(), height = plt_height())
-                par(mai = c(0.1, 0, 0.1, 0))
-                text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
-                dev.off()
+                grDevices::pdf(NULL, width = plt_height(), height = plt_height())
+                graphics::par(mai = c(0.1, 0, 0.1, 0))
+                text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
+                grDevices::dev.off()
                 return((0.2 + text_height) * ppi)
             })
 
@@ -840,7 +845,7 @@ server_sandbox_gene_panel_left <- function(id) {
                         axis_size = input$gene_axis_size,
                         display_legend = TRUE
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
         }
@@ -850,26 +855,26 @@ server_sandbox_gene_panel_right <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-          expr_matrix <- shiny::reactive({
-            if ("genes" %in% names(pkg_env)) {
-              index_gene <- pkg_env$genes[input$gene_expr]
-              index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
-              
-              return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
-            }
-            
-            # for backward-compatibility purposes
-            index_interest <- pkg_env$genes_of_interest[input$gene_expr]
-            index_interest <- index_interest[!is.na(index_interest)]
-            
-            index_others <- pkg_env$genes_others[input$gene_expr]
-            index_others <- index_others[!is.na(index_others)]
-            
-            rbind(
-              rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
-              rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
-            )
-          }) %>% shiny::bindEvent(input$gene_expr)
+            expr_matrix <- shiny::reactive({
+                if ("genes" %in% names(pkg_env)) {
+                    index_gene <- pkg_env$genes[input$gene_expr]
+                    index_gene <- index_gene[!is.na(index_gene)] # not necesarry most probably
+
+                    return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+                }
+
+                # for backward-compatibility purposes
+                index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+                index_interest <- index_interest[!is.na(index_interest)]
+
+                index_others <- pkg_env$genes_others[input$gene_expr]
+                index_others <- index_others[!is.na(index_others)]
+
+                rbind(
+                    rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL)),
+                    rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+                )
+            }) %>% shiny::bindEvent(input$gene_expr)
 
             max_level_expr <- shiny::reactive(max(expr_matrix()))
 
@@ -887,10 +892,10 @@ server_sandbox_gene_panel_right <- function(id) {
 
             gene_legend_height <- shiny::reactive({
                 # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
-                pdf(NULL, width = plt_height(), height = plt_height())
-                par(mai = c(0.1, 0, 0.1, 0))
-                text_height <- strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
-                dev.off()
+                grDevices::pdf(NULL, width = plt_height(), height = plt_height())
+                graphics::par(mai = c(0.1, 0, 0.1, 0))
+                text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
+                grDevices::dev.off()
                 return((0.2 + text_height) * ppi)
             })
 
@@ -973,7 +978,7 @@ server_sandbox_gene_panel_right <- function(id) {
                         axis_size = input$gene_axis_size,
                         display_legend = TRUE
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
         }
@@ -993,22 +998,22 @@ server_sandbox_jsi <- function(id) {
             )
 
             barcode_heatmap <- shiny::reactive({
-              shiny::req(input$jsi_k_1, input$jsi_k_2)
-              if(!is.na(as.numeric(input$jsi_k_1))){
-                clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
-                df_1 <- data.frame(clustering_1)
-              }else{
-                meta_category <- pkg_env$metadata[,input$jsi_k_1]
-                df_1 <- data.frame(meta_category)
-              }
-              df_1$cell <- rownames(df_1)
-              if(!is.na(as.numeric(input$jsi_k_2))){
-                clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
-                df_2 <- data.frame(clustering_2)
-              }else{
-                meta_category <- pkg_env$metadata[,input$jsi_k_2]
-                df_2 <- data.frame(meta_category)
-              }
+                shiny::req(input$jsi_k_1, input$jsi_k_2)
+                if (!is.na(as.numeric(input$jsi_k_1))) {
+                    clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
+                    df_1 <- data.frame(clustering_1)
+                } else {
+                    meta_category <- pkg_env$metadata[, input$jsi_k_1]
+                    df_1 <- data.frame(meta_category)
+                }
+                df_1$cell <- rownames(df_1)
+                if (!is.na(as.numeric(input$jsi_k_2))) {
+                    clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
+                    df_2 <- data.frame(clustering_2)
+                } else {
+                    meta_category <- pkg_env$metadata[, input$jsi_k_2]
+                    df_2 <- data.frame(meta_category)
+                }
                 df_2$cell <- rownames(df_2)
                 all_clusters_1 <- unique(df_1[, 1])
                 all_clusters_2 <- unique(df_2[, 1])
@@ -1104,9 +1109,16 @@ server_sandbox_jsi <- function(id) {
         }
     )
 }
-#' server sandbox
+
+#' Server - Sandbox module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the sandbox module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_sandbox <- function(id) {
@@ -1116,10 +1128,10 @@ server_sandbox <- function(id) {
             add_env_variable("fsets", list(
                 fsets = rhdf5::h5read("stability.h5", "feature_ordering/stable")
             ))
-          genes <- rhdf5::h5read("expression.h5", "genes")
-          index <- seq_along(genes)
-          names(index) <- genes
-          add_env_variable("genes", index)
+            genes <- rhdf5::h5read("expression.h5", "genes")
+            index <- seq_along(genes)
+            names(index) <- genes
+            add_env_variable("genes", index)
 
 
             server_sandbox_config_choice("config_choice_left", "left")
@@ -1179,33 +1191,32 @@ server_sandbox <- function(id) {
             server_sandbox_metadata_panel_right("sbx_metadata_panel_right")
             server_sandbox_gene_panel_left("sbx_gene_panel_left")
             server_sandbox_gene_panel_right("sbx_gene_panel_right")
-            
+
             discrete <- c()
-            for (category in colnames(pkg_env$metadata)){
-              if(length(unique(pkg_env$metadata[,category]))<20){
-                
-                discrete <- append(discrete,category)
-              }
+            for (category in colnames(pkg_env$metadata)) {
+                if (length(unique(pkg_env$metadata[, category])) < 20) {
+                    discrete <- append(discrete, category)
+                }
             }
 
             # And the JSI
             shiny::observeEvent(input$"config_choice_left-fix_config", {
                 shiny::req(pkg_env$selected_kvals_left)
-              shiny::req(pkg_env$clustering_options)
+                shiny::req(pkg_env$clustering_options)
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_1",
-                    choices = append(pkg_env$selected_kvals_left,discrete),
+                    choices = append(pkg_env$selected_kvals_left, discrete),
                     selected = pkg_env$selected_kvals_left[1]
                 )
             })
             shiny::observeEvent(input$"config_choice_right-fix_config", {
                 shiny::req(pkg_env$selected_kvals_right)
-              shiny::req(pkg_env$clustering_options)
+                shiny::req(pkg_env$clustering_options)
                 shiny::updateSelectizeInput(
                     session = session,
                     inputId = "sbx_jsi-jsi_k_2",
-                    choices = append(pkg_env$selected_kvals_right,discrete),
+                    choices = append(pkg_env$selected_kvals_right, discrete),
                     selected = pkg_env$selected_kvals_right[1]
                 )
             })

@@ -91,8 +91,8 @@ grouped_boxplot_dataframe <- function(dataframe,
         ylabel <- y_column
     }
 
-    boxplot(
-        formula = as.formula(paste0(y_column, " ~ ", x_column)),
+    graphics::boxplot(
+        formula = stats::as.formula(paste0(y_column, " ~ ", x_column)),
         data = dataframe,
         col = groups_colours,
         cex.axis = text_size,
@@ -164,7 +164,7 @@ grouped_boxplot_list <- function(groups_list,
     text_coords[count_diff + 1] <- mean(at_values[start_index:n_boxplots])
 
     if (display_legend) {
-        predicted_width <- strwidth(c(" ", unique_groups_values), units = "inches", cex = text_size)
+        predicted_width <- graphics::strwidth(c(" ", unique_groups_values), units = "inches", cex = text_size)
         space_width <- predicted_width[1]
         predicted_width <- predicted_width[2:length(predicted_width)]
         number_columns <- min(
@@ -176,7 +176,7 @@ grouped_boxplot_list <- function(groups_list,
         )
         number_rows <- ceiling(length(unique_groups_values) / number_columns)
 
-        text_height <- strheight(
+        text_height <- graphics::strheight(
             paste(
                 rep("TEXT", number_rows + 1),
                 collapse = "\n"
@@ -185,16 +185,16 @@ grouped_boxplot_list <- function(groups_list,
             cex = text_size
         ) + 0.1
 
-        layout(
+        graphics::layout(
             matrix(c(1, 2), nrow = 2),
             heights = c(
-                lcm((plt_height - text_height - 0.05) * 2.54),
-                lcm(text_height * 2.54)
+                graphics::lcm((plt_height - text_height - 0.05) * 2.54),
+                graphics::lcm(text_height * 2.54)
             )
         )
     }
 
-    boxplot(
+    graphics::boxplot(
         groups_list,
         outline = FALSE,
         at = at_values,
@@ -205,17 +205,17 @@ grouped_boxplot_list <- function(groups_list,
         cex.axis = text_size,
         cex.lab = text_size
     )
-    abline(v = abline_coords, lty = "dashed", col = "grey")
-    title(xlab = xlab_text, ylab = "ecc", cex.lab = text_size)
-    axis(side = 1, at = text_coords, labels = unique_x_values, las = 2, cex.axis = text_size)
+    graphics::abline(v = abline_coords, lty = "dashed", col = "grey")
+    graphics::title(xlab = xlab_text, ylab = "ecc", cex.lab = text_size)
+    graphics::axis(side = 1, at = text_coords, labels = unique_x_values, las = 2, cex.axis = text_size)
 
     if (!display_legend) {
         return()
     }
 
-    par(mar = c(0, 0, 0, 0))
+    graphics::par(mar = c(0, 0, 0, 0))
     plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
-    legend(
+    graphics::legend(
         "topleft",
         legend = unique_groups_values,
         col = groups_colours,
@@ -348,7 +348,6 @@ metadata_plot <- function(embedding,
                           display_legend = FALSE,
                           predicted_height = NULL,
                           labels = FALSE) {
-
     if (is.null(groups_highlight)) {
         metadata_mask <- rep(TRUE, nrow(embedding))
     } else {
@@ -383,12 +382,12 @@ only_legend_plot <- function(unique_values,
     plt_width <- plt_width / ppi
 
     if (is_continuous) {
-        par(mai = c(0.1, 0, 0.1, 0))
+        graphics::par(mai = c(0.1, 0, 0.1, 0))
         unique_values <- c(min(color_info), max(color_info))
     } else {
-        par(mar = c(0, 0, 0, 0))
+        graphics::par(mar = c(0, 0, 0, 0))
         # calculate space needed for the legend
-        predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = text_size)
+        predicted_width <- graphics::strwidth(c(" ", unique_values), units = "inches", cex = text_size)
         space_width <- predicted_width[1]
         predicted_width <- predicted_width[2:length(predicted_width)]
         number_columns <- min(
@@ -418,13 +417,13 @@ only_legend_plot <- function(unique_values,
     }
 
     if (is_continuous) {
-        legend_image <- as.raster(matrix(color_values, nrow = 1))
+        legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
         plot(c(0, 1), c(-1, 1), type = "n", axes = FALSE, bty = "n", ylab = "", xlab = "")
-        text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
-        rasterImage(legend_image, 0, 0, 1, 1)
+        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+        graphics::rasterImage(legend_image, 0, 0, 1, 1)
     } else {
         plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
-        legend(
+        graphics::legend(
             "topleft",
             legend = unique_values,
             col = color_values,
@@ -437,9 +436,9 @@ only_legend_plot <- function(unique_values,
             xpd = TRUE
         )
     }
-    # par(old_par)
+    # graphics::par(old_par)
 
-    # dev.off()
+    # grDevices::dev.off()
 }
 
 
@@ -530,12 +529,12 @@ color_plot2 <- function(embedding,
             number_rows <- 2
 
             if (is.null(predicted_height)) {
-                predicted_height <- strheight("TE\nXT\n", units = "inches", cex = legend_text_size)
+                predicted_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = legend_text_size)
             }
         } else {
             # calculate space needed for the legend
-            predicted_width <- strwidth(unique_values, units = "inches", cex = legend_text_size)
-            space_width <- strwidth(" ", units = "inches", cex = legend_text_size)
+            predicted_width <- graphics::strwidth(unique_values, units = "inches", cex = legend_text_size)
+            space_width <- graphics::strwidth(" ", units = "inches", cex = legend_text_size)
             number_columns <- min(
                 max(
                     plt_width %/% (6 * space_width + max(predicted_width)),
@@ -547,7 +546,7 @@ color_plot2 <- function(embedding,
 
             if (is.null(predicted_height)) {
                 number_rows <- ceiling(length(unique_values) / number_columns)
-                predicted_height <- strheight(
+                predicted_height <- graphics::strheight(
                     paste(
                         rep("TEXT", number_rows + 1),
                         collapse = "\n"
@@ -569,11 +568,11 @@ color_plot2 <- function(embedding,
     }
 
     if (display_legend) {
-        layout(
+        graphics::layout(
             matrix(c(1, 2), nrow = 2),
             heights = c(
-                lcm((plt_height - predicted_height) * 2.54),
-                lcm(predicted_height * 2.54)
+                graphics::lcm((plt_height - predicted_height) * 2.54),
+                graphics::lcm(predicted_height * 2.54)
             )
         )
     }
@@ -618,15 +617,15 @@ color_plot2 <- function(embedding,
     }
 
     if (is_continuous) {
-        par(mai = c(0.1, 0, 0.1, 0))
-        legend_image <- as.raster(matrix(color_values, nrow = 1))
+        graphics::par(mai = c(0.1, 0, 0.1, 0))
+        legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
         plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "")
-        text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = legend_text_size)
-        rasterImage(legend_image, 0, 0, 1, 1)
+        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = legend_text_size)
+        graphics::rasterImage(legend_image, 0, 0, 1, 1)
     } else {
-        par(mar = c(0, 0, 0, 0))
+        graphics::par(mar = c(0, 0, 0, 0))
         plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
-        legend(
+        graphics::legend(
             "topleft",
             legend = unique_values,
             col = color_values,
@@ -640,7 +639,7 @@ color_plot2 <- function(embedding,
         )
     }
 
-    # dev.off()
+    # grDevices::dev.off()
 }
 
 color_plot <- function(embedding,
@@ -679,8 +678,8 @@ color_plot <- function(embedding,
             col = colors[color_info],
             cex = pt_size,
             panel.first = {
-                axis(1, tck = 1, lty = 2, col = "gray")
-                axis(2, tck = 1, lty = 2, col = "gray")
+                graphics::axis(1, tck = 1, lty = 2, col = "gray")
+                graphics::axis(2, tck = 1, lty = 2, col = "gray")
             },
             xlab = "UMAP_1",
             ylab = "UMAP_2"
@@ -690,8 +689,8 @@ color_plot <- function(embedding,
             for (unique_val in unique_values) {
                 geometric_median <- Gmedian::Gmedian(embedding[color_info == unique_val, ])
 
-                text_width <- strwidth(unique_val, cex = text_size)
-                rect(
+                text_width <- graphics::strwidth(unique_val, cex = text_size)
+                graphics::rect(
                     geometric_median[1],
                     geometric_median[2],
                     geometric_median[1] + text_width * 1.2,
@@ -700,7 +699,7 @@ color_plot <- function(embedding,
                     border = "black"
                 )
 
-                text(
+                graphics::text(
                     geometric_median[1] + text_width * 0.6,
                     geometric_median[2] + text_size * 0.6,
                     unique_val,
@@ -709,9 +708,9 @@ color_plot <- function(embedding,
                 )
             }
 
-            # title(xlab = "UMAP_1", ylab = "UMAP_2")
+            # graphics::title(xlab = "UMAP_1", ylab = "UMAP_2")
         }
-        # legend(x = "bottom",
+        # graphics::legend(x = "bottom",
         #    inset = c(0, -0.2), # You will need to fine-tune the second
         #                        # value depending on the windows size
         #    legend = unique_values,
@@ -744,17 +743,17 @@ color_c_plot <- function(embedding,
             col = colors[color_info],
             cex = pt_size,
             panel.first = {
-                axis(1, tck = 1, lty = 2, col = "gray")
-                axis(2, tck = 1, lty = 2, col = "gray")
+                graphics::axis(1, tck = 1, lty = 2, col = "gray")
+                graphics::axis(2, tck = 1, lty = 2, col = "gray")
             },
             xlab = "UMAP_1",
             ylab = "UMAP_2"
         )
 
 
-        # title(xlab = "UMAP_1", ylab = "UMAP_2")
+        # graphics::title(xlab = "UMAP_1", ylab = "UMAP_2")
 
-        # legend(x = "bottom",
+        # graphics::legend(x = "bottom",
         #    inset = c(0, -0.2), # You will need to fine-tune the second
         #                        # value depending on the windows size
         #    legend = unique_values,
@@ -934,9 +933,64 @@ render_plot_by_height <- function(id, session) {
     })
 }
 
-#' Calculate markers in the shiny context
+#' Calculate markers - Shiny
 #'
-#' @description to be completed
+#' @description Performs the Wilcoxon rank sum test to identify differentially
+#' expressed genes between two groups of cells in the shiny context. The
+#' method can be also used outside the shiny context, as long as the expression
+#' matrix is stored in a h5 file.
+#'
+#' @param cells1 A vector of cell indices for the first group of cells.
+#' @param cells2 A vector of cell indices for the second group of cells.
+#' @param logfc_threshold The minimum absolute log fold change to consider a
+#' gene as differentially expressed. Defaults to `0`, meaning all genes are
+#' taken into considereation.
+#' @param min_pct_threshold The minimum fraction of cells expressing a gene
+#' form each cell population to consider the gene as differentially expressed.
+#' Increasing the value will speed up the function. Defaults to `0.1`.
+#' @param average_expression_threshold The minimum average expression that a
+#' gene should have in order to be considered as differentially expressed.
+#' @param average_expression_group1_threshold The minimum average expression
+#' that a gene should have in the first group of cells to be considered as
+#' differentially expressed. Defaults to `0`.
+#' @param min_diff_pct_threshold The minimum difference in the fraction of cells
+#' expressing a gene between the two cell populations to consider the gene as
+#' differentially expressed. Defaults to `-Inf`.
+#' @param used_slot Parameter that provides additional information about the
+#' expression matrix, whether it was scaled or not. The value of this parameter
+#' impacts the calculation of the fold change. If `data`, the function will
+#' calculates the fold change as the fraction between the log value of the
+#' average of the expression raised to exponential for the two cell groups. If
+#' `scale.data`, the function will calculate the fold change as the fraction
+#' between the average of the expression values for the two cell groups.
+#' Other options will default to calculating the fold change as the fraction
+#' between the log value of the average of the expression values for the two
+#' cell groups. Defaults to `data`.
+#' @param norm_method The normalization method used to normalize the expression
+#' matrix. The value of this parameter impacts the calculation of the average
+#' expression of the genes when `used_slot = "data"`. If `LogNormalize`, the
+#' log fold change will be calculated as described for the `used_slot`
+#' parameter. Otherwise, the log fold change will be calculated as the fraction
+#' between the log value of the average of the expression values for the two
+#' cell groups. Defaults to `LogNormalize`.
+#' @param expression_h5_path The path to the h5 file containing the expression
+#' matrix. The h5 file should contain the following fields: `expression_matrix`,
+#' `rank_matrix`, `average_expression`, `genes`. The file path
+#' defaults to `expression.h5`.
+#' @param pseudocount_use The pseudocount to add to the expression values when
+#' calculating the average expression of the genes, to avoid the 0 value for
+#' the denominator. Defaults to `1`.
+#' @param base The base of the logharithm. Defaults to `2`.
+
+#' @return A data frame containing the following columns:
+#' - `gene`: The gene name.
+#' - `avg_log2FC`: The average log fold change between the two cell groups.
+#' - `p_val`: The p-value of the Wilcoxon rank sum test.
+#' - `p_val_adj`: The adjusted p-value of the Wilcoxon rank sum test.
+#' - `pct.1`: The fraction of cells expressing the gene in the first cell group.
+#' - `pct.2`: The fraction of cells expressing the gene in the second cell group.
+#' - `avg_expr_group1`: The average expression of the gene in the first cell group.
+#' - `avg_expr`: The average expression of the gene.
 #'
 #' @export
 calculate_markers_shiny <- function(cells1,
@@ -1005,7 +1059,7 @@ calculate_markers_shiny <- function(cells1,
         }
     )
     df_list <- dplyr::bind_rows(df_list)
-    df_list$p_val_adj <- p.adjust(
+    df_list$p_val_adj <- stats::p.adjust(
         p = df_list$p_val,
         method = "bonferroni",
         n = nfiltered_genes
@@ -1019,9 +1073,84 @@ calculate_markers_shiny <- function(cells1,
 
 #' Calculate markers
 #'
-#' @description to be completed
+#' @description Performs the Wilcoxon rank sum test to identify differentially
+#' expressed genes between two groups of cells.
+#'
+#' @param expression_matrix A matrix of gene expression values having genes
+#' in rows and cells in columns.
+#' @param cells1 A vector of cell indices for the first group of cells.
+#' @param cells2 A vector of cell indices for the second group of cells.
+#' @param logfc_threshold The minimum absolute log fold change to consider a
+#' gene as differentially expressed. Defaults to `0`, meaning all genes are
+#' taken into considereation.
+#' @param min_pct_threshold The minimum fraction of cells expressing a gene
+#' form each cell population to consider the gene as differentially expressed.
+#' Increasing the value will speed up the function. Defaults to `0.1`.
+#' @param avg_expr_threshold_group1 The minimum average expression that a gene
+#' should have in the first group of cells to be considered as differentially
+#' expressed. Defaults to `0`.
+#' @param min_diff_pct_threshold The minimum difference in the fraction of cells
+#' expressing a gene between the two cell populations to consider the gene as
+#' differentially expressed. Defaults to `-Inf`.
+#' @param rank_matrix A matrix where the cells are ranked based on their
+#' expression levels with respect to each gene. Defaults to `NULL`, in which
+#' case the function will calculate the rank matrix. We recommend calculating
+#' the rank matrix beforehand and passing it to the function to speed up the
+#' computation.
+#' @param feature_names A vector of gene names. Defaults to `NULL`, in which
+#' case the function will use the row names of the expression matrix as gene
+#' names.
+#' @param used_slot Parameter that provides additional information about the
+#' expression matrix, whether it was scaled or not. The value of this parameter
+#' impacts the calculation of the fold change. If `data`, the function will
+#' calculates the fold change as the fraction between the log value of the
+#' average of the expression raised to exponential for the two cell groups. If
+#' `scale.data`, the function will calculate the fold change as the fraction
+#' between the average of the expression values for the two cell groups.
+#' Other options will default to calculating the fold change as the fraction
+#' between the log value of the average of the expression values for the two
+#' cell groups. Defaults to `data`.
+#' @param norm_method The normalization method used to normalize the expression
+#' matrix. The value of this parameter impacts the calculation of the average
+#' expression of the genes when `used_slot = "data"`. If `LogNormalize`, the
+#' log fold change will be calculated as described for the `used_slot`
+#' parameter. Otherwise, the log fold change will be calculated as the fraction
+#' between the log value of the average of the expression values for the two
+#' cell groups. Defaults to `LogNormalize`.
+#' @param pseudocount_use The pseudocount to add to the expression values when
+#' calculating the average expression of the genes, to avoid the 0 value for
+#' the denominator. Defaults to `1`.
+#' @param base The base of the logharithm. Defaults to `2`.
+#' @param adjust_pvals A logical value indicating whether to adjust the p-values
+#' for multiple testing using the Bonferonni method. Defaults to `TRUE`.
+#' @param check_cells_set_diff A logical value indicating whether to check if
+#' thw two cell groups are disjoint or not. Defaults to `TRUE`.
+#'
+#' @return A data frame containing the following columns:
+#' - `gene`: The gene name.
+#' - `avg_log2FC`: The average log fold change between the two cell groups.
+#' - `p_val`: The p-value of the Wilcoxon rank sum test.
+#' - `p_val_adj`: The adjusted p-value of the Wilcoxon rank sum test.
+#' - `pct.1`: The fraction of cells expressing the gene in the first cell group.
+#' - `pct.2`: The fraction of cells expressing the gene in the second cell group.
+#' - `avg_expr_group1`: The average expression of the gene in the first cell group.
 #'
 #' @export
+#' @examples
+#' set.seed(2024)
+#' # create an artificial expression matrix
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 50), runif(100 * 50, min = 3, max = 4)),
+#'     ncol = 200, byrow = FALSE
+#' )
+#' colnames(expr_matrix) <- as.character(1:200)
+#' rownames(expr_matrix) <- paste("feature", 1:50)
+#'
+#' calculate_markers(
+#'     expression_matrix = expr_matrix,
+#'     cells1 = 101:200,
+#'     cells2 = 1:100
+#' )
 calculate_markers <- function(expression_matrix,
                               cells1,
                               cells2,
@@ -1082,9 +1211,9 @@ calculate_markers <- function(expression_matrix,
     )
 
     # TODO a bit redundant; this is also done in FoldChange; check if you can combine the two steps
-    avg_expr_group1 <- rowMeans(expression_matrix[ , seq_along(cells1), drop = FALSE])
+    avg_expr_group1 <- rowMeans(expression_matrix[, seq_along(cells1), drop = FALSE])
+    # TODO calculate the average of the second group as well; should we perform the filter here as well?
     if (avg_expr_threshold_group1 > 0) {
-
         mask <- which(avg_expr_group1 >= avg_expr_threshold_group1)
 
         if (length(mask) == 0) {
@@ -1096,6 +1225,7 @@ calculate_markers <- function(expression_matrix,
         avg_expr_group1 <- avg_expr_group1[mask]
     }
 
+    # TODO create own calculation of FoldChange
     fc_results <- Seurat::FoldChange(
         object = expression_matrix,
         cells.1 = seq_along(cells1),
@@ -1111,8 +1241,6 @@ calculate_markers <- function(expression_matrix,
     mask <- which(max_pct >= min_pct_threshold &
         pct_diff >= min_diff_pct_threshold &
         abs(fc_results[, 1]) >= logfc_threshold)
-
-    # print(glue::glue("Length mask {length(mask)}"))
 
     if (length(mask) == 0) {
         return(data.frame())
@@ -1144,7 +1272,7 @@ calculate_markers <- function(expression_matrix,
     fc_results$p_val <- wilcox_test(rank_matrix, length(cells1), max(rank_matrix))
 
     if (adjust_pvals) {
-        fc_results$p_val_adj <- p.adjust(
+        fc_results$p_val_adj <- stats::p.adjust(
             p = fc_results$p_val,
             method = "bonferroni",
             n = n
@@ -1157,7 +1285,7 @@ calculate_markers <- function(expression_matrix,
     }
 
     fc_results <- fc_results[, c(4, 1, 2, 3, 5)]
-        fc_results$avg_expr_group1 <- avg_expr_group1
+    fc_results$avg_expr_group1 <- avg_expr_group1
 
     return(fc_results)
 }
@@ -1165,20 +1293,20 @@ calculate_markers <- function(expression_matrix,
 # function copied from https://cran.r-project.org/web/packages/TeachingDemos/index.html
 shadowtext <- function(x, y = NULL, labels, col = "white", bg = "black",
                        theta = seq(pi / 32, 2 * pi, length.out = 64), r = 0.1, cex = 1, ...) {
-    xy <- xy.coords(x, y)
-    fx <- grconvertX(xy$x, to = "nfc")
-    fy <- grconvertY(xy$y, to = "nfc")
-    fxo <- r * strwidth("A", units = "figure", cex = cex)
-    fyo <- r * strheight("A", units = "figure", cex = cex)
+    xy <- grDevices::xy.coords(x, y)
+    fx <- graphics::grconvertX(xy$x, to = "nfc")
+    fy <- graphics::grconvertY(xy$y, to = "nfc")
+    fxo <- r * graphics::strwidth("A", units = "figure", cex = cex)
+    fyo <- r * graphics::strheight("A", units = "figure", cex = cex)
 
     for (i in theta) {
-        text(grconvertX(fx + cos(i) * fxo, from = "nfc"),
-            grconvertY(fy + sin(i) * fyo, from = "nfc"),
+        graphics::text(graphics::grconvertX(fx + cos(i) * fxo, from = "nfc"),
+            graphics::grconvertY(fy + sin(i) * fyo, from = "nfc"),
             labels,
             cex = cex, col = bg, ...
         )
     }
-    text(xy$x, xy$y, labels, cex = cex, col = col, ...)
+    graphics::text(xy$x, xy$y, labels, cex = cex, col = col, ...)
 }
 
 gear_overall <- function(ns, id) {
@@ -1234,7 +1362,7 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_type")),
                 label = "Point type",
-                choices = c("Circle","Pixel")
+                choices = c("Circle", "Pixel")
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_order")),
@@ -1273,12 +1401,12 @@ gear_download <- function(ns, id, label = "") {
     )
 }
 
-jaccard_index <- function(a, b){
-  if (length(a) == 0 && length(b) == 0) {
-    return(1)
-  } else {
-    return(length(intersect(a, b)) / length(union(a, b)))
-  }
+jaccard_index <- function(a, b) {
+    if (length(a) == 0 && length(b) == 0) {
+        return(1)
+    } else {
+        return(length(intersect(a, b)) / length(union(a, b)))
+    }
 }
 
 # split_vector_by_metadata <- function(vec, metadata) {
@@ -1297,6 +1425,6 @@ jaccard_index <- function(a, b){
 
 
 
-    
+
 
 # }

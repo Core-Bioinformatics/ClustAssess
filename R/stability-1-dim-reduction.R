@@ -7,64 +7,85 @@
 #'
 #' @param data_matrix A data matrix having the features on the rows
 #' and the observations on the columns.
-#' @param feature_set A set of feature names that can be found on the rownames of
-#' the data matrix.
+#' @param feature_set A set of feature names that can be found on the rownames
+#' of the data matrix.
 #' @param steps Vector containing the sizes of the subsets; negative values will
 #' be interpreted as using all features.
-#' @param n_repetitions The number of repetitions of applying the pipeline with
-#' different seeds; ignored if seed_sequence is provided by the user.
-#' @param seed_sequence A custom seed sequence; if the value is NULL, the
-#' sequence will be built starting from 1 with a step of 100.
 #' @param feature_type A name associated to the feature_set.
+#' @param resolution A vector containing the resolution values used for
+#' clustering.
+#' @param n_repetitions The number of repetitions of applying the pipeline with
+#' different seeds; ignored if seed_sequence is provided by the user. Defaults
+#' to `100`.
+#' @param seed_sequence A custom seed sequence; if the value is NULL, the
+#' sequence will be built starting from 1 with a step of 100. Defaults to
+#' `NULL`.
 #' @param graph_reduction_type The graph reduction type, denoting if the graph
-#' should be built on either the PCA or the UMAP embedding.
-#' @param npcs The number of principal components.
-#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
-#' @param ncores The number of parallel R instances that will run the code. If
-#' the value is set to 1, the code will be run sequentially.
-#' @param algorithm An index indicating which community detection algorithm will
-#' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More details
-#' can be found in the Seurat's `FindClusters` function.
-#' @param ... additional arguments passed to the umap method.
-#'
+#' should be built on either the PCA or the UMAP embedding. Defaults to `PCA`.
+#' @param ecs_thresh The ECS threshold used for merging similar clusterings. We
+#' recommend using the 1 value. Defaults to `1`.
+#' @param matrix_processing A function that will be used to process the data
+#' matrix
+#' by using a dimensionality reduction technique. The function should have
+#' one parameter, the data matrix, and should return an embedding describing the
+#' reduced space. By default, the function will use the precise PCA method with
+#' `prcomp`.
+#' @param umap_arguments A list containing the arguments that will be passed
+#' to the UMAP function. Refer to the `uwot::umap` function for more details.
+#' @param clustering_algorithm An index indicating which community detection
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or
+#' Leiden (4). More details can be found in the Seurat's
+#' `FindClusters` function.
+#' @param clustering_arguments A list containing the arguments that will be
+#' passed to the community detection algorithm, such as the number of iterations
+#' and the number of starts. Refer to the Seurat's `FindClusters` function
+#' for more details.
+#' @param verbose A boolean indicating if the intermediate progress will
+#' be printed or not.
 #'
 #' @return A list having one field associated with a step value. Each step
 #' contains a list with three fields:
 #'
 #' * ecc - the EC-Consistency of the partitions obtained on all repetitions
 #' * embedding - one UMAP embedding generated on the feature subset
-#' * most_frequent_partition - the most common partition obtained across repetitions
-#' @md
+#' * most_frequent_partition - the most common partition obtained across
+#' repetitions
 #'
-#' @note The algorithm assumes that the feature_set is already sorted when performing
-#' the subsetting. For example, if the user wants to analyze highly variable feature set,
-#' they should provide them sorted by their variability.
+#' @note The algorithm assumes that the feature_set is already sorted when
+#' performing the subsetting based on the steps values. For example, if the
+#' user wants to analyze highly variable feature set, they should provide them
+#' sorted by their variability.
 #'
 #'
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+#'     nrow = 200, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:200)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
+#'     steps = 5,
 #'     feature_type = "feature_name",
 #'     resolution = c(0.1, 0.5, 1),
-#'     steps = 5,
-#'     npcs = 2,
 #'     n_repetitions = 10,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     umap_arguments = list(
+#'         # the following parameters are used by the umap function
+#'         # and are not mandatory
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_overall_stability_boxplot(feature_stability_result)
 assess_feature_stability <- function(data_matrix,
@@ -75,29 +96,30 @@ assess_feature_stability <- function(data_matrix,
                                      n_repetitions = 100,
                                      seed_sequence = NULL,
                                      graph_reduction_type = "PCA",
-                                     npcs = 30,
+                                     #  npcs = 30, # TODO remove this parameter - deprecated, as it can be used inside the matrix_processing function
                                      ecs_thresh = 1,
-                                     algorithm = 1,
-                                     verbose = FALSE,
-                                     matrix_processing = function(dt_mtx, actual_npcs, ...) {
-                                        # WARNING using more threads will lead to slightly different results
-                                        # initial_ncores <- RhpcBLASctl::blas_get_num_procs()
-                                        RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers()) 
-                                        embedding <- prcomp(x = dt_mtx, rank. = actual_npcs)$x
-                                        RhpcBLASctl::blas_set_num_threads(1)
+                                     matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
+                                         # WARNING using more threads will lead to slightly different results
+                                         # check using RhpcBLASctl::blas_get_num_procs()
+                                         actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
+                                         RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+                                         embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
+                                         RhpcBLASctl::blas_set_num_threads(1)
 
-                                        rownames(embedding) <- rownames(dt_mtx)
-                                        colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+                                         rownames(embedding) <- rownames(dt_mtx)
+                                         colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
 
-                                        return(embedding)
+                                         return(embedding)
                                      },
                                      umap_arguments = list(),
-                                     matrix_processing_arguments = list()
-                                    ) {
+                                     #  matrix_processing_arguments = list(), # TODO remove this parameter - deprecated
+                                     clustering_algorithm = 1,
+                                     clustering_arguments = list(),
+                                     verbose = FALSE) {
     # TODO create a function that does checks of the parameters
     # NOTE irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)? seems to be fixed, keep under observation
     # check parameters
-    if (!is.matrix(data_matrix) && !methods::is(data_matrix, "Matrix")) {
+    if (!is.matrix(data_matrix) && !inherits(data_matrix, "Matrix")) {
         stop("the data matrix parameter should be a matrix")
     }
 
@@ -133,17 +155,17 @@ assess_feature_stability <- function(data_matrix,
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
     }
 
-    if (!is.numeric(npcs) || length(npcs) > 1) {
-        stop("npcs parameter should be numeric")
-    }
-    # convert npcs to integers
-    npcs <- as.integer(npcs)
+    # if (!is.numeric(npcs) || length(npcs) > 1) {
+    #     stop("npcs parameter should be numeric")
+    # }
+    # # convert npcs to integers
+    # npcs <- as.integer(npcs)
 
     if (!is.numeric(ecs_thresh)) {
         stop("ecs_thresh parameter should be numeric")
     }
 
-    if (!is.numeric(algorithm) || length(algorithm) > 1 || !(algorithm %in% 1:4)) {
+    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:4)) {
         stop("algorithm should be a number between 1 and 4")
     }
 
@@ -197,24 +219,29 @@ assess_feature_stability <- function(data_matrix,
         )
     }
 
+    clustering_arguments <- process_clustering_arguments(clustering_arguments, clustering_algorithm)
+
     for (step in steps) {
         if (verbose) {
             pb$tick(0, tokens = list(featuresize = step))
         }
         used_features <- feature_set[1:step]
-        actual_npcs <- min(npcs, step %/% 2)
+        # actual_npcs <- min(npcs, step %/% 2)
         step <- as.character(step)
 
         partitions_list[[step]] <- list()
         steps_ecc_list[[object_name]][[step]] <- list()
 
-        embedding <- do.call(
-            matrix_processing,
-            c(
-                list(dt_mtx = data_matrix[, used_features], actual_npcs = actual_npcs),
-                matrix_processing_arguments
-            )
-        )
+        # embedding <- do.call(
+        #     matrix_processing,
+        #     c(
+        #         list(dt_mtx = data_matrix[, used_features]),
+        #         matrix_processing_arguments
+        #     )
+        # )
+        # TODO: check if the below line is equivalent with the above commented code
+
+        embedding <- matrix_processing(data_matrix[, used_features])
 
         if (is.null(rownames(embedding))) {
             rownames(embedding) <- rownames(data_matrix)
@@ -230,6 +257,7 @@ assess_feature_stability <- function(data_matrix,
         if (graph_reduction_type == "PCA") {
             neigh_matrix <- get_highest_prune_param(
                 nn_matrix = Seurat::FindNeighbors(
+                    # TODO don't use Seurat
                     embedding,
                     nn.method = "rann",
                     compute.SNN = FALSE,
@@ -246,8 +274,8 @@ assess_feature_stability <- function(data_matrix,
         needed_vars <- c(
             "graph_reduction_type",
             "umap_arguments",
-            "resolution",
-            "algorithm"
+            "clustering_arguments",
+            "resolution"
         )
 
         if (graph_reduction_type == "PCA") {
@@ -308,20 +336,32 @@ assess_feature_stability <- function(data_matrix,
 
                 # apply graph clustering to the snn graph
                 cluster_results <- lapply(resolution, function(r) {
-                    cl_res <- Seurat::FindClusters(
-                        umap_neigh_matrix,
-                        random.seed = seed,
-                        algorithm = algorithm,
-                        resolution = r,
-                        n.start = 1,
-                        verbose = FALSE
+                    cl_res <- do.call(
+                        clustering_functions,
+                        c(
+                            list(
+                                object = umap_neigh_matrix,
+                                resolution = r,
+                                seed = seed
+                            ),
+                            clustering_arguments
+                        )
                     )
+                    # cl_res <- Seurat::FindClusters(
+                    #     umap_neigh_matrix,
+                    #     random.seed = seed,
+                    #     algorithm = algorithm,
+                    #     resolution = r,
+                    #     n.start = 1,
+                    #     verbose = FALSE
+                    # )
 
-                    cl_res <- cl_res[, names(cl_res)[1]]
+                    # cl_res <- cl_res[, names(cl_res)[1]]
 
                     # return the clustering
                     list(
-                        mb = as.integer(cl_res),
+                        # mb = as.integer(cl_res),
+                        mb = cl_res,
                         freq = 1,
                         seed = seed
                     )
@@ -333,20 +373,32 @@ assess_feature_stability <- function(data_matrix,
 
             # apply graph clustering to the snn graph
             cluster_results <- lapply(resolution, function(r) {
-                cl_res <- Seurat::FindClusters(
-                    shared_neigh_matrix,
-                    random.seed = seed,
-                    algorithm = algorithm,
-                    resolution = r,
-                    n.start = 1,
-                    verbose = FALSE
-                )
+                # cl_res <- Seurat::FindClusters(
+                #     shared_neigh_matrix,
+                #     random.seed = seed,
+                #     algorithm = algorithm,
+                #     resolution = r,
+                #     n.start = 1,
+                #     verbose = FALSE
+                # )
 
-                cl_res <- cl_res[, names(cl_res)[1]]
+                # cl_res <- cl_res[, names(cl_res)[1]]
+                cl_res <- do.call(
+                    clustering_functions,
+                    c(
+                        list(
+                            object = shared_neigh_matrix,
+                            resolution = r,
+                            seed = seed
+                        ),
+                        clustering_arguments
+                    )
+                )
 
                 # return the clustering
                 list(
-                    mb = as.integer(cl_res),
+                    # mb = as.integer(cl_res),
+                    mb = cl_res,
                     freq = 1,
                     seed = seed
                 )
@@ -364,14 +416,13 @@ assess_feature_stability <- function(data_matrix,
 
         set.seed(42) # to match Seurat's default
         # FIXME find a way to solve the issue of duplicate "dict" class (from BiocGeneric and spam packages)
-        capture.output(embedding <- base::do.call(
+        utils::capture.output(embedding <- base::do.call(
             uwot::umap,
             c(
                 list(X = embedding),
                 umap_arguments
             )
-            ), type = "message"
-        )
+        ), type = "message")
 
         colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
         rownames(embedding) <- rownames(data_matrix)
@@ -442,47 +493,59 @@ assess_feature_stability <- function(data_matrix,
     )
 }
 
-#' Feature Stability Boxplot
+#' Per resolution Feature Stability Boxplot
 #'
 #' @description Display EC consistency for each feature set and for each step.
 #' Above each boxplot there is a number representing
-#' the step (or the size of the subset)
+#' the step (or the size of the subset). The ECC values are extracted depdening
+#' on the resolution value provided by the user.
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method
+#' @param resolution The resolution value for which the ECC will be extracted.
+#' @param violin_plot If TRUE, the function will return a violin plot instead
+#' of a boxplot. Default is `FALSE`.
 #' @param text_size The size of the labels above boxplots
-#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
-#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
-#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
-#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value
+#' will be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot;
+#' the value will be passed to the `width` argument of the
+#' `ggplot2::position_dodge` method.
+#' @param return_df If TRUE, the function will return the ECS values as a
+#' dataframe. Default is `FALSE`.
 #'
 #' @return A ggplot2 object.
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+#'     nrow = 200, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:200)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
+#'     steps = 5,
 #'     feature_type = "feature_name",
 #'     resolution = c(0.1, 0.5, 1),
-#'     steps = 5,
-#'     npcs = 2,
 #'     n_repetitions = 10,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     umap_arguments = list(
+#'         # the following parameters are used by the umap function
+#'         # and are not mandatory
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     clustering_algorithm = 1
 #' )
-#' plot_feature_per_resolution_stability_boxplot(feature_stability_result, 0.1)
+#' plot_feature_per_resolution_stability_boxplot(feature_stability_result, 0.5)
 plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
                                                           resolution,
                                                           violin_plot = FALSE,
@@ -579,49 +642,60 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
         ggplot2::ggtitle(glue::glue("Stability for resolution = {resolution}"))
 }
 
-#' Feature Stability Boxplot
+#' Overall Feature Stability Boxplot
 #'
 #' @description Display EC consistency for each feature set and for each step.
 #' Above each boxplot there is a number representing
-#' the step (or the size of the subset)
+#' the step (or the size of the subset). The ECC values are extracted for each
+#' resolution value and summarized using the `summary_function` parameter.
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method
+#' @param summary_function The function that will be used to summarize the ECC
+#' values. Defaults to `median`.
 #' @param text_size The size of the labels above boxplots
-#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
-#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
-#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
-#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value
+#' will be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot;
+#' the value will be passed to the `width` argument of the
+#' `ggplot2::position_dodge` method.
+#' @param return_df If TRUE, the function will return the ECS values as a
+#' dataframe. Default is `FALSE`.
 #'
 #' @return A ggplot2 object.
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)), nrow = 200, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+#'     nrow = 200, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:200)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
+#'     steps = 5,
 #'     feature_type = "feature_name",
 #'     resolution = c(0.1, 0.5, 1),
-#'     steps = 5,
-#'     npcs = 2,
 #'     n_repetitions = 10,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     umap_arguments = list(
+#'         # the following parameters are used by the umap function
+#'         # and are not mandatory
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_overall_stability_boxplot(feature_stability_result)
 plot_feature_overall_stability_boxplot <- function(feature_object_list,
-                                                   summary_function = median,
+                                                   summary_function = stats::median,
                                                    text_size = 4,
                                                    boxplot_width = 0.4,
                                                    dodge_width = 0.7,
@@ -719,8 +793,9 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #' a feature set and illustrates the distribution of the most frequent partition
 #' over the UMAP embedding.
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method
+#' @param resolution The resolution value for which the ECS will be extracted.
 #' @param text_size The size of the cluster label
 #' @param n_facet_cols The number of facet's columns.
 #' @param point_size The size of the points displayed on the plot.
@@ -729,35 +804,28 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(100 * 10), runif(50 * 10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 10), runif(50 * 10, min = 3, max = 4)),
+#'     nrow = 150, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:150)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
-#'
-#' umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
-#' rownames(umap_embedding) <- rownames(expr_matrix)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
+#'     steps = 5,
 #'     feature_type = "feature_name",
 #'     resolution = c(0.1, 0.5, 1),
-#'     steps = c(5, 10),
-#'     npcs = 2,
-#'     n_repetitions = 3,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     n_repetitions = 10,
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_stability_mb_facet(
 #'     feature_stability_result,
-#'     umap_embedding,
-#'     0.1
+#'     0.5,
+#'     point_size = 2
 #' )
 plot_feature_stability_mb_facet <- function(feature_object_list,
                                             resolution,
@@ -834,12 +902,13 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
 
 #' Feature Stability - EC Consistency Facet Plot
 #'
-#' @description Display a facet of plots where each subpanel is associated with a
-#' feature set and illustrates the distribution of the EC consistency score
+#' @description Display a facet of plots where each subpanel is associated with
+#' a feature set and illustrates the distribution of the EC consistency score
 #' over the UMAP embedding.
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method
+#' @param resolution The resolution value for which the ECS will be extracted.
 #' @param n_facet_cols The number of facet's columns.
 #' @param point_size The size of the points displayed on the plot.
 #'
@@ -847,35 +916,28 @@ plot_feature_stability_mb_facet <- function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(100 * 10), runif(50 * 10, min = 5, max = 7)), nrow = 150, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(100 * 10), runif(50 * 10, min = 3, max = 4)),
+#'     nrow = 150, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:150)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
-#'
-#' umap_embedding <- Seurat::RunUMAP(expr_matrix, verbose = FALSE)@cell.embeddings
-#' rownames(umap_embedding) <- rownames(expr_matrix)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
+#'     steps = 5,
 #'     feature_type = "feature_name",
 #'     resolution = c(0.1, 0.5, 1),
-#'     steps = c(5, 10),
-#'     npcs = 2,
-#'     n_repetitions = 3,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     n_repetitions = 10,
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_stability_ecs_facet(
 #'     feature_stability_result,
-#'     umap_embedding,
-#'     0.1
+#'     0.5,
+#'     point_size = 2
 #' )
 plot_feature_stability_ecs_facet <- function(feature_object_list,
                                              resolution,
@@ -931,18 +993,23 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
         ggplot2::facet_wrap(~ config_name + steps, ncol = n_facet_cols)
 }
 
-#' Feature Stability Incremental Boxplot
+#' Per resolution - Feature Stability Incremental Boxplot
 #'
-#' @description Perform an incremental ECS between two consecutive feature steps.
+#' @description Perform an incremental ECS between two consecutive feature
+#' steps. The ECS values are extracted only for a specified resolution value.
 #'
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method.
-#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
-#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method.
+#' @param resolution The resolution value for which the ECS will be extracted.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot;
+#' the value will be passed to the `width` argument of the
+#' `ggplot2::position_dodge` method.
 #' @param text_size The size of the labels above boxplots.
-#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
-#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value
+#' will be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param return_df If TRUE, the function will return the ECS values as a
+#' dataframe. Default is `FALSE`.
 #'
 #' @return A ggplot2 object with ECS distribution will be displayed as a
 #' boxplot. Above each boxplot there will be a pair of numbers representing the
@@ -950,27 +1017,32 @@ plot_feature_stability_ecs_facet <- function(feature_object_list,
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(25 * 10), runif(75 * 10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(50 * 10), runif(50 * 10, min = 3, max = 4)),
+#'     nrow = 100, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:100)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
-#'     feature_type = "feature_name",
 #'     steps = c(5, 10),
-#'     resolution = c(0.1, 0.5, 1),
-#'     npcs = 2,
+#'     feature_type = "feature_name",
+#'     resolution = c(0.1, 0.5),
 #'     n_repetitions = 3,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     umap_arguments = list(
+#'         # the following parameters are used by the umap function
+#'         # and are not mandatory
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_per_resolution_stability_incremental(feature_stability_result, 0.1)
 plot_feature_per_resolution_stability_incremental <- function(feature_object_list,
@@ -1094,18 +1166,25 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
         ggplot2::ggtitle(glue::glue("Incremental stability for resolution = {resolution}"))
 }
 
-#' Feature Stability Incremental Boxplot
+#' Overall Feature Stability Incremental Boxplot
 #'
-#' @description Perform an incremental ECS between two consecutive feature steps.
+#' @description Perform an incremental ECS between two consecutive feature
+#' steps. The ECS values are extracted for every resolution value and summarized
+#' using a function (e.g. median, mean, etc.).
 #'
 #'
-#' @param feature_object_list An object or a concatenation of objects returned by the
-#' `get_feature_stability` method.
-#' @param dodge_width Used for adjusting the horizontal position of the boxplot; the value
-#' will be passed to the `width` argument of the `ggplot2::position_dodge` method.
+#' @param feature_object_list An object or a concatenation of objects returned
+#' by the `assess_feature_stability` method.
+#' @param summary_function The function used to summarize the ECS values.
+#' Default is `median`.
+#' @param dodge_width Used for adjusting the horizontal position of the boxplot;
+#' the value will be passed to the `width` argument of the
+#' `ggplot2::position_dodge` method.
 #' @param text_size The size of the labels above boxplots.
-#' @param boxplot_width Used for adjusting the width of the boxplots; the value will
-#' be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param boxplot_width Used for adjusting the width of the boxplots; the value
+#' will be passed to the `width` argument of the `ggplot2::geom_boxplot` method.
+#' @param return_df If TRUE, the function will return the ECS values as
+#' a dataframe. Default is `FALSE`.
 #'
 #' @return A ggplot2 object with ECS distribution will be displayed as a
 #' boxplot. Above each boxplot there will be a pair of numbers representing the
@@ -1113,31 +1192,36 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial expression matrix
-#' expr_matrix <- matrix(c(runif(25 * 10), runif(75 * 10, min = 5, max = 7)), nrow = 100, byrow = TRUE)
+#' expr_matrix <- matrix(
+#'     c(runif(50 * 10), runif(50 * 10, min = 3, max = 4)),
+#'     nrow = 100, byrow = TRUE
+#' )
 #' rownames(expr_matrix) <- as.character(1:100)
 #' colnames(expr_matrix) <- paste("feature", 1:10)
 #'
 #' feature_stability_result <- assess_feature_stability(
 #'     data_matrix = t(expr_matrix),
 #'     feature_set = colnames(expr_matrix),
-#'     feature_type = "feature_name",
 #'     steps = c(5, 10),
-#'     resolution = c(0.1, 0.5, 1),
-#'     npcs = 2,
+#'     feature_type = "feature_name",
+#'     resolution = c(0.1, 0.5),
 #'     n_repetitions = 3,
-#'     algorithm = 1,
-#'     # the following parameters are used by the umap function and are not mandatory
-#'     n_neighbors = 3,
-#'     approx_pow = TRUE,
-#'     n_epochs = 0,
-#'     init = "random",
-#'     min_dist = 0.3
+#'     umap_arguments = list(
+#'         # the following parameters are used by the umap function
+#'         # and are not mandatory
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     clustering_algorithm = 1
 #' )
 #' plot_feature_overall_stability_incremental(feature_stability_result)
 plot_feature_overall_stability_incremental <- function(feature_object_list,
-                                                       summary_function = median,
+                                                       summary_function = stats::median,
                                                        dodge_width = 0.7,
                                                        text_size = 4,
                                                        boxplot_width = 0.4,

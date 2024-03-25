@@ -173,37 +173,36 @@ get_nn_conn_comps_pca <- function(embedding,
 
     nn_conn_comps_list
 }
-#' Relationship Between Nearest Neighbors and Connected Components
+#' Relationship Between Nearest Neighbours and Connected Components
 #'
 #' @description One of the steps in the clustering pipeline is building a
-#' k-nearest neighbor graph on a reduced-space embedding. This method assesses
+#' k-nearest neighbour graph on a reduced-space embedding. This method assesses
 #' the relationship between different number of nearest
-#' neighbors and the connectivity of the graph. In the context of graph clustering,
+#' neighbours and the connectivity of the graph. In the context of graph clustering,
 #' the number of connected components can be used as a
 #' lower bound for the number of clusters. The calculations are performed multiple
 #' times by changing the seed at each repetition.
 #'
 #' @param embedding A matrix associated with a PCA embedding. Embeddings from
 #' other dimensionality reduction techniques (such as LSI) can be used.
-#' @param n_neigh_sequence A sequence of the number of nearest neighbors.
-#' @param config_name User specified string that uniquely describes the
-#' embedding characteristics.
+#' @param n_neigh_sequence A sequence of the number of nearest neighbours.
 #' @param n_repetitions The number of repetitions of applying the pipeline with
-#' different seeds; ignored if seed_sequence is provided by the user.
+#' different seeds; ignored if seed_sequence is provided by the user. Defaults to `100``.
 #' @param seed_sequence A custom seed sequence; if the value is NULL, the
 #' sequence will be built starting from 1 with a step of 100.
-#' @param ncores The number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
-#' @param ... Additional arguments passed to the the `uwot::umap` method.
+#' @param include_umap A boolean value indicating whether to calculate the number
+#' of connected components for the UMAP embedding. Defaults to `FALSE`.
+#' @param umap_arguments Additional arguments passed to the the `uwot::umap` method.
 #'
-#' @return A list having one field associated with a number of nearest neighbors.
+#'
+#' @return A list having one field associated with a number of nearest neighbours.
 #' Each value contains an array of the number of connected components
 #' obtained on the specified number of repetitions.
 #'
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial PCA embedding
 #' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
@@ -214,8 +213,10 @@ get_nn_conn_comps_pca <- function(embedding,
 #'     n_neigh_sequence = c(2, 5),
 #'     n_repetitions = 3,
 #'     # arguments that are passed to the uwot function
-#'     min_dist = 0.3,
-#'     metric = "cosine"
+#'     umap_arguments = list(
+#'         min_dist = 0.3,
+#'         metric = "cosine"
+#'     )
 #' )
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 get_nn_conn_comps <- function(embedding,
@@ -228,7 +229,7 @@ get_nn_conn_comps <- function(embedding,
     if (!is.numeric(n_neigh_sequence)) {
         stop("n_neigh_sequence parameter should be numeric")
     }
-    # convert number of neighbors to integers
+    # convert number of neighbours to integers
     n_neigh_sequence <- sort(as.integer(n_neigh_sequence))
 
     if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
@@ -237,7 +238,7 @@ get_nn_conn_comps <- function(embedding,
     # convert n_repetitions to integers
     n_repetitions <- as.integer(n_repetitions)
 
-    if (!is.matrix(embedding) && !methods::is(embedding, "Matrix")) {
+    if (!is.matrix(embedding) && !inherits(embedding, "Matrix")) {
         stop("embedding parameter should be a matrix")
     }
 
@@ -285,10 +286,10 @@ get_nn_conn_comps <- function(embedding,
     ))
 }
 
-#' Relationship Between Number of Nearest Neighbors and Graph Connectivity
+#' Relationship Between Number of Nearest Neighbours and Graph Connectivity
 #'
 #' @description Display the distribution of the number connected components
-#' obtained for each number of neighbors across random seeds.
+#' obtained for each number of neighbours across random seeds.
 #'
 #' @param nn_conn_comps_object An object or a concatenation of objects returned
 #' by the `get_nn_conn_comps` method.
@@ -300,7 +301,7 @@ get_nn_conn_comps <- function(embedding,
 #' @note The number of connected components is displayed on a logarithmic scale.
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial PCA embedding
 #' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
@@ -311,8 +312,10 @@ get_nn_conn_comps <- function(embedding,
 #'     n_neigh_sequence = c(2, 5),
 #'     n_repetitions = 3,
 #'     # arguments that are passed to the uwot function
-#'     min_dist = 0.3,
-#'     metric = "cosine"
+#'     umap_arguments = list(
+#'         min_dist = 0.3,
+#'         metric = "cosine"
+#'     )
 #' )
 #' plot_connected_comps_evolution(nn_conn_comps_obj)
 plot_connected_comps_evolution <- function(nn_conn_comps_object) {
@@ -361,7 +364,7 @@ plot_connected_comps_evolution <- function(nn_conn_comps_object) {
             hjust = 1
         )) +
         ggplot2::labs(
-            x = "# of nearest neighbors",
+            x = "# of nearest neighbours",
             y = "# of connected components",
             fill = "configuration"
         ) +
@@ -382,36 +385,44 @@ get_n_strong_components <- function(nn_matrix,
     igraph::clusters(g)$no
 }
 
-#' Relationship Between Number of Nearest Neighbors and Graph Connectivity
+#' Calculate the highest pruning parameter for the SNN graph given Embedding
 #'
-#' @description Display the distribution of the number connected components
-#' obtained for each number of neighbors across random seeds.
+#' @description Given an embedding, the function calculates the highest pruning
+#' parameter for the SNN graph that preserves the connectivity of the graph.
 #'
-#' @param embedding An object or a concatenation of objects returned
-#' by the `get_nn_conn_comps` method.
+#' @param embedding A matrix associated with a PCA embedding. Embeddings from
+#' other dimensionality reduction techniques (such as LSI) can be used.
+#' @param n_neigh The number of nearest neighbours.
 #'
-#'
-#' @return A ggplot2 object with boxplots for the connected component distributions.
+#' @return The value of the highest pruning parameter.
 #' @export
 #'
-#' @note The number of connected components is displayed on a logarithmic scale.
+#' @note Given the way the SNN graph is built, the possible values for the pruning
+#' parameter are limited and can be determined by the formula `i / (2 * n_neigh - i)`,
+#' where `i` is a number of nearest neighbours between 0 and `n_neigh`.
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
+#' # create an artificial pca embedding
+#' pca_embedding <- matrix(
+#'     c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+#'     nrow = 200, byrow = TRUE
+#' )
+#' rownames(pca_embedding) <- as.character(1:200)
+#' colnames(pca_embedding) <- paste("PC", 1:10)
 #'
+#' get_highest_prune_param_embedding(pca_embedding, 5)
 get_highest_prune_param_embedding <- function(embedding,
                                               n_neigh) {
-    print(system.time(nn_matrix <- Seurat::FindNeighbors(
+    nn_matrix <- getNNmatrix(RANN::nn2(
         embedding,
-        k.param = n_neigh,
-        nn.method = "rann",
-        compute.SNN = FALSE,
-        verbose = FALSE
-    )$nn))
-    print(system.time(g <- igraph::graph_from_adjacency_matrix(
+        k = n_neigh
+    )$nn.idx, n_neigh, 0, -1)$nn
+
+    g <- igraph::graph_from_adjacency_matrix(
         nn_matrix,
         mode = "directed"
-    )))
+    )
 
     target_n_conn_comps <- igraph::clusters(g)$no
 
@@ -429,7 +440,6 @@ get_highest_prune_param_embedding <- function(embedding,
             n_neigh,
             possible_values[middle]
         )
-        print(paste(middle, current_n_conn_comps))
 
         if (current_n_conn_comps > target_n_conn_comps) {
             stop_n <- middle
@@ -449,23 +459,42 @@ get_highest_prune_param_embedding <- function(embedding,
     return(possible_values[middle])
 }
 
-#' Relationship Between Number of Nearest Neighbors and Graph Connectivity
+#' Calculate the highest pruning parameter for the SNN graph given NN matrix
 #'
-#' @description Display the distribution of the number connected components
-#' obtained for each number of neighbors across random seeds.
+#' @description Given a NN adjacency matrix, the function calculates the highest pruning
+#' parameter for the SNN graph that preserves the connectivity of the graph.
 #'
-#' @param embedding An object or a concatenation of objects returned
-#' by the `get_nn_conn_comps` method.
+#' @param nn_matrix The adjacency matrix of the nearest neighbour graph.
+#' @param n_neigh The number of nearest neighbours.
 #'
-#'
-#' @return A ggplot2 object with boxplots for the connected component distributions.
+#' @return A list with the following fields:
+#' - `prune_value`: The value of the highest pruning parameter.
+#' - `adj_matrix`: The adjacency matrix of the SNN graph after pruning.
 #' @export
 #'
-#' @note The number of connected components is displayed on a logarithmic scale.
+#' @note Given the way the SNN graph is built, the possible values for the pruning
+#' parameter are limited and can be determined by the formula `i / (2 * n_neigh - i)`,
+#' where `i` is a number of nearest neighbours between 0 and `n_neigh`.
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
+#' # create an artificial pca embedding
+#' pca_embedding <- matrix(
+#'     c(runif(100 * 10), runif(100 * 10, min = 3, max = 4)),
+#'     nrow = 200, byrow = TRUE
+#' )
+#' rownames(pca_embedding) <- as.character(1:200)
+#' colnames(pca_embedding) <- paste("PC", 1:10)
 #'
+#' # calculate the nn adjacency matrix
+#' nn_matrix <- getNNmatrix(
+#'     RANN::nn2(pca_embedding, k = 5)$nn.idx,
+#'     5,
+#'     0,
+#'     -1
+#' )$nn
+#'
+#' get_highest_prune_param(nn_matrix, 5)$prune_value
 get_highest_prune_param <- function(nn_matrix,
                                     n_neigh) {
     nn_matrix <- computeSNN(nn_matrix, n_neigh, 0)
@@ -490,7 +519,6 @@ get_highest_prune_param <- function(nn_matrix,
         current_g <- igraph::delete_edges(prev_g, which(igraph::E(prev_g)$weight <= possible_values[middle]))
 
         current_n_conn_comps <- igraph::clusters(current_g)$no
-        # print(paste(middle, current_n_conn_comps))
 
         if (current_n_conn_comps > target_n_conn_comps) {
             stop_n <- middle
@@ -520,7 +548,8 @@ assess_nn_stability_pca <- function(embedding,
                                     seed_sequence = NULL,
                                     ecs_thresh = 1,
                                     graph_type = 2,
-                                    algorithm = 1) {
+                                    clustering_algorithm = 1,
+                                    clustering_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
     cell_names <- rownames(embedding)
     partitions_list <- list()
@@ -583,12 +612,6 @@ assess_nn_stability_pca <- function(embedding,
     rm(nn2_res)
     gc()
 
-    # if (ncores > 1) {
-    #     shared_neigh_matrix <- SharedObject::share(neigh_matrices)
-    # } else {
-    #     shared_neigh_matrix <- neigh_matrices
-    # }
-
     for (n_neigh in as.character(n_neigh_sequence)) {
         partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
 
@@ -604,7 +627,8 @@ assess_nn_stability_pca <- function(embedding,
         needed_vars <- c(
             "graph_type",
             "algorithm",
-            "shared_neigh_matrix"
+            "shared_neigh_matrix",
+            "clustering_arguments"
         )
         all_vars <- ls()
 
@@ -615,16 +639,32 @@ assess_nn_stability_pca <- function(embedding,
         ) %dopar% {
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type != 1) {
-                cluster_results_nn <- Seurat::FindClusters(
-                    shared_neigh_matrix$nn,
-                    random.seed = seed,
-                    algorithm = algorithm,
-                    n.start = 1,
-                    verbose = FALSE
-                )
+                # cluster_results_nn <- Seurat::FindClusters(
+                #     shared_neigh_matrix$nn,
+                #     random.seed = seed,
+                #     algorithm = algorithm,
+                #     n.start = 1,
+                #     verbose = FALSE
+                # )
+
+                # cluster_results_nn <- list(
+                #     mb = as.integer(cluster_results_nn[, names(cluster_results_nn)[1]]),
+                #     freq = 1,
+                #     seed = seed
+                # )
 
                 cluster_results_nn <- list(
-                    mb = as.integer(cluster_results_nn[, names(cluster_results_nn)[1]]),
+                    mb = do.call(
+                        clustering_functions,
+                        c(
+                            list(
+                                object = shared_neigh_matrix$nn,
+                                resolution = 0.8,
+                                seed = seed
+                            ),
+                            clustering_arguments
+                        )
+                    ),
                     freq = 1,
                     seed = seed
                 )
@@ -634,16 +674,32 @@ assess_nn_stability_pca <- function(embedding,
                 }
             }
 
-            cluster_results_snn <- Seurat::FindClusters(
-                shared_neigh_matrix$snn,
-                random.seed = seed,
-                algorithm = algorithm,
-                n.start = 1,
-                verbose = FALSE
-            )
+            # cluster_results_snn <- Seurat::FindClusters(
+            #     shared_neigh_matrix$snn,
+            #     random.seed = seed,
+            #     algorithm = algorithm,
+            #     n.start = 1,
+            #     verbose = FALSE
+            # )
+
+            # cluster_results_snn <- list(
+            #     mb = as.integer(cluster_results_snn[, names(cluster_results_snn)[1]]),
+            #     freq = 1,
+            #     seed = seed
+            # )
 
             cluster_results_snn <- list(
-                mb = as.integer(cluster_results_snn[, names(cluster_results_snn)[1]]),
+                mb = do.call(
+                    clustering_functions,
+                    c(
+                        list(
+                            object = shared_neigh_matrix$snn,
+                            resolution = 0.8,
+                            seed = seed
+                        ),
+                        clustering_arguments
+                    )
+                ),
                 freq = 1,
                 seed = seed
             )
@@ -654,7 +710,7 @@ assess_nn_stability_pca <- function(embedding,
 
             return(list(cluster_results_snn, cluster_results_nn))
         }
-       
+
         neigh_matrices[[n_neigh]] <- NULL
 
         # merge the partitions that are considered similar by a given ecs threshold
@@ -719,7 +775,8 @@ assess_nn_stability_umap <- function(embedding,
                                      seed_sequence = NULL,
                                      ecs_thresh = 1,
                                      graph_type = 2,
-                                     algorithm = 1,
+                                     clustering_algorithm = 1,
+                                     clustering_arguments = list(),
                                      umap_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
 
@@ -728,16 +785,18 @@ assess_nn_stability_umap <- function(embedding,
         object_names <- object_names[graph_type + 1]
     }
 
-    umap_arguments[["n_threads"]] <- 1
-    umap_arguments[["n_sgd_threads"]] <- 1
+    # umap_arguments[["n_threads"]] <- 1
+    # umap_arguments[["n_sgd_threads"]] <- 1
 
     ncells <- nrow(embedding)
-    if (!("n_neighbors" %in% umap_arguments)) {
-        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
-    }
+    # if (!("n_neighbors" %in% umap_arguments)) {
+    # umap_arguments[["n_neighbors"]] <- 15 # uwot's default
+    # }
 
-    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+    # umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
 
+    umap_arguments <- process_umap_arguments(umap_arguments, ncells)
+    # num_iters <- process_clustering_arguments(clustering_arguments)[2]
 
     if (ncores > 1) {
         shared_embedding <- SharedObject::share(embedding)
@@ -751,8 +810,9 @@ assess_nn_stability_umap <- function(embedding,
         "n_neigh_sequence",
         "graph_reduction_type",
         "graph_type",
-        "algorithm",
+        # "clustering_algorithm",
         "umap_arguments",
+        "clustering_arguments",
         "prune_SNN"
     )
 
@@ -796,32 +856,64 @@ assess_nn_stability_umap <- function(embedding,
 
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type > 0) {
-                cluster_results_snn <- Seurat::FindClusters(
-                    neigh_matrix$snn,
-                    random.seed = seed,
-                    algorithm = algorithm,
-                    n.start = 1,
-                    verbose = FALSE
-                )
+                # cluster_results_snn <- Seurat::FindClusters(
+                #     neigh_matrix$snn,
+                #     random.seed = seed,
+                #     algorithm = algorithm,
+                #     n.start = 1,
+                #     verbose = FALSE
+                # )
+
+                # seed_result[["snn"]][[as.character(n_neigh)]] <- list(
+                #     mb = as.integer(cluster_results_snn[[1]]),
+                #     freq = 1,
+                #     seed = seed
+                # )
 
                 seed_result[["snn"]][[as.character(n_neigh)]] <- list(
-                    mb = as.integer(cluster_results_snn[[1]]),
+                    mb = do.call(
+                        clustering_functions,
+                        c(
+                            list(
+                                object = neigh_matrix$snn,
+                                resolution = 0.8,
+                                seed = seed
+                            ),
+                            clustering_arguments
+                        )
+                    ),
                     freq = 1,
                     seed = seed
                 )
             }
 
             if (graph_type %% 2 == 0) {
-                cluster_results_nn <- Seurat::FindClusters(
-                    neigh_matrix$nn,
-                    random.seed = seed,
-                    algorithm = algorithm,
-                    n.start = 1,
-                    verbose = FALSE
-                )
+                # cluster_results_nn <- Seurat::FindClusters(
+                #     neigh_matrix$nn,
+                #     random.seed = seed,
+                #     algorithm = algorithm,
+                #     n.start = 1,
+                #     verbose = FALSE
+                # )
+
+                # seed_result[["nn"]][[as.character(n_neigh)]] <- list(
+                #     mb = as.integer(cluster_results_nn[[1]]),
+                #     freq = 1,
+                #     seed = seed
+                # )
 
                 seed_result[["nn"]][[as.character(n_neigh)]] <- list(
-                    mb = as.integer(cluster_results_nn[[1]]),
+                    mb = do.call(
+                        clustering_functions,
+                        c(
+                            list(
+                                object = neigh_matrix$nn,
+                                resolution = 0.8,
+                                seed = seed
+                            ),
+                            clustering_arguments
+                        )
+                    ),
                     freq = 1,
                     seed = seed
                 )
@@ -898,7 +990,7 @@ assess_nn_stability_umap <- function(embedding,
     )
 }
 
-#' Assess Graph Building Parameters
+#' Assess the stability for Graph Building Parameters
 #'
 #' @description Evaluates clustering stability when changing the values of different
 #' parameters involved in the graph building step,
@@ -915,43 +1007,39 @@ assess_nn_stability_umap <- function(embedding,
 #' @param graph_reduction_type The graph reduction type, denoting if the graph
 #' should be built on either the PCA or the UMAP embedding.
 #' @param ecs_thresh The ECS threshold used for merging similar clusterings.
-#' @param ncores The number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
 #' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
-#' @param algorithm An index indicating which community detection algorithm will
+#' @param clustering_algorithm An index indicating which community detection algorithm will
 #' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
 #' details can be found in the Seurat's `FindClusters` function.
-#' @param ... Additional arguments passed to the the `uwot::umap` method.
-#'
-#'
+#' @param clustering_arguments A list of arguments that will be passed to the
+#' clustering algorithm. See the `FindClusters` function in Seurat for more details.
+#' @param umap_arguments Additional arguments passed to the the `uwot::umap` method.
 #'
 #' @return A list having three fields:
 #'
+#' * `n_neigh_k_corresp` - list containing the number of the clusters obtained by running
+#' the pipeline multiple times with different seed, number of neighbours and graph type (weighted vs unweigted)
+#' * `n_neigh_ec_consistency` - list containing the EC consistency of the partitions obtained
+#' at multiple runs when changing the number of neighbours or the graph type
+#' * `n_different_partitions` - the number of different partitions obtained by each
+#' number of neighbours
 #'
-#' * n_neigh_k_corresp - list containing the number of the clusters obtained by running
-#' the pipeline multiple times with different seed, number of neighbors and graph type (weighted vs unweigted)
-#' * n_neigh_ec_consistency - list containing the EC consistency of the partitions obtained
-#' at multiple runs when changing the number of neighbors or the graph type
-#' * n_different_partitions - the number of different partitions obtained by each
-#' number of neighbors
-#'
-#' @md
 #' @export
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial PCA embedding
 #' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
-#' colnames(pca_emb) <- paste0("PCA_", 1:30)
+#' colnames(pca_emb) <- paste0("PC_", 1:30)
 #'
 #' nn_stability_obj <- assess_nn_stability(
 #'     embedding = pca_emb,
 #'     n_neigh_sequence = c(10, 15, 20),
 #'     n_repetitions = 10,
 #'     graph_reduction_type = "PCA",
-#'     algorithm = 1
+#'     clustering_algorithm = 1
 #' )
 #' plot_n_neigh_ecs(nn_stability_obj)
 assess_nn_stability <- function(embedding,
@@ -961,19 +1049,18 @@ assess_nn_stability <- function(embedding,
                                 graph_reduction_type = "PCA",
                                 ecs_thresh = 1,
                                 graph_type = 2,
-                                algorithm = 1,
+                                clustering_algorithm = 1,
+                                clustering_arguments = list(),
                                 umap_arguments = list()) {
     # TODO vary by resolution
     # TODO add option to use pruning
-    # TODO add UMAP variant
-    # TODO add clustering parameters
     # BUG check the performance
     # [ ] optimise the way the nn matrices are built
     # check parameters
     if (!is.numeric(n_neigh_sequence)) {
         stop("n_neigh_sequence parameter should be numeric")
     }
-    # convert number of neighbors to integers
+    # convert number of neighbours to integers
     n_neigh_sequence <- sort(as.integer(n_neigh_sequence))
 
     if (!is.numeric(n_repetitions) || length(n_repetitions) > 1) {
@@ -990,11 +1077,11 @@ assess_nn_stability <- function(embedding,
         stop("graph_type should be a number between 0 and 2")
     }
 
-    if (!is.matrix(embedding) && !methods::is(embedding, "Matrix")) {
+    if (!is.matrix(embedding) && !inherits(embedding, "Matrix")) {
         stop("the embedding parameter should be a matrix")
     }
 
-    if (!is.numeric(algorithm) || length(algorithm) > 1 || !(algorithm %in% 1:4)) {
+    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:4)) {
         stop("algorithm should be a number between 1 and 4")
     }
 
@@ -1004,6 +1091,8 @@ assess_nn_stability <- function(embedding,
 
     ncells <- nrow(embedding)
     n_neigh_sequence <- n_neigh_sequence[which(n_neigh_sequence < ncells)]
+
+    clustering_arguments <- process_clustering_arguments(clustering_arguments, clustering_algorithm)
 
     if (length(n_neigh_sequence) == 0) {
         warning(glue::glue("The provided values for the `n_neigh_sequence` are greater than the number of cells ({ncells}). For the downstream analysis, we will set `n_neigh` to {ncells - 1}."))
@@ -1033,7 +1122,8 @@ assess_nn_stability <- function(embedding,
             seed_sequence = seed_sequence,
             ecs_thresh = ecs_thresh,
             graph_type = graph_type,
-            algorithm = algorithm
+            clustering_algorithm = clustering_algorithm,
+            clustering_arguments = clustering_arguments
         ))
     }
 
@@ -1044,17 +1134,18 @@ assess_nn_stability <- function(embedding,
         seed_sequence = seed_sequence,
         ecs_thresh = ecs_thresh,
         graph_type = graph_type,
-        algorithm = algorithm,
+        clustering_algorithm = clustering_algorithm,
+        clustering_arguments = clustering_arguments,
         umap_arguments = umap_arguments
     ))
 }
 
-# 2. neighbors <-> number of clusters association
+# 2. neighbours <-> number of clusters association
 
-#' Relationship Between Number of Nearest Neighbors and Number of Clusters
+#' Relationship Between Number of Nearest Neighbours and Number of Clusters
 #'
 #' @description Display the distribution of the
-#' number of clusters obtained for each number of neighbors across random seeds.
+#' number of clusters obtained for each number of neighbours across random seeds.
 #'
 #' @param nn_object_n_clusters An object or a concatenation of objects returned by the
 #' `get_nn_importance` method.
@@ -1066,18 +1157,18 @@ assess_nn_stability <- function(embedding,
 #' @note The number of clusters is displayed on a logarithmic scale.
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial PCA embedding
 #' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
-#' colnames(pca_emb) <- paste0("PCA_", 1:30)
+#' colnames(pca_emb) <- paste0("PC_", 1:30)
 #'
 #' nn_stability_obj <- assess_nn_stability(
 #'     embedding = pca_emb,
 #'     n_neigh_sequence = c(10, 15, 20),
 #'     n_repetitions = 10,
 #'     graph_reduction_type = "PCA",
-#'     algorithm = 1
+#'     clustering_algorithm = 1
 #' )
 #' plot_n_neigh_k_correspondence(nn_stability_obj)
 plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
@@ -1118,18 +1209,18 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
         ggplot2::theme_classic() +
         ggplot2::scale_y_continuous(breaks = chosen_breaks, trans = "log10") +
         ggplot2::labs(
-            x = "# of nearest neighbors",
+            x = "# of nearest neighbours",
             fill = "configuration"
         ) +
         ggplot2::ggtitle("Distribution of k across different seeds")
 }
 
-# 3. ECS distribution across different seeds for different number of neighbors
+# 3. ECS distribution across different seeds for different number of neighbours
 
 #' Graph construction parameters - ECC facet
 #'
 #' @description Display, for all configurations consisting in different number
-#' of neighbors, graph types and base embeddings, the EC Consistency of the partitions
+#' of neighbours, graph types and base embeddings, the EC Consistency of the partitions
 #' obtained over multiple runs on an UMAP embedding.
 #'
 #' @param nn_ecs_object An object or a concatenation of objects returned by the
@@ -1142,18 +1233,18 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
 #'
 #'
 #' @examples
-#' set.seed(2021)
+#' set.seed(2024)
 #' # create an artificial PCA embedding
 #' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
-#' colnames(pca_emb) <- paste0("PCA_", 1:30)
+#' colnames(pca_emb) <- paste0("PC_", 1:30)
 #'
 #' nn_stability_obj <- assess_nn_stability(
 #'     embedding = pca_emb,
 #'     n_neigh_sequence = c(10, 15, 20),
 #'     n_repetitions = 10,
 #'     graph_reduction_type = "PCA",
-#'     algorithm = 1
+#'     clustering_algorithm = 1
 #' )
 #' plot_n_neigh_ecs(nn_stability_obj)
 plot_n_neigh_ecs <- function(nn_ecs_object,
@@ -1181,9 +1272,9 @@ plot_n_neigh_ecs <- function(nn_ecs_object,
         ggplot2::geom_boxplot(width = boxplot_width) +
         ggplot2::theme_classic() +
         ggplot2::labs(
-            x = "# of nearest neighbors",
+            x = "# of nearest neighbours",
             y = "EC consistency",
             fill = "configuration"
         ) +
-        ggplot2::ggtitle("Distribution of ECC across different seeds for different # neighbors")
+        ggplot2::ggtitle("Distribution of ECC across different seeds for different # neighbours")
 }

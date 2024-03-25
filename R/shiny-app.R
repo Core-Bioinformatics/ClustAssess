@@ -1,28 +1,5 @@
 ppi <- 72
 single_color <- "#025147"
-# stab_obj <- readRDS("stability_object2.rds")
-# stab_obj <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/clustassess_obj.rds")
-# stab_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/clustassess_obj.rds")
-# # # expression_matrix <- readRDS("expression_matrix.rds")
-# # expression_matrix <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/expression_matrix.rds")
-
-# se_obj <- readRDS("/sutherland-scratch/andi/projects/0_2208_Floris/R_objects/aggregated/HV/aggr_filtered_coding_highrp.rds")
-# se_obj$orig.ident <- NULL
-# se_obj$library <- factor(se_obj$library)
-# se_obj$age <- factor(se_obj$age)
-# se_obj$sample_name <- factor(se_obj$sample_name)
-# se_obj$condition <- factor(se_obj$condition)
-# se_obj$organ <- factor(se_obj$organ)
-
-# # # metadata <- readRDS("metadata.rds")
-# # metadata <- readRDS("/servers/sutherland-scratch/andi/projects/0_2302_Carola_HNF1b/R_objects/metadata.rds")
-
-
-# # write_objects(stab_obj, expression_matrix, metadata, compression_level = 6)
-# write_objects(stab_obj, se_obj@assays$SCT@data, se_obj@meta.data, compression_level = 6)
-# write_objects(stab_obj, matrix(NA), se_obj@meta.data, compression_level = 6)
-# write_objects(stab_obj, matrix(NA), metadata$metadata, compression_level = 6)
-
 generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color = "#017c6b") {
     if (n_unique_values > 99) {
         return(sample(grDevices::colors(), n_unique_values))
@@ -35,9 +12,26 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
     single_color
 }
 
-#' Writing objects
+#' Write the objects for the ClustAssess ShinyApp
 #'
-#' @description to be completed
+#' @description Given the output of the ClustAssess pipeline, the expression matrix
+#' and the metadata, this function creates the files needed for the ClustAssess
+#' ShinyApp. The files are written in the project_folder and are the following:
+#' - metadata.rds: the metadata file
+#' - stability.h5: contains the stability results
+#' - expression.h5: contains the expression matrix and the rank matrix
+#' 
+#' @param clustassess_object The output of the ClustAssess automatic pipeline
+#' @param expression_matrix The expression matrix
+#' @param metadata The metadata
+#' @param project_folder The folder where the files will be written
+#' @param compression_level The compression level for the h5 files (See `rhdf5::h5createFile`` for more details)
+#' @param chunk_size The chunk size for the rank matrix (See `rhdf5::h5createDataset` for more details)
+#' @param gene_variance_threshold The threshold for the gene variance; genes with variance below this threshold will be removed
+#' @param summary_function The function used for summarizing the stability values; the default is `median`
+#' @param qualpalr_colorspace The colorspace used for generating the colors; the default is `pretty`
+#' 
+#' @return NULL (the files are written in the project_folder)
 #'
 #' @export
 write_objects <- function(clustassess_object,
@@ -47,7 +41,7 @@ write_objects <- function(clustassess_object,
                           compression_level = 6,
                           chunk_size = 100,
                           gene_variance_threshold = 0,
-                          summary_function = median,
+                          summary_function = stats::median,
                           qualpalr_colorspace = "pretty") {
     metadata_file_name <- file.path(project_folder, "metadata.rds")
     stability_file_name <- file.path(project_folder, "stability.h5")
@@ -543,18 +537,15 @@ write_objects <- function(clustassess_object,
     rhdf5::h5closeAll()
 }
 
-#' Writing the shiny app folder
-#'
-#' @description  to be completed
-#'
 #' @rdname write_shiny_app
 #' @export
 write_shiny_app.Seurat <- function(object,
+                                   metadata = NULL,
                                    assay_name,
                                    clustassess_object,
                                    project_folder,
                                    compression_level = 6,
-                                   summary_function = median,
+                                   summary_function = stats::median,
                                    shiny_app_title = "",
                                    organism_enrichment = "hsapiens",
                                    height_ratio = 0.6,
@@ -573,18 +564,16 @@ write_shiny_app.Seurat <- function(object,
     )
 }
 
-#' Writing the shiny app folder
-#'
-#' @description  to be completed
-#'
+
 #' @rdname write_shiny_app
 #' @export
 write_shiny_app.default <- function(object,
                                     metadata,
+                                    assay_name = NULL,
                                     clustassess_object,
                                     project_folder,
                                     compression_level = 6,
-                                    summary_function = median,
+                                    summary_function = stats::median,
                                     shiny_app_title = "",
                                     organism_enrichment = "hsapiens",
                                     height_ratio = 0.6,
@@ -595,7 +584,7 @@ write_shiny_app.default <- function(object,
 
     for (ftype in names(clustassess_object$feature_stability$by_steps)) {
         fsizes <- as.integer(names(clustassess_object$feature_stability$by_steps[[ftype]]))
-        fsizes <- fsizes[which(fsizes > median(nFeature))]
+        fsizes <- fsizes[which(fsizes > stats::median(nFeature))]
         if (length(fsizes) > 0) {
             warning_message <- paste0(warning_message, ftype, " - ", paste(fsizes, collapse = ", "), "; ")
         }
@@ -791,9 +780,16 @@ write_shiny_app.default <- function(object,
 }
 
 #' Add metadata to ClustAssess ShinyApp
-#' 
-#' @description to be ccompleted
-#' 
+#'
+#' @description Adds new metadata into the ClustAssess ShinyApp without having
+#' to update the object and re-create the app.
+#'
+#' @param app_folder The folder containing the ClustAssess ShinyApp
+#' @param metadata The new metadata to be added
+#' @param qualpalr_colorspace The colorspace to be used for the metadata
+#'
+#' @return NULL - the metadata object is updated in the app folder
+#'
 #' @export
 add_metadata <- function(app_folder,
                          metadata,

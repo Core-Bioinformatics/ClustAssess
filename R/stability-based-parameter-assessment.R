@@ -4,25 +4,25 @@
 NULL
 
 ranking_functions <- list(
-    "median" = median,
+    "median" = stats::median,
     "max" = max,
     "top_qt" = function(arr) {
-        fivenum(arr)[4]
+        stats::fivenum(arr)[4]
     },
     "top_qt_max" = function(arr) {
-        arr_summary <- fivenum(arr)
+        arr_summary <- stats::fivenum(arr)
         arr_summary[4] + arr_summary[5]
     },
     "iqr" = function(arr) {
-        arr_summary <- fivenum(arr)
+        arr_summary <- stats::fivenum(arr)
         arr_summary[2] - arr_summary[4]
     },
     "iqr_median" = function(arr) {
-        arr_summary <- fivenum(arr)
+        arr_summary <- stats::fivenum(arr)
         arr_summary[3] - (arr_summary[4] - arr_summary[2])
     },
     "iqr_median_coeff" = function(arr) {
-        arr_summary <- fivenum(arr)
+        arr_summary <- stats::fivenum(arr)
         arr_summary[3] / (arr_summary[4] - arr_summary[2])
     },
     "mean" = mean
@@ -30,13 +30,13 @@ ranking_functions <- list(
 
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
-seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_starts = 10, num_iter = 10, ...) {
+seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start = 10, num_iter = 10, ...) {
     cluster_result <- Seurat::FindClusters(
         object,
         resolution = resolution,
         random.seed = seed,
         algorithm = algorithm,
-        n.start = num_starts,
+        n.start = num_start,
         n.iter = num_iter,
         ...
     )
@@ -50,7 +50,6 @@ leiden_clustering <- function(g,
                               num_iter = 10,
                               num_starts = 1,
                               ...) {
-
     best_mb <- NULL
     best_quality <- NULL
     # g <- igraph::graph_from_adjacency_matrix(
@@ -87,7 +86,7 @@ clustering_functions <- function(object,
                                  resolution,
                                  seed,
                                  algorithm = 4,
-                                 num_iter = 10,
+                                 num_iters = 10,
                                  num_starts = 10,
                                  ...) {
     # FIXME change it to 1:3 once you will be able to share an igraph
@@ -97,8 +96,8 @@ clustering_functions <- function(object,
             resolution = resolution,
             seed = seed,
             algorithm = algorithm,
-            # n.start = num_starts,
-            # n.iter = num_iter,
+            num_start = num_starts,
+            num_iter = num_iters,
             ...
         ))
     }
@@ -108,7 +107,7 @@ clustering_functions <- function(object,
             g = object,
             resolution = resolution,
             seed = seed,
-            num_iter = num_iter,
+            num_iter = num_iters,
             num_starts = num_starts,
             ...
         )
@@ -137,20 +136,59 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' the resolution parameter and compare, using the EC Consistency score, the
 #' partitions obtained at different seeds.
 #'
-#' @param graph_adjacency_matrix A square adjacency matrix based on which an igraph
-#' object will be built.
-#' @param resolution A sequence of resolution values.
+#' @param expression_matrix An expression matrix having the features on the rows
+#' and the cells on the columns.
 #' @param n_repetitions The number of repetitions of applying the pipeline with
-#' different seeds; ignored if seed_sequence is provided by the user.
+#' different seeds; ignored if seed_sequence is provided by the user. Defaults to `100`.
+#' @param n_neigh_sequence A sequence of the number of nearest neighbours.
+#' @param resolution_sequence A sequence of resolution values. The resolution parameter
+#' controls the coarseness of the clustering. The higher the resolution, the more
+#' clusters will be obtained. The resolution parameter is used in the community
+#' detection algorithms.
+#' @param features_sets A list of the feature sets. A feature set is a list of genes
+#' from the expression matrix that will be used in the dimensionality reduction.
+#' @param steps A list with the same names as `feature_sets`. Each name has assigned
+#' a ector containing the sizes of the subsets; negative values will
+#' be interpreted as using all features.
 #' @param seed_sequence A custom seed sequence; if the value is NULL, the
 #' sequence will be built starting from 1 with a step of 100.
-#' @param ecs_thresh The ECS threshold used for merging similar clusterings.
-#' @param ncores The number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
-#' @param verbose Boolean value used for displaying the progress bar.
-#' @param algorithm An index or a list of indexes indicating which community detection
-#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
-#' More details can be found in the Seurat's `FindClusters` function.
+#' @param graph_reduction_embedding The type of dimensionality reduction used for
+#' the graph construction. The options are "PCA" and "UMAP". Defaults to `PCA`.
+#' @param include_umap_nn_assessment A boolean value indicating if the UMAP embeddings
+#' will be used for the nearest neighbours assessment. Defaults to `FALSE`.
+#' @param n_top_configs The number of top configurations that will be used for the
+#' downstream analysis in the dimensionality reduction step. Defaults to `3`.
+#' @param ranking_criterion The criterion used for ranking the configurations from
+#' the dimensionality reduction step. The options are "iqr", "median", "max", "top_qt",
+#' "top_qt_max", "iqr_median", "iqr_median_coeff" and "mean". Defaults to `iqr`.
+#' @param overall_summary A function used to summarize the stability of the configurations
+#' from the dimensionality reduction step across the different resolution values.
+#' The options are "median", "max", "top_qt", "top_qt_max", "iqr", "iqr_median",
+#' "iqr_median_coeff" and "mean". Defaults to `median`.
+#' @param ecs_threshold The ECS threshold used for merging similar clusterings.
+#' @param matrix_processing A function that will be used to process the data matrix
+#' by using a dimensionality reduction technique. The function should have
+#' one parameter, the data matrix, and should return an embedding describing the
+#' reduced space. By default, the function will use the precise PCA method with
+#' `prcomp`.
+#' @param umap_arguments A list containing the arguments that will be passed to the
+#' UMAP function. Refer to the `uwot::umap` function for more details.
+#' @param alogrithm_dim_reduction An index indicating the community detection
+#' algorithm that will be used in the Dimensionality reduction step.
+#' @param algorithm_graph_construct An index indicating the community detection
+#' algorithm that will be used in the Graph construction step.
+#' @param algorithms_clustering_assessment An index indicating which community
+#' detection algorithm will be used for the clustering step: Louvain (1),
+#' Louvain refined (2), SLM (3) or Leiden (4). More details can be found in
+#' the Seurat's `FindClusters` function.
+#' @param clustering_arguments A list containing the arguments that will be passed to the
+#' community detection algorithm, such as the number of iterations and the number of starts.
+#' Refer to the Seurat's `FindClusters` function for more details.
+#' @param verbose Boolean value used for displaying the progress
+#' of the assessment.
+#' @param temp_file The path to the file where the object will be saved.
+#' @param save_temp A boolean value indicating if the object
+#' will be saved to a file.
 #'
 #' @return A list having two fields:
 #'
@@ -160,41 +198,82 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' number of clusters that appears the most and use only the partitions with this
 #' size
 #'
-#' @md
 #' @export
-automatic_stability_assessment <- function(expression_matrix, # expr matrix
+#' @examples
+#' set.seed(2024)
+#' # create an already-transposed artificial expression matrix
+#' expr_matrix <- matrix(
+#'     c(runif(20 * 10), runif(30 * 10, min = 3, max = 4)),
+#'     nrow = 10, byrow = FALSE
+#' )
+#' colnames(expr_matrix) <- as.character(seq_len(ncol(expr_matrix)))
+#' rownames(expr_matrix) <- paste("feature", seq_len(nrow(expr_matrix)))
+#'
+#' autom_object <- automatic_stability_assessment(
+#'     expression_matrix = expr_matrix,
+#'     n_repetitions = 3,
+#'     n_neigh_sequence = c(5),
+#'     resolution_sequence = c(0.1, 0.5),
+#'     features_sets = list(
+#'         "set1" = rownames(expr_matrix)
+#'     ),
+#'     steps = list(
+#'         "set1" = c(5, 7)
+#'     ),
+#'     umap_arguments = list(
+#'         # the following parameters have been modified
+#'         # from the default values to ensure that
+#'         # the function will run under 5 seconds
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     n_top_configs = 1,
+#'     algorithms_clustering_assessment = 1,
+#'     save_temp = FALSE,
+#'     verbose = FALSE
+#' )
+#'
+#' # the object can be further used to plot the assessment results
+#' plot_feature_overall_stability_boxplot(autom_object$feature_stability)
+#' plot_n_neigh_ecs(autom_object$set1$"5"$nn_stability)
+#' plot_k_n_partitions(autom_object$set1$"5"$clustering_stability)
+automatic_stability_assessment <- function(expression_matrix,
                                            n_repetitions,
                                            n_neigh_sequence,
                                            resolution_sequence,
-                                           features_sets, # list with the names of the feature sets (HV, MA etc) and the list of top x genes
-                                           steps, # list with the names of the feature sets (HV, mA) and the list of steps
-                                           temp_file = NULL,
+                                           features_sets,
+                                           steps,
                                            seed_sequence = NULL,
                                            graph_reduction_embedding = "PCA",
                                            include_umap_nn_assessment = FALSE,
                                            n_top_configs = 3,
                                            ranking_criterion = "iqr",
                                            overall_summary = "median",
-                                           npcs = 30,
-                                           verbose = TRUE,
                                            ecs_threshold = 1, # do we really need it?,
-                                           matrix_processing_dim_reduction = function(dt_mtx, actual_npcs, ...) {
-                                                # WARNING using more threads will lead to slightly different results
-                                                RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
-                                                embedding <- prcomp(x = dt_mtx, rank. = actual_npcs)$x
-                                                RhpcBLASctl::blas_set_num_threads(1)
+                                           matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
+                                               # WARNING using more threads will lead to slightly different results
+                                               # check using RhpcBLASctl::blas_get_num_procs()
+                                               actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
+                                               RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+                                               embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
+                                               RhpcBLASctl::blas_set_num_threads(1)
 
-                                                rownames(embedding) <- rownames(dt_mtx)
-                                                colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
+                                               rownames(embedding) <- rownames(dt_mtx)
+                                               colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
 
-                                                return(embedding)
-                                            },
+                                               return(embedding)
+                                           },
                                            umap_arguments = list(),
+                                           alogrithm_dim_reduction = 1,
+                                           algorithm_graph_construct = 1,
+                                           algorithms_clustering_assessment = 1:3,
                                            clustering_arguments = list(),
-                                           matrix_processing_arguments = list(),
-                                           save_temp = TRUE,
-                                           algorithms_clustering_assessment = 1:3
-                                        ) {
+                                           verbose = TRUE,
+                                           temp_file = NULL,
+                                           save_temp = TRUE) {
     file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
     cell_names <- colnames(expression_matrix)
     if (is.null(cell_names)) {
@@ -233,26 +312,26 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         temp_object <- assess_feature_stability(
             data_matrix = expression_matrix,
             feature_set = features_sets[[set_name]],
-            resolution = resolution_sequence,
             steps = steps[[set_name]],
             feature_type = set_name,
-            graph_reduction_type = graph_reduction_embedding,
+            resolution = resolution_sequence,
             n_repetitions = n_repetitions,
             seed_sequence = seed_sequence,
-            npcs = npcs,
+            graph_reduction_type = graph_reduction_embedding,
             ecs_thresh = ecs_threshold,
-            algorithm = 1,
-            verbose = verbose,
-            matrix_processing = matrix_processing_dim_reduction,
-            matrix_processing_arguments = matrix_processing_arguments,
-            umap_arguments = umap_arguments
+            matrix_processing = matrix_processing,
+            umap_arguments = umap_arguments,
+            clustering_algorithm = alogrithm_dim_reduction,
+            clustering_arguments = clustering_arguments,
+            verbose = verbose
         )
 
         feature_stability_object$by_steps[[set_name]] <- temp_object$by_steps[[1]]
         feature_stability_object$incremental[[set_name]] <- temp_object$incremental[[1]]
         feature_stability_object$embedding_list[[set_name]] <- temp_object$embedding_list[[1]]
 
-        if (!is.null(temp_object$pca_list)) { # NOTE only for backwards compatability reasons
+        # NOTE only for backwards compatability reasons
+        if (!is.null(temp_object$pca_list)) {
             feature_stability_object$pca_list[[set_name]] <- temp_object$pca_list[[1]]
         }
 
@@ -278,8 +357,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 ranking_functions[[overall_summary]](by_res$ecc)
             })
         })
-        ecc_list_medians <- order(sapply(ecc_list, median), decreasing = TRUE)
-        ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))]#which(ecc_list_medians >= median(ecc_list_medians))
+        ecc_list_medians <- order(sapply(ecc_list, stats::median), decreasing = TRUE)
+        ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))] # which(ecc_list_medians >= stats::median(ecc_list_medians))
 
         # ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
         incremental_list <- c(
@@ -299,8 +378,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             )
         )
 
-        incremental_medians <- order(sapply(incremental_list, median), decreasing = TRUE)
-        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))] #which(incremental_medians >= median(incremental_medians))
+        incremental_medians <- order(sapply(incremental_list, stats::median), decreasing = TRUE)
+        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))] # which(incremental_medians >= stats::median(incremental_medians))
         eligible_steps <- intersect(ecc_above_median, incremental_above_median)
         n_top_configs <- min(n_top_configs, length(eligible_steps))
         total_nconfigs <- total_nconfigs + n_top_configs
@@ -312,20 +391,12 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
         feature_configs[[set_name]] <- list()
 
         # generate the pca and umap embeddings for each config
+        actual_npcs <- formals(matrix_processing)$actual_npcs
         for (j in seq_len(n_top_configs)) {
             n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
             current_features <- features_sets[[set_name]][seq_len(n_steps)]
             if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
-                pca_emb <- do.call(
-                    matrix_processing_dim_reduction,
-                    c(
-                        list(
-                            dt_mtx = expression_matrix[current_features, ],
-                            actual_npcs = min(npcs, n_steps %/% 2)
-                        ),
-                        matrix_processing_arguments
-                    )
-                )
+                pca_emb <- matrix_processing(expression_matrix[current_features, ])
             } else {
                 pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
             }
@@ -339,7 +410,7 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                     stable_config = list(
                         feature_set = feature_set_names[i],
                         n_features = n_steps,
-                        n_pcs = min(npcs, n_steps %/% 2)
+                        n_pcs = min(actual_npcs, n_steps %/% 2)
                     )
                 )
         }
@@ -411,8 +482,9 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 n_neigh_sequence = n_neigh_sequence,
                 n_repetitions = n_repetitions,
                 graph_reduction_type = "PCA",
-                ecs_thresh = 1,
-                algorithm = 1
+                ecs_thresh = ecs_threshold,
+                clustering_algorithm = algorithm_graph_construct,
+                clustering_arguments = clustering_arguments
             )
 
             if (include_umap_nn_assessment) {
@@ -423,8 +495,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                         n_neigh_sequence = n_neigh_sequence,
                         n_repetitions = n_repetitions,
                         graph_reduction_type = "UMAP",
-                        ecs_thresh = 1,
-                        algorithm = 1,
+                        ecs_thresh = ecs_threshold,
+                        clustering_algorithm = algorithm_graph_construct,
                         umap_arguments = umap_arguments
                     ),
                     SIMPLIFY = FALSE
@@ -461,8 +533,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
             }
 
 
-            ecc_medians <- sapply(nn_ecc_list, median)
-            eligible_configs <- which(ecc_medians >= fivenum(ecc_medians)[4])
+            ecc_medians <- sapply(nn_ecc_list, stats::median)
+            eligible_configs <- which(ecc_medians >= stats::fivenum(ecc_medians)[4])
             best_config_index <- rank_configs(nn_ecc_list[eligible_configs], rank_by = ranking_criterion, return_type = "order")[1]
             best_config <- nn_config_list[eligible_configs][best_config_index]
             best_nn <- as.integer(nn_list[eligible_configs][best_config_index])
@@ -518,7 +590,8 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
                 resolution = resolution_sequence,
                 n_repetitions = n_repetitions,
                 ecs_thresh = ecs_threshold,
-                algorithm = algorithms_clustering_assessment,
+                clustering_algorithm = algorithms_clustering_assessment,
+                clustering_arguments = clustering_arguments,
                 verbose = verbose
             )
 
@@ -536,7 +609,6 @@ automatic_stability_assessment <- function(expression_matrix, # expr matrix
     return(feature_configs)
 }
 
-
 update_seurat_object <- function(original_seurat_object,
                                  clustassess_object,
                                  stable_feature_type,
@@ -550,9 +622,89 @@ update_seurat_object <- function(original_seurat_object,
 
 #' Create monocle object based on expression matrix
 #'
-#' @description to be completed
+#' @description Use the expression matrix and the output of the
+#' `automatic_stability_assessment` function to create a Monocle object
+#' which has the stable numver of clusters.
+#'
+#' @param normalized_expression_matrix The normalized expression matrix
+#' having genes on rows and cells on columns.
+#' @param count_matrix The count matrix having genes on rows and cells on
+#' columns. If NULL, the normalized_expression_matrix will be used.
+#' @param clustassess_object The output of the `automatic_stability_assessment`.
+#' @param metadata The metadata dataframe having the cell names as rownames. If
+#' NULL, a dataframe with a single column named `identical_ident` will be
+#' created.
+#' @param stable_feature_type The feature type which leads to stable clusters.
+#' @param stable_feature_set_size The feature size which leads to stable
+#' clusters.
+#' @param stable_clustering_method The clustering method which leads to stable
+#' clusters.
+#' @param stable_n_clusters The number of clusters that are stable. If NULL,
+#' all the clusters will be provided. Defaults to `NULL`.
+#' @param gene_names The gene names that will be used in the Monocle object.
+#' If NULL, the rownames of the normalized_expression_matrix will be used.
+#' Defaults to `NULL`.
+#' @param cell_names The cell names that will be used in the Monocle object.
+#' If NULL, the colnames of the normalized_expression_matrix will be used.
+#' Defaults to `NULL`.
+#' @param use_all_genes A boolean value indicating if the expression matrix
+#' should be truncated to the genes used in the stability assessment. Defaults
+#' to `FALSE`.
+#' @param is_object_from_shinyapp A boolean value indicating if the ClustAssess
+#' object is extracted from a ShinyApp directory, or is a direct output of the
+#' `automatic_stability_assessment` function. Defaults to `FALSE`.
+#'
+#' @return A Monocle object of the expression matrix, having the stable number
+#' of clusters identified by ClustAssess.
 #'
 #' @export
+#' @examples
+#' set.seed(2024)
+#' # create an already-transposed artificial expression matrix
+#' expr_matrix <- matrix(
+#'     c(runif(20 * 10), runif(30 * 10, min = 3, max = 4)),
+#'     nrow = 10, byrow = FALSE
+#' )
+#' colnames(expr_matrix) <- as.character(seq_len(ncol(expr_matrix)))
+#' rownames(expr_matrix) <- paste("feature", seq_len(nrow(expr_matrix)))
+#'
+#' autom_object <- automatic_stability_assessment(
+#'     expression_matrix = expr_matrix,
+#'     n_repetitions = 3,
+#'     n_neigh_sequence = c(5),
+#'     resolution_sequence = c(0.1, 0.5),
+#'     features_sets = list(
+#'         "set1" = rownames(expr_matrix)
+#'     ),
+#'     steps = list(
+#'         "set1" = c(5, 7)
+#'     ),
+#'     umap_arguments = list(
+#'         # the following parameters have been modified
+#'         # from the default values to ensure that the function
+#'         # will run under 5 seconds
+#'         n_neighbors = 3,
+#'         approx_pow = TRUE,
+#'         n_epochs = 0,
+#'         init = "random",
+#'         min_dist = 0.3
+#'     ),
+#'     n_top_configs = 1,
+#'     algorithms_clustering_assessment = 1,
+#'     save_temp = FALSE,
+#'     verbose = FALSE
+#' )
+#'
+#'
+#' # uncomment to create the monocle object
+#' # mon_obj <- create_monocle_object(
+#' # normalized_expression_matrix = expr_matrix,
+#' # clustassess_object = autom_object,
+#' # metadata = NULL,
+#' # stable_feature_type = "set1",
+#' # stable_feature_set_size = "5",
+#' # stable_clustering_method = "Louvain"
+#' # )
 create_monocle_object <- function(normalized_expression_matrix,
                                   count_matrix = NULL,
                                   clustassess_object,

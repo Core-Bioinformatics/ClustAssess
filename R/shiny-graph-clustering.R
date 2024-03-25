@@ -253,9 +253,15 @@ ui_graph_clustering_k_stab <- function(id) {
     )
 }
 
-#' Graph clustering - ui side
+#' UI - Graph clustering module
 #'
-#' @description to be completed
+#' @description Creates the UI interface for the graph clustering module inside
+#' the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to identify the UI elements.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 ui_graph_clustering <- function(id) {
@@ -441,7 +447,7 @@ server_graph_clustering_per_value_boxplot <- function(id) {
                     )
 
 
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -517,7 +523,7 @@ server_graph_clustering_overall_boxplot <- function(id) {
                         plt_width = input$width_boxplot_overall_resolution * ppi,
                         plot_title = "Stability by k"
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -537,7 +543,7 @@ server_graph_clustering_overall_boxplot <- function(id) {
                         plt_width = input$width_boxplot_overall_k * ppi,
                         plot_title = "Stability by k"
                     )
-                    dev.off()
+                    grDevices::dev.off()
                 }
             )
 
@@ -635,7 +641,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                             changed_k(FALSE)
                         }
 
-                        predicted_width <- strwidth(c(" ", unique_values), units = "inches", cex = input$clustering_umap_legend_size) * ppi
+                        predicted_width <- graphics::strwidth(c(" ", unique_values), units = "inches", cex = input$clustering_umap_legend_size) * ppi
                         space_width <- predicted_width[1]
                         predicted_width <- predicted_width[2:length(predicted_width)]
 
@@ -648,7 +654,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                         )
                         number_rows <- ceiling(length(unique_values) / number_columns)
 
-                        text_height <- strheight(
+                        text_height <- graphics::strheight(
                             paste(
                                 rep("TEXT", number_rows + 1),
                                 collapse = "\n"
@@ -760,9 +766,9 @@ server_graph_clustering_per_value_umap <- function(id) {
                         }
                         formatted_k <- sprintf("%06d", as.integer(input$select_k))
 
-                        old_par <- par(mai = c(0.1, 0, 0.1, 0))
-                        text_height <- strheight("TE\nXT\n", units = "inches", cex = input$clustering_umap_legend_size)
-                        par(old_par)
+                        old_par <- graphics::par(mai = c(0.1, 0, 0.1, 0))
+                        text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$clustering_umap_legend_size)
+                        graphics::par(old_par)
                         ecc_legend_height(text_height * ppi)
 
                         color_plot2(
@@ -950,9 +956,19 @@ server_graph_clustering_k_stab <- function(id) {
     )
 }
 
-#' Graph clustering - server side
+#' Server - Graph clustering module
 #'
-#' @description to be completed
+#' @description Creates the backend interface for the graph clustering module
+#' inside the ClustAssess Shiny application.
+#'
+#' @param id The id of the module, used to acess the UI elements.
+#' @param feature_choice A reactive object that contains the chosen configuration
+#' from the Dimensionality Reduction tab.
+#' @param parent_session The session of the parent module, used to control the
+#' tabs of the application.
+#'
+#' @note This function should not be called directly, but in the context of the
+#' app that is created using the `write_shiny_app` function.
 #'
 #' @export
 server_graph_clustering <- function(id, feature_choice, parent_session) {
@@ -1114,7 +1130,7 @@ shiny_ggplot_clustering_per_value_stability <- function(clust_object,
 
 shiny_ggplot_clustering_overall_stability <- function(clust_object,
                                                       value_type = c("k", "resolution"),
-                                                      summary_function = median) {
+                                                      summary_function = stats::median) {
     value_type <- value_type[value_type %in% c("k", "resolution")]
 
     if (length(value_type) > 1) {
@@ -1202,7 +1218,7 @@ shiny_plot_clustering_per_value_stability <- function(ecc_list,
     text_coords[count_diff + 1] <- mean(at_values[start_index:length(cl_method)])
 
 
-    boxplot(
+    graphics::boxplot(
         ecc_list,
         outline = FALSE,
         at = at_values,
@@ -1213,9 +1229,9 @@ shiny_plot_clustering_per_value_stability <- function(ecc_list,
         cex.axis = text_size,
         cex.lab = text_size
     )
-    abline(v = abline_coords, lty = "dashed", col = "grey")
-    title(xlab = "k", ylab = "ecc", cex.lab = text_size)
-    axis(side = 1, at = text_coords, labels = unique_values, las = 2, cex.axis = text_size)
+    graphics::abline(v = abline_coords, lty = "dashed", col = "grey")
+    graphics::title(xlab = "k", ylab = "ecc", cex.lab = text_size)
+    graphics::axis(side = 1, at = text_coords, labels = unique_values, las = 2, cex.axis = text_size)
 }
 
 shiny_plot_clustering_per_value_stability_old <- function(clust_object,
@@ -1275,11 +1291,11 @@ shiny_plot_clustering_per_value_stability_old <- function(clust_object,
     }
     middle_values <- at_values[seq(from = offset, by = max_levels, to = length(name_values))]
 
-    colorsi <- rainbow(max_levels, s = 0.5)
+    colorsi <- grDevices::rainbow(max_levels, s = 0.5)
 
 
     return({
-        boxplot(
+        graphics::boxplot(
             ecc ~ method + x_value,
             data = melted_df,
             col = colorsi,
@@ -1292,15 +1308,15 @@ shiny_plot_clustering_per_value_stability_old <- function(clust_object,
             cex.axis = text_size,
             cex.lab = text_size
         )
-        axis(side = 1, at = middle_values, labels = cluster_values, las = 2, cex.axis = text_size)
-        title(xlab = value_type, cex.lab = text_size)
-        abline(v = abline_coords, lty = "dashed", col = "grey")
+        graphics::axis(side = 1, at = middle_values, labels = cluster_values, las = 2, cex.axis = text_size)
+        graphics::title(xlab = value_type, cex.lab = text_size)
+        graphics::abline(v = abline_coords, lty = "dashed", col = "grey")
     })
 }
 
 shiny_plot_clustering_overall_stability <- function(clust_object,
                                                     value_type = c("k", "resolution"),
-                                                    summary_function = median) {
+                                                    summary_function = stats::median) {
     value_type <- value_type[value_type %in% c("k", "resolution")]
 
     if (length(value_type) > 1) {
@@ -1325,9 +1341,9 @@ shiny_plot_clustering_overall_stability <- function(clust_object,
     melted_df$method <- factor(melted_df$method)
     melted_df[[value_type]] <- factor(melted_df[[value_type]])
 
-    colorsi <- rainbow(nlevels(melted_df$method), s = 0.5)
+    colorsi <- grDevices::rainbow(nlevels(melted_df$method), s = 0.5)
     return({
-        boxplot(
+        graphics::boxplot(
             ecc ~ method,
             data = melted_df,
             col = colorsi,
@@ -1402,9 +1418,9 @@ shiny_plot_k_res <- function(summary_df,
         cex.axis = text_size,
         cex.lab = text_size
     )
-    abline(v = seq(from = 0.5, by = 1, length.out = length(unique_x_axis)), lty = "dashed", col = "grey")
-    axis(side = 1, at = seq_along(unique_x_axis), labels = unique_x_axis, las = 2, cex.axis = text_size)
-    axis(side = 2, at = unique(summary_df$k), cex.axis = text_size)
+    graphics::abline(v = seq(from = 0.5, by = 1, length.out = length(unique_x_axis)), lty = "dashed", col = "grey")
+    graphics::axis(side = 1, at = seq_along(unique_x_axis), labels = unique_x_axis, las = 2, cex.axis = text_size)
+    graphics::axis(side = 2, at = unique(summary_df$k), cex.axis = text_size)
 }
 
 shiny_plot_k_n_partitions <- function(summary_df,
@@ -1474,14 +1490,14 @@ shiny_plot_k_n_partitions <- function(summary_df,
     if (display_legend) {
         plt_height <- plt_height / ppi
 
-        predicted_height <- strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = text_size) + strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5)
+        predicted_height <- graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = text_size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5)
         layout.matrix <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, ncol = 3, byrow = TRUE)
 
-        layout(
+        graphics::layout(
             mat = layout.matrix,
             heights = c(
-                lcm((plt_height - predicted_height - 0.1) * 2.54),
-                lcm(predicted_height * 2.54)
+                graphics::lcm((plt_height - predicted_height - 0.1) * 2.54),
+                graphics::lcm(predicted_height * 2.54)
             )
         )
     }
@@ -1498,13 +1514,13 @@ shiny_plot_k_n_partitions <- function(summary_df,
         cex.axis = text_size,
         cex.lab = text_size
     )
-    abline(v = seq(from = 0.5, by = 1, length.out = length(unique_x_axis)), lty = "dashed", col = "grey")
-    axis(side = 1, at = seq_along(unique_x_axis), labels = unique_x_axis, las = 2, cex.axis = text_size)
+    graphics::abline(v = seq(from = 0.5, by = 1, length.out = length(unique_x_axis)), lty = "dashed", col = "grey")
+    graphics::axis(side = 1, at = seq_along(unique_x_axis), labels = unique_x_axis, las = 2, cex.axis = text_size)
 
     if (display_legend) {
         # point shape
         plot(seq_len(n_methods) - 1, rep(1, n_methods), axes = FALSE, bty = "n", ylab = "", xlab = "", cex = pt_size_range[2], pch = available_pchs[seq_len(n_methods)], main = "Clustering\nmethods", ylim = c(-1, 1.5), cex.main = text_size)
-        text(y = -0.15, x = seq_len(n_methods) - 1, labels = unique_cl_method, cex = text_size, xpd = TRUE)
+        graphics::text(y = -0.15, x = seq_len(n_methods) - 1, labels = unique_cl_method, cex = text_size, xpd = TRUE)
 
         # point size
         nfreqs <- sum(summary_df$total_freq)
@@ -1515,14 +1531,14 @@ shiny_plot_k_n_partitions <- function(summary_df,
             pt_sizes <- rep(pt_size_range[2], 5)
         }
         plot(0:4, rep(1, 5), axes = FALSE, bty = "n", ylab = "", xlab = "", pch = 19, cex = pt_sizes, main = "k frequency", ylim = c(-1, 1.5), cex.main = text_size)
-        text(y = -0.15, x = 0:4, labels = round(chosen_numbers / nfreqs, digits = 3), cex = text_size, xpd = TRUE)
+        graphics::text(y = -0.15, x = 0:4, labels = round(chosen_numbers / nfreqs, digits = 3), cex = text_size, xpd = TRUE)
 
         # point colour
         unique_values <- c(min(summary_df$ecc), max(summary_df$ecc))
-        legend_image <- as.raster(matrix(color_values, nrow = 1))
+        legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
         plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "", main = "Average ECC", cex.main = text_size)
-        text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
-        rasterImage(legend_image, 0, 0, 1, 1)
+        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+        graphics::rasterImage(legend_image, 0, 0, 1, 1)
     }
 }
 
