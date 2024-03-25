@@ -1,4 +1,6 @@
 #' @importFrom foreach %dopar% %do%
+#' @importFrom dplyr %>%
+#' @importFrom methods new
 NULL
 
 #' The Element-Centric Clustering Similarity
@@ -49,7 +51,6 @@ NULL
 #'
 #' @return The average element-wise similarity between the two Clusterings.
 #' @export
-#' @md
 #'
 #' @examples
 #' km.res <- kmeans(mtcars, centers = 3)$cluster
@@ -135,7 +136,6 @@ element_sim <- function(clustering1,
 #' @return Vector of element-centric similarity between the two clusterings for
 #'  each element.
 #' @export
-#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -160,8 +160,8 @@ element_sim_elscore <- function(clustering1,
                                 row_normalize_cl2 = TRUE) {
     # if both clusterings are membership vectors, calculate the ecs without
     # creating a Clustering object
-    if (any(class(clustering1) %in% c("numeric", "integer", "factor", "character")) &&
-        any(class(clustering2) %in% c("numeric", "integer", "factor", "character"))) {
+    if (inherits(clustering1, c("numeric", "integer", "factor", "character")) &&
+        inherits(clustering2, c("numeric", "integer", "factor", "character"))) {
         if (length(clustering1) != length(clustering2)) {
             stop("clustering1 and clustering2 do not have the same length.")
         }
@@ -169,7 +169,7 @@ element_sim_elscore <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        if (class(clustering1) == "character" || class(clustering2) == "character") {
+        if (inherits(clustering1, "character") || inherits(clustering2, "character")) {
             node.scores <- corrected_l1_mb(clustering1, clustering2, alpha)
         } else {
             node.scores <- disjointECS(
@@ -182,7 +182,7 @@ element_sim_elscore <- function(clustering1,
         return(node.scores)
     }
 
-    if (methods::is(clustering1, "hclust")) {
+    if (inherits(clustering1, "hclust")) {
         clustering1 <- create_clustering(
             clustering_result = clustering1,
             alpha = alpha,
@@ -191,7 +191,7 @@ element_sim_elscore <- function(clustering1,
             ppr_implementation = ppr_implementation_cl1,
             dist_rescaled = dist_rescaled_cl1
         )
-    } else if (is.matrix(clustering1) | methods::is(clustering1, "Matrix")) {
+    } else if (is.matrix(clustering1) | inherits(clustering1, "Matrix")) {
         clustering1 <- create_clustering(
             clustering_result = clustering1,
             alpha = alpha,
@@ -204,7 +204,7 @@ element_sim_elscore <- function(clustering1,
         )
     }
 
-    if (methods::is(clustering2, "hclust")) {
+    if (inherits(clustering2, "hclust")) {
         clustering2 <- create_clustering(
             clustering_result = clustering2,
             alpha = alpha,
@@ -213,7 +213,7 @@ element_sim_elscore <- function(clustering1,
             ppr_implementation = ppr_implementation_cl2,
             dist_rescaled = dist_rescaled_cl2
         )
-    } else if (is.matrix(clustering2) | methods::is(clustering2, "Matrix")) {
+    } else if (is.matrix(clustering2) | inherits(clustering2, "Matrix")) {
         clustering2 <- create_clustering(
             clustering_result = clustering2,
             alpha = alpha,
@@ -293,7 +293,7 @@ create_clu2elm_dict_hierarchical <- function(clustering) {
 # create element -> cluster dictionary (list) for flat, overlapping clustering
 create_elm2clu_dict_overlapping <- function(clustering) {
     elm2clu_dict <- list()
-    for (i in 1:nrow(clustering)) {
+    for (i in seq_len(nrow(clustering))) {
         elm2clu_dict[[i]] <- which(clustering[i, ] > 0)
     }
     return(elm2clu_dict)
@@ -303,7 +303,7 @@ create_elm2clu_dict_overlapping <- function(clustering) {
 # maps elements to leaf node singleton clusters
 create_elm2clu_dict_hierarchical <- function(clustering) {
     elm2clu_dict <- list()
-    for (i in 1:length(clustering$order)) {
+    for (i in seq_along(clustering$order)) {
         elm2clu_dict[[i]] <- i
     }
     return(elm2clu_dict)
@@ -458,40 +458,38 @@ corrected_l1_mb <- function(mb1, mb2, alpha = 0.9) {
     ecs <- rep(0, n)
 
     cont_table <- table(mb1, mb2)
+    rownames(cont_table) <- as.character(rownames(cont_table))
+    colnames(cont_table) <- as.character(colnames(cont_table))
     c1_sizes <- rowSums(cont_table)
     c2_sizes <- colSums(cont_table)
     unique_ecs_vals <- matrix(NA, nrow = length(c1_sizes), ncol = length(c2_sizes))
     rownames(unique_ecs_vals) <- rownames(cont_table)
     colnames(unique_ecs_vals) <- colnames(cont_table)
 
-
     # iterate through each point of the membership vector
     for (i in 1:n) {
         # check if the similarity between of this pair of clusters was already calculated
-        if (is.na(unique_ecs_vals[mb1[i], mb2[i]])) {
-            Csize1 <- c1_sizes[mb1[i]]
-            Csize2 <- c2_sizes[mb2[i]]
+        mb1_elem <- as.character(mb1[i])
+        mb2_elem <- as.character(mb2[i])
+        if (is.na(unique_ecs_vals[mb1_elem, mb2_elem])) {
+            Csize1 <- c1_sizes[mb1_elem]
+            Csize2 <- c2_sizes[mb2_elem]
 
-            intersect_size <- cont_table[mb1[i], mb2[i]]
-            # print(paste(Csize1, Csize2, intersect_size))
+            intersect_size <- cont_table[mb1_elem, mb2_elem]
             temp_ecs <- (1 / Csize1 - 1 / Csize2) * intersect_size
             if (temp_ecs < 0) {
                 temp_ecs <- -temp_ecs
             }
             # calculate the sum of the difference between the affinity matrices
-            # print(temp_ecs)
             ecs[i] <- 1 - 0.5 * (temp_ecs + (Csize1 - intersect_size) / Csize1 + (Csize2 - intersect_size) / Csize2)
 
             # store the similarity between the pair of clusters
-            unique_ecs_vals[mb1[i], mb2[i]] <- ecs[i]
-            # print(ecs[i])
+            unique_ecs_vals[mb1_elem, mb2_elem] <- ecs[i]
         } else {
             # if yes, just copy the value
-            ecs[i] <- unique_ecs_vals[mb1[i], mb2[i]]
+            ecs[i] <- unique_ecs_vals[mb1_elem, mb2_elem]
         }
     }
-
-    # print(unique_ecs_vals)
 
     return(ecs)
 }
@@ -500,7 +498,7 @@ corrected_l1_mb <- function(mb1, mb2, alpha = 0.9) {
 ppr_partition <- function(clustering, alpha = 0.9) {
     ppr <- matrix(0, nrow = clustering@n_elements, ncol = clustering@n_elements)
 
-    for (i in 1:length(clustering@clu2elm_dict)) {
+    for (i in seq_along(clustering@clu2elm_dict)) {
         clusterlist <- clustering@clu2elm_dict[[i]]
         Csize <- length(clusterlist)
         ppr_res <- matrix(alpha / Csize, nrow = Csize, ncol = Csize)
@@ -652,7 +650,7 @@ make_cielg_hierarchical <- function(hierarchical_clustering,
     }
 
     bipartite_adj <- matrix(0, nrow = n.elements, ncol = 2 * n.elements - 1)
-    for (i in 1:length(clu2elm_dict)) {
+    for (i in seq_along(clu2elm_dict)) {
         element_list <- clu2elm_dict[[i]]
 
         cstrength <- weight_function(i)
@@ -680,7 +678,7 @@ find_groups_in_cluster <- function(clustervs, elementgroupList) {
 
     groupings <- list()
     index <- 1
-    for (i in 1:length(elementgroupList)) {
+    for (i in seq_along(elementgroupList)) {
         current <- elementgroupList[[i]]
         if (length(intersect(current, clustervertex)) > 0) {
             groupings[[index]] <- current
@@ -699,7 +697,7 @@ numerical_ppr_scores <- function(cielg, clustering, ppr_implementation = "prpack
 
     # keep track of all clusters an element is a member of
     elementgroupList <- list()
-    for (i in 1:length(clustering@elm2clu_dict)) {
+    for (i in seq_along(clustering@elm2clu_dict)) {
         element <- names(clustering)[i]
         # collapse clusters into single string
         clusters <- paste(clustering@elm2clu_dict[[i]], collapse = ",")
@@ -824,12 +822,9 @@ calculate_ppr_with_power_iteration <- function(W_matrix, index, alpha = 0.9,
 #' * "linkage" : use the linkage distances in the clustering.
 #' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
 #' rescaled to be in-between 0 and 1.
-#' @param ncores the number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
 #' @export
-#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -853,11 +848,11 @@ element_sim_matrix <- function(clustering_list,
 
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
-        any(class(x) %in% c("numeric", "integer", "factor", "character"))
+        inherits(x, c("numeric", "integer", "factor", "character"))
     })
 
     are_all_viable_objects <- sapply(clustering_list, function(x) {
-        is.matrix(x) || methods::is(x, "hclust") || methods::is(x, "Matrix")
+        is.matrix(x) || inherits(x, "hclust") || inherits(x, "Matrix")
     })
 
     if (any(are_all_flat_disjoint == FALSE) &&
@@ -962,7 +957,13 @@ element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type =
 # determine whether two flat disjoint membership vectors are identical
 are_identical_memberships <- function(mb1, mb2) {
     # calculate the contingency table between the two partitions
-    contingency_table <- (myContTable(mb1, mb2, min(mb1), min(mb2)) != 0)
+    if (inherits(mb1, c("character", "factor")) || inherits(mb2, c("character", "factor"))) {
+        contingency_table <- table(mb1, mb2)
+    } else {
+        contingency_table <- myContTable(mb1, mb2, min(mb1), min(mb2))
+    }
+
+    contingency_table <- (contingency_table != 0)
 
     if (nrow(contingency_table) != ncol(contingency_table)) {
         return(FALSE)
@@ -1002,13 +1003,12 @@ merge_identical_partitions <- function(clustering_list,
     }
 
     for (i in 2:n_partitions) {
-        # n_partitions = length(merged_partitions)
         n_merged_partitions <- length(merged_partitions)
 
         assigned_partition <- -1
 
         # for each partition, look into the merged list and see if there is a perfect match
-        for (j in 1:n_merged_partitions) { # for(j in 1:n_partitions) {}
+        for (j in seq_len(n_merged_partitions)) {
             are_identical <- are_identical_memberships(merged_partitions[[j]]$mb, clustering_list[[i]]$mb)
             if (are_identical) {
                 assigned_partition <- j
@@ -1029,7 +1029,7 @@ merge_identical_partitions <- function(clustering_list,
     if (order) {
         ordered_indices <- order(sapply(merged_partitions, function(x) {
             x$freq
-        }), decreasing = T)
+        }), decreasing = TRUE)
         merged_partitions <- merged_partitions[ordered_indices]
     }
 
@@ -1062,7 +1062,7 @@ merge_partitions_ecs <- function(partition_list,
     while (length(partition_groups) > 1) {
         # if the similarity between any pair of partitions is below the threshold
         # we do not perform any merging
-        if (max(sim_matrix, na.rm = T) < ecs_thresh) {
+        if (max(sim_matrix, na.rm = TRUE) < ecs_thresh) {
             break
         }
 
@@ -1133,9 +1133,11 @@ merge_partitions_ecs <- function(partition_list,
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
-#' @param ncores The number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
 #' @param order A logical: if TRUE, order the partitions based on their frequencies.
+#' @param check_ties A logical value that indicates whether to check for ties
+#' in the highest frequency partitions or not. If TRUE, the function will put
+#' at the first position the partition that has the highest similarity
+#' with the other partitions. Defaults to `FALSE`.
 #' @return a list of the merged partitions
 #' @export
 #' @examples
@@ -1155,7 +1157,7 @@ merge_partitions <- function(partition_list,
     }
 
     # check the type of object that is provided in the list
-    if (class(partition_list[[1]]) != "list") { # the elements should be membership vectors
+    if (!inherits(partition_list[[1]], "list")) { # the elements should be membership vectors
         partition_list <- lapply(partition_list, function(x) {
             list(
                 mb = x,
@@ -1163,10 +1165,9 @@ merge_partitions <- function(partition_list,
             )
         })
     } else {
-        if ("partitions" %in% names(partition_list)) { # the list contains the partition field, created by `get_resolution_importance` method
+        # the list contains the partition field, created by `get_resolution_importance` method
+        if ("partitions" %in% names(partition_list)) {
             return(merge_partitions(partition_list$partitions, ecs_thresh, order, check_ties))
-
-            # return(list(partitions = part_list, ecc = ec_consistency))
         }
         # the case with list of lists of partitions
         if (!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
@@ -1188,7 +1189,8 @@ merge_partitions <- function(partition_list,
         return(part_list)
     }
 
-    # check for ties - partitions with the same highest frequency; we will put first the one that has the highest similarity with the other partitions
+    # check for ties - partitions with the same highest frequency; we will put
+    # first the one that has the highest similarity with the other partitions
     # calculate the weighted ECC as well
     if (length(part_list) == 1) {
         return(list(partitions = part_list, ecc = rep(1, length(part_list[[1]]$mb))))
@@ -1251,12 +1253,14 @@ merge_partitions <- function(partition_list,
 #' * "linkage" : use the linkage distances in the clustering.
 #' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
 #' rescaled to be in-between 0 and 1.
-#' @param ncores the number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
+#' @param calculate_sim_matrix A logical value that indicates whether to
+#' calculate the similarity matrix or not along with the consistency score.
+#' Defaults to `FALSE`.
 #'
-#' @return a vector containing the element-wise consistency.
+#' @return A vector containing the element-wise consistency. If
+#' `calculate_sim_matrix` is set to `TRUE`, the element similarity matrix
+#' will be returned as well.
 #' @export
-#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -1275,11 +1279,11 @@ element_consistency <- function(clustering_list,
                                 calculate_sim_matrix = FALSE) {
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
-        any(class(x) %in% c("numeric", "integer", "factor", "character"))
+        inherits(x, c("numeric", "integer", "factor", "character"))
     })
 
     are_all_viable_objects <- sapply(clustering_list, function(x) {
-        is.matrix(x) | methods::is(x, "Matrix") | methods::is(x, "hclust")
+        is.matrix(x) | inherits(x, "Matrix") | inherits(x, "hclust")
     })
 
     if (any(are_all_flat_disjoint == FALSE) &&
@@ -1331,9 +1335,33 @@ element_consistency <- function(clustering_list,
 }
 
 #' Weighted Element-Centric Consistency
-#' @description calculate the element consistency of a list of clusterings where each object has a weight
+#' @description Calculate the weighted element-centric consistency of a set of
+#' clusterings. The weights are used to give more importance to some clusterings
+#' over others.
+#'
+#' @param clustering_list The list of clustering results, each of which is either:
+#' * A numeric/character/factor vector of cluster labels for each element.
+#' * A samples x clusters matrix/Matrix::Matrix of nonzero membership values.
+#' * An hclust object.
+#' @param weights A numeric vector of weights for each clustering in
+#' `clustering_list`. If `NULL`, then all weights will be equal to 1. Defaults
+#' to `NULL`.
+#' @param calculate_sim_matrix A logical value that indicates whether to
+#' calculate the similarity matrix or not along with the consistency score.
+#' Defaults to `FALSE`.
+#'
+#' @return A vector containing the weighted element-wise consistency. If
+#' `calculate_sim_matrix` is set to `TRUE`, the element similarity matrix
+#' will be returned as well.
+#'
+#' @note The weighted ECC will be calculated as \eqn{\displaystyle \frac{\sum_{i} \sum_{j} w_i w_j ECS(i, j)}{\sum_{i} w_i}}
 #'
 #' @export
+#' @examples
+#' # cluster across 20 random seeds
+#' clustering_list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)
+#' weights <- sample(1:10, 20, replace = TRUE)
+#' weighted_element_consistency(clustering_list, weights = weights)
 weighted_element_consistency <- function(clustering_list,
                                          weights = NULL,
                                          calculate_sim_matrix = FALSE) {
@@ -1410,12 +1438,9 @@ weighted_element_consistency <- function(clustering_list,
 #' * "linkage" : use the linkage distances in the clustering.
 #' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
 #' rescaled to be in-between 0 and 1.
-#' @param ncores the number of parallel R instances that will run the code.
-#' If the value is set to 1, the code will be run sequentially.
 #'
 #' @return A vector containing the element-wise average agreement.
 #' @export
-#' @md
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
 #' Element-centric clustering comparison unifies overlaps and hierarchy.
@@ -1436,16 +1461,16 @@ element_agreement <- function(reference_clustering,
                               row_normalize = TRUE) {
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
-        any(class(x) %in% c("numeric", "integer", "factor", "character"))
+        inherits(x, c("numeric", "integer", "factor", "character"))
     })
 
     are_all_viable_objects <- sapply(clustering_list, function(x) {
-        is.matrix(x) | methods::is(x, "Matrix") | methods::is(x, "hclust")
+        is.matrix(x) | inherits(x, "Matrix") | inherits(x, "hclust")
     })
 
     # if the condition is met, perform element frustration using only the membership vector
     if (all(are_all_flat_disjoint == TRUE) &&
-        any(class(reference_clustering) %in% c("numeric", "integer", "factor", "character"))) {
+        inherits(reference_clustering, c("numeric", "integer", "factor", "character"))) {
         return(element_agreement_flat_disjoint(
             reference_clustering = reference_clustering,
             clustering_list = clustering_list,
@@ -1455,7 +1480,7 @@ element_agreement <- function(reference_clustering,
 
     if (any(are_all_flat_disjoint == FALSE &&
         are_all_viable_objects == FALSE) ||
-        !(any(class(reference_clustering) %in% c("numeric", "integer", "factor", "character", "matrix", "Matrix", "hclust")))) {
+        !(inherits(reference_clustering, c("numeric", "integer", "factor", "character", "matrix", "Matrix", "hclust")))) {
         stop("Please ensure reference_clustering and each entry in clustering_list is from these following classes: numeric, factor, character, matrix, Matrix, hclust.")
     }
 
@@ -1470,7 +1495,7 @@ element_agreement <- function(reference_clustering,
     )
 
     # create Clustering object for the reference clustering
-    if (methods::is(reference_clustering, "hclust")) {
+    if (inherits(reference_clustering, "hclust")) {
         reference_clustering <- create_clustering(
             clustering_result = reference_clustering,
             alpha = alpha,
@@ -1479,7 +1504,7 @@ element_agreement <- function(reference_clustering,
             ppr_implementation = ppr_implementation,
             dist_rescaled = dist_rescaled
         )
-    } else if (is.matrix(reference_clustering) | methods::is(reference_clustering, "Matrix")) {
+    } else if (is.matrix(reference_clustering) | inherits(reference_clustering, "Matrix")) {
         reference_clustering <- create_clustering(
             clustering_result = reference_clustering,
             alpha = alpha,
@@ -1546,7 +1571,7 @@ create_clustering_list <- function(object_list,
         .packages = "ClustAssess",
         .export = "create_clustering"
     ) %dopar% {
-        if (methods::is(obj, "hclust")) {
+        if (inherits(obj, "hclust")) {
             return(create_clustering(
                 clustering_result = obj,
                 alpha = alpha,
@@ -1557,7 +1582,7 @@ create_clustering_list <- function(object_list,
             ))
         }
 
-        if (is.matrix(obj) | methods::is(obj, "Matrix")) {
+        if (is.matrix(obj) | inherits(obj, "Matrix")) {
             return(create_clustering(
                 clustering_result = obj,
                 alpha = alpha,
@@ -1641,8 +1666,6 @@ Clustering <- setClass(
 #' @return A Clustering object.
 #'
 #' @keywords internal
-#'
-#' @md
 setGeneric(
     "create_clustering",
     function(clustering_result, ...) {
@@ -1721,7 +1744,6 @@ setMethod(
     }
 )
 
-#' @importFrom methods new
 create_flat_disjoint_clustering <- function(clustering_result,
                                             alpha) {
     # disjoint partitions
@@ -1795,7 +1817,6 @@ setMethod(
     }
 )
 
-#' @importFrom methods new
 create_flat_overlapping_clustering <- function(clustering_result,
                                                alpha,
                                                ppr_implementation,
@@ -1854,7 +1875,6 @@ create_flat_overlapping_clustering <- function(clustering_result,
 
 setOldClass("hclust")
 #' @describeIn create_clustering Create Clustering Object from hclust
-#' @importFrom methods new
 setMethod(
     "create_clustering",
     signature(clustering_result = "hclust"),
