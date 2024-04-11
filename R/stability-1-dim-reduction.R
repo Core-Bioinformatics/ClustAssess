@@ -1,4 +1,5 @@
 # TODO close the socket connections in case of interruptions
+# TODO use the marker JSI as indicator for stabiliity instead of / together with the ECC
 
 #' Assess the stability for configurations of feature types and sizes
 #'
@@ -32,6 +33,10 @@
 #' `prcomp`.
 #' @param umap_arguments A list containing the arguments that will be passed
 #' to the UMAP function. Refer to the `uwot::umap` function for more details.
+#' @param prune_value Argument indicating whether to prune the SNN graph. If the
+#' value is 0, the graph won't be pruned. If the value is between 0 and 1, the
+#' edges with weight under the pruning value will be removed. If the value is
+#' -1, the highest pruning value will be calculated automatically and used.
 #' @param clustering_algorithm An index indicating which community detection
 #' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or
 #' Leiden (4). More details can be found in the Seurat's
@@ -96,7 +101,6 @@ assess_feature_stability <- function(data_matrix,
                                      n_repetitions = 100,
                                      seed_sequence = NULL,
                                      graph_reduction_type = "PCA",
-                                     #  npcs = 30, # TODO remove this parameter - deprecated, as it can be used inside the matrix_processing function
                                      ecs_thresh = 1,
                                      matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
                                          # WARNING using more threads will lead to slightly different results
@@ -112,7 +116,7 @@ assess_feature_stability <- function(data_matrix,
                                          return(embedding)
                                      },
                                      umap_arguments = list(),
-                                     #  matrix_processing_arguments = list(), # TODO remove this parameter - deprecated
+                                     prune_value = -1,
                                      clustering_algorithm = 1,
                                      clustering_arguments = list(),
                                      verbose = FALSE) {
@@ -124,7 +128,11 @@ assess_feature_stability <- function(data_matrix,
     }
 
     # transpose the matrix to have observations on rows and features on columns
-    data_matrix <- t(data_matrix)
+    if (inherits(data_matrix, "dgCMatrix")) {
+        data_matrix <- Matrix::t(data_matrix)
+    } else {
+        data_matrix <- t(data_matrix)
+    }
     ncells <- nrow(data_matrix)
 
     if (!is.character(feature_set)) {
@@ -154,12 +162,6 @@ assess_feature_stability <- function(data_matrix,
     if (!(graph_reduction_type %in% c("PCA", "UMAP"))) {
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
     }
-
-    # if (!is.numeric(npcs) || length(npcs) > 1) {
-    #     stop("npcs parameter should be numeric")
-    # }
-    # # convert npcs to integers
-    # npcs <- as.integer(npcs)
 
     if (!is.numeric(ecs_thresh)) {
         stop("ecs_thresh parameter should be numeric")
@@ -197,17 +199,7 @@ assess_feature_stability <- function(data_matrix,
         steps > length(feature_set)] <- length(feature_set)
     steps <- sort(unique(steps))
 
-
-    if (graph_reduction_type == "UMAP") {
-        umap_arguments[["n_threads"]] <- 1
-        umap_arguments[["n_sgd_threads"]] <- 1
-    }
-
-    if (!("n_neighbors" %in% names(umap_arguments))) {
-        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
-    }
-
-    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+    umap_arguments <- process_umap_arguments(umap_arguments, ncells)
 
     if (verbose) {
         pb <- progress::progress_bar$new(
@@ -226,20 +218,10 @@ assess_feature_stability <- function(data_matrix,
             pb$tick(0, tokens = list(featuresize = step))
         }
         used_features <- feature_set[1:step]
-        # actual_npcs <- min(npcs, step %/% 2)
         step <- as.character(step)
 
         partitions_list[[step]] <- list()
         steps_ecc_list[[object_name]][[step]] <- list()
-
-        # embedding <- do.call(
-        #     matrix_processing,
-        #     c(
-        #         list(dt_mtx = data_matrix[, used_features]),
-        #         matrix_processing_arguments
-        #     )
-        # )
-        # TODO: check if the below line is equivalent with the above commented code
 
         embedding <- matrix_processing(data_matrix[, used_features])
 
@@ -251,21 +233,30 @@ assess_feature_stability <- function(data_matrix,
             colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
         }
 
-        pca_list[[object_name]][[step]] <- embedding
+        pca_list[[object_name]][[step]] <- embedding # nolint
 
         # build the SNN graph before if PCA
         if (graph_reduction_type == "PCA") {
-            neigh_matrix <- get_highest_prune_param(
-                nn_matrix = Seurat::FindNeighbors(
-                    # TODO don't use Seurat
-                    embedding,
-                    nn.method = "rann",
-                    compute.SNN = FALSE,
-                    verbose = FALSE,
-                    k.param = min(20, ncells - 1)
-                )$nn,
-                n_neigh = min(20, ncells - 1)
-            )$adj_matrix
+            used_n_neigh <- min(20, ncells - 1)
+
+            if (prune_value >= 0) {
+                neigh_matrix <- getNNmatrix(
+                    RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                    used_n_neigh,
+                    0,
+                    prune_value
+                )$snn
+            } else {
+                neigh_matrix <- get_highest_prune_param(
+                    nn_matrix = getNNmatrix(
+                        RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                        used_n_neigh,
+                        0,
+                        -1
+                    )$nn,
+                    n_neigh = used_n_neigh
+                )$adj_matrix
+            }
             rownames(neigh_matrix) <- rownames(embedding)
             colnames(neigh_matrix) <- rownames(embedding)
         }
@@ -275,7 +266,9 @@ assess_feature_stability <- function(data_matrix,
             "graph_reduction_type",
             "umap_arguments",
             "clustering_arguments",
-            "resolution"
+            "resolution",
+            "prune_value",
+            "ncells"
         )
 
         if (graph_reduction_type == "PCA") {
@@ -306,8 +299,6 @@ assess_feature_stability <- function(data_matrix,
             if (graph_reduction_type == "UMAP") {
                 row_names <- rownames(shared_embedding)
                 # calculate the umap embedding
-                # set.seed(seed)
-                # TODO check if set.seed is equivalent with sending the seed as param; if so, change the set.seed(42) as well
                 if ("seed" %in% names(umap_arguments)) {
                     umap_arguments$seed <- seed
                 }
@@ -324,15 +315,27 @@ assess_feature_stability <- function(data_matrix,
                 gc()
 
                 # build the nn and snn graphs and apply graph clustering
-                umap_neigh_matrix <- get_highest_prune_param(
-                    nn_matrix = Seurat::FindNeighbors(
-                        ump_embedding,
-                        nn.method = "rann",
-                        compute.SNN = FALSE,
-                        verbose = FALSE
-                    )$nn,
-                    n_neigh = min(20, ncells)
-                )$adj_matrix
+                used_n_neigh <- min(20, ncells - 1)
+                if (prune_value >= 0) {
+                    umap_neigh_matrix <- getNNmatrix(
+                        RANN::nn2(ump_embedding, k = used_n_neigh)$nn.idx,
+                        used_n_neigh,
+                        0,
+                        prune_value
+                    )$snn
+                } else {
+                    umap_neigh_matrix <- get_highest_prune_param(
+                        nn_matrix = getNNmatrix(
+                            RANN::nn2(ump_embedding, k = used_n_neigh)$nn.idx,
+                            used_n_neigh,
+                            0,
+                            -1
+                        )$nn,
+                        n_neigh = used_n_neigh
+                    )$adj_matrix
+                }
+                rownames(umap_neigh_matrix) <- row_names
+                colnames(umap_neigh_matrix) <- row_names
 
                 # apply graph clustering to the snn graph
                 cluster_results <- lapply(resolution, function(r) {
@@ -347,20 +350,9 @@ assess_feature_stability <- function(data_matrix,
                             clustering_arguments
                         )
                     )
-                    # cl_res <- Seurat::FindClusters(
-                    #     umap_neigh_matrix,
-                    #     random.seed = seed,
-                    #     algorithm = algorithm,
-                    #     resolution = r,
-                    #     n.start = 1,
-                    #     verbose = FALSE
-                    # )
-
-                    # cl_res <- cl_res[, names(cl_res)[1]]
 
                     # return the clustering
                     list(
-                        # mb = as.integer(cl_res),
                         mb = cl_res,
                         freq = 1,
                         seed = seed
@@ -373,16 +365,6 @@ assess_feature_stability <- function(data_matrix,
 
             # apply graph clustering to the snn graph
             cluster_results <- lapply(resolution, function(r) {
-                # cl_res <- Seurat::FindClusters(
-                #     shared_neigh_matrix,
-                #     random.seed = seed,
-                #     algorithm = algorithm,
-                #     resolution = r,
-                #     n.start = 1,
-                #     verbose = FALSE
-                # )
-
-                # cl_res <- cl_res[, names(cl_res)[1]]
                 cl_res <- do.call(
                     clustering_functions,
                     c(
@@ -397,7 +379,6 @@ assess_feature_stability <- function(data_matrix,
 
                 # return the clustering
                 list(
-                    # mb = as.integer(cl_res),
                     mb = cl_res,
                     freq = 1,
                     seed = seed
@@ -415,14 +396,13 @@ assess_feature_stability <- function(data_matrix,
         }
 
         set.seed(42) # to match Seurat's default
-        # FIXME find a way to solve the issue of duplicate "dict" class (from BiocGeneric and spam packages)
-        utils::capture.output(embedding <- base::do.call(
+        embedding <- base::do.call(
             uwot::umap,
             c(
                 list(X = embedding),
                 umap_arguments
             )
-        ), type = "message")
+        )
 
         colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
         rownames(embedding) <- rownames(data_matrix)
@@ -561,7 +541,8 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
     # create a dataframe based on the object returned by `get_feature_stability`
     for (config_name in names(feature_object_list)) {
         list_ecc <- lapply(feature_object_list[[config_name]], function(x) {
-            as.numeric(x[[resolution]]$ecc) # NOTE as.numeric is necessary for the shiny app, which creates arrays, not numeric vectors
+            # NOTE as.numeric is necessary for the shiny app, which creates arrays, not numeric vectors
+            as.numeric(x[[resolution]]$ecc)
         })
 
         melt_object <- reshape2::melt(list_ecc)

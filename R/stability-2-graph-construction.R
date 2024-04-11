@@ -44,7 +44,7 @@ get_nn_conn_comps_umap <- function(embedding,
         "umap_arguments"
     )
     seed <- NA
-    getNNmatrix <- getNNmatrix
+    # getNNmatrix <- getNNmatrix
 
     # send the name of the dim reduction arguments
     nn_conn_comps_list_temp <- foreach::foreach(
@@ -138,7 +138,6 @@ get_nn_conn_comps_pca <- function(embedding,
 
     # send the name of the dim reduction arguments
     g_list <- foreach::foreach(
-        # n_neigh = n_neigh_sequence,
         i = seq_along(n_neigh_sequence),
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
@@ -157,7 +156,7 @@ get_nn_conn_comps_pca <- function(embedding,
     }
 
     g <- NULL
-    # store the results obtained for each number of neighbours in different lists
+    # store obtained results for each number of neighbours in different lists
     for (i in seq_along(n_neigh_sequence)) {
         n_neigh <- n_neigh_sequence[i]
         if (is.null(g)) {
@@ -548,6 +547,7 @@ assess_nn_stability_pca <- function(embedding,
                                     seed_sequence = NULL,
                                     ecs_thresh = 1,
                                     graph_type = 2,
+                                    prune_value = -1,
                                     clustering_algorithm = 1,
                                     clustering_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
@@ -577,7 +577,8 @@ assess_nn_stability_pca <- function(embedding,
     needed_vars <- c(
         "cell_names",
         "shared_nn2_res",
-        "graph_type"
+        "graph_type",
+        "prune_value"
     )
     neigh_matrices <- foreach::foreach(
         n_neigh = n_neigh_sequence,
@@ -591,10 +592,14 @@ assess_nn_stability_pca <- function(embedding,
         colnames(neigh_matrix$nn) <- cell_names
 
         if (graph_type > 0) {
-            neigh_matrix$snn <- get_highest_prune_param(
-                nn_matrix = neigh_matrix$nn,
-                n_neigh = n_neigh
-            )$adj_matrix
+            if (prune_value >= 0) {
+                neigh_matrix$snn <- computeSNN(neigh_matrix$nn, n_neigh, prune_value)
+            } else {
+                neigh_matrix$snn <- get_highest_prune_param(
+                    nn_matrix = neigh_matrix$nn,
+                    n_neigh = n_neigh
+                )$adj_matrix
+            }
             rownames(neigh_matrix$snn) <- cell_names
             colnames(neigh_matrix$snn) <- cell_names
         }
@@ -639,20 +644,6 @@ assess_nn_stability_pca <- function(embedding,
         ) %dopar% {
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type != 1) {
-                # cluster_results_nn <- Seurat::FindClusters(
-                #     shared_neigh_matrix$nn,
-                #     random.seed = seed,
-                #     algorithm = algorithm,
-                #     n.start = 1,
-                #     verbose = FALSE
-                # )
-
-                # cluster_results_nn <- list(
-                #     mb = as.integer(cluster_results_nn[, names(cluster_results_nn)[1]]),
-                #     freq = 1,
-                #     seed = seed
-                # )
-
                 cluster_results_nn <- list(
                     mb = do.call(
                         clustering_functions,
@@ -673,20 +664,6 @@ assess_nn_stability_pca <- function(embedding,
                     return(cluster_results_nn)
                 }
             }
-
-            # cluster_results_snn <- Seurat::FindClusters(
-            #     shared_neigh_matrix$snn,
-            #     random.seed = seed,
-            #     algorithm = algorithm,
-            #     n.start = 1,
-            #     verbose = FALSE
-            # )
-
-            # cluster_results_snn <- list(
-            #     mb = as.integer(cluster_results_snn[, names(cluster_results_snn)[1]]),
-            #     freq = 1,
-            #     seed = seed
-            # )
 
             cluster_results_snn <- list(
                 mb = do.call(
@@ -731,8 +708,8 @@ assess_nn_stability_pca <- function(embedding,
     #     gc()
     # }
 
-    # create an object showing the number of clusters obtained for each number of
-    # neighbours
+    # create an object showing the number of clusters obtained for each number
+    # of neighbours
     nn_object_n_clusters <- list()
     for (config_name in names(partitions_list)) {
         nn_object_n_clusters[[config_name]] <- list()
@@ -775,6 +752,7 @@ assess_nn_stability_umap <- function(embedding,
                                      seed_sequence = NULL,
                                      ecs_thresh = 1,
                                      graph_type = 2,
+                                     prune_value = -1,
                                      clustering_algorithm = 1,
                                      clustering_arguments = list(),
                                      umap_arguments = list()) {
@@ -785,18 +763,8 @@ assess_nn_stability_umap <- function(embedding,
         object_names <- object_names[graph_type + 1]
     }
 
-    # umap_arguments[["n_threads"]] <- 1
-    # umap_arguments[["n_sgd_threads"]] <- 1
-
     ncells <- nrow(embedding)
-    # if (!("n_neighbors" %in% umap_arguments)) {
-    # umap_arguments[["n_neighbors"]] <- 15 # uwot's default
-    # }
-
-    # umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
-
     umap_arguments <- process_umap_arguments(umap_arguments, ncells)
-    # num_iters <- process_clustering_arguments(clustering_arguments)[2]
 
     if (ncores > 1) {
         shared_embedding <- SharedObject::share(embedding)
@@ -810,10 +778,10 @@ assess_nn_stability_umap <- function(embedding,
         "n_neigh_sequence",
         "graph_reduction_type",
         "graph_type",
-        # "clustering_algorithm",
         "umap_arguments",
         "clustering_arguments",
-        "prune_SNN"
+        "prune_SNN",
+        "prune_value"
     )
 
     seed <- NA
@@ -846,30 +814,20 @@ assess_nn_stability_umap <- function(embedding,
             colnames(neigh_matrix$nn) <- row_names
 
             if (graph_type > 0) {
-                neigh_matrix$snn <- get_highest_prune_param(
-                    nn_matrix = neigh_matrix$nn,
-                    n_neigh = n_neigh
-                )$adj_matrix
+                if (prune_value >= 0) {
+                    neigh_matrix$snn <- computeSNN(neigh_matrix$nn, n_neigh, prune_value)
+                } else {
+                    neigh_matrix$snn <- get_highest_prune_param(
+                        nn_matrix = neigh_matrix$nn,
+                        n_neigh = n_neigh
+                    )$adj_matrix
+                }
                 rownames(neigh_matrix$snn) <- row_names
                 colnames(neigh_matrix$snn) <- row_names
             }
 
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type > 0) {
-                # cluster_results_snn <- Seurat::FindClusters(
-                #     neigh_matrix$snn,
-                #     random.seed = seed,
-                #     algorithm = algorithm,
-                #     n.start = 1,
-                #     verbose = FALSE
-                # )
-
-                # seed_result[["snn"]][[as.character(n_neigh)]] <- list(
-                #     mb = as.integer(cluster_results_snn[[1]]),
-                #     freq = 1,
-                #     seed = seed
-                # )
-
                 seed_result[["snn"]][[as.character(n_neigh)]] <- list(
                     mb = do.call(
                         clustering_functions,
@@ -888,20 +846,6 @@ assess_nn_stability_umap <- function(embedding,
             }
 
             if (graph_type %% 2 == 0) {
-                # cluster_results_nn <- Seurat::FindClusters(
-                #     neigh_matrix$nn,
-                #     random.seed = seed,
-                #     algorithm = algorithm,
-                #     n.start = 1,
-                #     verbose = FALSE
-                # )
-
-                # seed_result[["nn"]][[as.character(n_neigh)]] <- list(
-                #     mb = as.integer(cluster_results_nn[[1]]),
-                #     freq = 1,
-                #     seed = seed
-                # )
-
                 seed_result[["nn"]][[as.character(n_neigh)]] <- list(
                     mb = do.call(
                         clustering_functions,
@@ -1009,6 +953,10 @@ assess_nn_stability_umap <- function(embedding,
 #' @param ecs_thresh The ECS threshold used for merging similar clusterings.
 #' @param graph_type Argument indicating whether the graph should be
 #' unweighted (0), weighted (1) or both (2).
+#' @param prune_value Argument indicating whether to prune the SNN graph. If the
+#' value is 0, the graph won't be pruned. If the value is between 0 and 1, the
+#' edges with weight under the pruning value will be removed. If the value is
+#' -1, the highest pruning value will be calculated automatically and used.
 #' @param clustering_algorithm An index indicating which community detection algorithm will
 #' be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
 #' details can be found in the Seurat's `FindClusters` function.
@@ -1049,13 +997,12 @@ assess_nn_stability <- function(embedding,
                                 graph_reduction_type = "PCA",
                                 ecs_thresh = 1,
                                 graph_type = 2,
+                                prune_value = -1,
                                 clustering_algorithm = 1,
                                 clustering_arguments = list(),
                                 umap_arguments = list()) {
     # TODO vary by resolution
-    # TODO add option to use pruning
     # BUG check the performance
-    # [ ] optimise the way the nn matrices are built
     # check parameters
     if (!is.numeric(n_neigh_sequence)) {
         stop("n_neigh_sequence parameter should be numeric")
@@ -1122,6 +1069,7 @@ assess_nn_stability <- function(embedding,
             seed_sequence = seed_sequence,
             ecs_thresh = ecs_thresh,
             graph_type = graph_type,
+            prune_value = prune_value,
             clustering_algorithm = clustering_algorithm,
             clustering_arguments = clustering_arguments
         ))
@@ -1134,6 +1082,7 @@ assess_nn_stability <- function(embedding,
         seed_sequence = seed_sequence,
         ecs_thresh = ecs_thresh,
         graph_type = graph_type,
+        prune_value = prune_value,
         clustering_algorithm = clustering_algorithm,
         clustering_arguments = clustering_arguments,
         umap_arguments = umap_arguments
