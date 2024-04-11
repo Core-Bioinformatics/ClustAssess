@@ -2,11 +2,10 @@ Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
 Version: 1.0.0
-Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
-                  role = c("aut", "cre")), person("Andi", "Munteanu",
-                  email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
-                  email="iim22@cam.ac.uk", role="aut"))
-Maintainer: Andi Munteanu <am3019@cam.ac.uk>
+Authors@R: c(person("Arash", "Shahsavari", email="arash8579@hotmail.com",
+                  role = c("aut")), person("Andi", "Munteanu",
+                  email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Irina", "Mohorianu",
+                  email="iim22@cam.ac.uk", role=c("aut")))
 Description: A set of tools for evaluating clustering robustness using 
     proportion of ambiguously clustered pairs (Senbabaoglu et al. (2014) 
     <doi:10.1038/srep06207>), as well as similarity across methods 
@@ -36,7 +35,6 @@ Imports:
     progress,
     reshape2,
     RANN,
-    SeuratObject,
     stringr,
     paletteer,
     plotly,
@@ -47,7 +45,6 @@ Imports:
     shinyjs,
     shinyLP,
     shinyWidgets,
-    styler,
     uwot,
     vioplot,
     viridis
@@ -58,6 +55,7 @@ LinkingTo:
     RcppEigen
 Suggests: 
     DelayedMatrixStats,
+    devtools,
     rhdf5,
     SharedObject,
     knitr,
@@ -69,14 +67,15 @@ Suggests:
     dendextend,
     leidenbase,
     monocle3,
+    patchwork,
     scales,
     Seurat,
-    sf,
+    SeuratData,
+    SeuratObject,
+    styler,
     ragg,
-    readr,
     reactlog,
-    RhpcBLASctl,
-    patchwork
+    RhpcBLASctl
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
