@@ -17,13 +17,11 @@ algorithm_names_mapping <- list(
 #' using the `merge_partitions` method.
 #'
 #' @param res_obj A list associated to a configuration field from the object
-#' returned by the `get_resolution_importance` method.
+#' returned by the `assess_clustering_importance` method.
 #'
 #' @return A list having one field assigned to each number of clusters. A number
 #' of cluster will contain a list of all merged partitions. To avoid duplicates,
 #' `merged_partitions` with threshold 1 is applied.
-#'
-#' #TODO add example
 merge_resolutions <- function(res_obj) {
     clusters_obj <- list()
     ncores <- foreach::getDoParWorkers()
@@ -60,28 +58,11 @@ merge_resolutions <- function(res_obj) {
         i = seq_along(clusters_obj),
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)]
-        # .export = c("merge_partitions", "merge_identical_partitions", "are_identical_memberships")
     ) %do% {
         ClustAssess::merge_partitions(clusters_obj[[i]], check_ties = TRUE)
     }
 
     names(clusters_obj) <- k_vals
-
-    # for (k in names(clusters_obj)) {
-    #   clusters_obj[[k]] <- list(partitions = clusters_obj[[k]])
-
-    #   # compute the EC-consistency of the partition list
-    #   ec_consistency <- weighted_element_consistency(
-    #     lapply(clusters_obj[[k]]$partitions, function(x) {
-    #       x$mb
-    #     }),
-    #     sapply(clusters_obj[[k]]$partitions, function(x) {
-    #       x$freq
-    #     })
-    #   )
-
-    #   clusters_obj[[k]][["ecc"]] <- ec_consistency
-    # }
 
     clusters_obj
 }
@@ -439,7 +420,9 @@ plot_clustering_per_value_stability <- function(clust_object,
     melted_df <- reshape2::melt(ecc_vals)
     colnames(melted_df) <- c("ecc", value_type, "method")
     melted_df$method <- factor(melted_df$method)
-    melted_df[[value_type]] <- factor(melted_df[[value_type]])
+    unique_vals <- stringr::str_sort(unique(melted_df[[value_type]]), numeric = TRUE)
+    melted_df[[value_type]] <- factor(melted_df[[value_type]], levels = unique_vals)
+
 
     ggplot2::ggplot(
         melted_df,
