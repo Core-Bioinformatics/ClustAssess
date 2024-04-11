@@ -1166,8 +1166,13 @@ calculate_markers <- function(expression_matrix,
                               base = 2,
                               adjust_pvals = TRUE,
                               check_cells_set_diff = TRUE) {
+    rowMeans_function <- base::rowMeans
+    if (inherits(expression_matrix, "dgCMatrix")) {
+        rowMeans_function <- Matrix::rowMeans
+    }
+
     default_mean_fxn <- function(x) {
-        return(log(x = rowMeans(x = x) + pseudocount_use, base = base))
+        return(log(x = rowMeans_function(x = x) + pseudocount_use, base = base))
     }
 
     if (is.null(feature_names)) {
@@ -1202,16 +1207,16 @@ calculate_markers <- function(expression_matrix,
     mean_fxn <- switch(EXPR = used_slot,
         data = switch(EXPR = norm_method,
             LogNormalize = function(x) {
-                return(log(x = rowMeans(x = expm1(x = x)) + pseudocount_use, base = base))
+                return(log(x = rowMeans_function(x = expm1(x = x)) + pseudocount_use, base = base))
             },
             default_mean_fxn
         ),
-        scale.data = rowMeans,
+        scale.data = rowMeans_function,
         default_mean_fxn
     )
 
     # TODO a bit redundant; this is also done in FoldChange; check if you can combine the two steps
-    avg_expr_group1 <- rowMeans(expression_matrix[, seq_along(cells1), drop = FALSE])
+    avg_expr_group1 <- rowMeans_function(expression_matrix[, seq_along(cells1), drop = FALSE])
     # TODO calculate the average of the second group as well; should we perform the filter here as well?
     if (avg_expr_threshold_group1 > 0) {
         mask <- which(avg_expr_group1 >= avg_expr_threshold_group1)
@@ -1250,8 +1255,6 @@ calculate_markers <- function(expression_matrix,
     fc_results <- fc_results[mask, ]
     feature_names <- feature_names[mask]
     avg_expr_group1 <- avg_expr_group1[mask]
-
-    # return(expression_matrix)
 
     if (is.null(rank_matrix)) {
         rank_matrix <- matrix(nrow = nrow(expression_matrix), ncol = ncol(expression_matrix))

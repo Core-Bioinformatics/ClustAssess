@@ -164,7 +164,6 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             add_env_variable("height_ratio", height_ratio)
 
             add_env_variable("dimension", dimension)
-            # TODO use these package variables in the shiny functions instead of local vars
             add_env_variable("plt_height", shiny::reactive(floor(pkg_env$height_ratio * pkg_env$dimension()[2])))
             add_env_variable("plt_width", shiny::reactive(pkg_env$dimension()[1]))
             add_env_variable("plt_width_half", shiny::reactive(pkg_env$dimension()[1] * 0.43))

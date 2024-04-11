@@ -1549,7 +1549,6 @@ shiny_ggplot_k_resolution_corresp <- function(clust_object,
                                               colour_information = c("ecc", "freq_k"),
                                               dodge_width = 0.3,
                                               pt_size_range = c(1.5, 4)) {
-    # TODO check the colors and the vertical lines, try to help the user
     if (length(colour_information) > 1) {
         colour_information <- colour_information[1]
     }

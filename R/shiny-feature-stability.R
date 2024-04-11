@@ -575,8 +575,6 @@ server_dimensionality_distribution <- function(id) {
                 )
             })
 
-            # TODO metadata highlight only a group of cells
-
             expr_matrix <- shiny::reactive({
                 if ("genes" %in% names(pkg_env)) {
                     index_gene <- pkg_env$genes[input$gene_expr]
