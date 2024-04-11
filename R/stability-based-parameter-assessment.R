@@ -173,6 +173,10 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' `prcomp`.
 #' @param umap_arguments A list containing the arguments that will be passed to the
 #' UMAP function. Refer to the `uwot::umap` function for more details.
+#' @param prune_value Argument indicating whether to prune the SNN graph. If the
+#' value is 0, the graph won't be pruned. If the value is between 0 and 1, the
+#' edges with weight under the pruning value will be removed. If the value is
+#' -1, the highest pruning value will be calculated automatically and used.
 #' @param alogrithm_dim_reduction An index indicating the community detection
 #' algorithm that will be used in the Dimensionality reduction step.
 #' @param algorithm_graph_construct An index indicating the community detection
@@ -267,6 +271,7 @@ automatic_stability_assessment <- function(expression_matrix,
                                                return(embedding)
                                            },
                                            umap_arguments = list(),
+                                           prune_value = -1,
                                            alogrithm_dim_reduction = 1,
                                            algorithm_graph_construct = 1,
                                            algorithms_clustering_assessment = 1:3,
@@ -321,6 +326,7 @@ automatic_stability_assessment <- function(expression_matrix,
             ecs_thresh = ecs_threshold,
             matrix_processing = matrix_processing,
             umap_arguments = umap_arguments,
+            prune_value = prune_value,
             clustering_algorithm = alogrithm_dim_reduction,
             clustering_arguments = clustering_arguments,
             verbose = verbose
@@ -483,6 +489,7 @@ automatic_stability_assessment <- function(expression_matrix,
                 n_repetitions = n_repetitions,
                 graph_reduction_type = "PCA",
                 ecs_thresh = ecs_threshold,
+                prune_value = prune_value,
                 clustering_algorithm = algorithm_graph_construct,
                 clustering_arguments = clustering_arguments
             )
@@ -496,6 +503,7 @@ automatic_stability_assessment <- function(expression_matrix,
                         n_repetitions = n_repetitions,
                         graph_reduction_type = "UMAP",
                         ecs_thresh = ecs_threshold,
+                        prune_value = prune_value,
                         clustering_algorithm = algorithm_graph_construct,
                         umap_arguments = umap_arguments
                     ),
@@ -542,25 +550,43 @@ automatic_stability_assessment <- function(expression_matrix,
             split_configs <- strsplit(best_config, "_")[[1]]
             base_embedding <- tolower(split_configs[length(split_configs) - 1])
             graph_type <- split_configs[length(split_configs)] # NOTE update if you decide to remove ecs thresh
-            feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
-                object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
-                k.param = best_nn,
-                verbose = FALSE,
-                nn.method = "rann",
-                compute.SNN = FALSE
+            # feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
+            #     object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
+            #     k.param = best_nn,
+            #     verbose = FALSE,
+            #     nn.method = "rann",
+            #     compute.SNN = FALSE
+            # )$nn
+            feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- getNNmatrix(
+                RANN::nn2(
+                    feature_configs[[set_name]][[n_steps]][[base_embedding]],
+                    k = best_nn,
+                )$nn.idx,
+                best_nn,
+                0,
+                -1
             )$nn
             highest_prune_param <- 0
 
             if (graph_type == "snn") {
-                highest_prune_param <- get_highest_prune_param(
-                    feature_configs[[set_name]][[n_steps]][["adj_matrix"]],
-                    best_nn
-                )
-                feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- highest_prune_param$adj_matrix
+                if (prune_value >= 0) {
+                    feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- computeSNN(
+                        feature_configs[[set_name]][[n_steps]][["adj_matrix"]],
+                        best_nn,
+                        prune_value
+                    )
+                    highest_prune_param <- prune_value
+                } else {
+                    highest_prune_param <- get_highest_prune_param(
+                        feature_configs[[set_name]][[n_steps]][["adj_matrix"]],
+                        best_nn
+                    )
+                    feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- highest_prune_param$adj_matrix
+                    highest_prune_param <- highest_prune_param$prune_value
+                    gc()
+                }
                 rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
                 colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
-                highest_prune_param <- highest_prune_param$prune_value
-                gc()
             }
 
             feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
