@@ -1,3 +1,4 @@
+# BUG the app doesn't work fully on Windows - check the problems
 ppi <- 72
 single_color <- "#025147"
 generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color = "#017c6b") {
@@ -20,7 +21,7 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
 #' - metadata.rds: the metadata file
 #' - stability.h5: contains the stability results
 #' - expression.h5: contains the expression matrix and the rank matrix
-#' 
+#'
 #' @param clustassess_object The output of the ClustAssess automatic pipeline
 #' @param expression_matrix The expression matrix
 #' @param metadata The metadata
@@ -30,7 +31,7 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
 #' @param gene_variance_threshold The threshold for the gene variance; genes with variance below this threshold will be removed
 #' @param summary_function The function used for summarizing the stability values; the default is `median`
 #' @param qualpalr_colorspace The colorspace used for generating the colors; the default is `pretty`
-#' 
+#'
 #' @return NULL (the files are written in the project_folder)
 #'
 #' @export
@@ -408,12 +409,12 @@ write_objects <- function(clustassess_object,
     num_rows <- nrow(expression_matrix)
     num_chunks <- ceiling(num_rows / chunk_size)
     dense_chunks <- lapply(seq_len(num_chunks), function(i) {
-      start_row <- (i - 1) * chunk_size + 1
-      end_row <- min(i * chunk_size, num_rows)
-      chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
-      gene_vars <- matrixStats::rowVars(chunk_matrix)
+        start_row <- (i - 1) * chunk_size + 1
+        end_row <- min(i * chunk_size, num_rows)
+        chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
+        gene_vars <- matrixStats::rowVars(chunk_matrix)
         # filter by var threshold
-      chunk_matrix[gene_vars >= gene_variance_threshold, ]
+        chunk_matrix[gene_vars >= gene_variance_threshold, ]
     })
 
     print("merging chunks")
@@ -624,6 +625,7 @@ write_shiny_app.default <- function(object,
         library(shinyjs)
         library(rhdf5)
         library(ClustAssess)
+        library(dplyr)
 
         tabs_numbers <- seq_len(6)
         names(tabs_numbers) <- c(
