@@ -18,7 +18,7 @@ above a given threshold. The merging is done using a complete linkage approach."
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -39,7 +39,13 @@ above a given threshold. The merging is done using a complete linkage approach."
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -68,7 +74,12 @@ above a given threshold. The merging is done using a complete linkage approach.<
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">merge_partitions</span><span class="op">(</span><span class="va">partition_list</span>, ecs_thresh <span class="op">=</span> <span class="fl">1</span>, ncores <span class="op">=</span> <span class="fl">1</span>, order <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">merge_partitions</span><span class="op">(</span></span>
+<span>  <span class="va">partition_list</span>,</span>
+<span>  ecs_thresh <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  order <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  check_ties <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -81,13 +92,15 @@ above a given threshold. The merging is done using a complete linkage approach.<
 <dd><p>A numeric: the ecs threshold.</p></dd>
 
 
-<dt>ncores</dt>
-<dd><p>The number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.</p></dd>
-
-
 <dt>order</dt>
 <dd><p>A logical: if TRUE, order the partitions based on their frequencies.</p></dd>
+
+
+<dt>check_ties</dt>
+<dd><p>A logical value that indicates whether to check for ties
+in the highest frequency partitions or not. If TRUE, the function will put
+at the first position the partition that has the highest similarity
+with the other partitions. Defaults to <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -99,8 +112,8 @@ If the value is set to 1, the code will be run sequentially.</p></dd>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">initial_list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">2</span>,<span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'B'</span>,<span class="st">'B'</span>,<span class="st">'A'</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">merge_partitions</span><span class="op">(</span><span class="va">initial_list</span>, <span class="fl">0.99</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">initial_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B"</span>, <span class="st">"B"</span>, <span class="st">"A"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">merge_partitions</span><span class="op">(</span><span class="va">initial_list</span>, <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$mb</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1 1 2</span>
@@ -127,11 +140,11 @@ If the value is set to 1, the code will be run sequentially.</p></dd>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

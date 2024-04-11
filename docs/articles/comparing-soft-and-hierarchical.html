@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -56,7 +56,13 @@
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul>
 </li>
@@ -81,146 +87,199 @@
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1 data-toc-skip>Comparing soft and hierarchical clusterings with element-centric similarity</h1>
+      <h1 data-toc-skip>Comparing soft and hierarchical clusterings with
+element-centric similarity</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/../../../carola/foetal-liver/analysis/vignettes/comparing-soft-and-hierarchical.Rmd" class="external-link"><code>../../../carola/foetal-liver/analysis/vignettes/comparing-soft-and-hierarchical.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/vignettes/comparing-soft-and-hierarchical.Rmd" class="external-link"><code>vignettes/comparing-soft-and-hierarchical.Rmd</code></a></small>
       <div class="hidden name"><code>comparing-soft-and-hierarchical.Rmd</code></div>
 
     </div>
 
     
     
-<p>In this vignette we will illustrate how element-centric similarity can be used to compare different kinds of clustering results: flat disjoint clusterings, flat overlapping clusterings, and hierarchical clusterings.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">e1071</span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mhahsler/dbscan" class="external-link">dbscan</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span><span class="op">)</span>
-
-<span class="co"># we will use the Iris dataset for this vignette</span>
-<span class="va">data</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span>
-<span class="va">df.iris</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/prcomp.html" class="external-link">prcomp</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">x</span><span class="op">)</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">species</span> <span class="op">=</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">species</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'Iris PCA'</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">is_e1071</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st">"e1071"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_e1071</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"e1071"</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">e1071</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">is_dbscan</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/mhahsler/dbscan" class="external-link">"dbscan"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dbscan'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     as.dendrogram</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dbscan</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dbscan"</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mhahsler/dbscan" class="external-link">dbscan</a></span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">is_dendextend</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="http://talgalili.github.io/dendextend/" class="external-link">"dendextend"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ---------------------</span></span>
+<span><span class="co">#&gt; Welcome to dendextend version 1.17.1</span></span>
+<span><span class="co">#&gt; Type citation('dendextend') for how to cite the package.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Type browseVignettes(package = 'dendextend') for the package vignette.</span></span>
+<span><span class="co">#&gt; The github page is: https://github.com/talgalili/dendextend/</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Suggestions and bug-reports can be submitted at: https://github.com/talgalili/dendextend/issues</span></span>
+<span><span class="co">#&gt; You may ask questions at stackoverflow, use the r and dendextend tags: </span></span>
+<span><span class="co">#&gt;   https://stackoverflow.com/questions/tagged/dendextend</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  To suppress this message use:  suppressPackageStartupMessages(library(dendextend))</span></span>
+<span><span class="co">#&gt; ---------------------</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dendextend'</span></span>
+<span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     cutree</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dendextend</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dendextend"</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>In this vignette we will illustrate how element-centric similarity
+can be used to compare different kinds of clustering results: flat
+disjoint clusterings, flat overlapping clusterings, and hierarchical
+clusterings.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># we will use the Iris dataset for this vignette</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">df.iris</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/prcomp.html" class="external-link">prcomp</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">x</span><span class="op">)</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="va">iris</span><span class="op">$</span><span class="va">Species</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">species</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Iris PCA"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="comparing-soft-and-hierarchical_files/figure-html/setup-1.png" width="672"></p>
 <p>Next, we cluster the data using three different approaches.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># a flat, disjoint clustering with DBscan</span>
-<span class="va">db.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/dbscan/man/dbscan.html" class="external-link">dbscan</a></span><span class="op">(</span><span class="va">data</span>, eps<span class="op">=</span><span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">db.cluster</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">db.res</span><span class="op">)</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">db.cluster</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'DBScan clustering'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-1.png" width="672"></p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="co"># an overlapping clustering with soft k-means</span>
-<span class="va">cmeans.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/e1071/man/cmeans.html" class="external-link">cmeans</a></span><span class="op">(</span><span class="va">data</span>, centers<span class="op">=</span><span class="fl">6</span><span class="op">)</span><span class="op">$</span><span class="va">membership</span>
-<span class="co"># get the strongest cluster assignment for each observation to plot</span>
-<span class="co"># but we will still use the soft cluster assignments to calculate ECS</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.cluster</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">cmeans.res</span>, <span class="fl">1</span>, <span class="va">which.max</span><span class="op">)</span><span class="op">)</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">cmeans.cluster</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'c-means clustering'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-2.png" width="672"></p>
+<code class="sourceCode R"><span><span class="co"># a flat, disjoint clustering with DBscan</span></span>
+<span><span class="va">db.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/dbscan/man/dbscan.html" class="external-link">dbscan</a></span><span class="op">(</span><span class="va">data</span>, eps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">db.cluster</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">db.res</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">db.cluster</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"DBScan clustering"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-1.png" width="672"></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R">
-<span class="co"># a hierarchical clustering</span>
-<span class="va">distances</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">data</span>, method<span class="op">=</span><span class="st">'euclidean'</span><span class="op">)</span>
-<span class="va">hc.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="va">distances</span>, method<span class="op">=</span><span class="st">'complete'</span><span class="op">)</span>
-<span class="co"># plot the resulting dendrogram</span>
-<span class="va">node.colors</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'blue'</span>, <span class="st">'red'</span>, <span class="st">'green'</span><span class="op">)</span>
-<span class="va">hc.res</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://rdrr.io/r/stats/dendrogram.html" class="external-link">as.dendrogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
-  <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_pch"</span>, <span class="fl">19</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
-  <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_cex"</span>, <span class="fl">0.5</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
-  <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_col"</span>, <span class="va">node.colors</span><span class="op">[</span><span class="va">df.iris</span><span class="op">$</span><span class="va">species</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> 
-  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span>main<span class="op">=</span><span class="st">'Complete linkage hierarchical clustering'</span>, leaflab<span class="op">=</span><span class="st">'none'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-3.png" width="672"></p>
-<p>Now, we will compare the clustering results using element-centric similarity. ECS allows us to compare different kinds of clustering results, including the overlapping clustering and the hierarchical clustering we just calculated. The results tell us how similarly each observation was clustered by the two methods; the higher the ECS, the more similar the clustering of that observation.</p>
+<code class="sourceCode R"><span></span>
+<span><span class="co"># an overlapping clustering with soft k-means</span></span>
+<span><span class="va">cmeans.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/e1071/man/cmeans.html" class="external-link">cmeans</a></span><span class="op">(</span><span class="va">data</span>, centers <span class="op">=</span> <span class="fl">6</span><span class="op">)</span><span class="op">$</span><span class="va">membership</span></span>
+<span><span class="co"># get the strongest cluster assignment for each observation to plot</span></span>
+<span><span class="co"># but we will still use the soft cluster assignments to calculate ECS</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.cluster</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">cmeans.res</span>, <span class="fl">1</span>, <span class="va">which.max</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">cmeans.cluster</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"c-means clustering"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-2.png" width="672"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># which observations are clustered more similarly?</span>
-<span class="co"># first compare flat disjoint and flat soft clusterings</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.cmeans.ecs</span> <span class="op">=</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span><span class="va">db.res</span>, 
-                                                <span class="va">cmeans.res</span><span class="op">)</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">dbscan.cmeans.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'DBScan vs c-means similarity'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-1.png" width="672"></p>
+<code class="sourceCode R"><span></span>
+<span><span class="co"># a hierarchical clustering</span></span>
+<span><span class="va">distances</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">data</span>, method <span class="op">=</span> <span class="st">"euclidean"</span><span class="op">)</span></span>
+<span><span class="va">hc.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="va">distances</span>, method <span class="op">=</span> <span class="st">"complete"</span><span class="op">)</span></span>
+<span><span class="co"># plot the resulting dendrogram</span></span>
+<span><span class="va">node.colors</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"blue"</span>, <span class="st">"red"</span>, <span class="st">"green"</span><span class="op">)</span></span>
+<span><span class="va">hc.res</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu">as.dendrogram</span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_pch"</span>, <span class="fl">19</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_cex"</span>, <span class="fl">0.5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="http://talgalili.github.io/dendextend/reference/set.html" class="external-link">set</a></span><span class="op">(</span><span class="st">"leaves_col"</span>, <span class="va">node.colors</span><span class="op">[</span><span class="va">df.iris</span><span class="op">$</span><span class="va">species</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span>main <span class="op">=</span> <span class="st">"Complete linkage hierarchical clustering"</span>, leaflab <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/clustering-3.png" width="672"></p>
+<p>Now, we will compare the clustering results using element-centric
+similarity. ECS allows us to compare different kinds of clustering
+results, including the overlapping clustering and the hierarchical
+clustering we just calculated. The results tell us how similarly each
+observation was clustered by the two methods; the higher the ECS, the
+more similar the clustering of that observation.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.cmeans.ecs</span><span class="op">)</span>
-<span class="co">#&gt; [1] 0.4675256</span>
-
-<span class="co"># next compare flat disjoint and hierarchical disjoint clusterings</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.hc.ecs</span> <span class="op">=</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span><span class="va">db.res</span>, 
-                                    <span class="va">hc.res</span><span class="op">)</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">dbscan.hc.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'DBScan vs hclust similarity'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="672"></p>
+<code class="sourceCode R"><span><span class="co"># which observations are clustered more similarly?</span></span>
+<span><span class="co"># first compare flat disjoint and flat soft clusterings</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.cmeans.ecs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span></span>
+<span>    <span class="va">db.res</span>,</span>
+<span>    <span class="va">cmeans.res</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">dbscan.cmeans.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"DBScan vs c-means similarity"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-1.png" width="672"></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.hc.ecs</span><span class="op">)</span>
-<span class="co">#&gt; [1] 0.5875193</span>
-
-<span class="co"># finally compare flat soft and hierarchical disjoint clusterings</span>
-<span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.hc.ecs</span> <span class="op">=</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span><span class="va">cmeans.res</span>, 
-                                            <span class="va">hc.res</span><span class="op">)</span>
-<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">PC1</span>, y<span class="op">=</span><span class="va">PC2</span>, color<span class="op">=</span><span class="va">cmeans.hc.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title<span class="op">=</span><span class="st">'c-means vs hclust similarity'</span><span class="op">)</span></code></pre></div>
-<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-3.png" width="672"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.cmeans.ecs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.4675256</span></span>
+<span></span>
+<span><span class="co"># next compare flat disjoint and hierarchical disjoint clusterings</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.hc.ecs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span></span>
+<span>    <span class="va">db.res</span>,</span>
+<span>    <span class="va">hc.res</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">dbscan.hc.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"DBScan vs hclust similarity"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="672"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.hc.ecs</span><span class="op">)</span>
-<span class="co">#&gt; [1] 0.614915</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">dbscan.hc.ecs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.5875193</span></span>
+<span></span>
+<span><span class="co"># finally compare flat soft and hierarchical disjoint clusterings</span></span>
+<span><span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.hc.ecs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/element_sim_elscore.html">element_sim_elscore</a></span><span class="op">(</span></span>
+<span>    <span class="va">cmeans.res</span>,</span>
+<span>    <span class="va">hc.res</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">df.iris</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">PC1</span>, y <span class="op">=</span> <span class="va">PC2</span>, color <span class="op">=</span> <span class="va">cmeans.hc.ecs</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"c-means vs hclust similarity"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="comparing-soft-and-hierarchical_files/figure-html/ecs-3.png" width="672"></p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">df.iris</span><span class="op">$</span><span class="va">cmeans.hc.ecs</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.614915</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; R version 4.2.0 (2022-04-22)</span>
-<span class="co">#&gt; Platform: x86_64-pc-linux-gnu (64-bit)</span>
-<span class="co">#&gt; Running under: Debian GNU/Linux 10 (buster)</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; Matrix products: default</span>
-<span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.8.0</span>
-<span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.8.0</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; locale:</span>
-<span class="co">#&gt;  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              </span>
-<span class="co">#&gt;  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    </span>
-<span class="co">#&gt;  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   </span>
-<span class="co">#&gt;  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 </span>
-<span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span>
-<span class="co">#&gt; [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       </span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; attached base packages:</span>
-<span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; other attached packages:</span>
-<span class="co">#&gt; [1] dendextend_1.15.2 ggplot2_3.3.6     dbscan_1.1-10     e1071_1.7-11     </span>
-<span class="co">#&gt; [5] ClustAssess_0.3.1</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; loaded via a namespace (and not attached):</span>
-<span class="co">#&gt;  [1] Rcpp_1.0.8.3      lattice_0.20-45   class_7.3-20      assertthat_0.2.1 </span>
-<span class="co">#&gt;  [5] rprojroot_2.0.3   digest_0.6.29     foreach_1.5.2     utf8_1.2.2       </span>
-<span class="co">#&gt;  [9] R6_2.5.1          evaluate_0.15     highr_0.9         pillar_1.7.0     </span>
-<span class="co">#&gt; [13] rlang_1.0.2       rstudioapi_0.13   jquerylib_0.1.4   Matrix_1.4-1     </span>
-<span class="co">#&gt; [17] rmarkdown_2.14    pkgdown_2.0.4     textshaping_0.3.6 desc_1.4.1       </span>
-<span class="co">#&gt; [21] labeling_0.4.2    stringr_1.4.0     igraph_1.2.11     munsell_0.5.0    </span>
-<span class="co">#&gt; [25] proxy_0.4-27      compiler_4.2.0    xfun_0.31         pkgconfig_2.0.3  </span>
-<span class="co">#&gt; [29] systemfonts_1.0.4 htmltools_0.5.2   tidyselect_1.1.2  tibble_3.1.7     </span>
-<span class="co">#&gt; [33] gridExtra_2.3     codetools_0.2-18  fansi_1.0.3       viridisLite_0.4.0</span>
-<span class="co">#&gt; [37] crayon_1.5.1      dplyr_1.0.9       withr_2.5.0       grid_4.2.0       </span>
-<span class="co">#&gt; [41] jsonlite_1.8.0    gtable_0.3.0      lifecycle_1.0.1   DBI_1.1.2        </span>
-<span class="co">#&gt; [45] magrittr_2.0.3    scales_1.2.0      cli_3.3.0         stringi_1.7.6    </span>
-<span class="co">#&gt; [49] cachem_1.0.6      farver_2.1.0      viridis_0.6.2     fs_1.5.2         </span>
-<span class="co">#&gt; [53] bslib_0.3.1       ellipsis_0.3.2    ragg_1.2.2        vctrs_0.4.1      </span>
-<span class="co">#&gt; [57] generics_0.1.2    iterators_1.0.14  tools_4.2.0       glue_1.6.2       </span>
-<span class="co">#&gt; [61] purrr_0.3.4       fastmap_1.1.0     yaml_2.3.5        colorspace_2.0-3 </span>
-<span class="co">#&gt; [65] memoise_2.0.1     knitr_1.39        sass_0.4.1</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; R version 4.3.3 (2024-02-29 ucrt)</span></span>
+<span><span class="co">#&gt; Platform: x86_64-w64-mingw32/x64 (64-bit)</span></span>
+<span><span class="co">#&gt; Running under: Windows 11 x64 (build 22631)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Matrix products: default</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; locale:</span></span>
+<span><span class="co">#&gt; [1] LC_COLLATE=Romanian_Romania.utf8  LC_CTYPE=Romanian_Romania.utf8   </span></span>
+<span><span class="co">#&gt; [3] LC_MONETARY=Romanian_Romania.utf8 LC_NUMERIC=C                     </span></span>
+<span><span class="co">#&gt; [5] LC_TIME=Romanian_Romania.utf8    </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; time zone: Europe/Bucharest</span></span>
+<span><span class="co">#&gt; tzcode source: internal</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attached base packages:</span></span>
+<span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; other attached packages:</span></span>
+<span><span class="co">#&gt; [1] ggplot2_3.5.0     ClustAssess_1.0.0 dendextend_1.17.1 dbscan_1.1-12    </span></span>
+<span><span class="co">#&gt; [5] e1071_1.7-14     </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span><span class="co">#&gt;  [1] viridis_0.6.5     sass_0.4.9        utf8_1.2.4        generics_0.1.3   </span></span>
+<span><span class="co">#&gt;  [5] class_7.3-22      lattice_0.22-5    digest_0.6.35     magrittr_2.0.3   </span></span>
+<span><span class="co">#&gt;  [9] evaluate_0.23     grid_4.3.3        iterators_1.0.14  fastmap_1.1.1    </span></span>
+<span><span class="co">#&gt; [13] foreach_1.5.2     jsonlite_1.8.8    Matrix_1.6-5      gridExtra_2.3    </span></span>
+<span><span class="co">#&gt; [17] purrr_1.0.2       fansi_1.0.6       viridisLite_0.4.2 scales_1.3.0     </span></span>
+<span><span class="co">#&gt; [21] codetools_0.2-19  textshaping_0.3.7 jquerylib_0.1.4   cli_3.6.2        </span></span>
+<span><span class="co">#&gt; [25] rlang_1.1.3       munsell_0.5.1     withr_3.0.0       cachem_1.0.8     </span></span>
+<span><span class="co">#&gt; [29] yaml_2.3.8        tools_4.3.3       memoise_2.0.1     dplyr_1.1.4      </span></span>
+<span><span class="co">#&gt; [33] colorspace_2.1-0  vctrs_0.6.5       R6_2.5.1          proxy_0.4-27     </span></span>
+<span><span class="co">#&gt; [37] lifecycle_1.0.4   fs_1.6.3          ragg_1.3.0        pkgconfig_2.0.3  </span></span>
+<span><span class="co">#&gt; [41] desc_1.4.3        pkgdown_2.0.7     pillar_1.9.0      bslib_0.7.0      </span></span>
+<span><span class="co">#&gt; [45] gtable_0.3.4      glue_1.7.0        Rcpp_1.0.12       systemfonts_1.0.6</span></span>
+<span><span class="co">#&gt; [49] highr_0.10        xfun_0.43         tibble_3.2.1      tidyselect_1.2.1 </span></span>
+<span><span class="co">#&gt; [53] knitr_1.45        farver_2.1.1      igraph_2.0.3      htmltools_0.5.8  </span></span>
+<span><span class="co">#&gt; [57] labeling_0.4.3    rmarkdown_2.26    compiler_4.3.3</span></span></code></pre></div>
 </div>
   </div>
 
@@ -236,12 +295,12 @@
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+<p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

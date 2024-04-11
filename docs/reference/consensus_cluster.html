@@ -18,7 +18,7 @@ clustered pairs (PAC) with hierarchical clustering."><!-- mathjax --><script src
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -39,7 +39,13 @@ clustered pairs (PAC) with hierarchical clustering."><!-- mathjax --><script src
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -68,20 +74,20 @@ clustered pairs (PAC) with hierarchical clustering.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">consensus_cluster</span><span class="op">(</span>
-  <span class="va">x</span>,
-  k_min <span class="op">=</span> <span class="fl">3</span>,
-  k_max <span class="op">=</span> <span class="fl">100</span>,
-  n_reps <span class="op">=</span> <span class="fl">100</span>,
-  p_sample <span class="op">=</span> <span class="fl">0.8</span>,
-  p_feature <span class="op">=</span> <span class="fl">1</span>,
-  p_minkowski <span class="op">=</span> <span class="fl">2</span>,
-  dist_method <span class="op">=</span> <span class="st">"euclidean"</span>,
-  linkage <span class="op">=</span> <span class="st">"complete"</span>,
-  lower_lim <span class="op">=</span> <span class="fl">0.1</span>,
-  upper_lim <span class="op">=</span> <span class="fl">0.9</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">consensus_cluster</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  k_min <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  k_max <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  n_reps <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  p_sample <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  p_feature <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  p_minkowski <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  dist_method <span class="op">=</span> <span class="st">"euclidean"</span>,</span>
+<span>  linkage <span class="op">=</span> <span class="st">"complete"</span>,</span>
+<span>  lower_lim <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  upper_lim <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -162,9 +168,9 @@ Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">pac.res</span> <span class="op">=</span> <span class="fu">consensus_cluster</span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, k_max<span class="op">=</span><span class="fl">20</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">pac.res</span> <span class="op">&lt;-</span> <span class="fu">consensus_cluster</span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, k_max <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating consensus clustering</span>
-<span class="r-in"><span class="fu"><a href="pac_convergence.html">pac_convergence</a></span><span class="op">(</span><span class="va">pac.res</span>, k_plot<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>,<span class="fl">5</span>,<span class="fl">7</span>,<span class="fl">9</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"><span><span class="fu"><a href="pac_convergence.html">pac_convergence</a></span><span class="op">(</span><span class="va">pac.res</span>, k_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">7</span>, <span class="fl">9</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="consensus_cluster-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
@@ -176,11 +182,11 @@ Scientific reports, 4(1), 1-13. https://doi.org/10.1038/srep06207</p>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

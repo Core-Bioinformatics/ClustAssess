@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -38,7 +38,13 @@
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -64,9 +70,41 @@
           <p class="section-desc"></p>
         </th>
       </tr></tbody><tbody><tr><td>
+          <p><code><a href="add_metadata.html">add_metadata()</a></code> </p>
+        </td>
+        <td><p>Add metadata to ClustAssess ShinyApp</p></td>
+      </tr><tr><td>
+          <p><code><a href="assess_clustering_stability.html">assess_clustering_stability()</a></code> </p>
+        </td>
+        <td><p>Assessment of Stability for Graph Clustering</p></td>
+      </tr><tr><td>
+          <p><code><a href="assess_feature_stability.html">assess_feature_stability()</a></code> </p>
+        </td>
+        <td><p>Assess the stability for configurations of feature types and sizes</p></td>
+      </tr><tr><td>
+          <p><code><a href="assess_nn_stability.html">assess_nn_stability()</a></code> </p>
+        </td>
+        <td><p>Assess the stability for Graph Building Parameters</p></td>
+      </tr><tr><td>
+          <p><code><a href="automatic_stability_assessment.html">automatic_stability_assessment()</a></code> </p>
+        </td>
+        <td><p>Assessment of Stability for Graph Clustering</p></td>
+      </tr><tr><td>
+          <p><code><a href="calculate_markers.html">calculate_markers()</a></code> </p>
+        </td>
+        <td><p>Calculate markers</p></td>
+      </tr><tr><td>
+          <p><code><a href="calculate_markers_shiny.html">calculate_markers_shiny()</a></code> </p>
+        </td>
+        <td><p>Calculate markers - Shiny</p></td>
+      </tr><tr><td>
           <p><code><a href="consensus_cluster.html">consensus_cluster()</a></code> </p>
         </td>
         <td><p>Consensus Clustering and Proportion of Ambiguously Clustered Pairs</p></td>
+      </tr><tr><td>
+          <p><code><a href="create_monocle_object.html">create_monocle_object()</a></code> </p>
+        </td>
+        <td><p>Create monocle object based on expression matrix</p></td>
       </tr><tr><td>
           <p><code><a href="element_agreement.html">element_agreement()</a></code> </p>
         </td>
@@ -88,25 +126,21 @@
         </td>
         <td><p>Pairwise Comparison of Clusterings</p></td>
       </tr><tr><td>
-          <p><code><a href="get_clustering_difference.html">get_clustering_difference()</a></code> </p>
+          <p><code><a href="getNNmatrix.html">getNNmatrix()</a></code> </p>
         </td>
-        <td><p>Graph Clustering Method Stability</p></td>
+        <td><p>Computes the NN adjacency matrix given the neighbours</p></td>
       </tr><tr><td>
-          <p><code><a href="get_feature_stability.html">get_feature_stability()</a></code> </p>
+          <p><code><a href="get_highest_prune_param.html">get_highest_prune_param()</a></code> </p>
         </td>
-        <td><p>Evaluate Feature Set Stability</p></td>
+        <td><p>Calculate the highest pruning parameter for the SNN graph given NN matrix</p></td>
+      </tr><tr><td>
+          <p><code><a href="get_highest_prune_param_embedding.html">get_highest_prune_param_embedding()</a></code> </p>
+        </td>
+        <td><p>Calculate the highest pruning parameter for the SNN graph given Embedding</p></td>
       </tr><tr><td>
           <p><code><a href="get_nn_conn_comps.html">get_nn_conn_comps()</a></code> </p>
         </td>
-        <td><p>Relationship Between Nearest Neighbors and Connected Components</p></td>
-      </tr><tr><td>
-          <p><code><a href="get_nn_importance.html">get_nn_importance()</a></code> </p>
-        </td>
-        <td><p>Assess Graph Building Parameters</p></td>
-      </tr><tr><td>
-          <p><code><a href="get_resolution_importance.html">get_resolution_importance()</a></code> </p>
-        </td>
-        <td><p>Evaluate Stability Across Resolution, Number of Neighbors, and Graph Type</p></td>
+        <td><p>Relationship Between Nearest Neighbours and Connected Components</p></td>
       </tr><tr><td>
           <p><code><a href="marker_overlap.html">marker_overlap()</a></code> </p>
         </td>
@@ -116,6 +150,10 @@
         </td>
         <td><p>Merge Partitions</p></td>
       </tr><tr><td>
+          <p><code><a href="merge_resolutions.html">merge_resolutions()</a></code> </p>
+        </td>
+        <td><p>Merge Partitions from different Resolutions</p></td>
+      </tr><tr><td>
           <p><code><a href="pac_convergence.html">pac_convergence()</a></code> </p>
         </td>
         <td><p>PAC Convergence Plot</p></td>
@@ -124,29 +162,41 @@
         </td>
         <td><p>PAC Landscape Plot</p></td>
       </tr><tr><td>
-          <p><code><a href="plot_clustering_difference_boxplot.html">plot_clustering_difference_boxplot()</a></code> </p>
-        </td>
-        <td><p>Clustering Method Stability Boxplot</p></td>
-      </tr><tr><td>
           <p><code><a href="plot_clustering_difference_facet.html">plot_clustering_difference_facet()</a></code> </p>
         </td>
         <td><p>Clustering Method Stability Facet Plot</p></td>
       </tr><tr><td>
+          <p><code><a href="plot_clustering_overall_stability.html">plot_clustering_overall_stability()</a></code> </p>
+        </td>
+        <td><p>Clustering Method Overall Stability Boxplot</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot_clustering_per_value_stability.html">plot_clustering_per_value_stability()</a></code> </p>
+        </td>
+        <td><p>Clustering Method per value Stability Boxplot</p></td>
+      </tr><tr><td>
           <p><code><a href="plot_connected_comps_evolution.html">plot_connected_comps_evolution()</a></code> </p>
         </td>
-        <td><p>Relationship Between Number of Nearest Neighbors and Graph Connectivity</p></td>
+        <td><p>Relationship Between Number of Nearest Neighbours and Graph Connectivity</p></td>
       </tr><tr><td>
-          <p><code><a href="plot_feature_stability_boxplot.html">plot_feature_stability_boxplot()</a></code> </p>
+          <p><code><a href="plot_feature_overall_stability_boxplot.html">plot_feature_overall_stability_boxplot()</a></code> </p>
         </td>
-        <td><p>Feature Stability Boxplot</p></td>
+        <td><p>Overall Feature Stability Boxplot</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot_feature_overall_stability_incremental.html">plot_feature_overall_stability_incremental()</a></code> </p>
+        </td>
+        <td><p>Overall Feature Stability Incremental Boxplot</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot_feature_per_resolution_stability_boxplot.html">plot_feature_per_resolution_stability_boxplot()</a></code> </p>
+        </td>
+        <td><p>Per resolution Feature Stability Boxplot</p></td>
+      </tr><tr><td>
+          <p><code><a href="plot_feature_per_resolution_stability_incremental.html">plot_feature_per_resolution_stability_incremental()</a></code> </p>
+        </td>
+        <td><p>Per resolution - Feature Stability Incremental Boxplot</p></td>
       </tr><tr><td>
           <p><code><a href="plot_feature_stability_ecs_facet.html">plot_feature_stability_ecs_facet()</a></code> </p>
         </td>
         <td><p>Feature Stability - EC Consistency Facet Plot</p></td>
-      </tr><tr><td>
-          <p><code><a href="plot_feature_stability_ecs_incremental.html">plot_feature_stability_ecs_incremental()</a></code> </p>
-        </td>
-        <td><p>Feature Stability Incremental Boxplot</p></td>
       </tr><tr><td>
           <p><code><a href="plot_feature_stability_mb_facet.html">plot_feature_stability_mb_facet()</a></code> </p>
         </td>
@@ -166,7 +216,67 @@
       </tr><tr><td>
           <p><code><a href="plot_n_neigh_k_correspondence.html">plot_n_neigh_k_correspondence()</a></code> </p>
         </td>
-        <td><p>Relationship Between Number of Nearest Neighbors and Number of Clusters</p></td>
+        <td><p>Relationship Between Number of Nearest Neighbours and Number of Clusters</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_comparisons.html">server_comparisons()</a></code> </p>
+        </td>
+        <td><p>Server - Comparison module</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_dimensionality_reduction.html">server_dimensionality_reduction()</a></code> </p>
+        </td>
+        <td><p>Server - Dimensionality reduction module</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_graph_clustering.html">server_graph_clustering()</a></code> </p>
+        </td>
+        <td><p>Server - Graph clustering module</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_graph_construction.html">server_graph_construction()</a></code> </p>
+        </td>
+        <td><p>Server - Graph construction module</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_landing_page.html">server_landing_page()</a></code> </p>
+        </td>
+        <td><p>Server - Landing page module</p></td>
+      </tr><tr><td>
+          <p><code><a href="server_sandbox.html">server_sandbox()</a></code> </p>
+        </td>
+        <td><p>Server - Sandbox module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_comparisons.html">ui_comparisons()</a></code> </p>
+        </td>
+        <td><p>UI - Comparison module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_dimensionality_reduction.html">ui_dimensionality_reduction()</a></code> </p>
+        </td>
+        <td><p>UI - Dimensionality reduction module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_graph_clustering.html">ui_graph_clustering()</a></code> </p>
+        </td>
+        <td><p>UI - Graph clustering module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_graph_construction.html">ui_graph_construction()</a></code> </p>
+        </td>
+        <td><p>UI - Graph construction module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_landing_page.html">ui_landing_page()</a></code> </p>
+        </td>
+        <td><p>UI - Landing page module</p></td>
+      </tr><tr><td>
+          <p><code><a href="ui_sandbox.html">ui_sandbox()</a></code> </p>
+        </td>
+        <td><p>UI - Sandbox module</p></td>
+      </tr><tr><td>
+          <p><code><a href="weighted_element_consistency.html">weighted_element_consistency()</a></code> </p>
+        </td>
+        <td><p>Weighted Element-Centric Consistency</p></td>
+      </tr><tr><td>
+          <p><code><a href="write_objects.html">write_objects()</a></code> </p>
+        </td>
+        <td><p>Write the objects for the ClustAssess ShinyApp</p></td>
+      </tr><tr><td>
+          <p><code><a href="write_shiny_app.html">write_shiny_app()</a></code> </p>
+        </td>
+        <td><p>Create the ClustAssess ShinyApp</p></td>
       </tr></tbody></table></div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -176,11 +286,11 @@
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -18,7 +18,7 @@ clustering results"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -39,7 +39,13 @@ clustering results"><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aj
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -68,21 +74,21 @@ clustering results</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">element_sim</span><span class="op">(</span>
-  <span class="va">clustering1</span>,
-  <span class="va">clustering2</span>,
-  alpha <span class="op">=</span> <span class="fl">0.9</span>,
-  r_cl1 <span class="op">=</span> <span class="fl">1</span>,
-  rescale_path_type_cl1 <span class="op">=</span> <span class="st">"max"</span>,
-  ppr_implementation_cl1 <span class="op">=</span> <span class="st">"prpack"</span>,
-  dist_rescaled_cl1 <span class="op">=</span> <span class="cn">FALSE</span>,
-  row_normalize_cl1 <span class="op">=</span> <span class="cn">TRUE</span>,
-  r_cl2 <span class="op">=</span> <span class="fl">1</span>,
-  rescale_path_type_cl2 <span class="op">=</span> <span class="st">"max"</span>,
-  ppr_implementation_cl2 <span class="op">=</span> <span class="st">"prpack"</span>,
-  dist_rescaled_cl2 <span class="op">=</span> <span class="cn">FALSE</span>,
-  row_normalize_cl2 <span class="op">=</span> <span class="cn">TRUE</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">element_sim</span><span class="op">(</span></span>
+<span>  <span class="va">clustering1</span>,</span>
+<span>  <span class="va">clustering2</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  r_cl1 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rescale_path_type_cl1 <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  ppr_implementation_cl1 <span class="op">=</span> <span class="st">"prpack"</span>,</span>
+<span>  dist_rescaled_cl1 <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  row_normalize_cl1 <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  r_cl2 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rescale_path_type_cl2 <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  ppr_implementation_cl2 <span class="op">=</span> <span class="st">"prpack"</span>,</span>
+<span>  dist_rescaled_cl2 <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  row_normalize_cl2 <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -175,9 +181,9 @@ TRUE, which will lead to slightly different ECS values compared to clusim.</p></
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="va">km.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
-<span class="r-in"><span class="va">hc.res</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">element_sim</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">km.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span></span>
+<span class="r-in"><span><span class="va">hc.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">mtcars</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">element_sim</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.4444444</span>
 </code></pre></div>
     </div>
@@ -189,11 +195,11 @@ TRUE, which will lead to slightly different ECS values compared to clusim.</p></
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

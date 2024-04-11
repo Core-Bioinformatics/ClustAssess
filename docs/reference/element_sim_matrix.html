@@ -18,7 +18,7 @@ average element-centric clustering similarities."><!-- mathjax --><script src="h
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -39,7 +39,13 @@ average element-centric clustering similarities."><!-- mathjax --><script src="h
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -68,17 +74,16 @@ average element-centric clustering similarities.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">element_sim_matrix</span><span class="op">(</span>
-  <span class="va">clustering_list</span>,
-  output_type <span class="op">=</span> <span class="st">"matrix"</span>,
-  alpha <span class="op">=</span> <span class="fl">0.9</span>,
-  r <span class="op">=</span> <span class="fl">1</span>,
-  rescale_path_type <span class="op">=</span> <span class="st">"max"</span>,
-  ppr_implementation <span class="op">=</span> <span class="st">"prpack"</span>,
-  dist_rescaled <span class="op">=</span> <span class="cn">FALSE</span>,
-  row_normalize <span class="op">=</span> <span class="cn">TRUE</span>,
-  ncores <span class="op">=</span> <span class="fl">1</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">element_sim_matrix</span><span class="op">(</span></span>
+<span>  <span class="va">clustering_list</span>,</span>
+<span>  output_type <span class="op">=</span> <span class="st">"matrix"</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  r <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rescale_path_type <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  ppr_implementation <span class="op">=</span> <span class="st">"prpack"</span>,</span>
+<span>  dist_rescaled <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  row_normalize <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -128,11 +133,6 @@ rescaled to be in-between 0 and 1.</p></dd>
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
 
-
-<dt>ncores</dt>
-<dd><p>the number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.</p></dd>
-
 </dl></div>
     <div id="value">
     <h2>Value</h2>
@@ -149,72 +149,72 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># cluster across 20 random seeds</span></span>
-<span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">element_sim_matrix</span><span class="op">(</span><span class="va">clustering.list</span>, output_type<span class="op">=</span><span class="st">"matrix"</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       [,1] [,2] [,3] [,4]      [,5]      [,6]      [,7]      [,8]      [,9]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]    1    1    1    1 0.7012775 0.5396205 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]   NA    1    1    1 0.7012775 0.5396205 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,]   NA   NA    1    1 0.7012775 0.5396205 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]   NA   NA   NA    1 0.7012775 0.5396205 0.5396205 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,]   NA   NA   NA   NA 1.0000000 0.5503724 0.5503724 0.7012775 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,]   NA   NA   NA   NA        NA 1.0000000 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,]   NA   NA   NA   NA        NA        NA 1.0000000 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,]   NA   NA   NA   NA        NA        NA        NA 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]   NA   NA   NA   NA        NA        NA        NA        NA 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [18,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [19,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [20,]   NA   NA   NA   NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           [,10]     [,11]     [,12]     [,13]     [,14]     [,15]     [,16]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.7012775 0.5503724 0.7012775 0.7012775 1.0000000 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 0.5396205 1.0000000 0.5396205 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.5396205 1.0000000 0.5396205 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,] 0.5396205 1.0000000 0.5396205 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,] 1.0000000 0.5396205 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]        NA 1.0000000 0.5396205 0.5396205 0.5503724 0.5503724 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]        NA        NA 1.0000000 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]        NA        NA        NA 1.0000000 0.7012775 0.7012775 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14,]        NA        NA        NA        NA 1.0000000 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15,]        NA        NA        NA        NA        NA 1.0000000 0.7012775</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA        NA        NA        NA        NA        NA 1.0000000</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># cluster across 20 random seeds</span></span></span>
+<span class="r-in"><span><span class="va">clustering.list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">element_sim_matrix</span><span class="op">(</span><span class="va">clustering.list</span>, output_type <span class="op">=</span> <span class="st">"matrix"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       [,1]      [,2]      [,3]      [,4]      [,5]      [,6]      [,7]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]    1 0.5396205 0.5396205 0.5396205 0.5396205 1.0000000 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]   NA 1.0000000 1.0000000 1.0000000 1.0000000 0.5396205 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,]   NA        NA 1.0000000 1.0000000 1.0000000 0.5396205 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]   NA        NA        NA 1.0000000 1.0000000 0.5396205 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,]   NA        NA        NA        NA 1.0000000 0.5396205 0.5503724</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,]   NA        NA        NA        NA        NA 1.0000000 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,]   NA        NA        NA        NA        NA        NA 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [17,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [19,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [20,]   NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            [,8]      [,9]     [,10]     [,11]     [,12]     [,13]     [,14]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 1.0000000 0.5396205 0.5396205 1.0000000 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.5396205 1.0000000 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 0.5396205 1.0000000 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 0.5396205 1.0000000 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.5396205 1.0000000 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 1.0000000 0.5396205 0.5396205 1.0000000 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.7012775 0.5503724 0.5503724 0.7012775 0.7012775 0.7012775 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 0.5396205 0.5396205 1.0000000 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]        NA 1.0000000 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]        NA        NA 1.0000000 0.5396205 0.5396205 0.5396205 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,]        NA        NA        NA 1.0000000 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12,]        NA        NA        NA        NA 1.0000000 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13,]        NA        NA        NA        NA        NA 1.0000000 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14,]        NA        NA        NA        NA        NA        NA 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15,]        NA        NA        NA        NA        NA        NA        NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [17,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [18,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [19,]        NA        NA        NA        NA        NA        NA        NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [20,]        NA        NA        NA        NA        NA        NA        NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           [,17]     [,18]     [,19]     [,20]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.7012775 0.7012775 0.7012775 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 0.5396205 0.5396205 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.5396205 0.5396205 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,] 0.5396205 0.5396205 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,] 0.5396205 0.5396205 0.5396205 1.0000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14,] 0.7012775 0.7012775 0.7012775 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15,] 0.7012775 0.7012775 0.7012775 0.5503724</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17,] 1.0000000 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [18,]        NA 1.0000000 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [19,]        NA        NA 1.0000000 0.5396205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [20,]        NA        NA        NA 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           [,15]     [,16]     [,17]     [,18]     [,19]     [,20]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] 0.7012775 1.0000000 0.5503724 0.5503724 0.5503724 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10,] 0.5396205 0.5503724 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [12,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [14,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15,] 1.0000000 0.7012775 0.5396205 0.5396205 0.5396205 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16,]        NA 1.0000000 0.5503724 0.5503724 0.5503724 0.7012775</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [17,]        NA        NA 1.0000000 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [18,]        NA        NA        NA 1.0000000 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [19,]        NA        NA        NA        NA 1.0000000 0.5396205</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [20,]        NA        NA        NA        NA        NA 1.0000000</span>
 </code></pre></div>
     </div>
   </div>
@@ -225,11 +225,11 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

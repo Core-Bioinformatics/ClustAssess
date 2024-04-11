@@ -18,7 +18,7 @@ their element-wise clustering consistency (also known as element-wise frustratio
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ClustAssess</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -39,7 +39,13 @@ their element-wise clustering consistency (also known as element-wise frustratio
       <a href="../articles/comparing-soft-and-hierarchical.html">Comparing soft and hierarchical clusterings with element-centric similarity</a>
     </li>
     <li>
-      <a href="../articles/stability-based-parameter-assessment.html">Stability-based parameter assessment</a>
+      <a href="../articles/dim_reduction_flexibility.html">Flexibility of the dimensionality reduction assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-description.html">Stability-based parameter assessment</a>
+    </li>
+    <li>
+      <a href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a>
     </li>
   </ul></li>
       </ul><ul class="nav navbar-nav navbar-right"><li>
@@ -68,16 +74,16 @@ their element-wise clustering consistency (also known as element-wise frustratio
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">element_consistency</span><span class="op">(</span>
-  <span class="va">clustering_list</span>,
-  alpha <span class="op">=</span> <span class="fl">0.9</span>,
-  r <span class="op">=</span> <span class="fl">1</span>,
-  rescale_path_type <span class="op">=</span> <span class="st">"max"</span>,
-  ppr_implementation <span class="op">=</span> <span class="st">"prpack"</span>,
-  dist_rescaled <span class="op">=</span> <span class="cn">FALSE</span>,
-  row_normalize <span class="op">=</span> <span class="cn">TRUE</span>,
-  ncores <span class="op">=</span> <span class="fl">1</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">element_consistency</span><span class="op">(</span></span>
+<span>  <span class="va">clustering_list</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  r <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  rescale_path_type <span class="op">=</span> <span class="st">"max"</span>,</span>
+<span>  ppr_implementation <span class="op">=</span> <span class="st">"prpack"</span>,</span>
+<span>  dist_rescaled <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  row_normalize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  calculate_sim_matrix <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -123,16 +129,19 @@ so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.</p></dd>
 
 
-<dt>ncores</dt>
-<dd><p>the number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.</p></dd>
+<dt>calculate_sim_matrix</dt>
+<dd><p>A logical value that indicates whether to
+calculate the similarity matrix or not along with the consistency score.
+Defaults to <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
     
 
-<p>a vector containing the element-wise consistency.</p>
+<p>A vector containing the element-wise consistency. If
+<code>calculate_sim_matrix</code> is set to <code>TRUE</code>, the element similarity matrix
+will be returned as well.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -143,14 +152,25 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># cluster across 20 random seeds</span></span>
-<span class="r-in"><span class="va">clustering.list</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers<span class="op">=</span><span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span>
-<span class="r-in"><span class="fu">element_consistency</span><span class="op">(</span><span class="va">clustering.list</span><span class="op">)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.6885062 0.6885062 0.8415248 0.5457963 0.7241969 0.4719151 0.7241969</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.8415248 0.8415248 0.6885062 0.6885062 0.6645249 0.6645249 0.6645249</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] 0.6541353 0.6541353 0.6541353 0.8415248 0.8415248 0.8415248 0.8415248</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [22] 0.6645249 0.6645249 0.7241969 0.6541353 0.8415248 0.8415248 0.8415248</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [29] 0.7241969 0.6885062 0.7241969 0.8415248</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># cluster across 20 random seeds</span></span></span>
+<span class="r-in"><span><span class="va">clustering.list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">20</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">mtcars</span>, centers <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">element_consistency</span><span class="op">(</span><span class="va">clustering.list</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Mazda RX4       Mazda RX4 Wag          Datsun 710      Hornet 4 Drive </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6405960           0.6405960           0.8321594           0.5946685 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Hornet Sportabout             Valiant          Duster 360           Merc 240D </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7885851           0.5814684           0.7885851           0.8321594 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            Merc 230            Merc 280           Merc 280C          Merc 450SE </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8321594           0.6405960           0.6405960           0.6580314 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Merc 450SL         Merc 450SLC  Cadillac Fleetwood Lincoln Continental </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6580314           0.6580314           0.7677527           0.7677527 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Chrysler Imperial            Fiat 128         Honda Civic      Toyota Corolla </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7677527           0.8321594           0.8321594           0.8321594 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Toyota Corona    Dodge Challenger         AMC Javelin          Camaro Z28 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8321594           0.6580314           0.6580314           0.7885851 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Pontiac Firebird           Fiat X1-9       Porsche 914-2        Lotus Europa </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7677527           0.8321594           0.8321594           0.8321594 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      Ford Pantera L        Ferrari Dino       Maserati Bora          Volvo 142E </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7885851           0.6405960           0.7885851           0.8321594 </span>
 </code></pre></div>
     </div>
   </div>
@@ -161,11 +181,11 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Irina Mohorianu.</p>
+  <p></p><p>Developed by Arash Shahsavari, Andi Munteanu, Miguel Larraz Lopez de Novales, Irina Mohorianu.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
