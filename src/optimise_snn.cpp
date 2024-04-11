@@ -85,7 +85,7 @@ Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double> &nnMatrix, in
 //' @param nnRanked A matrix with the lists of the nearest neighbours for each point
 //' @param k The number of neighbours to consider. Defaults to `-1`, which means all neighbours.
 //' @param start The index of the first neighbour to consider. Defaults to `0`.
-//' @param prune The threshold to prune the SNN matrix. Defaults to `0`.
+//' @param prune The threshold to prune the SNN matrix. If -1, the function will only return the NN matrix. Defaults to `0`.
 //'
 //' @export
 //'

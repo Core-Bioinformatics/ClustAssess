@@ -8,14 +8,12 @@ merge_resolutions(res_obj)
 }
 \arguments{
 \item{res_obj}{A list associated to a configuration field from the object
-returned by the \code{get_resolution_importance} method.}
+returned by the \code{assess_clustering_importance} method.}
 }
 \value{
 A list having one field assigned to each number of clusters. A number
 of cluster will contain a list of all merged partitions. To avoid duplicates,
 \code{merged_partitions} with threshold 1 is applied.
-
-#TODO add example
 }
 \description{
 Merge partitions obtained with different resolution values. The

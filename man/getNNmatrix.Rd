@@ -13,7 +13,7 @@ getNNmatrix(nnRanked, k = -1L, start = 0L, prune = 0)
 
 \item{start}{The index of the first neighbour to consider. Defaults to \code{0}.}
 
-\item{prune}{The threshold to prune the SNN matrix. Defaults to \code{0}.}
+\item{prune}{The threshold to prune the SNN matrix. If -1, the function will only return the NN matrix. Defaults to \code{0}.}
 }
 \value{
 A list with the NN and SNN adjacency matrices.

@@ -34,6 +34,7 @@ automatic_stability_assessment(
     return(embedding)
  },
   umap_arguments = list(),
+  prune_value = -1,
   alogrithm_dim_reduction = 1,
   algorithm_graph_construct = 1,
   algorithms_clustering_assessment = 1:3,
@@ -95,6 +96,11 @@ reduced space. By default, the function will use the precise PCA method with
 
 \item{umap_arguments}{A list containing the arguments that will be passed to the
 UMAP function. Refer to the \code{uwot::umap} function for more details.}
+
+\item{prune_value}{Argument indicating whether to prune the SNN graph. If the
+value is 0, the graph won't be pruned. If the value is between 0 and 1, the
+edges with weight under the pruning value will be removed. If the value is
+-1, the highest pruning value will be calculated automatically and used.}
 
 \item{alogrithm_dim_reduction}{An index indicating the community detection
 algorithm that will be used in the Dimensionality reduction step.}

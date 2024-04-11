@@ -12,6 +12,7 @@ assess_nn_stability(
   graph_reduction_type = "PCA",
   ecs_thresh = 1,
   graph_type = 2,
+  prune_value = -1,
   clustering_algorithm = 1,
   clustering_arguments = list(),
   umap_arguments = list()
@@ -36,6 +37,11 @@ should be built on either the PCA or the UMAP embedding.}
 
 \item{graph_type}{Argument indicating whether the graph should be
 unweighted (0), weighted (1) or both (2).}
+
+\item{prune_value}{Argument indicating whether to prune the SNN graph. If the
+value is 0, the graph won't be pruned. If the value is between 0 and 1, the
+edges with weight under the pruning value will be removed. If the value is
+-1, the highest pruning value will be calculated automatically and used.}
 
 \item{clustering_algorithm}{An index indicating which community detection algorithm will
 be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
