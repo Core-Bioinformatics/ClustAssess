@@ -585,9 +585,9 @@ automatic_stability_assessment <- function(expression_matrix,
                     highest_prune_param <- highest_prune_param$prune_value
                     gc()
                 }
-                rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
-                colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
             }
+            rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
+            colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
 
             feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
             feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type
@@ -635,6 +635,7 @@ automatic_stability_assessment <- function(expression_matrix,
     return(feature_configs)
 }
 
+# TODO create this funciton
 update_seurat_object <- function(original_seurat_object,
                                  clustassess_object,
                                  stable_feature_type,
