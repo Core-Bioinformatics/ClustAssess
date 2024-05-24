@@ -177,7 +177,7 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' value is 0, the graph won't be pruned. If the value is between 0 and 1, the
 #' edges with weight under the pruning value will be removed. If the value is
 #' -1, the highest pruning value will be calculated automatically and used.
-#' @param alogrithm_dim_reduction An index indicating the community detection
+#' @param algorithm_dim_reduction An index indicating the community detection
 #' algorithm that will be used in the Dimensionality reduction step.
 #' @param algorithm_graph_construct An index indicating the community detection
 #' algorithm that will be used in the Graph construction step.
@@ -272,7 +272,7 @@ automatic_stability_assessment <- function(expression_matrix,
                                            },
                                            umap_arguments = list(),
                                            prune_value = -1,
-                                           alogrithm_dim_reduction = 1,
+                                           algorithm_dim_reduction = 1,
                                            algorithm_graph_construct = 1,
                                            algorithms_clustering_assessment = 1:3,
                                            clustering_arguments = list(),
@@ -840,12 +840,10 @@ create_monocle_object <- function(normalized_expression_matrix,
     pca_embedding <- clustassess_object$pca
     rownames(pca_embedding) <- cell_names
     colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
-    # SingleCellExperiment::reducedDims(monocle_cds)$PCA <- pca_embedding
     monocle_cds@int_colData$reducedDims$PCA <- pca_embedding
     umap_embedding <- clustassess_object$umap
     rownames(umap_embedding) <- cell_names
     colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
-    # SingleCellExperiment::reducedDims(monocle_cds)$UMAP <- umap_embedding
     monocle_cds@int_colData$reducedDims$UMAP <- umap_embedding
 
     return(monocle_cds)
