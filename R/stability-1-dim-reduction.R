@@ -578,8 +578,8 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
 
     # given that the input object can have multiple configurations with different
     # number of steps, we will use only the first `min_index` steps
-    final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
-    final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
+    # final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
+    # final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
 
     final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
     final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
@@ -724,8 +724,8 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 
     # given that the input object can have multiple configurations with different
     # number of steps, we will use only the first `min_index` steps
-    final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
-    final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
+    # final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
+    # final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
 
     final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
     final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
