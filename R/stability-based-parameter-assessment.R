@@ -327,7 +327,7 @@ automatic_stability_assessment <- function(expression_matrix,
             matrix_processing = matrix_processing,
             umap_arguments = umap_arguments,
             prune_value = prune_value,
-            clustering_algorithm = alogrithm_dim_reduction,
+            clustering_algorithm = algorithm_dim_reduction,
             clustering_arguments = clustering_arguments,
             verbose = verbose
         )
