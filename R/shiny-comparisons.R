@@ -254,6 +254,56 @@ ui_comparison_jsi_panel <- function(id) {
     )
 }
 
+ui_comparison_gene_heatmap <- function(id) {
+    ns <- shiny::NS(id) 
+
+    shiny::tagList(
+        shiny::h2("Gene expression heatmap"),
+        shiny::splitLayout(
+            cellWidths = "40px",
+            shinyWidgets::dropdownButton(
+                shiny::sliderInput(
+                    inputId = ns("text_size"),
+                    label = "Text size",
+                    min = 5, max = 50, value = 15, step = 0.5
+                ),
+                shinyWidgets::prettySwitch(
+                    inputId = ns("scale"),
+                    label = "Apply scaling",
+                    status = "success",
+                    fill = TRUE,
+                    value = FALSE
+                ),
+                shiny::sliderInput(
+                    inputId = ns("clipping_value"),
+                    label = "Clipping value",
+                    min = 0.01, max = 20, value = 3, step = 0.1
+                ),
+                circle = TRUE,
+                status = "success",
+                size = "sm",
+                icon = shiny::icon("cog")
+            ),
+            gear_download(ns, "heatmap", "heatmap")
+        ),
+        shiny::splitLayout(
+            shiny::selectizeInput(
+                inputId = ns("gene_expr"),
+                choices = NULL,
+                label = "Select a metadata or a gene",
+                width = "95%",
+                multiple = TRUE
+            ),
+            shiny::selectInput(
+                inputId = ns("metadata"),
+                choices = NULL,
+                label = "Split by metadata"
+            )
+        ),
+        shiny::plotOutput(ns("gene_heatmap"), height = "auto"),
+    )
+}
+
 ui_comparison_violin_gene <- function(id) {
     ns <- shiny::NS(id)
 
@@ -382,6 +432,7 @@ ui_comparisons <- function(id) {
         ),
         ui_comparison_jsi_panel(ns("jsi_plot")),
         ui_comparison_violin_gene(ns("violin_gene")),
+        ui_comparison_gene_heatmap(ns("gene_heatmap")),
         ui_comparison_markers(ns("markers")),
         ui_comparison_enrichment(ns("enrichment")),
         style = "margin-bottom:30px;"
@@ -1538,8 +1589,14 @@ server_comparison_violin_gene <- function(id) {
                         sapply(split_vals, length)
                     )
 
+                    stats_df <- rbind(
+                        stats_df,
+                        sapply(seq_along(split_vals), function(x) { sum(split_vals[[x]] > stats_df[1, x])}),
+                        sapply(seq_along(split_vals), function(x) { sum(split_vals[[x]] < stats_df[5, x])})
+                    )
+
                     colnames(stats_df) <- names(split_vals)
-                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells")
+                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells", "# cells above min", "# cells under max")
 
                     breaks_df <- sapply(split_vals, function(x) {
                         table(cut(x, breaks = break_points))
@@ -1549,6 +1606,127 @@ server_comparison_violin_gene <- function(id) {
                 },
                 rownames = TRUE
             )
+        }
+    )
+}
+
+server_comparison_gene_heatmap <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            heatmap_plot <- shiny::reactive({
+                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, cancelOutput = TRUE)
+
+
+                shiny::isolate({
+                    is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+
+                    if (is_cluster) {
+                        k <- strsplit(input$metadata, "_")[[1]][2]
+                        mtd_val <- pkg_env$stab_obj$mbs[[k]]
+                        unique_vals <- as.character(seq_len(as.numeric(k)))
+                    } else {
+                        mtd_val <- pkg_env$metadata[[input$metadata]]
+                        unique_vals <- levels(mtd_val)
+                    }
+
+                    htmp_matrix <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
+                    rownames(htmp_matrix) <- input$gene_expr
+                    colnames(htmp_matrix) <- unique_vals
+
+                    if ("genes" %in% names(pkg_env)) {
+                        index_gene <- pkg_env$genes[input$gene_expr]
+
+                        for (i in seq_along(input$gene_expr)) {
+                            expr_profile <- rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene[i], NULL))
+                            for (j in seq_along(unique_vals)) {
+                                filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
+                                htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
+                            }
+                        }
+                    } else { # for backward-compatibility purposes
+                        index_interest <- pkg_env$genes_of_interest[input$gene_expr]
+                        index_others <- pkg_env$genes_others[input$gene_expr]
+
+                        for (i in seq_along(index_interest)) {
+                            expr_profile <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest[i], NULL))
+                            for (j in seq_along(unique_vals)) {
+                                filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
+                                htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
+                            }
+                        }
+
+                        offset <- length(index_interest)
+                        for (i in seq_along(index_others)) {
+                            expr_profile <- rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others[i], NULL))
+                            for (j in seq_along(unique_vals)) {
+                                filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
+                                htmp_matrix[i + offset, j] <- mean(filtered_expr, na.rm = TRUE)
+                            }
+                        }
+                    }
+
+                    nelems <- nrow(htmp_matrix) * ncol(htmp_matrix)
+
+                    if (input$scale && ncol(htmp_matrix) > 1) {
+                        htmp_matrix <- t(scale(t(htmp_matrix)))
+                        htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
+                        htmp_matrix[htmp_matrix < -input$clipping_value] <- -input$clipping_value
+
+                        colour_scheme <- colorRampPalette(c("blue", "white", "red"))(nelems*2)
+                    } else {
+                        htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
+                        colour_scheme <- colorRampPalette(c("white", "#004c00"))(nelems*2)
+                    }
+
+                    if (min(htmp_matrix) == max(htmp_matrix)) {
+                        colour_scheme <- "white"
+                    }
+
+                    ComplexHeatmap::Heatmap(
+                        htmp_matrix,
+                        row_order = seq_len(nrow(htmp_matrix)),
+                        column_order = seq_len(ncol(htmp_matrix)),
+                        heatmap_legend_param = list(direction = "horizontal", legend_width = grid::unit(5,  "cm")),
+                        name = paste0(ifelse(input$scale, "scaled ", ""), "expression level"),
+                        col = colour_scheme,
+                        cell_fun = function(j, i, x, y, width, height, fill) {
+                            grid::grid.text(sprintf("%.2f", htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
+                        },
+                        column_title = paste0("Gene expression heatmap split by ", input$metadata)
+                    )
+                })
+            })
+
+            shiny::observe({
+                shiny::req(input$gene_expr, heatmap_plot())
+                shiny::req(pkg_env$dimension())
+                
+                shiny::isolate({
+                    output$gene_heatmap <- shiny::renderPlot(
+                        width = pkg_env$dimension()[1],
+                        height = 200 + length(input$gene_expr) * 50,
+                        {
+                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "top")
+                        }
+                    )
+
+                    output$download_heatmap <- shiny::downloadHandler(
+                        filename = function() {
+                            paste0(input$filename_heatmap, ".", tolower(input$filetype_heatmap))
+                        },
+                        content = function(file) {
+                            shiny::req(heatmap_plot())
+
+                            pdf(file, width = input$width_heatmap, height = input$height_heatmap)
+                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "top")
+                            dev.off()
+                        }
+                    )
+                })
+            })
+            
+
         }
     )
 }
@@ -1690,14 +1868,6 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     selected = paste0("stable_", k_values[1], "_clusters")
                 )
 
-                shiny::updateSelectizeInput(
-                    session,
-                    inputId = glue::glue("violin_gene-metadata"),
-                    server = FALSE,
-                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
-                    selected = paste0("stable_", k_values[1], "_clusters")
-                )
-
                 if ("genes" %in% names(pkg_env)) {
                     gene_choices <- names(pkg_env$genes)
                 } else { # for backward-compatibility purposes
@@ -1714,29 +1884,58 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         maxOptions = 7
                     )
                 )
-
-                continuous_metadata <- c(
-                    setdiff(colnames(pkg_env$metadata), names(pkg_env$metadata_unique)),
-                    paste0("ecc_", k_values)
-                )
-
-                shiny::updateSelectizeInput(
-                    session,
-                    inputId = glue::glue("violin_gene-gene_expr"),
-                    choices = c(continuous_metadata, gene_choices),
-                    selected = continuous_metadata[1],
-                    server = TRUE,
-                    options = list(
-                        maxOptions = length(continuous_metadata)
-                    )
-                )
             }
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("violin_gene-metadata"),
+                server = FALSE,
+                choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                selected = paste0("stable_", k_values[1], "_clusters")
+            )
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("gene_heatmap-metadata"),
+                server = FALSE,
+                choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                selected = paste0("stable_", k_values[1], "_clusters")
+            )
+
+            continuous_metadata <- c(
+                setdiff(colnames(pkg_env$metadata), names(pkg_env$metadata_unique)),
+                paste0("ecc_", k_values)
+            )
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("violin_gene-gene_expr"),
+                choices = c(continuous_metadata, gene_choices),
+                selected = continuous_metadata[1],
+                server = TRUE,
+                options = list(
+                    maxOptions = length(continuous_metadata)
+                )
+            )
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("gene_heatmap-gene_expr"),
+                choices = gene_choices,
+                selected = gene_choices[1],
+                server = TRUE,
+                options = list(
+                    maxOptions = 7
+                )
+            )
+
             server_comparison_metadata_panel("metadata_panel_left")
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
             server_comparison_gene_panel("gene_panel_right")
             server_comparison_jsi("jsi_plot", append(k_values, discrete))
             server_comparison_violin_gene("violin_gene")
+            server_comparison_gene_heatmap("gene_heatmap")
             marker_genes <- server_comparison_markers("markers", k_values)
             server_comparison_enrichment("enrichment", marker_genes)
 
