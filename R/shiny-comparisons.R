@@ -279,6 +279,13 @@ ui_comparison_gene_heatmap <- function(id) {
                     label = "Clipping value",
                     min = 0.01, max = 20, value = 3, step = 0.1
                 ),
+                shinyWidgets::prettySwitch(
+                    inputId = ns("show_numbers"),
+                    label = "Show the values on the heatmap",
+                    status = "success",
+                    fill = TRUE,
+                    value = FALSE 
+                ),
                 circle = TRUE,
                 status = "success",
                 size = "sm",
@@ -1615,8 +1622,7 @@ server_comparison_gene_heatmap <- function(id) {
         id,
         function(input, output, session) {
             heatmap_plot <- shiny::reactive({
-                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, cancelOutput = TRUE)
-
+                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), cancelOutput = TRUE)
 
                 shiny::isolate({
                     is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
@@ -1687,11 +1693,14 @@ server_comparison_gene_heatmap <- function(id) {
                         htmp_matrix,
                         row_order = seq_len(nrow(htmp_matrix)),
                         column_order = seq_len(ncol(htmp_matrix)),
+                        row_names_side = "left",
                         heatmap_legend_param = list(direction = "horizontal", legend_width = grid::unit(5,  "cm")),
                         name = paste0(ifelse(input$scale, "scaled ", ""), "expression level"),
                         col = colour_scheme,
                         cell_fun = function(j, i, x, y, width, height, fill) {
-                            grid::grid.text(sprintf("%.2f", htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
+                            if (input$show_numbers) {
+                                grid::grid.text(sprintf("%.2f", htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
+                            }
                         },
                         column_title = paste0("Gene expression heatmap split by ", input$metadata)
                     )
@@ -1707,7 +1716,7 @@ server_comparison_gene_heatmap <- function(id) {
                         width = pkg_env$dimension()[1],
                         height = 200 + length(input$gene_expr) * 50,
                         {
-                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "top")
+                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
                         }
                     )
 
@@ -1719,7 +1728,7 @@ server_comparison_gene_heatmap <- function(id) {
                             shiny::req(heatmap_plot())
 
                             pdf(file, width = input$width_heatmap, height = input$height_heatmap)
-                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "top")
+                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
                             dev.off()
                         }
                     )

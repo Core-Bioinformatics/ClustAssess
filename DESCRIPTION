@@ -18,6 +18,7 @@ Encoding: UTF-8
 biocViews:
 Imports: 
     ggplot2,
+    ComplexHeatmap,
     dplyr,
     DT,
     fastcluster,
