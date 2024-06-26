@@ -950,6 +950,51 @@ server_graph_clustering_k_stab <- function(id) {
                 }
             )
 
+            output$download_k_stability <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_k_stability, ".", tolower(input$filetype_k_stability))
+                },
+                content = function(file) {
+                    shiny::req(input$k_nparts_thresh > 0, input$k_select_groups)
+                    filetypes[[input$filetype_k_stability]](file, width = input$width_k_stability, height = input$height_k_stability)
+
+                    shiny_plot_k_n_partitions(
+                        summary_df = pkg_env$stab_obj$summary_k,
+                        distance_factor = input$k_distance_factor,
+                        filtered_cl_methods = input$k_select_groups,
+                        text_size = input$k_text_size,
+                        pt_size_range = input$k_point_range,
+                        threshold_ecc = input$k_ecc_thresh,
+                        threshold_occurences = input$k_occ_thresh,
+                        threshold_nparts = input$k_nparts_thresh,
+                        plt_height = input$height_k_stability * ppi,
+                        display_legend = TRUE
+                    )
+
+                    grDevices::dev.off()
+                }
+            )
+
+            output$download_k_resolution <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_k_resolution, ".", tolower(input$filetype_k_resolution))
+                },
+                content = function(file) {
+                    shiny::req(input$res_distance_factor > 0, input$res_select_groups)
+                    filetypes[[input$filetype_k_resolution]](file, width = input$width_k_resolution, height = input$height_k_resolution)
+
+                    shiny_plot_k_res(
+                        summary_df = pkg_env$stab_obj$summary_res,
+                        distance_factor = input$res_distance_factor,
+                        filtered_cl_methods = input$res_select_groups,
+                        text_size = input$res_text_size,
+                        pt_size_range = input$res_point_range
+                    )
+
+                    grDevices::dev.off()
+                }
+            )
+
             shiny::observe(gclust_k_corresp_info(session)) %>% shiny::bindEvent(input$info_k_corresp, ignoreInit = TRUE)
             shiny::observe(gclust_k_stab_info(session)) %>% shiny::bindEvent(input$info_k_stab, ignoreInit = TRUE)
         }

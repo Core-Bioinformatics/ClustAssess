@@ -35,7 +35,7 @@ automatic_stability_assessment(
  },
   umap_arguments = list(),
   prune_value = -1,
-  alogrithm_dim_reduction = 1,
+  algorithm_dim_reduction = 1,
   algorithm_graph_construct = 1,
   algorithms_clustering_assessment = 1:3,
   clustering_arguments = list(),
@@ -102,7 +102,7 @@ value is 0, the graph won't be pruned. If the value is between 0 and 1, the
 edges with weight under the pruning value will be removed. If the value is
 -1, the highest pruning value will be calculated automatically and used.}
 
-\item{alogrithm_dim_reduction}{An index indicating the community detection
+\item{algorithm_dim_reduction}{An index indicating the community detection
 algorithm that will be used in the Dimensionality reduction step.}
 
 \item{algorithm_graph_construct}{An index indicating the community detection
