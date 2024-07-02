@@ -802,7 +802,7 @@ add_metadata <- function(app_folder,
         quit(glue::glue("The app folder {app_folder} should contain a file named `metadata.rds`!"))
     }
 
-    if (!is.data.frame(app_folder)) {
+    if (!is.data.frame(metadata)) {
         quit("The `metadata` object should be a dataframe!")
     }
 
