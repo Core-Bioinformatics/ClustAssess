@@ -7,8 +7,7 @@
 merge_partitions(
   partition_list,
   ecs_thresh = 1,
-  order = TRUE,
-  check_ties = FALSE
+  order_logic = c("freq", "agreement", "none")
 )
 }
 \arguments{
@@ -16,12 +15,17 @@ merge_partitions(
 
 \item{ecs_thresh}{A numeric: the ecs threshold.}
 
-\item{order}{A logical: if TRUE, order the partitions based on their frequencies.}
-
-\item{check_ties}{A logical value that indicates whether to check for ties
-in the highest frequency partitions or not. If TRUE, the function will put
-at the first position the partition that has the highest similarity
-with the other partitions. Defaults to \code{FALSE}.}
+\item{order_logic}{Variable indicating the method of ordering the partitions.
+It can take these three values:
+\itemize{
+\item "freq": order the partitions based on their frequencies. The partition with
+the highest frequency will be the first on the list (default).
+\item "agreement": order the partitions based on their average agreement index.
+The average agreement index of a partition is calculated as the mean of
+the ECS scores between that partition and the other partitions from the list.
+The partition with the highest agreement will be  the first on the list.
+\item "none": do not perform any ordering (not recommended).
+}}
 }
 \value{
 a list of the merged partitions
