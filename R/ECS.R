@@ -992,8 +992,7 @@ are_identical_memberships <- function(mb1, mb2) {
 # merge partitions that are identical (meaning the ecs threshold is 1)
 # the order parameter is indicating whether to sort the merged objects
 # based on their frequency
-merge_identical_partitions <- function(clustering_list,
-                                       order = TRUE) {
+merge_identical_partitions <- function(clustering_list) {
     # merge the same memberships into the same object
     merged_partitions <- list(clustering_list[[1]])
     n_partitions <- length(clustering_list)
@@ -1025,21 +1024,11 @@ merge_identical_partitions <- function(clustering_list,
         }
     }
 
-    # order the newly merged partitions based on their frequencies
-    if (order) {
-        ordered_indices <- order(sapply(merged_partitions, function(x) {
-            x$freq
-        }), decreasing = TRUE)
-        merged_partitions <- merged_partitions[ordered_indices]
-    }
-
     merged_partitions
 }
 
 # merge the partitions when the ecs threshold is not 1
-merge_partitions_ecs <- function(partition_list,
-                                 ecs_thresh = 0.99,
-                                 order = TRUE) {
+merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
     partition_groups <- list()
     nparts <- length(partition_list)
 
@@ -1116,14 +1105,6 @@ merge_partitions_ecs <- function(partition_list,
         merged_index <- merged_index + 1
     }
 
-    # order the newly merged partitions based on their frequencies
-    if (order) {
-        ordered_indices <- order(sapply(merged_partitions, function(x) {
-            x$freq
-        }), decreasing = T)
-        merged_partitions <- merged_partitions[ordered_indices]
-    }
-
     merged_partitions
 }
 
@@ -1133,11 +1114,15 @@ merge_partitions_ecs <- function(partition_list,
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
-#' @param order A logical: if TRUE, order the partitions based on their frequencies.
-#' @param check_ties A logical value that indicates whether to check for ties
-#' in the highest frequency partitions or not. If TRUE, the function will put
-#' at the first position the partition that has the highest similarity
-#' with the other partitions. Defaults to `FALSE`.
+#' @param order_logic Variable indicating the method of ordering the partitions.
+#' It can take these three values:
+#' - "freq": order the partitions based on their frequencies. The partition with
+#' the highest frequency will be the first on the list (default).
+#' - "agreement": order the partitions based on their average agreement index.
+#' The average agreement index of a partition is calculated as the mean of
+#' the ECS scores between that partition and the other partitions from the list.
+#' The partition with the highest agreement will be  the first on the list.
+#' - "none": do not perform any ordering (not recommended).
 #' @return a list of the merged partitions
 #' @export
 #' @examples
@@ -1145,16 +1130,17 @@ merge_partitions_ecs <- function(partition_list,
 #' merge_partitions(initial_list, 1)
 merge_partitions <- function(partition_list,
                              ecs_thresh = 1,
-                             order = TRUE,
-                             check_ties = FALSE) {
+                             order_logic = c("freq", "agreement", "none")) {
     # check the parameters
     if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
         stop("ecs_thresh parameter should be numeric")
     }
 
-    if (!is.logical(order)) {
-        stop("order parameter should be logical")
+    order_logic <- order_logic[1]
+    if (!(order_logic %in% c("freq", "agreement", "none"))) {
+        stop("order parameter should be either `freq`, `agreement` or `none`")
     }
+
 
     # check the type of object that is provided in the list
     if (!inherits(partition_list[[1]], "list")) { # the elements should be membership vectors
@@ -1167,31 +1153,24 @@ merge_partitions <- function(partition_list,
     } else {
         # the list contains the partition field, created by `get_resolution_importance` method
         if ("partitions" %in% names(partition_list)) {
-            return(merge_partitions(partition_list$partitions, ecs_thresh, order, check_ties))
+            return(merge_partitions(partition_list$partitions, ecs_thresh, order_logic))
         }
         # the case with list of lists of partitions
         if (!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
             return(lapply(partition_list, function(sublist) {
-                merge_partitions(sublist, ecs_thresh, order, check_ties)
+                merge_partitions(sublist, ecs_thresh, order_logic)
             }))
         }
     }
 
     # if the threshold is 1, apply the identical merging
     if (ecs_thresh == 1) {
-        part_list <- merge_identical_partitions(partition_list, order)
+        part_list <- merge_identical_partitions(partition_list)
     } else {
         # otherwise merge the partitions using the `merge_partitions_ecs` function
-        part_list <- merge_partitions_ecs(partition_list, ecs_thresh, order = order)
+        part_list <- merge_partitions_ecs(partition_list, ecs_thresh)
     }
 
-    if (!check_ties) {
-        return(part_list)
-    }
-
-    # check for ties - partitions with the same highest frequency; we will put
-    # first the one that has the highest similarity with the other partitions
-    # calculate the weighted ECC as well
     if (length(part_list) == 1) {
         return(list(partitions = part_list, ecc = rep(1, length(part_list[[1]]$mb))))
     }
@@ -1206,25 +1185,55 @@ merge_partitions <- function(partition_list,
         calculate_sim_matrix = TRUE
     )
 
-    max_freq <- part_list[[1]]$freq
+    # add average aggreement index for each membership - how similar it is
+    # with the other clusterings
+    average_agreement <- (
+        rowSums(consistency$ecs_matrix, na.rm = TRUE) +
+        colSums(consistency$ecs_matrix, na.rm = TRUE)
+    ) / (nrow(consistency$ecs_matrix) - 1)
 
-    for (i in seq(from = 2, to = nrow(consistency$ecs_matrix), by = 1)) {
-        if (part_list[[i]]$freq != max_freq) {
-            i <- i - 1
-            break
-        }
+    for (i in seq_len(nrow(consistency$ecs_matrix))) {
+        part_list[[i]]$avg_agreement <- average_agreement[i]
     }
-    nmax <- i
 
-    # in case of ties on the highest frequency, put at the first position the partition that has the highest similarity with the others
-    if (nmax > 1) {
-        average_agreement <- (rowSums(consistency$ecs_matrix, na.rm = TRUE) + colSums(consistency$ecs_matrix, na.rm = TRUE) - 2) / (nrow(consistency$ecs_matrix) - 1)
-        highest_sim_index <- which.max(average_agreement[seq_len(nmax)])
-
-        temp_mb <- part_list[[1]]$mb
-        part_list[[1]]$mb <- part_list[[highest_sim_index]]$mb
-        part_list[[highest_sim_index]]$mb <- temp_mb
+    if (order_logic == "none") {
+        return(part_list)
     }
+
+    # order the newly merged partitions based on their frequencies
+    if (order_logic == "freq") {
+        ordered_indices <- order(sapply(part_list, function(x) {
+            x$freq
+        }), decreasing = TRUE)
+    } else {
+        ordered_indices <- order(sapply(part_list, function(x) {
+            x$avg_agreement
+        }), decreasing = TRUE)
+    }
+    part_list <- part_list[ordered_indices]
+
+    # NOTE this code was used to check for ties and use the agreement as
+    # additional decider; now that sorting by agreement is possible, the code
+    # is not needed anymore, but it will kept for now
+    # max_freq <- part_list[[1]]$freq
+
+    # for (i in seq(from = 2, to = nrow(consistency$ecs_matrix), by = 1)) {
+    #     if (part_list[[i]]$freq != max_freq) {
+    #         i <- i - 1
+    #         break
+    #     }
+    # }
+    # nmax <- i
+
+    # # in case of ties on the highest frequency, put at the first position the partition that has the highest similarity with the others
+    # if (nmax > 1) {
+    #     highest_sim_index <- which.max(average_agreement[seq_len(nmax)])
+
+    #     temp_mb <- part_list[[1]]$mb
+    #     part_list[[1]]$mb <- part_list[[highest_sim_index]]$mb
+    #     part_list[[1]]$avg_agreement <- part_list[[highest_sim_index]]$avg_agreement
+    #     part_list[[highest_sim_index]]$mb <- temp_mb
+    # }
 
     return(list(partitions = part_list, ecc = consistency$ecc))
 }
@@ -1298,6 +1307,8 @@ element_consistency <- function(clustering_list,
             partition_list = clustering_list,
             ecs_thresh = 1
         )
+        # TODO check if they do the same thing
+        return(final_clustering_list$ecc)
         return(weighted_element_consistency(
             clustering_list = lapply(final_clustering_list, function(x) {
                 x$mb
