@@ -288,8 +288,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 different_partitions[[k]] <- merge_partitions(
                     partition_list = different_partitions[[k]],
                     ecs_thresh = ecs_thresh,
-                    order = TRUE,
-                    check_ties = TRUE
+                    order_logic = "freq"
                 )
 
                 unique_partitions <- c(

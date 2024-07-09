@@ -416,7 +416,7 @@ assess_feature_stability <- function(data_matrix,
                     x[[r]]
                 }),
                 ecs_thresh = ecs_thresh,
-                order = TRUE
+                order_logic = "freq"
             )
         })
 
@@ -426,16 +426,18 @@ assess_feature_stability <- function(data_matrix,
         # the most frequent partition and the number of different partitions
         steps_ecc_list[[object_name]][[step]] <- lapply(as.character(resolution), function(r) {
             list(
-                ecc = weighted_element_consistency(
-                    lapply(partitions_list[[step]][[r]], function(x) {
-                        x$mb
-                    }),
-                    sapply(partitions_list[[step]][[r]], function(x) {
-                        x$freq
-                    }) # NOTE ECS should be fast enough without parallelization
-                ),
-                most_frequent_partition = partitions_list[[step]][[r]][[1]],
-                n_different_partitions = length(partitions_list[[step]][[r]])
+                ecc = partitions_list[[step]][[r]]$ecc,
+                # TODO check if these two do the same thing
+                # ecc = weighted_element_consistency(
+                #     lapply(partitions_list[[step]][[r]]$partitions, function(x) {
+                #         x$mb
+                #     }),
+                #     sapply(partitions_list[[step]][[r]]$partitions, function(x) {
+                #         x$freq
+                #     }) # NOTE ECS should be fast enough without parallelization
+                # ),
+                most_frequent_partition = partitions_list[[step]][[r]]$partitions[[1]],
+                n_different_partitions = length(partitions_list[[step]][[r]]$partitions)
             )
         })
 

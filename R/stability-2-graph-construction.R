@@ -516,6 +516,7 @@ get_highest_prune_param <- function(nn_matrix,
     while (start_n <= stop_n) {
         middle <- as.integer((stop_n + start_n) / 2)
         current_g <- igraph::delete_edges(prev_g, which(igraph::E(prev_g)$weight <= possible_values[middle]))
+        gc()
 
         current_n_conn_comps <- igraph::clusters(current_g)$no
 
