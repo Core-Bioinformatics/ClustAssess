@@ -715,7 +715,7 @@ assess_nn_stability_pca <- function(embedding,
     for (config_name in names(partitions_list)) {
         nn_object_n_clusters[[config_name]] <- list()
         for (n_neigh in names(partitions_list[[config_name]])) {
-            nn_object_n_clusters[[config_name]][[n_neigh]] <- unlist(lapply(partitions_list[[config_name]][[n_neigh]], function(x) {
+            nn_object_n_clusters[[config_name]][[n_neigh]] <- unlist(lapply(partitions_list[[config_name]][[n_neigh]]$partitions, function(x) {
                 rep(length(unique(x$mb)), x$freq)
             }))
         }
@@ -725,14 +725,15 @@ assess_nn_stability_pca <- function(embedding,
     # number of neighbours
     nn_ecs_object <- lapply(partitions_list, function(config) {
         lapply(config, function(n_neigh) {
-            weighted_element_consistency(
-                lapply(n_neigh, function(x) {
-                    x$mb
-                }),
-                sapply(n_neigh, function(x) {
-                    x$freq
-                })
-            )
+            n_neigh$ecc
+            # weighted_element_consistency(
+            #     lapply(n_neigh, function(x) {
+            #         x$mb
+            #     }),
+            #     sapply(n_neigh, function(x) {
+            #         x$freq
+            #     })
+            # )
         })
     })
 
@@ -903,7 +904,7 @@ assess_nn_stability_umap <- function(embedding,
     for (config_name in names(partitions_list)) {
         nn_object_n_clusters[[config_name]] <- list()
         for (n_neigh in names(partitions_list[[config_name]])) {
-            nn_object_n_clusters[[config_name]][[n_neigh]] <- unlist(lapply(partitions_list[[config_name]][[n_neigh]], function(x) {
+            nn_object_n_clusters[[config_name]][[n_neigh]] <- unlist(lapply(partitions_list[[config_name]][[n_neigh]]$partitions, function(x) {
                 rep(length(unique(x$mb)), x$freq)
             }))
         }
@@ -913,14 +914,15 @@ assess_nn_stability_umap <- function(embedding,
     # number of neighbours
     nn_ecs_object <- lapply(partitions_list, function(config) {
         lapply(config, function(n_neigh) {
-            weighted_element_consistency(
-                lapply(n_neigh, function(x) {
-                    x$mb
-                }),
-                sapply(n_neigh, function(x) {
-                    x$freq
-                })
-            )
+            n_neigh$ecc
+            # weighted_element_consistency(
+            #     lapply(n_neigh, function(x) {
+            #         x$mb
+            #     }),
+            #     sapply(n_neigh, function(x) {
+            #         x$freq
+            #     })
+            # )
         })
     })
 

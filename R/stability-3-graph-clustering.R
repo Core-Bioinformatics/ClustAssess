@@ -59,7 +59,7 @@ merge_resolutions <- function(res_obj) {
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)]
     ) %do% {
-        ClustAssess::merge_partitions(clusters_obj[[i]], check_ties = TRUE)
+        ClustAssess::merge_partitions(clusters_obj[[i]])
     }
 
     names(clusters_obj) <- k_vals
