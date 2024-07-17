@@ -15,7 +15,7 @@ calculate_markers(
   rank_matrix = NULL,
   feature_names = NULL,
   used_slot = "data",
-  norm_method = "LogNormalize",
+  norm_method = "SCT",
   pseudocount_use = 1,
   base = 2,
   adjust_pvals = TRUE,

@@ -4,7 +4,12 @@
 \alias{choose_stable_clusters}
 \title{Choose stable clusters based on ECC and frequency}
 \usage{
-choose_stable_clusters(clusters_list, ecc_threshold = 0.9, freq_threshold = 30)
+choose_stable_clusters(
+  clusters_list,
+  ecc_threshold = 0.9,
+  freq_threshold = 30,
+  summary_function = mean
+)
 }
 \arguments{
 \item{clusters_list}{List of clusters obtained from the
@@ -15,6 +20,10 @@ Default is 0.9.}
 
 \item{freq_threshold}{Minimum total frequency of the partitions to consider.
 Default is 30.}
+
+\item{summary_function}{Function to summarize the ECC values. Default
+is \code{mean}. To match the results from the ClustAssess Shiny App, use
+\code{median}.}
 }
 \value{
 A list of stable clusters that satisfy the ECC and frequency.

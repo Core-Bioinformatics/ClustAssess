@@ -16,7 +16,8 @@ calculate_markers_shiny(
   norm_method = "LogNormalize",
   expression_h5_path = "expression.h5",
   pseudocount_use = 1,
-  base = 2
+  base = 2,
+  verbose = TRUE
 )
 }
 \arguments{
