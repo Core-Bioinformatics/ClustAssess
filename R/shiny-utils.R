@@ -1004,7 +1004,8 @@ calculate_markers_shiny <- function(cells1,
                                     norm_method = "LogNormalize",
                                     expression_h5_path = "expression.h5",
                                     pseudocount_use = 1,
-                                    base = 2) {
+                                    base = 2,
+                                    verbose = TRUE) {
     cells2 <- setdiff(cells2, cells1)
 
     if (length(cells2) == 0 || length(cells1) == 0) {
@@ -1021,7 +1022,9 @@ calculate_markers_shiny <- function(cells1,
     names(average_expressions) <- genes
 
     nchunks <- ceiling(nfiltered_genes / chunk_size)
-    print(glue::glue("[{Sys.time()}] Start DEG analysis"))
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] Start DEG analysis"))
+    }
     df_list <- lapply(
         seq_len(nchunks),
         function(i) {
@@ -1066,7 +1069,9 @@ calculate_markers_shiny <- function(cells1,
     )
     df_list$avg_expr <- average_expressions[df_list$gene]
 
-    print(glue::glue("[{Sys.time()}] DEG analysis - Done"))
+    if (verbose) {
+        print(glue::glue("[{Sys.time()}] DEG analysis - Done"))
+    }
 
     df_list
 }
@@ -1161,7 +1166,7 @@ calculate_markers <- function(expression_matrix,
                               rank_matrix = NULL,
                               feature_names = NULL,
                               used_slot = "data",
-                              norm_method = "LogNormalize",
+                              norm_method = "SCT",
                               pseudocount_use = 1,
                               base = 2,
                               adjust_pvals = TRUE,
@@ -1171,8 +1176,21 @@ calculate_markers <- function(expression_matrix,
         rowMeans_function <- Matrix::rowMeans
     }
 
-    default_mean_fxn <- function(x) {
+    # as of Seurat 5
+    deprecated_default_mean_fxn <- function(x) {
         return(log(x = rowMeans_function(x = x) + pseudocount_use, base = base))
+    }
+
+    sct_data_mean_function <- function(x) {
+       return(log(x = (rowSums(x = expm1(x = x)) + pseudocount_use)/NCOL(x), base = base))
+    }
+
+    counts_mean_function <- function(x) {
+        return(log(x = (rowSums(x = x) + pseudocount_use)/NCOL(x), base = base))
+    }
+
+    log1pdata_mean_function <- function(x) {
+        return(log(x = (rowSums(x = expm1(x = x)) + pseudocount_use)/NCOL(x), base = base))
     }
 
     if (is.null(feature_names)) {
@@ -1205,14 +1223,15 @@ calculate_markers <- function(expression_matrix,
         no = paste0("avg_log", base_text, "FC")
     )
     mean_fxn <- switch(EXPR = used_slot,
+        counts = counts_mean_function,
         data = switch(EXPR = norm_method,
-            LogNormalize = function(x) {
-                return(log(x = rowMeans_function(x = expm1(x = x)) + pseudocount_use, base = base))
-            },
-            default_mean_fxn
+            SCT = sct_data_mean_function,
+            LogNormalize = log1pdata_mean_function,
+            NULL = log1pdata_mean_function,
+            counts_mean_function
         ),
         scale.data = rowMeans_function,
-        default_mean_fxn
+        counts_mean_function
     )
 
     # TODO a bit redundant; this is also done in FoldChange; check if you can combine the two steps
