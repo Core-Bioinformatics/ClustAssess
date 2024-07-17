@@ -39,8 +39,8 @@
 #' )
 create_monocle_default <- function(normalized_expression_matrix,
                                    count_matrix = NULL,
-                                   pca_emb = NULL,
-                                   umap_emb = NULL,
+                                   pca_embedding = NULL,
+                                   umap_embedding = NULL,
                                    metadata_df = NULL) {
     if (is.null(count_matrix)) {
         count_matrix <- normalized_expression_matrix
@@ -73,20 +73,20 @@ create_monocle_default <- function(normalized_expression_matrix,
 
     monocle_cds <- monocle3::preprocess_cds(
         cds = monocle_cds,
-        num_dim = ifelse(is.null(pca_emb), 30, ncol(pca_emb)),
+        num_dim = ifelse(is.null(pca_embedding), 30, ncol(pca_embedding)),
         norm_method = "none",
         scaling = FALSE
     )
 
     monocle_cds@assays@data$normalized_data <- normalized_expression_matrix
 
-    if (!is.null(pca_emb)) {
+    if (!is.null(pca_embedding)) {
         rownames(pca_embedding) <- cell_names
         colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
         monocle_cds@int_colData$reducedDims$PCA <- pca_embedding
     }
 
-    if (!is.null(umap_emb)) {
+    if (!is.null(umap_embedding)) {
         rownames(umap_embedding) <- cell_names
         colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
         monocle_cds@int_colData$reducedDims$UMAP <- umap_embedding
@@ -279,9 +279,22 @@ create_monocle_from_clustassess_app <- function(app_folder,
     gene_names <- rhdf5::h5read(expr_path, "genes")
     cell_names <- rhdf5::h5read(expr_path, "cells")
 
-    expr_matrix <- rhdf5::h5read(expr_path, "expression")
+    expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
     colnames(expr_matrix) <- cell_names
     rownames(expr_matrix) <- gene_names
+
+    available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
+    available_ftypes <- names(available_configs)
+
+    if (!stable_feature_type %in% available_ftypes) {
+        stop(paste0("The provided stable_feature_type: ", stable_feature_type, " is not available in the app.\nAvailable options: ", paste(available_ftypes, collapse = ", ")))
+    }
+
+    available_fsizes <- available_configs[[stable_feature_type]]
+
+    if (!stable_feature_set_size %in% available_fsizes) {
+        stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
+    }
 
     if (!use_all_genes) {
         used_genes <- rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list"))
@@ -295,7 +308,12 @@ create_monocle_from_clustassess_app <- function(app_folder,
     cl_ecc_prefix <- paste0(prefix, "/clustering_stability/split_by_k/ecc/")
     metadata_df <- readRDS(file.path(app_folder, "metadata.rds"))$metadata
 
-    available_n_clusters <- names(rhdf5::h5read(stab_path, cl_mb_prefix))
+    tryCatch({
+        available_n_clusters <- names(rhdf5::h5read(stab_path, cl_mb_prefix))
+
+    }, error = function(e) {
+        stop(paste0("The provided stable_clustering_method: ", stable_clustering_method, " is not available in the app."))
+    })
 
     if (is.null(stable_n_clusters)) {
         stable_n_clusters <- available_n_clusters
@@ -315,11 +333,11 @@ create_monocle_from_clustassess_app <- function(app_folder,
     colnames(metadata_df) <- metadata_values
 
     for (k in stable_n_clusters) {
-        metadata_df[[paste0("stable_", k, "_clusters")]] <- rhdf5::h5read(stab_path, paste0(cl_mb_prefix, "/", k))
-        metadata_df[[paste0("ecc_", k)]] <- rhdf5::hread(
+        metadata_df[[paste0("stable_", k, "_clusters")]] <- factor(as.integer(rhdf5::h5read(stab_path, paste0(cl_mb_prefix, "/", k))))
+        metadata_df[[paste0("ecc_", k)]] <- as.numeric(rhdf5::h5read(
             stab_path,
-            paste0(cl_ecc_prefix, sprintf("%06d;%s", k, stable_clustering_method))
-        )
+            paste0(cl_ecc_prefix, sprintf("%06d;%s", as.integer(k), stable_clustering_method))
+        ))
     }
 
     return(create_monocle_default(
