@@ -972,7 +972,7 @@ render_plot_by_height <- function(id, session) {
 #' log fold change will be calculated as described for the `used_slot`
 #' parameter. Otherwise, the log fold change will be calculated as the fraction
 #' between the log value of the average of the expression values for the two
-#' cell groups. Defaults to `LogNormalize`.
+#' cell groups. Defaults to `SCT`.
 #' @param expression_h5_path The path to the h5 file containing the expression
 #' matrix. The h5 file should contain the following fields: `expression_matrix`,
 #' `rank_matrix`, `average_expression`, `genes`. The file path
@@ -1001,7 +1001,7 @@ calculate_markers_shiny <- function(cells1,
                                     average_expression_group1_threshold = 0,
                                     min_diff_pct_threshold = -Inf,
                                     used_slot = "data",
-                                    norm_method = "LogNormalize",
+                                    norm_method = "SCT",
                                     expression_h5_path = "expression.h5",
                                     pseudocount_use = 1,
                                     base = 2,
@@ -1121,7 +1121,7 @@ calculate_markers_shiny <- function(cells1,
 #' log fold change will be calculated as described for the `used_slot`
 #' parameter. Otherwise, the log fold change will be calculated as the fraction
 #' between the log value of the average of the expression values for the two
-#' cell groups. Defaults to `LogNormalize`.
+#' cell groups. Defaults to `SCT`.
 #' @param pseudocount_use The pseudocount to add to the expression values when
 #' calculating the average expression of the genes, to avoid the 0 value for
 #' the denominator. Defaults to `1`.

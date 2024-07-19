@@ -73,7 +73,7 @@ expression of the genes when \code{used_slot = "data"}. If \code{LogNormalize}, 
 log fold change will be calculated as described for the \code{used_slot}
 parameter. Otherwise, the log fold change will be calculated as the fraction
 between the log value of the average of the expression values for the two
-cell groups. Defaults to \code{LogNormalize}.}
+cell groups. Defaults to \code{SCT}.}
 
 \item{pseudocount_use}{The pseudocount to add to the expression values when
 calculating the average expression of the genes, to avoid the 0 value for
