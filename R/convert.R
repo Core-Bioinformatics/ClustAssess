@@ -48,6 +48,11 @@ create_monocle_default <- function(normalized_expression_matrix,
         count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
     }
 
+    # check if normalized expression matrix is sparse
+    if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
+        normalized_expression_matrix <- as(normalized_expression_matrix, "dgCMatrix")
+    }
+
     gene_names <- rownames(normalized_expression_matrix)
     cell_names <- colnames(normalized_expression_matrix)
 
@@ -63,7 +68,6 @@ create_monocle_default <- function(normalized_expression_matrix,
 
         rownames(metadata_df) <- cell_names
     }
-
 
     monocle_cds <- monocle3::new_cell_data_set(
         expression_data = count_matrix,
@@ -276,12 +280,17 @@ create_monocle_from_clustassess_app <- function(app_folder,
 
     expr_path <- file.path(app_folder, "expression.h5")
     stab_path <- file.path(app_folder, "stability.h5")
-    gene_names <- rhdf5::h5read(expr_path, "genes")
-    cell_names <- rhdf5::h5read(expr_path, "cells")
+    gene_names <- as.character(rhdf5::h5read(expr_path, "genes"))
+    cell_names <- as.character(rhdf5::h5read(expr_path, "cells"))
 
+    # expr_matrix <- Matrix::Matrix(
+    #     rhdf5::h5read(expr_path, "expression_matrix"),
+    #     sparse = TRUE,
+    #     dimnames = list(gene_names, cell_names)
+    # )
     expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
-    colnames(expr_matrix) <- cell_names
     rownames(expr_matrix) <- gene_names
+    colnames(expr_matrix) <- cell_names
 
     available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
     available_ftypes <- names(available_configs)
@@ -299,13 +308,13 @@ create_monocle_from_clustassess_app <- function(app_folder,
     if (!use_all_genes) {
         used_genes <- rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list"))
         used_genes <- used_genes[seq_len(as.integer(stable_feature_set_size))]
-        expr_matrix <- expr_matrix[used_genes, ]
+        expr_matrix <- expr_matrix[used_genes, , drop = FALSE]
         gene_names <- used_genes
     }
 
     prefix <- paste0(stable_feature_type, "/", stable_feature_set_size)
     cl_mb_prefix <- paste0(prefix, "/clustering_stability/split_by_k/mbs/", stable_clustering_method)
-    cl_ecc_prefix <- paste0(prefix, "/clustering_stability/split_by_k/ecc/")
+    cl_ecc_prefix <- paste0(prefix, "/clustering_stability/split_by_k/ecc")
     metadata_df <- readRDS(file.path(app_folder, "metadata.rds"))$metadata
 
     tryCatch({
@@ -334,10 +343,15 @@ create_monocle_from_clustassess_app <- function(app_folder,
 
     for (k in stable_n_clusters) {
         metadata_df[[paste0("stable_", k, "_clusters")]] <- factor(as.integer(rhdf5::h5read(stab_path, paste0(cl_mb_prefix, "/", k))))
-        metadata_df[[paste0("ecc_", k)]] <- as.numeric(rhdf5::h5read(
+        ecc <- as.numeric(rhdf5::h5read(
             stab_path,
-            paste0(cl_ecc_prefix, sprintf("%06d;%s", as.integer(k), stable_clustering_method))
+            paste0(cl_ecc_prefix, sprintf("/%06d;%s", as.integer(k), stable_clustering_method))
         ))
+        ecc_order <- as.numeric(rhdf5::h5read(
+            stab_path,
+            paste0(cl_ecc_prefix, sprintf("_order/%06d;%s", as.integer(k), stable_clustering_method))
+        ))
+        metadata_df[[paste0("ecc_", k)]] <- ecc[ecc_order]
     }
 
     return(create_monocle_default(
