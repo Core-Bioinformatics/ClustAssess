@@ -632,6 +632,8 @@ automatic_stability_assessment <- function(expression_matrix,
         saveRDS(feature_configs, temp_file)
     }
 
+    # NOTE add this class to uniquely identify the object
+    class(feature_configs) <- c(class(feature_configs), "ClustAssess")
     return(feature_configs)
 }
 
