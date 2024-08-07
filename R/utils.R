@@ -176,7 +176,8 @@ choose_stable_clusters <- function(clusters_list,
     index_chosen <- intersect(index_ecc, index_freq)
    
     if (length(index_chosen) == 0) {
-        stop("No stable clusters found. Consider lowering the `ecc_threshold` or `freq_threshold`.")
+        warning("No stable clusters found. Consider lowering the `ecc_threshold` or `freq_threshold`.")
+        return(NULL)
     }
 
     return(clusters_list[index_chosen])
