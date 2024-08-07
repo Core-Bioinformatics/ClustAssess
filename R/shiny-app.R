@@ -69,6 +69,7 @@ write_objects <- function(clustassess_object,
     for (mtd_col in metadata_columns) {
         if (is.factor(metadata[, mtd_col])) {
             metadata[, mtd_col] <- droplevels(metadata[, mtd_col])
+            metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 502) {
                 next
@@ -77,6 +78,7 @@ write_objects <- function(clustassess_object,
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.character(metadata[, mtd_col])) {
+            metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 502) {
@@ -593,6 +595,7 @@ write_shiny_app.default <- function(object,
 
     if (stringr::str_length(warning_message) > 0) {
         while (TRUE) {
+            # FIXME this doens't work on console, with `Rscript` check if scan() would work / if writing a isoalted function
             warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nPlease type `yes` or `no` if you want to continue creating the ClustAssess shiny app."), immediate. = TRUE)
             user_input <- readline()
             if (user_input == "no") {
