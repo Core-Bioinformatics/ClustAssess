@@ -94,6 +94,14 @@ create_monocle_default <- function(normalized_expression_matrix,
         rownames(umap_embedding) <- cell_names
         colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
         monocle_cds@int_colData$reducedDims$UMAP <- umap_embedding
+    } else {
+        monocle_cds <- monocle3::reduce_dimension(
+            cds = monocle_cds,
+            reduction_method = "UMAP",
+            umap.n_neighbors = 25,
+            umap.min_dist = 0.3,
+            umap.metric = "cosine"
+        )
     }
 
     return(monocle_cds)
