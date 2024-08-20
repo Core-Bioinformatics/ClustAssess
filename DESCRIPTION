@@ -16,6 +16,8 @@ Description: A set of tools for evaluating clustering robustness using
 License: MIT + file LICENSE
 Encoding: UTF-8
 biocViews:
+    rhdf5,
+    SharedObject
 Imports: 
     ggplot2,
     ComplexHeatmap,
@@ -49,7 +51,7 @@ Imports:
     uwot,
     vioplot,
     viridis
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 LinkingTo: 
     Rcpp,
