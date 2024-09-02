@@ -1156,6 +1156,8 @@ calculate_markers_shiny <- function(cells1,
 #'     cells1 = 101:200,
 #'     cells2 = 1:100
 #' )
+#' # TODO should be rewritten such that you don't create new matrix objects inside
+#' # just
 calculate_markers <- function(expression_matrix,
                               cells1,
                               cells2,

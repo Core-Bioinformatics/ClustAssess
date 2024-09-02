@@ -267,6 +267,11 @@ ui_comparison_gene_heatmap <- function(id) {
                     label = "Text size",
                     min = 5, max = 50, value = 15, step = 0.5
                 ),
+                shiny::sliderInput(
+                    inputId = ns("point_size"),
+                    label = "Point max size",
+                    min = 0.1, max = 30, value = c(0.5, 3), step = 0.1
+                ),
                 shinyWidgets::prettySwitch(
                     inputId = ns("scale"),
                     label = "Apply scaling",
@@ -277,7 +282,7 @@ ui_comparison_gene_heatmap <- function(id) {
                 shiny::sliderInput(
                     inputId = ns("clipping_value"),
                     label = "Clipping value",
-                    min = 0.01, max = 20, value = 3, step = 0.1
+                    min = 0.01, max = 20, value = 6, step = 0.1
                 ),
                 shinyWidgets::prettySwitch(
                     inputId = ns("show_numbers"),
@@ -305,6 +310,12 @@ ui_comparison_gene_heatmap <- function(id) {
                 inputId = ns("metadata"),
                 choices = NULL,
                 label = "Split by metadata"
+            ),
+            shinyWidgets::radioGroupButtons(
+                inputId = ns("plot_type"),
+                label = "Plot type",
+                choices = c("Heatmap", "Bubbleplot"),
+                selected = "Heatmap"
             )
         ),
         shiny::plotOutput(ns("gene_heatmap"), height = "auto"),
@@ -1622,7 +1633,7 @@ server_comparison_gene_heatmap <- function(id) {
         id,
         function(input, output, session) {
             heatmap_plot <- shiny::reactive({
-                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), cancelOutput = TRUE)
+                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, cancelOutput = TRUE)
 
                 shiny::isolate({
                     is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
@@ -1637,8 +1648,11 @@ server_comparison_gene_heatmap <- function(id) {
                     }
 
                     htmp_matrix <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
+                    perc_expressed <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
                     rownames(htmp_matrix) <- input$gene_expr
+                    rownames(perc_expressed) <- input$gene_expr
                     colnames(htmp_matrix) <- unique_vals
+                    colnames(perc_expressed) <- unique_vals
 
                     if ("genes" %in% names(pkg_env)) {
                         index_gene <- pkg_env$genes[input$gene_expr]
@@ -1648,6 +1662,7 @@ server_comparison_gene_heatmap <- function(id) {
                             for (j in seq_along(unique_vals)) {
                                 filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
                                 htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
+                                perc_expressed[i, j] <- sum(filtered_expr > 0) / length(filtered_expr)
                             }
                         }
                     } else { # for backward-compatibility purposes
@@ -1659,6 +1674,7 @@ server_comparison_gene_heatmap <- function(id) {
                             for (j in seq_along(unique_vals)) {
                                 filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
                                 htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
+                                perc_expressed[i, j] <- sum(filtered_expr > 0) / length(filtered_expr)
                             }
                         }
 
@@ -1668,6 +1684,7 @@ server_comparison_gene_heatmap <- function(id) {
                             for (j in seq_along(unique_vals)) {
                                 filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
                                 htmp_matrix[i + offset, j] <- mean(filtered_expr, na.rm = TRUE)
+                                perc_expressed[i, j] <- sum(filtered_expr > 0) / length(filtered_expr)
                             }
                         }
                     }
@@ -1676,34 +1693,61 @@ server_comparison_gene_heatmap <- function(id) {
 
                     if (input$scale && ncol(htmp_matrix) > 1) {
                         htmp_matrix <- t(scale(t(htmp_matrix)))
+                        original_htmp_matrix <- htmp_matrix
                         htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
                         htmp_matrix[htmp_matrix < -input$clipping_value] <- -input$clipping_value
 
                         colour_scheme <- colorRampPalette(c("blue", "white", "red"))(nelems*2)
                     } else {
+                        original_htmp_matrix <- htmp_matrix
                         htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
-                        colour_scheme <- colorRampPalette(c("white", "#004c00"))(nelems*2)
+                        colour_scheme <- colorRampPalette(c("grey85", "#004c00"))(nelems*2)
                     }
 
                     if (min(htmp_matrix) == max(htmp_matrix)) {
-                        colour_scheme <- "white"
+                        colour_scheme <- "grey85"
                     }
 
-                    ComplexHeatmap::Heatmap(
-                        htmp_matrix,
-                        row_order = seq_len(nrow(htmp_matrix)),
-                        column_order = seq_len(ncol(htmp_matrix)),
-                        row_names_side = "left",
-                        heatmap_legend_param = list(direction = "horizontal", legend_width = grid::unit(5,  "cm")),
-                        name = paste0(ifelse(input$scale, "scaled ", ""), "expression level"),
-                        col = colour_scheme,
-                        cell_fun = function(j, i, x, y, width, height, fill) {
-                            if (input$show_numbers) {
-                                grid::grid.text(sprintf("%.2f", htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
-                            }
-                        },
-                        column_title = paste0("Gene expression heatmap split by ", input$metadata)
-                    )
+                    if (input$plot_type == "Heatmap") {
+                        return(ComplexHeatmap::Heatmap(
+                            htmp_matrix,
+                            row_order = seq_len(nrow(htmp_matrix)),
+                            column_order = seq_len(ncol(htmp_matrix)),
+                            row_names_side = "left",
+                            heatmap_legend_param = list(direction = "horizontal", legend_width = grid::unit(5,  "cm")),
+                            name = paste0(ifelse(input$scale, "scaled ", ""), "expression level"),
+                            col = colour_scheme,
+                            cell_fun = function(j, i, x, y, width, height, fill) {
+                                if (input$show_numbers) {
+                                    grid::grid.text(sprintf("%.2f", original_htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
+                                }
+                            },
+                            column_title = paste0("Gene expression heatmap split by ", input$metadata)
+                        ))
+                    }
+
+                    bubbleplot_df <- reshape2::melt(htmp_matrix)
+                    colnames(bubbleplot_df) <- c("gene", "metadata", "expr_level")
+                    bubbleplot_df$perc <- reshape2::melt(perc_expressed)$value
+                    bubbleplot_df$gene <- factor(bubbleplot_df$gene, levels = input$gene_expr)
+                    bubbleplot_df$metadata <- factor(bubbleplot_df$metadata, levels = unique_vals)
+
+                    ggplot2::ggplot(bubbleplot_df, ggplot2::aes(x = .data$metadata, y = .data$gene, size = .data$perc, fill = .data$expr_level)) +
+                        ggplot2::geom_point(shape = 21, alpha = 0.7) +
+                        ggplot2::scale_fill_gradientn(colours = colour_scheme) +
+                        ggplot2::scale_size_continuous(range = input$point_size) +
+                        ggplot2::theme(
+                            axis.text.x = ggplot2::element_text(size = input$text_size),
+                            axis.text.y = ggplot2::element_text(size = input$text_size),
+                            axis.title = ggplot2::element_text(size = input$text_size),
+                            legend.position = "bottom"
+                        ) +
+                        ggplot2::xlab("") +
+                        ggplot2::ylab("")
+
+
+
+
                 })
             })
 
@@ -1716,7 +1760,11 @@ server_comparison_gene_heatmap <- function(id) {
                         width = pkg_env$dimension()[1],
                         height = 200 + length(input$gene_expr) * 50,
                         {
-                            ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
+                            if (input$plot_type == "Bubbleplot") {
+                                heatmap_plot()
+                            } else {
+                                ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
+                            }
                         }
                     )
 
@@ -1726,6 +1774,16 @@ server_comparison_gene_heatmap <- function(id) {
                         },
                         content = function(file) {
                             shiny::req(heatmap_plot())
+
+                            if (input$plot_type == "Bubbleplot") {
+                                ggplot2::ggsave(
+                                    filename = file,
+                                    plot = heatmap_plot(),
+                                    height = input$height_heatmap,
+                                    width = input$width_heatmap
+                                )
+                                return()
+                            }
 
                             pdf(file, width = input$width_heatmap, height = input$height_heatmap)
                             ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
@@ -1890,7 +1948,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     selected = gene_choices[1],
                     server = TRUE,
                     options = list(
-                        maxOptions = 7
+                        maxOptions = 7,
+                        create = TRUE
                     )
                 )
             }
@@ -1923,7 +1982,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                 selected = continuous_metadata[1],
                 server = TRUE,
                 options = list(
-                    maxOptions = length(continuous_metadata)
+                    maxOptions = length(continuous_metadata),
+                    create = TRUE
                 )
             )
 
@@ -1934,7 +1994,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                 selected = gene_choices[1],
                 server = TRUE,
                 options = list(
-                    maxOptions = 7
+                    maxOptions = 7,
+                    create = TRUE
                 )
             )
 
