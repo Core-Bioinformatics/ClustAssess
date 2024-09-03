@@ -347,6 +347,17 @@ ui_comparison_violin_gene <- function(id) {
                     label = "Boxplot width",
                     min = 0.01, max = 1, value = 0.1, step = 0.01
                 ),
+                shiny::sliderInput(
+                    inputId = ns("boxplot_dodge"),
+                    label = "Distance between boxplots",
+                    min = 0.01, max = 1, value = 0.1, step = 0.01
+                ),
+                shinyWidgets::checkboxGroupButtons(
+                    inputId = ns("graph_type"),
+                    label = "Graph type (multiple)",
+                    choices = c("Violin", "Boxplot"),
+                    selected = c("Violin", "Boxplot")
+                ),
                 circle = TRUE,
                 status = "success",
                 size = "sm",
@@ -359,16 +370,46 @@ ui_comparison_violin_gene <- function(id) {
                 inputId = ns("gene_expr"),
                 choices = NULL,
                 label = "Select a metadata or a gene",
-                width = "95%",
+                # width = "95%",
                 multiple = FALSE
             ),
             shiny::selectInput(
-                inputId = ns("metadata"),
+                inputId = ns("metadata_split"),
                 choices = NULL,
                 label = "Split by metadata"
+            ),
+            shiny::selectInput(
+                inputId = ns("metadata_group"),
+                choices = NULL,
+                label = "Group by metadata"
+            ),
+            shiny::selectInput(
+                inputId = ns("metadata_subset"),
+                label = "Subset by metadata",
+                choices = NULL
+            ),
+            shiny::verticalLayout(
+                shiny::tags$b("Select subset groups"),
+                shinyWidgets::pickerInput(
+                    inputId = ns("metadata_groups_subset"),
+                    choices = NULL,
+                    options = list(
+                        `actions-box` = TRUE,
+                        title = "Select/deselect groups",
+                        size = 10,
+                        width = "90%",
+                        `selected-text-format` = "count > 3"
+                    ),
+                    multiple = TRUE
+                )
             )
         ),
         shiny::plotOutput(ns("violin_gene"), height = "auto"),
+        shiny::selectInput(
+            inputId = ns("stat_mtd_group"),
+            label = "Select the group for the stats table",
+            choices = NULL
+        ),
         shiny::tableOutput(ns("stats"))
     )
 }
@@ -522,7 +563,6 @@ server_comparison_markers <- function(id, k_choices) {
             shinyjs::hide("markers_dt")
             shinyjs::show("enable_markers")
 
-            print(id)
             server_comparison_markers_panels(session, k_choices)
             # server_comparison_markers_panels("group_left", k_choices)
 
@@ -1455,6 +1495,66 @@ server_comparison_violin_gene <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            changed_metadata <- shiny::reactiveVal(FALSE)
+
+            shiny::observe({
+                shiny::req(input$metadata_subset)
+                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+
+                if (is_cluster) {
+                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                    shinyWidgets::updatePickerInput(
+                        session,
+                        inputId = "metadata_groups_subset",
+                        choices = seq_len(k_value),
+                        selected = seq_len(k_value),
+                        clearOptions = TRUE
+                    )
+                    changed_metadata(TRUE)
+
+                    return()
+                }
+
+                mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
+
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "metadata_groups_subset",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                changed_metadata(TRUE)
+            }) %>% shiny::bindEvent(input$metadata_subset)
+
+            metadata_mask <- shiny::reactive({
+                shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
+                shiny::isolate({
+                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    if (is_cluster) {
+                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        all_unique_values <- as.character(seq_len(k))
+                    } else {
+                        all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
+                    }
+
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+
+                        changed_metadata(FALSE)
+                    }
+
+                    if (is_cluster) {
+                        return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    }
+                    return(pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                })
+            })
+
+
             distr_val <- shiny::reactive({
                 shiny::req(input$gene_expr, length(input$gene_expr) == 1, cancelOutput = TRUE)
 
@@ -1487,30 +1587,73 @@ server_comparison_violin_gene <- function(id) {
                 return(rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL))[1, ])
             })
 
-            metadata_info <- shiny::reactive({
-                shiny::req(input$metadata, cancelOutput = TRUE)
-                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+            metadata_split_info <- shiny::reactive({
+                metadata_split <- input$metadata_split
+                shiny::req(metadata_split, cancelOutput = TRUE)
+                is_cluster <- stringr::str_detect(metadata_split, "stable_[0-9]+_clusters")
 
                 if (is_cluster) {
-                    k <- strsplit(input$metadata, "_")[[1]][2]
+                    k <- strsplit(metadata_split, "_")[[1]][2]
                     return(list(
                         color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
-                        color_info = factor(pkg_env$stab_obj$mbs[[k]])
+                        color_info = factor(pkg_env$stab_obj$mbs[[k]]),
+                        unique_values = as.character(seq_len(as.integer(k)))
                     ))
                 }
 
                 return(list(
-                    color_values = pkg_env$metadata_colors[[input$metadata]],
-                    color_info = pkg_env$metadata[[input$metadata]]
+                    color_values = pkg_env$metadata_colors[[metadata_split]],
+                    color_info = pkg_env$metadata[[metadata_split]],
+                    unique_values = pkg_env$metadata_unique[[metadata_split]]
                 ))
             })
 
+            metadata_group_info <- shiny::reactive({
+                metadata_group <- input$metadata_group
+                shiny::req(metadata_group, cancelOutput = TRUE)
+                is_cluster <- stringr::str_detect(metadata_group, "stable_[0-9]+_clusters")
+
+                if (is_cluster) {
+                    k <- strsplit(metadata_group, "_")[[1]][2]
+                    return(list(
+                        color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        color_info = factor(pkg_env$stab_obj$mbs[[k]]),
+                        unique_values = as.character(seq_len(as.integer(k)))
+                    ))
+                }
+
+                return(list(
+                    color_values = pkg_env$metadata_colors[[metadata_group]],
+                    color_info = pkg_env$metadata[[metadata_group]],
+                    unique_values = pkg_env$metadata_unique[[metadata_group]]
+                ))
+            })
+
+            shiny::observe({
+                mtd_grp_info <- metadata_group_info()
+                shiny::req(mtd_grp_info)
+                unique_values <- mtd_grp_info$unique_values
+
+                shiny::updateSelectInput(
+                    session = session,
+                    inputId = "stat_mtd_group",
+                    choices = unique_values,
+                    selected = unique_values[1]
+                )
+            })
+
             ggplot_object <- shiny::reactive({
-                shiny::req(distr_val(), metadata_info(), cancelOutput = TRUE)
+                shiny::req(distr_val(), metadata_split_info(), metadata_group_info(), cancelOutput = TRUE)
+                mtd_mask <- metadata_mask()
+                graph_types <- input$graph_type
+                if (is.null(graph_types)) {
+                    graph_types <- "Violin"
+                }
+                boxplot_dodge <- input$boxplot_dodge
 
                 is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
                 is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
-                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+                # is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
 
                 function_applied <- ifelse(!input$log_scale,
                     function(x) {
@@ -1523,22 +1666,25 @@ server_comparison_violin_gene <- function(id) {
 
                 df <- data.frame(
                     gene_expr = function_applied(distr_val()),
-                    metadata = metadata_info()$color_info
+                    metadata_split = metadata_split_info()$color_info,
+                    metadata_group = metadata_group_info()$color_info
                 )
+                df$metadata_group <- factor(df$metadata_group, levels = unique(df$metadata_group))
+                df$metadata_split <- factor(df$metadata_split, levels = unique(df$metadata_split))
 
-                ggplot2::ggplot(
+                df <- df[mtd_mask, ]
+
+                gplot_object <- ggplot2::ggplot(
                     df,
-                    ggplot2::aes(x = .data$metadata, y = .data$gene_expr, fill = .data$metadata)
+                    ggplot2::aes(x = .data$metadata_split, y = .data$gene_expr, fill = .data$metadata_group)
                 ) +
-                    ggplot2::geom_violin() +
-                    ggplot2::scale_fill_manual(values = metadata_info()$color_values) +
-                    ggplot2::geom_boxplot(width = input$boxplot_width, outlier.shape = NA) +
+                    ggplot2::scale_fill_manual(values = metadata_group_info()$color_values, name = input$metadata_group) +
+                    # ggplot2::geom_violin(width = input$boxplot_width) +
+                    # ggplot2::geom_boxplot(width = input$boxplot_width, outlier.shape = NA) +
                     ggplot2::theme(
-                        legend.position = "none",
                         axis.text = ggplot2::element_text(size = input$text_size),
                         axis.title = ggplot2::element_text(size = input$text_size)
                     ) +
-                    # ggplot2::scale_y_continuous(trans = ifelse(input$log_scale, "log10", "identity")) +
                     ggplot2::ylab(paste0(ifelse(
                         is_ecc,
                         "ECC",
@@ -1549,6 +1695,26 @@ server_comparison_violin_gene <- function(id) {
                         )
                     ), ifelse(input$log_scale, " (log10 scale)", ""))) +
                     ggplot2::xlab(input$metadata)
+
+                # FIXME empty distribution cause shifts in violin plots and mismatch with the boxplots
+                # TODO add violin plots for multiple genes
+                if ("Violin" %in% graph_types) {
+                    gplot_object <- gplot_object + ggplot2::geom_violin(
+                        width = input$boxplot_width,
+                        trim = FALSE,
+                        position = ggplot2::position_dodge(width = boxplot_dodge)
+                    )
+                }
+
+                if ("Boxplot" %in% graph_types) {
+                    gplot_object <- gplot_object + ggplot2::geom_boxplot(
+                        width = input$boxplot_width,
+                        position = ggplot2::position_dodge(width = boxplot_dodge),
+                        outlier.shape = NA
+                    )
+                }
+
+                gplot_object
             })
 
             output$violin_gene <- shiny::renderPlot(
@@ -1581,11 +1747,33 @@ server_comparison_violin_gene <- function(id) {
 
             output$stats <- shiny::renderTable(
                 {
-                    shiny::req(distr_val(), metadata_info())
+                    mtd_mask <- metadata_mask()
+                    shiny::req(mtd_mask)
+                    distr_vector <- distr_val()[mtd_mask]
+                    mtd_split_info <- metadata_split_info()
+                    mtd_split_info$color_info <- mtd_split_info$color_info[mtd_mask]
+                    mtd_group_info <- metadata_group_info()
+                    mtd_group_info$color_info <- mtd_group_info$color_info[mtd_mask]
+                    selected_group <- input$stat_mtd_group
+                    shiny::req(
+                        distr_vector,
+                        mtd_split_info,
+                        selected_group,
+                        mtd_group_info,
+                        selected_group %in% mtd_group_info$unique_values,
+                        cancelOutput = TRUE
+                    )
 
                     is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
                     is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
-                    distr_stats <- stats::fivenum(distr_val())
+
+                    if (length(mtd_group_info$unique_values) > 1) {
+                        mask <- mtd_group_info$color_info == selected_group
+                        distr_vector <- distr_vector[mask]
+                        mtd_split_info$color_info <- mtd_split_info$color_info[mask]
+                    }
+
+                    distr_stats <- stats::fivenum(distr_vector)
                     distance_breaks <- (distr_stats[5] - distr_stats[1]) / 4
                     break_points <- c(
                         distr_stats[1],
@@ -1596,9 +1784,14 @@ server_comparison_violin_gene <- function(id) {
                     )
 
                     split_vals <- split(
-                        distr_val(),
-                        metadata_info()$color_info
+                        distr_vector,
+                        mtd_split_info$color_info
                     )
+                    for (i in names(split_vals)) {
+                        if (is.null(split_vals[[i]]) || length(split_vals[[i]]) == 0) {
+                            split_vals[[i]] <- NULL
+                        }
+                    }
 
                     stats_df <- rbind(
                         data.frame(sapply(seq_along(split_vals), function(i) {
@@ -1956,10 +2149,26 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
 
             shiny::updateSelectizeInput(
                 session,
-                inputId = glue::glue("violin_gene-metadata"),
+                inputId = glue::glue("violin_gene-metadata_split"),
                 server = FALSE,
                 choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
                 selected = paste0("stable_", k_values[1], "_clusters")
+            )
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("violin_gene-metadata_group"),
+                server = FALSE,
+                choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                selected = "one_level"
+            )
+
+            shiny::updateSelectizeInput(
+                session,
+                inputId = glue::glue("violin_gene-metadata_subset"),
+                server = FALSE,
+                choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                selected = "one_level"
             )
 
             shiny::updateSelectizeInput(
