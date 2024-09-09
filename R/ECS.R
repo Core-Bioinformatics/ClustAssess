@@ -914,6 +914,11 @@ element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type =
     }
 
     n_clusterings <- length(mb_list)
+
+    if (n_clusterings == 1) {
+        return(matrix(1, nrow = 1, ncol = 1))
+    }
+
     first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
         rep(i, n_clusterings - i)
     }))
