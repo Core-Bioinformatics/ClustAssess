@@ -1,4 +1,111 @@
 ####### UI #######
+ui_colour_picker <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::h1("Change discrete colour scheme"),
+        shiny::splitLayout(
+            cellWidths = c("20%", "80%"),
+            colourpicker::colourInput(
+                inputId = ns("colour_picker"),
+                label = "Pick a colour to get the hexcode",
+                value = "red",
+                allowTransparent = TRUE,
+                closeOnClick = TRUE
+            ),
+            shiny::tagList(
+                shiny::h3("Qualpalr palette generator"),
+                shiny::splitLayout(
+                    cellWidths = c("120px", "170px", "220px", "220px", "220px"),
+                    shiny::numericInput(
+                        inputId = ns("n_colours"),
+                        label = "Number of colours",
+                        value = 10,
+                        min = 1,
+                        max = 99,
+                        width = "100px",
+                    ),
+                    shiny::selectInput(
+                        inputId = ns("preset"),
+                        label = "Preset",
+                        choices = c("pretty", "pretty_dark", "pastels", "pastels_dark"),
+                        width = "150px"
+                    ),
+                    shiny::sliderInput(
+                        inputId = ns("hue"),
+                        label = "Hue",
+                        min = -360, max = 360,
+                        value = c(0, 360),
+                        width = "200px"
+                    ),
+                    shiny::sliderInput(
+                        inputId = ns("saturation"),
+                        label = "Saturation",
+                        min = 0, max = 1,
+                        value = c(0.1, 0.3),
+                        width = "200px"
+                    ),
+                    shiny::sliderInput(
+                        inputId = ns("lightness"),
+                        label = "Lightness",
+                        min = 0, max = 1,
+                        value = c(0.3, 0.6),
+                        width = "200px"
+                    )
+                ),
+                shiny::splitLayout(
+                    cellWidths = c("15%", "85%"),
+                        shiny::actionButton(
+                            inputId = ns("generate_palette"),
+                            label = "Generate palette",
+                            style = "font-size:20px;",
+                            class = "btn-success"
+                        ),
+                        shiny::verbatimTextOutput(ns("palette_output"))
+                ),
+                shiny::plotOutput(ns("palette_plot"))
+            )
+        ),
+        shiny::splitLayout(
+            shiny::tagList(
+                shiny::h3("Update colour palette for a given number of groups"),
+                shiny::splitLayout(
+                    cellWidths = c("120px", "600px", "290px"),
+                    shiny::numericInput(
+                        inputId = ns("n_groups"),
+                        label = "Number of groups",
+                        value = 10,
+                        min = 1,
+                        max = 99,
+                        width = "100px"
+                    ),
+                    shiny::textAreaInput(
+                        inputId = ns("colours_input"),
+                        label = "Enter hexcodes of colours, separated by commas",
+                        value = "",
+                        width = "100%"
+                    )
+                ),
+                shiny::actionButton(
+                    inputId = ns("update_colours"),
+                    label = "Update colours for ngroups",
+                    style = "font-size:20px;",
+                    class = "btn-danger",
+                    width = "270px"
+                )
+            ),
+            shiny::tagList(
+                shiny::h3("Save the current colour configurations"),
+                shiny::downloadButton(ns("download_colours"), "Download current colours (JSON format)"),
+                shiny::h3("Update colour configuration from an uploaded file"),
+                shiny::p("The files should follow the JSON format, where the keys are the number of groups and the values are the hexcodes of the colours."),
+                shiny::fileInput(ns("upload_colours"), "Upload a file with colour configurations (JSON format)", accept = ".json")
+            )
+        )
+    )
+
+}
+
 ui_sandbox_config_choice <- function(id, draw_line) {
     ns <- shiny::NS(id)
     style <- ifelse(draw_line, "border-right:5px solid", "")
@@ -192,6 +299,7 @@ ui_sandbox <- function(id) {
     ns <- shiny::NS(id)
     shiny::tabPanel(
         "Sandbox",
+        ui_colour_picker(ns("colour_picker")),
         shiny::fluidRow(
             shiny::h1("Compare your current configuration", style = "margin-bottom:10px ")
         ),
@@ -211,10 +319,121 @@ ui_sandbox <- function(id) {
             ui_sandbox_gene_panel(ns("sbx_gene_panel_right"), FALSE)
         ),
         ui_sandbox_jsi_panel(ns("sbx_jsi")),
-        style = "margin-left: 25px;margin-top:72px;"
+        style = "margin-left: 25px;margin-top:130px; margin-bottom:70px;"
     )
 }
 ####### SERVER #######
+server_colour_picker <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            shiny::observe({
+                chosen_preset <- input$preset
+
+                if (chosen_preset == "pretty") {
+                    shiny::updateSliderInput(session, "hue", value = c(0, 360))
+                    shiny::updateSliderInput(session, "saturation", value = c(0.1, 0.5))
+                    shiny::updateSliderInput(session, "lightness", value = c(0.5, 0.85))
+                    return()
+                }
+
+                if (chosen_preset == "pretty_dark") {
+                    shiny::updateSliderInput(session, "hue", value = c(0, 360))
+                    shiny::updateSliderInput(session, "saturation", value = c(0.1, 0.5))
+                    shiny::updateSliderInput(session, "lightness", value = c(0.2, 0.4))
+                    return()
+                }
+
+                if (chosen_preset == "pastels") {
+                    shiny::updateSliderInput(session, "hue", value = c(0, 360))
+                    shiny::updateSliderInput(session, "saturation", value = c(0.2, 0.4))
+                    shiny::updateSliderInput(session, "lightness", value = c(0.8, 0.9))
+                    return()
+                }
+
+                shiny::updateSliderInput(session, "hue", value = c(0, 360))
+                shiny::updateSliderInput(session, "saturation", value = c(0.1, 0.3))
+                shiny::updateSliderInput(session, "lightness", value = c(0.3, 0.6))
+            }) %>% shiny::bindEvent(input$preset)
+
+            shiny::observe({
+                pallette <- qualpalr::qualpal(
+                    n = input$n_colours,
+                    colorspace = list(
+                        h = input$hue,
+                        s = input$saturation,
+                        l = input$lightness
+                    )
+                )$hex
+
+                output$palette_output <- shiny::renderPrint({
+                    paste(pallette, collapse = ",")
+                })
+
+                output$palette_plot <- shiny::renderPlot({
+                    graphics::par(mar = c(0, 0, 0, 0))
+                    graphics::barplot(
+                        rep(1, length(pallette)),
+                        col = pallette,
+                        axes = FALSE,
+                        space = 0,
+                        border = NA
+                    )
+                })
+
+            }) %>% shiny::bindEvent(input$generate_palette)
+
+            shiny::observe({
+                shinyjs::disable("update_colours")
+                ngroups <- input$n_groups
+                colours_hexcode <- strsplit(input$colours_input, ",")[[1]]
+
+                if (ngroups != length(colours_hexcode)) {
+                    return()
+                }
+
+                shinyjs::enable("update_colours")
+            })
+
+            shiny::observe({
+                ngroups <- input$n_groups
+                colours_hexcode <- strsplit(input$colours_input, ",")[[1]]
+                discrete_colors <- pkg_env$discrete_colors
+
+                shiny::req(ngroups == length(colours_hexcode)) 
+
+                discrete_colors[[as.character(ngroups)]] <- colours_hexcode
+                add_env_variable("discrete_colors", discrete_colors)
+            }) %>% shiny::bindEvent(input$update_colours)
+
+            output$download_colours <- shiny::downloadHandler(
+                filename = function() {
+                    "clustassess_app_discrete_colours.json"
+                },
+                content = function(file) {
+                    jsonlite::write_json(pkg_env$discrete_colors, file, pretty = TRUE)
+                }
+            )
+
+            shiny::observe({
+                shiny::req(input$upload_colours)
+                shiny::req(input$upload_colours$datapath)
+
+                discrete_colors <- pkg_env$discrete_colors
+                new_discrete_colors <- jsonlite::read_json(input$upload_colours$datapath)
+                for (discrete_col in names(new_discrete_colors)) {
+                    new_discrete_colors[[discrete_col]] <- as.character(new_discrete_colors[[discrete_col]])
+                }
+
+                for (discrete_col in names(new_discrete_colors)) {
+                    discrete_colors[[discrete_col]] <- new_discrete_colors[[discrete_col]]
+                }
+                add_env_variable("discrete_colors", discrete_colors)
+            }) %>% shiny::bindEvent(input$upload_colours)
+        }
+    )
+}
+
 server_sandbox_config_choice <- function(id, side) {
     shiny::moduleServer(
         id,
@@ -1125,6 +1344,8 @@ server_sandbox <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            server_colour_picker("colour_picker")
+
             add_env_variable("fsets", list(
                 fsets = rhdf5::h5read("stability.h5", "feature_ordering/stable")
             ))

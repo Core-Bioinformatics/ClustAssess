@@ -828,8 +828,9 @@ server_dimensionality_distribution <- function(id) {
                                     )
                                 }
 
-                                color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
+                                # color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
                                 unique_values <- pkg_env$metadata_unique[[current_metadata]][matched_elems]
+                                color_values <- pkg_env$discrete_colors[[as.character(length(unique_values))]]
                             } else {
                                 color_values <- NULL
                                 unique_values <- NULL
@@ -1072,8 +1073,9 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
     graphics::par(mai = current_margins)
 
-    col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
+    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
+    col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original, function(x) {
         length(x)
     }))
@@ -1167,8 +1169,9 @@ shiny_plot_feature_stability_incremental <- function(resval,
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
     graphics::par(mai = current_margins)
 
-    col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
+    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
+    col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original_incremental, function(x) {
         length(x)
     }))

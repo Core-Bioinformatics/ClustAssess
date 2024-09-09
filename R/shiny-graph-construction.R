@@ -60,9 +60,10 @@ ui_graph_construction <- function(id) {
                 c(
                     "Colour scheme 1" = "col_1",
                     "Colour scheme 2" = "col_2",
-                    "Colour scheme 3" = "col_3"
+                    "Colour scheme 3" = "col_3",
+                    "Colour scheme 4" = "col_4"
                 ),
-                size = 3, selectize = F
+                size = 4, selectize = F, selected = "col_4"
             )
         ),
         shiny::splitLayout(
@@ -106,9 +107,10 @@ ui_graph_construction <- function(id) {
                 c(
                     "Colour scheme 1" = "col_1",
                     "Colour scheme 2" = "col_2",
-                    "Colour scheme 3" = "col_3"
+                    "Colour scheme 3" = "col_3",
+                    "Colour scheme 4" = "col_4"
                 ),
-                size = 3, selectize = F
+                size = 4, selectize = F, selected = "col_4"
             ),
             shiny::uiOutput(ns("sel_conn_comps_render"))
         ),
@@ -161,9 +163,10 @@ ui_graph_construction <- function(id) {
                 c(
                     "Colour scheme 1" = "col_1",
                     "Colour scheme 2" = "col_2",
-                    "Colour scheme 3" = "col_3"
+                    "Colour scheme 3" = "col_3",
+                    "Colour scheme 4" = "col_4"
                 ),
-                size = 3, selectize = F
+                size = 4, selectize = F, selected = "col_4"
             ),
             shiny::uiOutput(ns("sel_stab_render"))
         ),
@@ -241,6 +244,14 @@ server_graph_construction <- function(id, chosen_config) {
             shiny::outputOptions(output, "sel_stab_render", suspendWhenHidden = FALSE)
 
             plot_conn_comps_Input <- shiny::reactive({
+                if (input$palette_plot_conn_comps == "col_4") {
+
+                    return(
+                        plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
+                            ggplot2::scale_fill_manual(values = pkg_env$discrete_colors[[as.character(length(pkg_env$stab_obj$nn_conn_comps))]])
+                    )
+                }
+
                 if (input$palette_plot_conn_comps == "col_1") {
                     option <- "RdBu"
                 } else if (input$palette_plot_conn_comps == "col_2") {
@@ -313,6 +324,23 @@ server_graph_construction <- function(id, chosen_config) {
             })
             # Reactive for second plot
             plot_n_neigh_k_correspondence_Input <- shiny::reactive({
+                if (length(input$sel_conn_comps) == 0) {
+                    return(ggplot2::ggplot() +
+                        ggplot2::theme_void())
+                }
+
+                obj <- pkg_env$stab_obj
+                obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
+
+                if (input$palette_plot_neigh_k == "col_4") {
+                    dis_colors <- pkg_env$discrete_colors[[as.character(length(input$sel_conn_comps))]]
+                    names(dis_colors) <- names(obj$nn_stability$n_neigh_k_corresp)
+                    return(
+                        plot_n_neigh_k_correspondence(obj$nn_stability) +
+                            ggplot2::scale_fill_manual(values = dis_colors)
+                    )
+                }
+
                 if (input$palette_plot_neigh_k == "col_1") {
                     option <- "RdBu"
                 } else if (input$palette_plot_neigh_k == "col_2") {
@@ -320,15 +348,9 @@ server_graph_construction <- function(id, chosen_config) {
                 } else {
                     option <- "Greys"
                 }
-                if (length(input$sel_conn_comps) == 0) {
-                    return(ggplot2::ggplot() +
-                        ggplot2::theme_void())
-                } else {
-                    obj <- pkg_env$stab_obj
-                    obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
-                    plot_n_neigh_k_correspondence(obj$nn_stability) +
-                        ggplot2::scale_fill_brewer(palette = option)
-                }
+                
+                plot_n_neigh_k_correspondence(obj$nn_stability) +
+                    ggplot2::scale_fill_brewer(palette = option)
             })
             # 2 Plot Relationship between the number of neighbours and then number of clusters
             output$plot_neigh_k <- shiny::renderPlot({
@@ -420,6 +442,23 @@ server_graph_construction <- function(id, chosen_config) {
             })
             # Reactive for third plot
             plot_neigh_stability_Input <- shiny::reactive({
+                if (length(input$sel_stab) == 0) {
+                    return(ggplot2::ggplot() +
+                        ggplot2::theme_void())
+                }
+
+                obj <- pkg_env$stab_obj
+                obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+
+                if (input$palette_neigh_stability == "col_4") {
+                    dis_colours <- pkg_env$discrete_colors[[as.character(length(input$sel_stab))]]
+                    names(dis_colours) <- input$sel_stab
+                    return(
+                        plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
+                            ggplot2::scale_fill_manual(values = dis_colours)
+                    )
+                }
+
                 if (input$palette_neigh_stability == "col_1") {
                     option <- "RdBu"
                 } else if (input$palette_neigh_stability == "col_2") {
@@ -427,15 +466,9 @@ server_graph_construction <- function(id, chosen_config) {
                 } else {
                     option <- "Greys"
                 }
-                if (length(input$sel_stab) == 0) {
-                    return(ggplot2::ggplot() +
-                        ggplot2::theme_void())
-                } else {
-                    obj <- pkg_env$stab_obj
-                    obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
-                    plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
-                        ggplot2::scale_fill_brewer(palette = option)
-                }
+
+                plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
+                    ggplot2::scale_fill_brewer(palette = option)
             })
             # 3. Plot Stability
             output$plot_neigh_stability <- shiny::renderPlot({

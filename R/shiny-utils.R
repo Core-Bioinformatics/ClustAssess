@@ -81,7 +81,8 @@ grouped_boxplot_dataframe <- function(dataframe,
                                       text_size = 1) {
     unique_groups <- unique(dataframe[, x_column])
     n_groups <- length(unique_groups)
-    groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
+    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
+    groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
 
     if (is.null(xlabel)) {
         xlabel <- x_column
@@ -126,8 +127,9 @@ grouped_boxplot_list <- function(groups_list,
     n_groups <- length(unique_groups_values)
     n_boxplots <- length(groups_values)
 
-    groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
+    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
     groups_values <- match(groups_values, unique_groups_values)
+    groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
     at_values <- rep(0, length(groups_values))
     text_coords <- rep(0, length(unique_x_values))
     abline_coords <- rep(0, length(unique_x_values) - 1)
@@ -354,11 +356,14 @@ metadata_plot <- function(embedding,
         metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
     }
 
+    mtd_unique <- pkg_env$metadata_unique[[metadata_name]]
+
     color_plot2(
         embedding = embedding,
         color_info = pkg_env$metadata[[metadata_name]],
-        color_values = pkg_env$metadata_colors[[metadata_name]],
-        unique_values = pkg_env$metadata_unique[[metadata_name]],
+        # color_values = pkg_env$metadata_colors[[metadata_name]],
+        color_values = pkg_env$discrete_colors[[as.character(length(mtd_unique))]],
+        unique_values = mtd_unique,
         plt_height = plt_height,
         plt_width = plt_width,
         cell_mask = metadata_mask,

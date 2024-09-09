@@ -843,13 +843,13 @@ server_comparison_metadata_panel <- function(id) {
                         color_info <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
                         color_info <- color_info[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
                     } else {
-                        color_values <- rhdf5::h5read("stability.h5", paste0("colors/", k))
+                        color_values <- pkg_env$discrete_colors[[k]]
                         unique_values <- seq_len(as.integer(k))
                         color_info <- factor(pkg_env$stab_obj$mbs[[k]])
                     }
                 } else {
                     unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                    color_values <- pkg_env$metadata_colors[[input$metadata]]
+                    color_values <- pkg_env$discrete_colors[[as.character(length(unique_values))]]
                     color_info <- pkg_env$metadata[[input$metadata]]
                 }
 
@@ -1595,14 +1595,16 @@ server_comparison_violin_gene <- function(id) {
                 if (is_cluster) {
                     k <- strsplit(metadata_split, "_")[[1]][2]
                     return(list(
-                        color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        # color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        color_values = pkg_env$discrete_colors[[k]],
                         color_info = factor(pkg_env$stab_obj$mbs[[k]]),
                         unique_values = as.character(seq_len(as.integer(k)))
                     ))
                 }
 
                 return(list(
-                    color_values = pkg_env$metadata_colors[[metadata_split]],
+                    # color_values = pkg_env$metadata_colors[[metadata_split]],
+                    color_values = pkg_env$discrete_colors[[as.character(length(pkg_env$metadata_unique[[metadata_split]]))]],
                     color_info = pkg_env$metadata[[metadata_split]],
                     unique_values = pkg_env$metadata_unique[[metadata_split]]
                 ))
@@ -1616,14 +1618,16 @@ server_comparison_violin_gene <- function(id) {
                 if (is_cluster) {
                     k <- strsplit(metadata_group, "_")[[1]][2]
                     return(list(
-                        color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        # color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
+                        color_values = pkg_env$discrete_colors[[k]],
                         color_info = factor(pkg_env$stab_obj$mbs[[k]]),
                         unique_values = as.character(seq_len(as.integer(k)))
                     ))
                 }
 
                 return(list(
-                    color_values = pkg_env$metadata_colors[[metadata_group]],
+                    # color_values = pkg_env$metadata_colors[[metadata_group]],
+                    color_values = pkg_env$discrete_colors[[as.character(length(pkg_env$metadata_unique[[metadata_group]]))]],
                     color_info = pkg_env$metadata[[metadata_group]],
                     unique_values = pkg_env$metadata_unique[[metadata_group]]
                 ))
@@ -1665,7 +1669,7 @@ server_comparison_violin_gene <- function(id) {
                 )
 
                 df <- data.frame(
-                    gene_expr = function_applied(distr_val()),
+                    gene_expr = distr_val(),
                     metadata_split = metadata_split_info()$color_info,
                     metadata_group = metadata_group_info()$color_info
                 )
@@ -1695,6 +1699,10 @@ server_comparison_violin_gene <- function(id) {
                         )
                     ), ifelse(input$log_scale, " (log10 scale)", ""))) +
                     ggplot2::xlab(input$metadata)
+                
+                if (input$log_scale) {
+                    gplot_object <- gplot_object + ggplot2::scale_y_log10()
+                }
 
                 # FIXME empty distribution cause shifts in violin plots and mismatch with the boxplots
                 # TODO add violin plots for multiple genes
