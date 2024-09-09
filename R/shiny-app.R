@@ -62,7 +62,15 @@ write_objects <- function(clustassess_object,
 
     # metadata file
     print(glue::glue("[{Sys.time()}] Writing the metadata"))
-    metadata$one_level <- factor(rep("one_level", nrow(metadata)))
+    if (is.null(metadata)) {
+        metadata <- data.frame(
+            one_level = rep("one_level", ncol(expression_matrix)),
+            row.names = colnames(expression_matrix)
+        )
+    } else {
+        metadata$one_level <- factor(rep("one_level", nrow(metadata)))
+    }
+
     metadata_columns <- colnames(metadata)
     metadata_colors <- list()
     metadata_unique <- list()
@@ -571,7 +579,7 @@ write_shiny_app.Seurat <- function(object,
 #' @rdname write_shiny_app
 #' @export
 write_shiny_app.default <- function(object,
-                                    metadata,
+                                    metadata = NULL,
                                     assay_name = NULL,
                                     clustassess_object,
                                     project_folder,
