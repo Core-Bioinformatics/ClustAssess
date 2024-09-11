@@ -1071,6 +1071,9 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     current_margins <- graphics::par("mai")
     old_margin <- current_margins[1]
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
+    if (text_size > 1.5) {
+        current_margins[2] <- current_margins[2] + 0.5 * predicted_height[1]
+    }
     graphics::par(mai = current_margins)
 
     # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
@@ -1108,7 +1111,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         col = col,
         at = at_values,
         xaxt = "n",
-        xlab = "# features",
+        xlab = ifelse(text_size > 1.5, "", "# features"),
         ylab = "ECC",
         boxwex = width * (n_groups + (space_intra_groups - 1) * (n_groups - 1)) / n_groups,
         outline = FALSE,
@@ -1128,10 +1131,11 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         at = at_values,
         labels = name_values,
         cex = text_size,
+        cex.axis = text_size,
         las = 2,
         xpd = NA
     )
-
+    
     graphics::legend(
         "bottomleft",
         legend = fgroups,
@@ -1167,6 +1171,9 @@ shiny_plot_feature_stability_incremental <- function(resval,
     current_margins <- graphics::par("mai")
     old_margin <- current_margins[1]
     current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
+    if (text_size > 1.5) {
+        current_margins[2] <- current_margins[2] + 0.5 * predicted_height[1]
+    }
     graphics::par(mai = current_margins)
 
     # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
@@ -1224,6 +1231,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
         at = at_values,
         labels = name_values,
         cex = text_size,
+        cex.axis = text_size,
         las = 2
     )
 

@@ -140,7 +140,31 @@ ui_graph_clustering_overall_boxplot <- function(id) {
             shiny::h2("Boxplot distribution of the overall stability"),
         ),
         shiny::splitLayout(
-            gear_download(ns, "boxplot_overall_resolution", "boxplot_overall_resolution"),
+            shiny::splitLayout(
+                cellWidths = "40px",
+                shinyWidgets::dropdownButton(
+                    label = "",
+                    icon = shiny::icon("cog"),
+                    size = "sm",
+                    status = "success",
+                    shiny::sliderInput(
+                        inputId = ns("boxplot_width"),
+                        label = "Boxplot width",
+                        min = 0.1, max = 1.00, value = 0.5
+                    ),
+                    shiny::sliderInput(
+                        inputId = ns("title_size"),
+                        label = "Title size",
+                        min = 0.50, max = 10.00, value = 1.5, step = 0.1
+                    ),
+                    shiny::sliderInput(
+                        inputId = ns("axis_size"),
+                        label = "Axis text size",
+                        min = 0.50, max = 10.00, value = 1.5
+                    )
+                ),
+                gear_download(ns, "boxplot_overall_resolution", "boxplot_overall_resolution"),
+            ),
             gear_download(ns, "boxplot_overall_k", "boxplot_overall_k")
         ),
         shiny::splitLayout(
@@ -480,13 +504,20 @@ server_graph_clustering_overall_boxplot <- function(id) {
                     ftype <- pkg_env$lock_stable$feature_set
                     fsize <- pkg_env$lock_stable$n_features
 
+                    axis_size <- input$axis_size
+                    title_size <- input$title_size
+                    boxplot_width <- input$boxplot_width
+
                     grouped_boxplot_dataframe(
                         dataframe = pkg_env$stab_obj$summary_res, # rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_resolution", "summary", sep = "/")),
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = plt_height() - 1,
                         plt_width = plt_width(),
-                        plot_title = "Stability by resolution"
+                        plot_title = "Stability by resolution",
+                        axis_size = axis_size,
+                        title_size = title_size,
+                        boxplot_width = boxplot_width
                     )
                 }
             )
@@ -496,13 +527,20 @@ server_graph_clustering_overall_boxplot <- function(id) {
                     floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2))
                 },
                 {
+                    axis_size <- input$axis_size
+                    title_size <- input$title_size
+                    boxplot_width <- input$boxplot_width
+
                     grouped_boxplot_dataframe(
                         dataframe = pkg_env$stab_obj$summary_k, # rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "summary", sep = "/")),
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = plt_height() - 1,
                         plt_width = plt_width(),
-                        plot_title = "Stability by k"
+                        plot_title = "Stability by k",
+                        axis_size = axis_size,
+                        title_size = title_size,
+                        boxplot_width = boxplot_width
                     )
                 }
             )
@@ -515,13 +553,20 @@ server_graph_clustering_overall_boxplot <- function(id) {
                 content = function(file) {
                     filetypes[[input$filetype_boxplot_overall_resolution]](file, width = input$width_boxplot_overall_resolution, height = input$height_boxplot_overall_resolution)
 
+                    axis_size <- input$axis_size
+                    title_size <- input$title_size
+                    boxplot_width <- input$boxplot_width
+
                     grouped_boxplot_dataframe(
                         dataframe = pkg_env$stab_obj$summary_res,
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = input$height_boxplot_overall_resolution * ppi,
                         plt_width = input$width_boxplot_overall_resolution * ppi,
-                        plot_title = "Stability by k"
+                        plot_title = "Stability by k",
+                        axis_size = axis_size,
+                        title_size = title_size,
+                        boxplot_width = boxplot_width
                     )
                     grDevices::dev.off()
                 }
@@ -535,13 +580,20 @@ server_graph_clustering_overall_boxplot <- function(id) {
                 content = function(file) {
                     filetypes[[input$filetype_boxplot_overall_k]](file, width = input$width_boxplot_overall_k, height = input$height_boxplot_overall_k)
 
+                    axis_size <- input$axis_size
+                    title_size <- input$title_size
+                    boxplot_width <- input$boxplot_width
+
                     grouped_boxplot_dataframe(
                         dataframe = pkg_env$stab_obj$summary_k,
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = input$height_boxplot_overall_k * ppi,
                         plt_width = input$width_boxplot_overall_k * ppi,
-                        plot_title = "Stability by k"
+                        plot_title = "Stability by k",
+                        axis_size = axis_size,
+                        title_size = title_size,
+                        boxplot_width = boxplot_width
                     )
                     grDevices::dev.off()
                 }
