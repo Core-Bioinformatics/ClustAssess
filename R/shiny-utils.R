@@ -10,7 +10,10 @@ pkg_env <- .GlobalEnv # new.env(parent = baseenv())
 filetypes <- list(
     "PDF" = pdf,
     "PNG" = function(filename, width, height) {
-        ragg::agg_png(filename, width, height, units = "in")
+        ragg::agg_png(filename, width, height, units = "in", res = 300)
+    },
+    "JPEG" = function(filename, width, height) {
+        ragg::agg_jpeg(filename, width, height, units = "in", res = 300)
     },
     "SVG" = svg
 )
@@ -75,10 +78,12 @@ grouped_boxplot_dataframe <- function(dataframe,
                                       x_column,
                                       plt_height,
                                       plt_width,
+                                      boxplot_width = 0.5,
                                       xlabel = NULL,
                                       ylabel = NULL,
                                       plot_title = "",
-                                      text_size = 1) {
+                                      title_size = 1,
+                                      axis_size = 1) {
     unique_groups <- unique(dataframe[, x_column])
     n_groups <- length(unique_groups)
     # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
@@ -92,12 +97,20 @@ grouped_boxplot_dataframe <- function(dataframe,
         ylabel <- y_column
     }
 
+    if (axis_size > 1.5) {
+        current_margins <- graphics::par("mai")
+        current_margins[2] <- current_margins[2] + 0.5 * graphics::strheight(ylabel, units = "inches", cex = axis_size)
+        graphics::par(mai = current_margins)
+    }
+
     graphics::boxplot(
         formula = stats::as.formula(paste0(y_column, " ~ ", x_column)),
         data = dataframe,
         col = groups_colours,
-        cex.axis = text_size,
-        cex.label = text_size,
+        cex.main = title_size,
+        cex.axis = axis_size,
+        cex.lab = axis_size,
+        boxwex = boxplot_width,
         main = plot_title,
         xlab = xlabel,
         ylab = ylabel
@@ -1421,11 +1434,12 @@ gear_download <- function(ns, id, label = "") {
         icon = shiny::icon("download"),
         status = "success",
         size = "sm",
-        shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
+        shiny::em(paste0("Note: Use one of the following extensions: ", paste(names(filetypes), collapse = ", "))),
         shiny::textInput(ns(paste0("filename_", id)), "File name:", width = "80%", value = label),
         shiny::numericInput(ns(paste0("width_", id)), "Width (in):", 7, 3, 100, 0.1),
         shiny::numericInput(ns(paste0("height_", id)), "Height (in):", 7, 3, 100, 0.1),
-        shiny::selectInput(ns(paste0("filetype_", id)), "Filetype", choices = c("PDF", "PNG", "SVG"), selected = "PDF", width = "80%"),
+        shiny::selectInput(ns(paste0("filetype_", id)), "Filetype", choices = names(filetypes), selected = names(filetypes)[1], width = "80%"),
+        shinyWidgets::prettyRadioButtons(ns(paste0("raster_", id)), "Rasterize", choices = c("Yes", "No"), selected = "Yes"),
         shiny::downloadButton(ns(paste0("download_", id)), label = "Download Plot")
     )
 }

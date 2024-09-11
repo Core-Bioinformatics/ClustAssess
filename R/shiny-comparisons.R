@@ -1,5 +1,26 @@
 ####### UI #######
 
+ui_cell_annotation <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::splitLayout(
+            shiny::selectInput(
+                inputId = ns("selected_clusters"),
+                label = "Select the clusters for the annotation",
+                choices = NULL
+            ),
+            shiny::sliderInput(
+                inputId = ns("number_classes"),
+                label = "Number of classes",
+                min = 1, max = 10, value = 1, step = 1
+            )
+        ),
+        shiny::uiOutput(ns("annotation_ui")),
+        shiny::actionButton(ns("annotation_button"), "Annotate clusters!", class = "btn-danger")
+    )
+}
+
 ui_comparison_markers <- function(id) {
     ns <- shiny::NS(id)
 
@@ -232,11 +253,11 @@ ui_comparison_jsi_panel <- function(id) {
                 icon = shiny::icon("download"),
                 status = "success",
                 size = "sm",
-                shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
+                shiny::em(paste0("Note: Use one of the following extensions: ", paste0(names(filetypes), collapse = ", "))),
                 shiny::textInput(ns("filename_heatmap"), "File name:", width = "80%"),
                 shiny::numericInput(ns("width_heatmap"), "Width (in):", 7, 3, 100, 0.1),
                 shiny::numericInput(ns("height_heatmap"), "Height (in):", 7, 3, 100, 0.1),
-                shiny::selectInput(ns("heatmap_filetype"), "Filetype", choices = c("PDF", "PNG", "SVG"), selected = "PDF", width = "100%"),
+                shiny::selectInput(ns("heatmap_filetype"), "Filetype", choices = names(filetypes), selected = names(filetypes)[1], width = "100%"),
                 shiny::downloadButton(ns("download_heatmap"), label = "Download Plot")
             )
         ),
@@ -478,7 +499,9 @@ ui_comparisons <- function(id) {
             class = "page-info"
         ),
         shiny::actionButton(ns("show_config"), "Show config", type = "info", class = "btn-info show_config"),
-        shiny::h2("Compare your current configuration", class = "first-element-tab"), # style = "margin-bottom:10px ")
+        shiny::h2("Annotation of cell clusters", class = "first-element-tab"), # style = "margin-bottom:10px ")
+        ui_cell_annotation(ns("cell_annotation")),
+        shiny::h2("Compare your current configuration"), # style = "margin-bottom:10px ")
         shiny::splitLayout(
             cellWidths = c("48%", "48%"),
             ui_comparison_metadata_panel(ns("metadata_panel_left"), TRUE),
@@ -1006,6 +1029,10 @@ server_comparison_metadata_panel <- function(id) {
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_metadata * 3 / 4, "inches")))
                     }
 
+                    if (input$raster_metadata == "Yes") {
+                        ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 300)
+                    }
+
                     ggplot2::ggsave(
                         filename = file,
                         plot = ggplot_obj,
@@ -1023,6 +1050,18 @@ server_comparison_gene_panel <- function(id) {
         id,
         function(input, output, session) {
             gene_legend_height <- shiny::reactiveVal(0)
+            shiny::observe({
+                name_genes <- input$gene_expr
+                ngenes <- length(name_genes)
+                name_genes <- name_genes[seq_len(min(ngenes, 3))]
+
+                shiny::updateTextInput(
+                    session,
+                    "filename_gene",
+                    value = paste0(name_genes, collapse = "_")
+                )
+            }) %>% shiny::bindEvent(input$gene_expr)
+
             expr_matrix <- shiny::reactive({
                 if ("genes" %in% names(pkg_env)) {
                     index_gene <- pkg_env$genes[input$gene_expr]
@@ -1343,6 +1382,10 @@ server_comparison_gene_panel <- function(id) {
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
                     }
 
+                    if (input$raster_gene == "Yes") {
+                        ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 300)
+                    }
+
                     ggplot2::ggsave(
                         filename = file,
                         plot = ggplot_obj,
@@ -1474,12 +1517,18 @@ server_comparison_jsi <- function(id, k_choices) {
                 }
             })
 
+
             output$download_heatmap <- shiny::downloadHandler(
                 filename = function() {
                     heatmap_filetype()
                 },
                 content = function(file) {
-                    ggplot2::ggsave(file, barcode_heatmap(),
+                    gplot_obj <- barcode_heatmap()
+                    if (input$raster_heatmap == "Yes") {
+                        gplot_obj <- ggrastr::rasterise(gplot_obj, dpi = 300)
+                    }
+
+                    ggplot2::ggsave(file, gplot_obj,
                         width = input$width_heatmap,
                         height = input$height_heatmap,
                         units = "in",
@@ -1659,22 +1708,13 @@ server_comparison_violin_gene <- function(id) {
                 is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
                 # is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
 
-                function_applied <- ifelse(!input$log_scale,
-                    function(x) {
-                        x
-                    },
-                    function(x) {
-                        log10(x)
-                    }
-                )
-
                 df <- data.frame(
                     gene_expr = distr_val(),
                     metadata_split = metadata_split_info()$color_info,
                     metadata_group = metadata_group_info()$color_info
                 )
-                df$metadata_group <- factor(df$metadata_group, levels = unique(df$metadata_group))
-                df$metadata_split <- factor(df$metadata_split, levels = unique(df$metadata_split))
+                df$metadata_group <- droplevels(df$metadata_group)
+                df$metadata_split <- droplevels(df$metadata_split)
 
                 df <- df[mtd_mask, ]
 
@@ -1707,10 +1747,14 @@ server_comparison_violin_gene <- function(id) {
                 # FIXME empty distribution cause shifts in violin plots and mismatch with the boxplots
                 # TODO add violin plots for multiple genes
                 if ("Violin" %in% graph_types) {
+                    quantiles_draw <- c(0.25, 0.5, 0.75)
+                    if ("Boxplot" %in% graph_types) {
+                        quantiles_draw <- NULL
+                    }
                     gplot_object <- gplot_object + ggplot2::geom_violin(
                         width = input$boxplot_width,
-                        trim = FALSE,
-                        position = ggplot2::position_dodge(width = boxplot_dodge)
+                        position = ggplot2::position_dodge(width = boxplot_dodge),
+                        draw_quantiles = quantiles_draw
                     )
                 }
 
@@ -1740,11 +1784,16 @@ server_comparison_violin_gene <- function(id) {
                     paste0(input$filename_violin, ".", tolower(input$filetype_violin))
                 },
                 content = function(file) {
-                    shiny::req(ggplot_object())
+                    temp_object <- ggplot_object()
+                    shiny::req(temp_object)
+
+                    if (input$raster_violin == "Yes") {
+                        temp_object <- ggrastr::rasterise(temp_object, dpi = 300)
+                    }
 
                     ggplot2::ggsave(
                         filename = file,
-                        plot = ggplot_object() + ggplot2::ggtitle(
+                        plot = temp_object + ggplot2::ggtitle(
                             glue::glue("Distribution of {input$gene_expr} - Split by {input$metadata}")
                         ),
                         height = input$height_violin,
@@ -1974,12 +2023,17 @@ server_comparison_gene_heatmap <- function(id) {
                             paste0(input$filename_heatmap, ".", tolower(input$filetype_heatmap))
                         },
                         content = function(file) {
-                            shiny::req(heatmap_plot())
+                            temp_ggplot_obj <- heatmap_plot()
+                            shiny::req(temp_ggplot_obj)
 
                             if (input$plot_type == "Bubbleplot") {
+                                if (input$raster_heatmap == "Yes") {
+                                    temp_ggplot_obj <- ggrastr::rasterise(temp_ggplot_obj, dpi = 300)
+                                }
+
                                 ggplot2::ggsave(
                                     filename = file,
-                                    plot = heatmap_plot(),
+                                    plot = temp_ggplot_obj,
                                     height = input$height_heatmap,
                                     width = input$width_heatmap
                                 )
