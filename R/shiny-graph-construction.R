@@ -64,6 +64,30 @@ ui_graph_construction <- function(id) {
                     "Colour scheme 4" = "col_4"
                 ),
                 size = 4, selectize = F, selected = "col_4"
+            ),
+            shiny::sliderInput(
+                inputId = ns("title_size1"),
+                label = "Title size",
+                min = 0,
+                max = 40,
+                value = 15,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("axis_size1"),
+                label = "Axis text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("legend_size1"),
+                label = "Legend text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
             )
         ),
         shiny::splitLayout(
@@ -112,7 +136,31 @@ ui_graph_construction <- function(id) {
                 ),
                 size = 4, selectize = F, selected = "col_4"
             ),
-            shiny::uiOutput(ns("sel_conn_comps_render"))
+            shiny::uiOutput(ns("sel_conn_comps_render")),
+            shiny::sliderInput(
+                inputId = ns("title_size2"),
+                label = "Title size",
+                min = 0,
+                max = 40,
+                value = 15,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("axis_size2"),
+                label = "Axis text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("legend_size2"),
+                label = "Legend text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
+            )
         ),
         shiny::fluidRow(
             shiny::tags$head(shiny::tags$style(shiny::HTML("pre { white-space: pre-wrap; word-break: keep-all; }"))),
@@ -148,7 +196,7 @@ ui_graph_construction <- function(id) {
             status = "success",
             size = "sm",
             shiny::em("Note: Use one of the following extensions: PDF, PNG, SVG."),
-            shiny::textInput(ns("filename_neigh_stability"), "File name:", width = "80%"),
+            shiny::textInput(ns("filename_neigh_stability"), "File name:", width = "80%", value = "neigh_stability"),
             shiny::numericInput(ns("width_neigh_stability"), "Width (in):", 7, 3, 100, 0.1),
             shiny::numericInput(ns("height_neigh_stability"), "Height (in):", 7, 3, 100, 0.1),
             shiny::selectInput(ns("filetype_neigh_stability"), "Filetype", choices = c("PDF", "PNG", "SVG"), width = "50%", selected = "PDF"),
@@ -168,7 +216,31 @@ ui_graph_construction <- function(id) {
                 ),
                 size = 4, selectize = F, selected = "col_4"
             ),
-            shiny::uiOutput(ns("sel_stab_render"))
+            shiny::uiOutput(ns("sel_stab_render")),
+            shiny::sliderInput(
+                inputId = ns("title_size3"),
+                label = "Title size",
+                min = 0,
+                max = 40,
+                value = 15,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("axis_size3"),
+                label = "Axis text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
+            ),
+            shiny::sliderInput(
+                inputId = ns("legend_size3"),
+                label = "Legend text size",
+                min = 0,
+                max = 40,
+                value = 10,
+                step = 0.5
+            )
         ),
         shiny::fluidRow(
             shiny::splitLayout(
@@ -244,10 +316,23 @@ server_graph_construction <- function(id, chosen_config) {
             shiny::outputOptions(output, "sel_stab_render", suspendWhenHidden = FALSE)
 
             plot_conn_comps_Input <- shiny::reactive({
+                title_size <- input$title_size1
+                axis_size <- input$axis_size1
+                legend_size <- input$legend_size1
+
+                temp_gplot_obj <- plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
+                    ggplot2::theme(
+                        axis.title = ggplot2::element_text(size = axis_size),
+                        axis.text = ggplot2::element_text(size = axis_size),
+                        legend.text = ggplot2::element_text(size = legend_size),
+                        legend.title = ggplot2::element_text(size = legend_size),
+                        plot.title = ggplot2::element_text(size = title_size)
+                    )
+
                 if (input$palette_plot_conn_comps == "col_4") {
 
                     return(
-                        plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
+                        temp_gplot_obj +
                             ggplot2::scale_fill_manual(values = pkg_env$discrete_colors[[as.character(length(pkg_env$stab_obj$nn_conn_comps))]])
                     )
                 }
@@ -259,8 +344,7 @@ server_graph_construction <- function(id, chosen_config) {
                 } else {
                     option <- "Greys"
                 }
-                plot_connected_comps_evolution(pkg_env$stab_obj$nn_conn_comps) +
-                    ggplot2::scale_fill_brewer(palette = option)
+                temp_gplot_obj + ggplot2::scale_fill_brewer(palette = option)
             })
             # 1 Plot Relationship between the number of neighbours and then number of connected components
             output$plot_conn_comps <- shiny::renderPlot(
@@ -324,6 +408,10 @@ server_graph_construction <- function(id, chosen_config) {
             })
             # Reactive for second plot
             plot_n_neigh_k_correspondence_Input <- shiny::reactive({
+                title_size <- input$title_size2
+                axis_size <- input$axis_size2
+                legend_size <- input$legend_size2
+
                 if (length(input$sel_conn_comps) == 0) {
                     return(ggplot2::ggplot() +
                         ggplot2::theme_void())
@@ -332,12 +420,21 @@ server_graph_construction <- function(id, chosen_config) {
                 obj <- pkg_env$stab_obj
                 obj$nn_stability$n_neigh_k_corresp <- obj$nn_stability$n_neigh_k_corresp[input$sel_conn_comps]
 
+                temp_gplot_obj <- plot_n_neigh_k_correspondence(pkg_env$stab_obj$nn_stability) +
+                    ggplot2::theme(
+                        axis.title = ggplot2::element_text(size = axis_size),
+                        axis.text = ggplot2::element_text(size = axis_size),
+                        legend.text = ggplot2::element_text(size = legend_size),
+                        legend.title = ggplot2::element_text(size = legend_size),
+                        plot.title = ggplot2::element_text(size = title_size)
+                    )
+
+
                 if (input$palette_plot_neigh_k == "col_4") {
                     dis_colors <- pkg_env$discrete_colors[[as.character(length(input$sel_conn_comps))]]
                     names(dis_colors) <- names(obj$nn_stability$n_neigh_k_corresp)
                     return(
-                        plot_n_neigh_k_correspondence(obj$nn_stability) +
-                            ggplot2::scale_fill_manual(values = dis_colors)
+                        temp_gplot_obj + ggplot2::scale_fill_manual(values = dis_colors)
                     )
                 }
 
@@ -349,8 +446,7 @@ server_graph_construction <- function(id, chosen_config) {
                     option <- "Greys"
                 }
                 
-                plot_n_neigh_k_correspondence(obj$nn_stability) +
-                    ggplot2::scale_fill_brewer(palette = option)
+                temp_gplot_obj + ggplot2::scale_fill_brewer(palette = option)
             })
             # 2 Plot Relationship between the number of neighbours and then number of clusters
             output$plot_neigh_k <- shiny::renderPlot({
@@ -446,16 +542,26 @@ server_graph_construction <- function(id, chosen_config) {
                     return(ggplot2::ggplot() +
                         ggplot2::theme_void())
                 }
+                title_size <- input$title_size3
+                axis_size <- input$axis_size3
+                legend_size <- input$legend_size3
 
                 obj <- pkg_env$stab_obj
                 obj$nn_stability$n_neigh_ec_consistency <- obj$nn_stability$n_neigh_ec_consistency[input$sel_stab]
+                temp_gplot_obj <- plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
+                    ggplot2::theme(
+                        axis.title = ggplot2::element_text(size = axis_size),
+                        axis.text = ggplot2::element_text(size = axis_size),
+                        legend.text = ggplot2::element_text(size = legend_size),
+                        legend.title = ggplot2::element_text(size = legend_size),
+                        plot.title = ggplot2::element_text(size = title_size)
+                    )
 
                 if (input$palette_neigh_stability == "col_4") {
                     dis_colours <- pkg_env$discrete_colors[[as.character(length(input$sel_stab))]]
                     names(dis_colours) <- input$sel_stab
                     return(
-                        plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
-                            ggplot2::scale_fill_manual(values = dis_colours)
+                        temp_gplot_obj + ggplot2::scale_fill_manual(values = dis_colours)
                     )
                 }
 
@@ -467,8 +573,7 @@ server_graph_construction <- function(id, chosen_config) {
                     option <- "Greys"
                 }
 
-                plot_n_neigh_ecs(obj$nn_stability, boxplot_width = 0.8) +
-                    ggplot2::scale_fill_brewer(palette = option)
+                temp_gplot_obj + ggplot2::scale_fill_brewer(palette = option)
             })
             # 3. Plot Stability
             output$plot_neigh_stability <- shiny::renderPlot({
