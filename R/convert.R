@@ -1,4 +1,215 @@
 
+get_dim_reduction_from_clustassess_app <- function(app_folder,
+                                                   dim_type = c("pca", "umap"),
+                                                   dim_key = "PC_",
+                                                   stable_feature_type,
+                                                   stable_feature_set_size) {
+    dim_type <- dim_type[1]
+
+    expr_path <- file.path(app_folder, "expression.h5")
+    stab_path <- file.path(app_folder, "stability.h5")
+
+    if (!file.exists(expr_path)) {
+        stop(paste0("The expression.h5 file does not exist in the provided app_folder: ", app_folder))
+    }
+
+    if (!file.exists(stab_path)) {
+        stop(paste0("The stability.h5 file does not exist in the provided app_folder: ", app_folder))
+    }
+
+    cell_names <- as.character(rhdf5::h5read(expr_path, "cells"))
+
+    available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
+    available_ftypes <- names(available_configs)
+
+    if (!stable_feature_type %in% available_ftypes) {
+        stop(paste0("The provided stable_feature_type: ", stable_feature_type, " is not available in the app.\nAvailable options: ", paste(available_ftypes, collapse = ", ")))
+    }
+
+    available_fsizes <- available_configs[[stable_feature_type]]
+
+    if (!stable_feature_set_size %in% available_fsizes) {
+        stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
+    }
+
+    prefix <- paste0(stable_feature_type, "/", stable_feature_set_size)
+    stab_structure <- rhdf5::h5ls(stab_path)
+    avail_options <- stab_structure$name[stab_structure$group == paste0("/", prefix)]
+
+    if (!(dim_type %in% avail_options)) {
+        stop(paste0("The provided dim_type: ", dim_type, " is not available in the app.\nAvailable options: ", paste(avail_options, collapse = ", ")))
+    }
+
+    dim_emb <- rhdf5::h5read(stab_path, paste0(prefix, "/", dim_type))
+    rownames(dim_emb) <- cell_names
+    colnames(dim_emb) <- paste0(dim_key, seq_len(ncol(dim_emb)))
+
+    return(dim_emb)
+}
+
+get_clusters_from_clustassess_app <- function(app_folder,
+                                              stable_feature_type,
+                                              stable_feature_set_size,
+                                              stable_clustering_method) {
+    stab_path <- file.path(app_folder, "stability.h5")
+    if (!file.exists(stab_path)) {
+        stop(paste0("The stability.h5 file does not exist in the provided app_folder: ", app_folder))
+    }
+
+    available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
+    available_ftypes <- names(available_configs)
+
+    if (!stable_feature_type %in% available_ftypes) {
+        stop(paste0("The provided stable_feature_type: ", stable_feature_type, " is not available in the app.\nAvailable options: ", paste(available_ftypes, collapse = ", ")))
+    }
+
+    available_fsizes <- available_configs[[stable_feature_type]]
+
+    if (!stable_feature_set_size %in% available_fsizes) {
+        stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
+    }
+
+    prefix <- paste0(stable_feature_type, "/", stable_feature_set_size)
+    cl_mb_prefix <- paste0(prefix, "/clustering_stability/split_by_k/mbs/", stable_clustering_method)
+    cl_ecc_prefix <- paste0(prefix, "/clustering_stability/split_by_k/ecc")
+
+    tryCatch({
+        available_n_clusters <- names(rhdf5::h5read(stab_path, cl_mb_prefix))
+    }, error = function(e) {
+        stop(paste0("The provided stable_clustering_method: ", stable_clustering_method, " is not available in the app."))
+    })
+
+    df_list <- lapply(available_n_clusters, function(k) {
+        mb <- factor(as.integer(rhdf5::h5read(stab_path, paste0(cl_mb_prefix, "/", k))))
+        ecc <- as.numeric(rhdf5::h5read(
+            stab_path,
+            paste0(cl_ecc_prefix, sprintf("/%06d;%s", as.integer(k), stable_clustering_method))
+        ))
+        ecc_order <- as.numeric(rhdf5::h5read(
+            stab_path,
+            paste0(cl_ecc_prefix, sprintf("_order/%06d;%s", as.integer(k), stable_clustering_method))
+        ))
+
+        temp_df <- data.frame(mb, ecc[ecc_order])
+        colnames(temp_df) <- c(paste0("stable_", k, "_clusters"), paste0("ecc_", k))
+        return(temp_df)
+    })
+
+    return(do.call(cbind, df_list))
+}
+
+get_metadata_from_clustassess_app <- function(app_folder) {
+    metadata_df <- readRDS(file.path(app_folder, "metadata.rds"))$metadata
+    metadata_values <- colnames(metadata_df)
+    metadata_values[which(metadata_values == "sample_name")] <- "sample_names"
+    colnames(metadata_df) <- metadata_values
+
+    return(metadata_df)
+}
+
+get_expression_matrix_from_clustassess_app <- function(app_folder,
+                                                       stable_feature_type,
+                                                       stable_feature_set_size,
+                                                       use_all_genes = FALSE) {
+    expr_path <- file.path(app_folder, "expression.h5")
+    stab_path <- file.path(app_folder, "stability.h5")
+    if (!file.exists(expr_path)) {
+        stop(paste0("The expression.h5 file does not exist in the provided app_folder: ", app_folder))
+    }
+
+    available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
+    available_ftypes <- names(available_configs)
+
+    if (!stable_feature_type %in% available_ftypes) {
+        stop(paste0("The provided stable_feature_type: ", stable_feature_type, " is not available in the app.\nAvailable options: ", paste(available_ftypes, collapse = ", ")))
+    }
+
+    available_fsizes <- available_configs[[stable_feature_type]]
+
+    if (!stable_feature_set_size %in% available_fsizes) {
+        stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
+    }
+
+    gene_names <- as.character(rhdf5::h5read(expr_path, "genes"))
+
+    if (!use_all_genes) {
+        used_genes <- as.character(rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list")))
+        used_genes <- used_genes[seq_len(as.integer(stable_feature_set_size))]
+        expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
+        rownames(expr_matrix) <- gene_names
+        expr_matrix <- expr_matrix[used_genes, , drop = FALSE]
+        gc()
+        gene_names <- used_genes
+    } else {
+        expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
+    }
+
+    rownames(expr_matrix) <- gene_names
+    colnames(expr_matrix) <- as.character(rhdf5::h5read(expr_path, "cells"))
+
+    return(expr_matrix)
+}
+
+get_info_from_clustassess_app <- function(app_folder,
+                                          info_type = c("expression_matrix", "metadata", "dim_reduction", "clusters"),
+                                          stable_feature_type,
+                                          stable_feature_set_size,
+                                          stable_clustering_method,
+                                          stable_n_clusters = NULL,
+                                          dim_type = c("pca", "umap"),
+                                          dim_key = "PC_",
+                                          use_all_genes = FALSE) {
+    info_type <- info_type[1]
+    if (!(info_type %in% c("expression_matrix", "metadata", "dim_reduction", "clusters"))) {
+        stop(paste0("The provided info_type: ", info_type, " is not available."))
+    }
+
+    if (info_type == "expression_matrix") {
+        return(get_expression_matrix_from_clustassess_app(
+            app_folder,
+            stable_feature_type,
+            stable_feature_set_size,
+            use_all_genes
+        ))
+    }
+
+    if (info_type == "dim_reduction") {
+        return(get_dim_reduction_from_clustassess_app(
+            app_folder,
+            dim_type,
+            dim_key,
+            stable_feature_type,
+            stable_feature_set_size
+        ))
+    }
+
+    clusters_df <- get_clusters_from_clustassess_app(
+        app_folder,
+        stable_feature_type,
+        stable_feature_set_size,
+        stable_clustering_method
+    )
+
+    if (info_type == "clusters") {
+        return(clusters_df)
+    }
+
+    metadata_df <- get_metadata_from_clustassess_app(app_folder)
+
+    if (is.null(stable_n_clusters)) {
+        return(cbind(metadata_df, clusters_df))
+    }
+
+    for (k in stable_n_clusters) {
+        if (!(paste0("stable_", k, "_clusters") %in% colnames(metadata_df))) {
+            metadata_df[[paste0("stable_", k, "_clusters")]] <- clusters_df[[paste0("stable_", k, "_clusters")]]
+            metadata_df[[paste0("ecc_", k)]] <- clusters_df[[paste0("ecc_", k)]]
+        }
+    }
+
+    return(metadata_df)
+}
+
 #' Create monocle object
 #'
 #' @description Use a normalized expression matrix and, potentially, an already
@@ -317,6 +528,7 @@ create_monocle_from_clustassess_app <- function(app_folder,
         used_genes <- rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list"))
         used_genes <- used_genes[seq_len(as.integer(stable_feature_set_size))]
         expr_matrix <- expr_matrix[used_genes, , drop = FALSE]
+        gc()
         gene_names <- used_genes
     }
 
@@ -381,4 +593,159 @@ update_seurat_object <- function(original_seurat_object,
                                  seurat_assay = "SCT") {
 
 
+}
+
+#' Create Seurat object
+#'
+#' @description Use a normalized expression matrix and, potentially, an already
+#' generated PCA / UMAP embedding, to create a Seurat object.
+#'
+#' @param normalized_expression_matrix The normalized expression matrix
+#' having genes on rows and cells on columns.
+#' @param count_matrix The count matrix having genes on rows and cells on
+#' columns. If NULL, the normalized_expression_matrix will be used.
+#' @param pca_emb The PCA embedding of the expression matrix. If NULL, the
+#' pca will be created using the `Seurat` package (default parameters).
+#' @param umap_emb The UMAP embedding of the expression matrix. If NULL, the
+#' umap will be created using the `Seurat` package (default parameters).
+#' @param metadata_df The metadata dataframe having the cell names as rownames.
+#' If NULL, a dataframe with a single column named `identical_ident` will be
+#' created.
+#'
+#' @return A Seurat object of the expression matrix, having the stable number
+#' of clusters identified by ClustAssess.
+#'
+#' @export
+create_seurat_object_default <- function(normalized_expression_matrix,
+                                         count_matrix = NULL,
+                                         pca_embedding = NULL,
+                                         umap_embedding = NULL,
+                                         metadata_df = NULL) {
+
+
+    if (is.null(count_matrix)) {
+        count_matrix <- normalized_expression_matrix
+    } else {
+        count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
+    }
+
+    if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
+        normalized_expression_matrix <- Matrix::Matrix(normalized_expression_matrix, sparse = TRUE)
+    }
+
+    cell_names <- colnames(normalized_expression_matrix)
+
+    if (is.null(metadata_df)) {
+        metadata_df <- data.frame(
+            one_level = rep("one", ncol(normalized_expression_matrix)),
+            row.names = cell_names
+        )
+    } else {
+        if (nrow(metadata_df) != ncol(normalized_expression_matrix)) {
+            stop("The number of rows in metadata_df should be equal to the number of cells in normalized_expression_matrix")
+        }
+
+        rownames(metadata_df) <- cell_names
+    }
+
+    seurat_obj <- Seurat::CreateSeuratObject(
+        counts = count_matrix,
+        meta.data = metadata_df
+    )
+
+    seurat_obj <- Seurat::NormalizeData(seurat_obj)
+    seurat_obj@assays$RNA@layers$data <- normalized_expression_matrix
+    seurat_obj <- Seurat::ScaleData(seurat_obj)
+    seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
+    seurat_obj <- Seurat::RunPCA(seurat_obj)
+
+    if (!is.null(pca_embedding)) {
+        rownames(pca_embedding) <- cell_names
+        colnames(pca_embedding) <- paste0("PC_", seq_len(ncol(pca_embedding)))
+        seurat_obj$pca <- SeuratObject::CreateDimReducObject(
+            embedding = pca_embedding,
+            key = "PCA"
+        )
+    }
+
+    seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = 1:30)
+
+    if (!is.null(umap_embedding)) {
+        rownames(umap_embedding) <- cell_names
+        colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
+        seurat_obj$umap <- SeuratObject::CreateDimReducObject(
+            embedding = umap_embedding,
+            key = "UMAP"
+        )
+    }
+
+    return(seurat_obj)
+}
+
+#' Create Seurat object from a ClustAssess shiny app
+#'
+#' @description Use the files generated in the ClustAssess app to create a
+#' Seurat object which has the stable number of clusters.
+#'
+#' @param app_folder Path pointing to the folder containing a ClustAssess app.
+#' @param stable_feature_type The feature type which leads to stable clusters.
+#' @param stable_feature_set_size The feature size which leads to stable
+#' clusters.
+#' @param stable_clustering_method The clustering method which leads to stable
+#' clusters.
+#' @param stable_n_clusters The number of clusters that are stable. If NULL,
+#' all the clusters will be provided. Defaults to `NULL`.
+#' @param use_all_genes A boolean value indicating if the expression matrix
+#' should be truncated to the genes used in the stability assessment. Defaults
+#' to `FALSE`.
+#'
+#' @return A Seurat object of the expression matrix, having the stable number
+#' of clusters identified by ClustAssess.
+#'
+#' @export
+create_seurat_object_from_clustassess_app <- function(app_folder,
+                                                      stable_feature_type,
+                                                      stable_feature_set_size,
+                                                      stable_clustering_method,
+                                                      stable_n_clusters = NULL,
+                                                      use_all_genes = FALSE) {
+    create_seurat_object_default(
+        normalized_expression_matrix = get_info_from_clustassess_app(
+            app_folder,
+            info_type = "expression_matrix",
+            stable_feature_type = stable_feature_type,
+            stable_feature_set_size = stable_feature_set_size,
+            stable_clustering_method = stable_clustering_method,
+            stable_n_clusters = stable_n_clusters,
+            use_all_genes = use_all_genes
+        ),
+        pca_embedding = get_info_from_clustassess_app(
+            app_folder,
+            info_type = "dim_reduction",
+            dim_type = "pca",
+            dim_key = "PC_",
+            stable_feature_type = stable_feature_type,
+            stable_feature_set_size = stable_feature_set_size,
+            stable_clustering_method = stable_clustering_method,
+            stable_n_clusters = stable_n_clusters
+        ),
+        umap_embedding = get_info_from_clustassess_app(
+            app_folder,
+            info_type = "dim_reduction",
+            dim_type = "umap",
+            dim_key = "UMAP_",
+            stable_feature_type = stable_feature_type,
+            stable_feature_set_size = stable_feature_set_size,
+            stable_clustering_method = stable_clustering_method,
+            stable_n_clusters = stable_n_clusters
+        ),
+        metadata_df = get_info_from_clustassess_app(
+            app_folder,
+            info_type = "metadata",
+            stable_feature_type = stable_feature_type,
+            stable_feature_set_size = stable_feature_set_size,
+            stable_clustering_method = stable_clustering_method,
+            stable_n_clusters = stable_n_clusters
+        )
+    )
 }
