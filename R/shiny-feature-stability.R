@@ -143,7 +143,10 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
             choices = NULL,
             label = "Gene name(s)",
             width = "95%",
-            multiple = TRUE
+            multiple = TRUE,
+            options = list(
+                plugins = list("remove_button", "drag_drop")
+            )
         ),
         shiny::splitLayout(
             shiny::numericInput(

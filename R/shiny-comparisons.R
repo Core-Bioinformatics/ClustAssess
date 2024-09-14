@@ -173,7 +173,10 @@ ui_comparison_gene_panel <- function(id, draw_line) {
             choices = NULL,
             label = "Gene name(s)",
             width = "95%",
-            multiple = TRUE
+            multiple = TRUE,
+            options = list(
+                plugins = list("drag_drop", "remove_button")
+            )
         ),
         shiny::verticalLayout(
             shiny::splitLayout(
@@ -283,34 +286,64 @@ ui_comparison_gene_heatmap <- function(id) {
         shiny::splitLayout(
             cellWidths = "40px",
             shinyWidgets::dropdownButton(
-                shiny::sliderInput(
-                    inputId = ns("text_size"),
-                    label = "Text size",
-                    min = 5, max = 50, value = 15, step = 0.5
-                ),
-                shiny::sliderInput(
-                    inputId = ns("point_size"),
-                    label = "Point max size",
-                    min = 0.1, max = 30, value = c(0.5, 3), step = 0.1
-                ),
-                shinyWidgets::prettySwitch(
-                    inputId = ns("scale"),
-                    label = "Apply scaling",
-                    status = "success",
-                    fill = TRUE,
-                    value = FALSE
-                ),
-                shiny::sliderInput(
-                    inputId = ns("clipping_value"),
-                    label = "Clipping value",
-                    min = 0.01, max = 20, value = 6, step = 0.1
-                ),
-                shinyWidgets::prettySwitch(
-                    inputId = ns("show_numbers"),
-                    label = "Show the values on the heatmap",
-                    status = "success",
-                    fill = TRUE,
-                    value = FALSE 
+                inputId = ns("gear_heatmap"),
+                shiny::splitLayout(
+                    shiny::tagList(
+                        shiny::sliderInput(
+                            inputId = ns("text_size"),
+                            label = "Text size",
+                            min = 5, max = 50, value = 15, step = 0.5
+                        ),
+                        shiny::sliderInput(
+                            inputId = ns("point_size"),
+                            label = "Point max size",
+                            min = 0.1, max = 30, value = c(1.5, 7), step = 0.1
+                        ),
+                        shiny::splitLayout(
+                            cellWidths = "120px",
+                            shinyWidgets::prettySwitch(
+                                inputId = ns("scale"),
+                                label = "Apply scaling",
+                                status = "success",
+                                fill = TRUE,
+                                value = FALSE
+                            ),
+                            shinyWidgets::prettySwitch(
+                                inputId = ns("show_numbers"),
+                                label = "Show values",
+                                status = "success",
+                                fill = TRUE,
+                                value = FALSE 
+                            )
+                        ),
+                        shiny::sliderInput(
+                            inputId = ns("clipping_value"),
+                            label = "Clipping value",
+                            min = 0.01, max = 20, value = 6, step = 0.1
+                        )
+                    ),
+                    shiny::tagList(
+                        shiny::sliderInput(
+                            inputId = ns("tile_position"),
+                            label = "Colourbar position",
+                            min = -4, max = 0.5, value = 0, step = 0.05
+                        ),
+                        shiny::sliderInput(
+                            inputId = ns("tile_height"),
+                            label = "Colourbar height",
+                            min = 0.05, max = 5, value = 0.2, step = 0.05
+                        ),
+                        shiny::sliderInput(
+                            inputId = ns("legend_spacing"),
+                            label = "Legend spacing (in)",
+                            min = 0, max = 5, value = 0.1, step = 0.05
+                        ),
+                        shiny::sliderInput(
+                            inputId = ns("lower_margin"),
+                            label = "Plot lower margin (pt)",
+                            min = 0, max = 300, value = 50, step = 1
+                        )
+                    )
                 ),
                 circle = TRUE,
                 status = "success",
@@ -325,7 +358,10 @@ ui_comparison_gene_heatmap <- function(id) {
                 choices = NULL,
                 label = "Select a metadata or a gene",
                 width = "95%",
-                multiple = TRUE
+                multiple = TRUE,
+                options = list(
+                    plugins = list("drag_drop", "remove_button")
+                )
             ),
             shiny::selectInput(
                 inputId = ns("metadata"),
@@ -392,7 +428,10 @@ ui_comparison_violin_gene <- function(id) {
                 choices = NULL,
                 label = "Select a metadata or a gene",
                 # width = "95%",
-                multiple = FALSE
+                multiple = FALSE,
+                options = list(
+                    plugins = list("drag_drop", "remove_button")
+                )
             ),
             shiny::selectInput(
                 inputId = ns("metadata_split"),
@@ -450,6 +489,11 @@ ui_comparison_enrichment <- function(id) {
                 options = list(
                     title = "Select data sources"
                 )
+            ),
+            shiny::numericInput(
+                inputId = ns("top_n_makers"),
+                label = "Select the number of top markers",
+                min = 1, max = 200, value = 30, step = 1
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns("group"),
@@ -1030,7 +1074,7 @@ server_comparison_metadata_panel <- function(id) {
                     }
 
                     if (input$raster_metadata == "Yes") {
-                        ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 300)
+                        ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 900)
                     }
 
                     ggplot2::ggsave(
@@ -1525,7 +1569,7 @@ server_comparison_jsi <- function(id, k_choices) {
                 content = function(file) {
                     gplot_obj <- barcode_heatmap()
                     if (input$raster_heatmap == "Yes") {
-                        gplot_obj <- ggrastr::rasterise(gplot_obj, dpi = 300)
+                        gplot_obj <- ggrastr::rasterise(gplot_obj, dpi = 900)
                     }
 
                     ggplot2::ggsave(file, gplot_obj,
@@ -1882,8 +1926,22 @@ server_comparison_gene_heatmap <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            shiny::observe({
+                shiny::updateSliderInput(
+                    session,
+                    "tile_position",
+                    value = -0.05 * length(input$gene_expr)
+                )
+
+                shiny::updateSliderInput(
+                    session,
+                    "tile_height",
+                    value = 0.15 + 0.03 * length(input$gene_expr)
+                )
+            }) %>% shiny::bindEvent(input$gene_expr)
+
             heatmap_plot <- shiny::reactive({
-                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, cancelOutput = TRUE)
+                shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, input$tile_position, input$tile_height, input$legend_spacing, input$lower_margin, cancelOutput = TRUE)
 
                 shiny::isolate({
                     is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
@@ -1976,10 +2034,13 @@ server_comparison_gene_heatmap <- function(id) {
                         ))
                     }
 
+                    tile_colours <- pkg_env$discrete_colors[[as.character(length(unique_vals))]]
+                    names(tile_colours) <- unique_vals
+
                     bubbleplot_df <- reshape2::melt(htmp_matrix)
                     colnames(bubbleplot_df) <- c("gene", "metadata", "expr_level")
                     bubbleplot_df$perc <- reshape2::melt(perc_expressed)$value
-                    bubbleplot_df$gene <- factor(bubbleplot_df$gene, levels = input$gene_expr)
+                    bubbleplot_df$gene <- factor(bubbleplot_df$gene, levels = rev(input$gene_expr))
                     bubbleplot_df$metadata <- factor(bubbleplot_df$metadata, levels = unique_vals)
 
                     ggplot2::ggplot(bubbleplot_df, ggplot2::aes(x = .data$metadata, y = .data$gene, size = .data$perc, fill = .data$expr_level)) +
@@ -1990,14 +2051,21 @@ server_comparison_gene_heatmap <- function(id) {
                             axis.text.x = ggplot2::element_text(size = input$text_size),
                             axis.text.y = ggplot2::element_text(size = input$text_size),
                             axis.title = ggplot2::element_text(size = input$text_size),
-                            legend.position = "bottom"
+                            legend.text = ggplot2::element_text(size = input$text_size),
+                            legend.title = ggplot2::element_text(size = input$text_size),
+                            legend.position = "bottom",
+                            legend.box = "vertical"
                         ) +
                         ggplot2::xlab("") +
-                        ggplot2::ylab("")
-
-
-
-
+                        ggplot2::ylab("") +
+                        ggnewscale::new_scale_fill() +
+                        ggplot2::geom_tile(data = bubbleplot_df, aes(x = .data$metadata, y = input$tile_position, fill = .data$metadata), height = input$tile_height, show.legend = FALSE) +
+                        ggplot2::scale_fill_manual(values = tile_colours) +
+                        ggplot2::coord_cartesian(clip = "off", ylim = c(1, nrow(htmp_matrix))) +
+                        ggplot2::theme(
+                            plot.margin = ggplot2::margin(b = input$lower_margin, unit = "pt"),
+                            legend.box.spacing = grid::unit(input$legend_spacing, "in")
+                        )
                 })
             })
 
@@ -2008,7 +2076,7 @@ server_comparison_gene_heatmap <- function(id) {
                 shiny::isolate({
                     output$gene_heatmap <- shiny::renderPlot(
                         width = pkg_env$dimension()[1],
-                        height = 200 + length(input$gene_expr) * 50,
+                        height = 220 + length(input$gene_expr) * 70,
                         {
                             if (input$plot_type == "Bubbleplot") {
                                 heatmap_plot()
@@ -2027,10 +2095,6 @@ server_comparison_gene_heatmap <- function(id) {
                             shiny::req(temp_ggplot_obj)
 
                             if (input$plot_type == "Bubbleplot") {
-                                if (input$raster_heatmap == "Yes") {
-                                    temp_ggplot_obj <- ggrastr::rasterise(temp_ggplot_obj, dpi = 300)
-                                }
-
                                 ggplot2::ggsave(
                                     filename = file,
                                     plot = temp_ggplot_obj,
@@ -2047,8 +2111,6 @@ server_comparison_gene_heatmap <- function(id) {
                     )
                 })
             })
-            
-
         }
     )
 }
@@ -2065,9 +2127,16 @@ server_comparison_enrichment <- function(id, marker_genes) {
             }) %>% shiny::bindEvent(marker_genes(), once = TRUE)
 
             gprof_result <- shiny::reactive({
-                shiny::req(marker_genes())
+                chosen_markers <- marker_genes()
+                n_top_markers <- input$n_top_markers
+                shiny::req(chosen_markers, n_top_markers > 1)
                 shinyjs::disable("enrichment_button")
                 selected_group <- stringr::str_replace(input$group, " ", "_")
+
+                chosen_markers <- chosen_markers[[selected_group]]
+                n_top_markers <- min(n_top_markers, length(chosen_markers))
+                chosen_markers <- chosen_markers[seq_len(n_top_markers)]
+
 
                 # TODO use as background only the genes with avg expression over a specific
                 if ("genes" %in% names(pkg_env)) {
@@ -2077,7 +2146,7 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 }
 
                 gprf_res <- gprofiler2::gost(
-                    query = marker_genes()[[selected_group]],
+                    query = chosen_markers,
                     sources = input$gprofilerSources,
                     organism = pkg_env$organism,
                     evcodes = TRUE,
