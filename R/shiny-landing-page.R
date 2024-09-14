@@ -198,6 +198,8 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
                 shiny::showTab("tabset_id", "Dimensionality Reduction", select = FALSE, session = parent_session)
                 shiny::showTab("tabset_id", "Sandbox", select = FALSE, session = parent_session)
             }) %>% shiny::bindEvent(pkg_env$dimension(), once = TRUE)
+
+            update_gears_width()
             print(paste(Sys.time(), "landing - finished loading"))
         }
     )

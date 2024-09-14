@@ -1452,6 +1452,17 @@ jaccard_index <- function(a, b) {
     }
 }
 
+update_gears_width <- function() {
+    shiny::observe({
+        win_dims <- pkg_env$dimension()
+        shiny::req(win_dims)
+
+        shinyjs::runjs(paste0(
+            "$('.dropdown-menu .shiny-split-layout').css('width', '", win_dims[1] / 2.2, "px');"
+        ))
+    })
+}
+
 # split_vector_by_metadata <- function(vec, metadata) {
 #     if (is.factor(metadata)) {
 #         unique_values <- levels(metadata)
