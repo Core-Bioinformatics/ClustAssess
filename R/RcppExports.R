@@ -2,27 +2,27 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 myContTable <- function(a, b, minim_mb1, minim_mb2) {
-    .Call("_ClustAssess_myContTable", PACKAGE = "ClustAssess", a, b, minim_mb1, minim_mb2)
+    .Call('_ClustAssess_myContTable', PACKAGE = 'ClustAssess', a, b, minim_mb1, minim_mb2)
 }
 
 disjointECS <- function(mb1, mb2) {
-    .Call("_ClustAssess_disjointECS", PACKAGE = "ClustAssess", mb1, mb2)
+    .Call('_ClustAssess_disjointECS', PACKAGE = 'ClustAssess', mb1, mb2)
 }
 
 calculate_pac_cpp <- function(indicator, connectivity, lower_lim, upper_lim) {
-    .Call("_ClustAssess_calculate_pac_cpp", PACKAGE = "ClustAssess", indicator, connectivity, lower_lim, upper_lim)
+    .Call('_ClustAssess_calculate_pac_cpp', PACKAGE = 'ClustAssess', indicator, connectivity, lower_lim, upper_lim)
 }
 
 filterNNmatrix <- function(oldNN, nnRanked, oldK, newK, prune = 0) {
-    .Call("_ClustAssess_filterNNmatrix", PACKAGE = "ClustAssess", oldNN, nnRanked, oldK, newK, prune)
+    .Call('_ClustAssess_filterNNmatrix', PACKAGE = 'ClustAssess', oldNN, nnRanked, oldK, newK, prune)
 }
 
 pruneSNN <- function(snnMatrix, prune = 0) {
-    .Call("_ClustAssess_pruneSNN", PACKAGE = "ClustAssess", snnMatrix, prune)
+    .Call('_ClustAssess_pruneSNN', PACKAGE = 'ClustAssess', snnMatrix, prune)
 }
 
 computeSNN <- function(nnMatrix, k, prune = 0) {
-    .Call("_ClustAssess_computeSNN", PACKAGE = "ClustAssess", nnMatrix, k, prune)
+    .Call('_ClustAssess_computeSNN', PACKAGE = 'ClustAssess', nnMatrix, k, prune)
 }
 
 #' Computes the NN adjacency matrix given the neighbours
@@ -36,13 +36,14 @@ computeSNN <- function(nnMatrix, k, prune = 0) {
 #'
 #' @return A list with the NN and SNN adjacency matrices.
 getNNmatrix <- function(nnRanked, k = -1L, start = 0L, prune = 0) {
-    .Call("_ClustAssess_getNNmatrix", PACKAGE = "ClustAssess", nnRanked, k, start, prune)
+    .Call('_ClustAssess_getNNmatrix', PACKAGE = 'ClustAssess', nnRanked, k, start, prune)
 }
 
 update_connectivity_cpp <- function(connectivity, sampling_indices, cluster_assignments) {
-    .Call("_ClustAssess_update_connectivity_cpp", PACKAGE = "ClustAssess", connectivity, sampling_indices, cluster_assignments)
+    .Call('_ClustAssess_update_connectivity_cpp', PACKAGE = 'ClustAssess', connectivity, sampling_indices, cluster_assignments)
 }
 
 wilcox_test <- function(rank_values, n1, max_rank) {
-    .Call("_ClustAssess_wilcox_test", PACKAGE = "ClustAssess", rank_values, n1, max_rank)
+    .Call('_ClustAssess_wilcox_test', PACKAGE = 'ClustAssess', rank_values, n1, max_rank)
 }
+

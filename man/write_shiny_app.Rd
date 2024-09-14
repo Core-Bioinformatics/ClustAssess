@@ -36,7 +36,7 @@ write_shiny_app(
 
 \method{write_shiny_app}{default}(
   object,
-  metadata,
+  metadata = NULL,
   assay_name = NULL,
   clustassess_object,
   project_folder,
