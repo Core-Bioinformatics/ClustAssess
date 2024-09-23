@@ -57,6 +57,7 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests: 
+    colourpicker,
     DelayedMatrixStats,
     devtools,
     rhdf5,
