@@ -6,13 +6,15 @@ ui_colour_picker <- function(id) {
         shiny::h1("Change discrete colour scheme"),
         shiny::splitLayout(
             cellWidths = c("20%", "80%"),
-            colourpicker::colourInput(
-                inputId = ns("colour_picker"),
-                label = "Pick a colour to get the hexcode",
-                value = "red",
-                allowTransparent = TRUE,
-                closeOnClick = TRUE
-            ),
+            if (system.file(package = "colourpicker") != "") {
+                colourpicker::colourInput(
+                    inputId = ns("colour_picker"),
+                    label = "Pick a colour to get the hexcode",
+                    value = "red",
+                    allowTransparent = TRUE,
+                    closeOnClick = TRUE
+                )
+            },
             shiny::tagList(
                 shiny::h3("Qualpalr palette generator"),
                 shiny::splitLayout(
@@ -62,45 +64,38 @@ ui_colour_picker <- function(id) {
                             class = "btn-success"
                         ),
                         shiny::verbatimTextOutput(ns("palette_output"))
-                ),
-                shiny::plotOutput(ns("palette_plot"))
+                )
             )
         ),
+        shiny::h3("Update colour palette for a given number of groups"),
+        shiny::p("If you select the recursive update, the palette with lower number of clusters will be updated as well using the ordering provided."),
         shiny::splitLayout(
-            shiny::tagList(
-                shiny::h3("Update colour palette for a given number of groups"),
-                shiny::splitLayout(
-                    cellWidths = c("120px", "600px", "290px"),
-                    shiny::numericInput(
-                        inputId = ns("n_groups"),
-                        label = "Number of groups",
-                        value = 10,
-                        min = 1,
-                        max = 99,
-                        width = "100px"
-                    ),
-                    shiny::textAreaInput(
-                        inputId = ns("colours_input"),
-                        label = "Enter hexcodes of colours, separated by commas",
-                        value = "",
-                        width = "100%"
-                    )
-                ),
-                shiny::actionButton(
-                    inputId = ns("update_colours"),
-                    label = "Update colours for ngroups",
-                    style = "font-size:20px;",
-                    class = "btn-danger",
-                    width = "270px"
-                )
+            shinyWidgets::prettySwitch(
+                inputId = ns("recursive_update"),
+                label = "Recursive update",
+                status = "success"
             ),
-            shiny::tagList(
-                shiny::h3("Save the current colour configurations"),
-                shiny::downloadButton(ns("download_colours"), "Download current colours (JSON format)"),
-                shiny::h3("Update colour configuration from an uploaded file"),
-                shiny::p("The files should follow the JSON format, where the keys are the number of groups and the values are the hexcodes of the colours."),
-                shiny::fileInput(ns("upload_colours"), "Upload a file with colour configurations (JSON format)", accept = ".json")
+            shiny::textAreaInput(
+                inputId = ns("colours_input"),
+                label = "Enter hexcodes of colours, separated by commas",
+                value = "",
+                width = "100%"
             )
+        ),
+        shiny::plotOutput(ns("palette_plot"), height = "auto"),
+        shiny::actionButton(
+            inputId = ns("update_colours"),
+            label = "Update colours for ngroups",
+            style = "font-size:20px;",
+            class = "btn-danger",
+            width = "270px"
+        ),
+        shiny::tagList(
+            shiny::h3("Save the current colour configurations"),
+            shiny::downloadButton(ns("download_colours"), "Download current colours (JSON format)"),
+            shiny::h3("Update colour configuration from an uploaded file"),
+            shiny::p("The files should follow the JSON format, where the keys are the number of groups and the values are the hexcodes of the colours."),
+            shiny::fileInput(ns("upload_colours"), "Upload a file with colour configurations (JSON format)", accept = ".json")
         )
     )
 
@@ -369,40 +364,39 @@ server_colour_picker <- function(id) {
                 output$palette_output <- shiny::renderPrint({
                     paste(pallette, collapse = ",")
                 })
+            }) %>% shiny::bindEvent(input$generate_palette)
 
-                output$palette_plot <- shiny::renderPlot({
+            selected_palette <- shiny::reactive({
+                strsplit(input$colours_input, ",")[[1]]
+            })
+
+            shiny::observe({
+                current_palette <- selected_palette()
+                shiny::req(length(current_palette) > 0)
+                output$palette_plot <- shiny::renderPlot(height = "400px", {
                     graphics::par(mar = c(0, 0, 0, 0))
                     graphics::barplot(
-                        rep(1, length(pallette)),
-                        col = pallette,
+                        rep(1, length(current_palette)),
+                        col = current_palette,
                         axes = FALSE,
                         space = 0,
                         border = NA
                     )
                 })
-
-            }) %>% shiny::bindEvent(input$generate_palette)
-
-            shiny::observe({
-                shinyjs::disable("update_colours")
-                ngroups <- input$n_groups
-                colours_hexcode <- strsplit(input$colours_input, ",")[[1]]
-
-                if (ngroups != length(colours_hexcode)) {
-                    return()
-                }
-
-                shinyjs::enable("update_colours")
             })
 
             shiny::observe({
-                ngroups <- input$n_groups
-                colours_hexcode <- strsplit(input$colours_input, ",")[[1]]
+                current_palette <- selected_palette()
+                ngroups <- length(current_palette)
+                do_recursive <- input$recursive_update
                 discrete_colors <- pkg_env$discrete_colors
 
-                shiny::req(ngroups == length(colours_hexcode)) 
-
-                discrete_colors[[as.character(ngroups)]] <- colours_hexcode
+                discrete_colors[[as.character(ngroups)]] <- current_palette
+                if (do_recursive && ngroups > 1) {
+                    for (i in seq_len(ngroups - 1)) {
+                        discrete_colors[[as.character(i)]] <- current_palette[seq_len(i)]
+                    }
+                }
                 add_env_variable("discrete_colors", discrete_colors)
             }) %>% shiny::bindEvent(input$update_colours)
 
