@@ -10,6 +10,11 @@ ui_cell_annotation <- function(id) {
                 label = "Select the clusters for the annotation",
                 choices = NULL
             ),
+            shiny::textInput(
+                inputId = ns("annotation_name"),
+                label = "Annotation name",
+                placeholder = "Provide a name for the annotation"
+            ),
             shiny::sliderInput(
                 inputId = ns("number_classes"),
                 label = "Number of classes",
@@ -491,8 +496,8 @@ ui_comparison_enrichment <- function(id) {
                 )
             ),
             shiny::numericInput(
-                inputId = ns("top_n_makers"),
-                label = "Select the number of top markers",
+                inputId = ns("top_n_markers"),
+                label = "Select the number of top markers (-1 for all)",
                 min = 1, max = 200, value = 30, step = 1
             ),
             shinyWidgets::radioGroupButtons(
@@ -566,6 +571,52 @@ ui_comparisons <- function(id) {
 }
 
 ####### SERVER #######
+server_cell_annotation <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            k_choices <- names(pkg_env$metadata_unique)
+            selected_choice <- k_choices[1]
+            for (k in k_choices) {
+                if (stringr::str_detect(k, "stable_[0-9]+_clusters")) {
+                    selected_choice <- k
+                    break
+                }
+            }
+
+            shiny::updateSelectInput(
+                session = session,
+                inputId = "selected_clusters",
+                choices = k_choices,
+                selected = selected_choice
+            )
+
+            shiny::observe({
+                chosen_metadata <- input$selected_clusters
+                shiny::req(chosen_metadata, chosen_metadata %in% k_choices)
+
+                shiny::updateSliderInput(
+                    session = session,
+                    inputId = "number_classes",
+                    value = 1,
+                    max = length(pkg_env$metadata_unique[[chosen_metadata]])
+                )
+            }) %>% shiny::bindEvent(input$selected_clusters)
+
+            shiny::observe({
+                nclasses <- input$number_classess
+                shiny::req(nclasses, nclasses > 0)
+
+
+
+            }) %>% shiny::bindEvent(input$number_classess)
+
+            #TODO finish the rendering and the adding of the new annotation - you will need to make the metadata_unique reactive
+
+        }
+    )
+}
+
 server_comparison_markers <- function(id, k_choices) {
     shiny::moduleServer(
         id,
@@ -728,7 +779,6 @@ server_comparison_markers <- function(id, k_choices) {
                 return(markers_result)
             }) %>% shiny::bindEvent(input$markers_button)
 
-
             shiny::observe(
                 output$markers_dt <- DT::renderDataTable(
                     {
@@ -838,21 +888,21 @@ server_comparison_metadata_panel <- function(id) {
 
             shiny::observe({
                 shiny::req(input$metadata_subset)
-                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
 
-                if (is_cluster) {
-                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                    shinyWidgets::updatePickerInput(
-                        session,
-                        inputId = "metadata_groups_subset",
-                        choices = seq_len(k_value),
-                        selected = seq_len(k_value),
-                        clearOptions = TRUE
-                    )
-                    changed_metadata(TRUE)
+                # if (is_cluster) {
+                    # k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                    # shinyWidgets::updatePickerInput(
+                        # session,
+                        # inputId = "metadata_groups_subset",
+                        # choices = seq_len(k_value),
+                        # selected = seq_len(k_value),
+                        # clearOptions = TRUE
+                    # )
+                    # changed_metadata(TRUE)
 
-                    return()
-                }
+                    # return()
+                # }
 
                 mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
 
@@ -869,13 +919,13 @@ server_comparison_metadata_panel <- function(id) {
             metadata_mask <- shiny::reactive({
                 shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
                 shiny::isolate({
-                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
-                    if (is_cluster) {
-                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                        all_unique_values <- as.character(seq_len(k))
-                    } else {
+                    # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    # if (is_cluster) {
+                        # k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        # all_unique_values <- as.character(seq_len(k))
+                    # } else {
                         all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
-                    }
+                    # }
 
                     if (changed_metadata()) {
                         shiny::req(
@@ -886,9 +936,9 @@ server_comparison_metadata_panel <- function(id) {
                         changed_metadata(FALSE)
                     }
 
-                    if (is_cluster) {
-                        return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
-                    }
+                    # if (is_cluster) {
+                        # return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    # }
                     return(pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
                 })
             })
@@ -898,27 +948,28 @@ server_comparison_metadata_panel <- function(id) {
             plot_data <- shiny::reactive({
                 shiny::req(input$metadata)
 
-                is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
-                is_ecc <- stringr::str_detect(input$metadata, "ecc_[0-9]+")
+                # is_cluster <- stringr::str_detect(input$metadata, "^stable_[0-9]+_clusters")
+                # is_cluster <- FALSE
+                # is_ecc <- stringr::str_detect(input$metadata, "^ecc_[0-9]+")
 
-                if (is_cluster || is_ecc) {
-                    k <- strsplit(input$metadata, "_")[[1]][2]
-                    if (is_ecc) {
-                        cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
-                        unique_values <- NULL
-                        color_values <- NULL
-                        color_info <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
-                        color_info <- color_info[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
-                    } else {
-                        color_values <- pkg_env$discrete_colors[[k]]
-                        unique_values <- seq_len(as.integer(k))
-                        color_info <- factor(pkg_env$stab_obj$mbs[[k]])
-                    }
-                } else {
+                # if (is_cluster || is_ecc) {
+                #     k <- strsplit(input$metadata, "_")[[1]][2]
+                #     if (is_ecc) {
+                #         cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
+                #         unique_values <- NULL
+                #         color_values <- NULL
+                #         color_info <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+                #         color_info <- color_info[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]]
+                #     } else {
+                #         color_values <- pkg_env$discrete_colors[[k]]
+                #         unique_values <- seq_len(as.integer(k))
+                #         color_info <- factor(pkg_env$stab_obj$mbs[[k]])
+                #     }
+                # } else {
                     unique_values <- pkg_env$metadata_unique[[input$metadata]]
                     color_values <- pkg_env$discrete_colors[[as.character(length(unique_values))]]
                     color_info <- pkg_env$metadata[[input$metadata]]
-                }
+                # }
 
                 list(
                     unique_values = unique_values,
@@ -1133,21 +1184,21 @@ server_comparison_gene_panel <- function(id) {
 
             shiny::observe({
                 shiny::req(input$metadata_subset)
-                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
 
-                if (is_cluster) {
-                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                    shinyWidgets::updatePickerInput(
-                        session,
-                        inputId = "metadata_groups_subset",
-                        choices = seq_len(k_value),
-                        selected = seq_len(k_value),
-                        clearOptions = TRUE
-                    )
-                    changed_metadata(TRUE)
+                # if (is_cluster) {
+                    # k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                #     shinyWidgets::updatePickerInput(
+                #         session,
+                #         inputId = "metadata_groups_subset",
+                #         choices = seq_len(k_value),
+                #         selected = seq_len(k_value),
+                #         clearOptions = TRUE
+                #     )
+                #     changed_metadata(TRUE)
 
-                    return()
-                }
+                #     return()
+                # }
 
                 mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
 
@@ -1205,13 +1256,13 @@ server_comparison_gene_panel <- function(id) {
                     input$metadata_groups_subset
 
                     shiny::isolate({
-                        is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
-                        if (is_cluster) {
-                            k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                            all_unique_values <- as.character(seq_len(k))
-                        } else {
+                        # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                        # if (is_cluster) {
+                            # k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                            # all_unique_values <- as.character(seq_len(k))
+                        # } else {
                             all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
-                        }
+                        # }
 
                         if (changed_metadata()) {
                             shiny::req(
@@ -1222,11 +1273,11 @@ server_comparison_gene_panel <- function(id) {
                             changed_metadata(FALSE)
                         }
 
-                        if (is_cluster) {
-                            metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
-                        } else {
+                        # if (is_cluster) {
+                            # metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                        # } else {
                             metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
-                        }
+                        # }
 
 
                         if (is.na(expr_threshold) || is.null(expr_threshold)) {
@@ -1297,13 +1348,13 @@ server_comparison_gene_panel <- function(id) {
                         input$metadata_groups_subset
 
                         shiny::isolate({
-                            is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
-                            if (is_cluster) {
-                                k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                                all_unique_values <- as.character(seq_len(k))
-                            } else {
+                            # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                            # if (is_cluster) {
+                                # k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                                # all_unique_values <- as.character(seq_len(k))
+                            # } else {
                                 all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
-                            }
+                            # }
 
                             if (changed_metadata()) {
                                 shiny::req(
@@ -1312,11 +1363,11 @@ server_comparison_gene_panel <- function(id) {
                                 )
                             }
 
-                            if (is_cluster) {
-                                metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
-                            } else {
+                            # if (is_cluster) {
+                                # metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                            # } else {
                                 metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
-                            }
+                            # }
 
                             if (is.na(expr_threshold) || is.null(expr_threshold)) {
                                 expr_threshold <- 0
@@ -1360,13 +1411,13 @@ server_comparison_gene_panel <- function(id) {
                 },
                 content = function(file) {
                     shiny::req(input$expr_threshold, input$gene_expr, input$width_gene, input$height_gene, expr_matrix())
-                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
-                    if (is_cluster) {
-                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                        all_unique_values <- as.character(seq_len(k))
-                    } else {
+                    # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    # if (is_cluster) {
+                        # k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        # all_unique_values <- as.character(seq_len(k))
+                    # } else {
                         all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
-                    }
+                    # }
 
                     if (changed_metadata()) {
                         shiny::req(
@@ -1375,11 +1426,11 @@ server_comparison_gene_panel <- function(id) {
                         )
                     }
 
-                    if (is_cluster) {
-                        metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
-                    } else {
+                    # if (is_cluster) {
+                        # metadata_mask <- (pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    # } else {
                         metadata_mask <- (pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
-                    }
+                    # }
 
                     # filetypes[[input$filetype_gene]](file, width = input$width_gene, height = input$height_gene)
                     unique_values <- NULL
@@ -1442,25 +1493,32 @@ server_comparison_gene_panel <- function(id) {
     )
 }
 
-server_comparison_jsi <- function(id, k_choices) {
+server_comparison_jsi <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            k_choices <- names(pkg_env$metadata_unique)
+            selected_choice <- k_choices[1]
+            for (available_choices in k_choices) {
+                if (startsWith(available_choices, "stable_")) {
+                    selected_choice <- available_choices
+                    break
+                }
+            }
+
             shiny::updateSelectInput(
                 session = session,
                 inputId = "jsi_k_1",
                 choices = k_choices,
-                selected = k_choices[1]
+                selected = selected_choice
             )
 
             shiny::updateSelectInput(
                 session = session,
                 inputId = "jsi_k_2",
                 choices = k_choices,
-                selected = k_choices[1]
+                selected = selected_choice
             )
-
-
 
             plt_height <- shiny::reactive(
                 floor(pkg_env$height_ratio * pkg_env$dimension()[2])
@@ -1592,21 +1650,21 @@ server_comparison_violin_gene <- function(id) {
 
             shiny::observe({
                 shiny::req(input$metadata_subset)
-                is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
 
-                if (is_cluster) {
-                    k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                    shinyWidgets::updatePickerInput(
-                        session,
-                        inputId = "metadata_groups_subset",
-                        choices = seq_len(k_value),
-                        selected = seq_len(k_value),
-                        clearOptions = TRUE
-                    )
-                    changed_metadata(TRUE)
+                # if (is_cluster) {
+                    # k_value <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                    # shinyWidgets::updatePickerInput(
+                        # session,
+                        # inputId = "metadata_groups_subset",
+                        # choices = seq_len(k_value),
+                        # selected = seq_len(k_value),
+                        # clearOptions = TRUE
+                    # )
+                    # changed_metadata(TRUE)
 
-                    return()
-                }
+                    # return()
+                # }
 
                 mtd_names <- pkg_env$metadata_unique[[input$metadata_subset]]
 
@@ -1623,13 +1681,13 @@ server_comparison_violin_gene <- function(id) {
             metadata_mask <- shiny::reactive({
                 shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
                 shiny::isolate({
-                    is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
-                    if (is_cluster) {
-                        k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
-                        all_unique_values <- as.character(seq_len(k))
-                    } else {
+                    # is_cluster <- stringr::str_detect(input$metadata_subset, "stable_[0-9]+_clusters")
+                    # if (is_cluster) {
+                        # k <- as.numeric(strsplit(input$metadata_subset, "_")[[1]][2])
+                        # all_unique_values <- as.character(seq_len(k))
+                    # } else {
                         all_unique_values <- pkg_env$metadata_unique[[input$metadata_subset]]
-                    }
+                    # }
 
                     if (changed_metadata()) {
                         shiny::req(
@@ -1640,9 +1698,9 @@ server_comparison_violin_gene <- function(id) {
                         changed_metadata(FALSE)
                     }
 
-                    if (is_cluster) {
-                        return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
-                    }
+                    # if (is_cluster) {
+                        # return(pkg_env$stab_obj$mbs[[as.character(k)]] %in% as.integer(input$metadata_groups_subset))
+                    # }
                     return(pkg_env$metadata[[input$metadata_subset]] %in% input$metadata_groups_subset)
                 })
             })
@@ -1651,15 +1709,16 @@ server_comparison_violin_gene <- function(id) {
             distr_val <- shiny::reactive({
                 shiny::req(input$gene_expr, length(input$gene_expr) == 1, cancelOutput = TRUE)
 
-                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
-                is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                # is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                # is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                is_continuous <- (!(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
 
-                if (is_ecc) {
-                    k <- strsplit(input$gene_expr, "_")[[1]][2]
-                    cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
-                    temp_val <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
-                    return(temp_val[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]])
-                }
+                # if (is_ecc) {
+                    # k <- strsplit(input$gene_expr, "_")[[1]][2]
+                    # cl_method <- strsplit(names(pkg_env$stab_obj$ecc)[1], ";")[[1]][2]
+                    # temp_val <- pkg_env$stab_obj$ecc[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]
+                    # return(temp_val[pkg_env$stab_obj$ecc_order[[paste(sprintf("%06d", as.integer(k)), cl_method, sep = ";")]]])
+                # }
 
                 if (is_continuous) {
                     return(pkg_env$metadata[[input$gene_expr]])
@@ -1682,18 +1741,18 @@ server_comparison_violin_gene <- function(id) {
 
             metadata_split_info <- shiny::reactive({
                 metadata_split <- input$metadata_split
-                shiny::req(metadata_split, cancelOutput = TRUE)
-                is_cluster <- stringr::str_detect(metadata_split, "stable_[0-9]+_clusters")
+                shiny::req(metadata_split, metadata_split %in% names(pkg_env$metadata_unique), cancelOutput = TRUE)
+                # is_cluster <- stringr::str_detect(metadata_split, "stable_[0-9]+_clusters")
 
-                if (is_cluster) {
-                    k <- strsplit(metadata_split, "_")[[1]][2]
-                    return(list(
+                # if (is_cluster) {
+                    # k <- strsplit(metadata_split, "_")[[1]][2]
+                    # return(list(
                         # color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
-                        color_values = pkg_env$discrete_colors[[k]],
-                        color_info = factor(pkg_env$stab_obj$mbs[[k]]),
-                        unique_values = as.character(seq_len(as.integer(k)))
-                    ))
-                }
+                        # color_values = pkg_env$discrete_colors[[k]],
+                        # color_info = factor(pkg_env$stab_obj$mbs[[k]]),
+                        # unique_values = as.character(seq_len(as.integer(k)))
+                    # ))
+                # }
 
                 return(list(
                     # color_values = pkg_env$metadata_colors[[metadata_split]],
@@ -1705,18 +1764,18 @@ server_comparison_violin_gene <- function(id) {
 
             metadata_group_info <- shiny::reactive({
                 metadata_group <- input$metadata_group
-                shiny::req(metadata_group, cancelOutput = TRUE)
-                is_cluster <- stringr::str_detect(metadata_group, "stable_[0-9]+_clusters")
+                shiny::req(metadata_group, metadata_group %in% names(pkg_env$metadata_unique), cancelOutput = TRUE)
+                # is_cluster <- stringr::str_detect(metadata_group, "stable_[0-9]+_clusters")
 
-                if (is_cluster) {
-                    k <- strsplit(metadata_group, "_")[[1]][2]
-                    return(list(
+                # if (is_cluster) {
+                    # k <- strsplit(metadata_group, "_")[[1]][2]
+                    # return(list(
                         # color_values = rhdf5::h5read("stability.h5", paste0("colors/", k)),
-                        color_values = pkg_env$discrete_colors[[k]],
-                        color_info = factor(pkg_env$stab_obj$mbs[[k]]),
-                        unique_values = as.character(seq_len(as.integer(k)))
-                    ))
-                }
+                        # color_values = pkg_env$discrete_colors[[k]],
+                        # color_info = factor(pkg_env$stab_obj$mbs[[k]]),
+                        # unique_values = as.character(seq_len(as.integer(k)))
+                    # ))
+                # }
 
                 return(list(
                     # color_values = pkg_env$metadata_colors[[metadata_group]],
@@ -1748,7 +1807,7 @@ server_comparison_violin_gene <- function(id) {
                 }
                 boxplot_dodge <- input$boxplot_dodge
 
-                is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                is_ecc <- stringr::str_detect(input$gene_expr, "^ecc_[0-9]+_clusters")
                 is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
                 # is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
 
@@ -1865,8 +1924,9 @@ server_comparison_violin_gene <- function(id) {
                         cancelOutput = TRUE
                     )
 
-                    is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
-                    is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                    # is_ecc <- stringr::str_detect(input$gene_expr, "ecc_[0-9]+")
+                    # is_continuous <- (!is_ecc && !(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
+                    is_continuous <- (!(input$gene_expr %in% names(pkg_env$metadata_unique)) && (input$gene_expr %in% colnames(pkg_env$metadata)))
 
                     if (length(mtd_group_info$unique_values) > 1) {
                         mask <- mtd_group_info$color_info == selected_group
@@ -1944,16 +2004,21 @@ server_comparison_gene_heatmap <- function(id) {
                 shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, input$tile_position, input$tile_height, input$legend_spacing, input$lower_margin, cancelOutput = TRUE)
 
                 shiny::isolate({
-                    is_cluster <- stringr::str_detect(input$metadata, "stable_[0-9]+_clusters")
+                    if (!(input$metadata %in% colnames(pkg_env$metadata))) {
+                        return(NULL)
+                    }
+                    # is_cluster <- input$metadata
+                    # shiny::req(is_cluster)
+                    # is_cluster <- stringr::str_detect(is_cluster, "stable_[0-9]+_clusters")
 
-                    if (is_cluster) {
-                        k <- strsplit(input$metadata, "_")[[1]][2]
-                        mtd_val <- pkg_env$stab_obj$mbs[[k]]
-                        unique_vals <- as.character(seq_len(as.numeric(k)))
-                    } else {
+                    # if (is_cluster) {
+                        # k <- strsplit(input$metadata, "_")[[1]][2]
+                        # mtd_val <- pkg_env$stab_obj$mbs[[k]]
+                        # unique_vals <- as.character(seq_len(as.numeric(k)))
+                    # } else {
                         mtd_val <- pkg_env$metadata[[input$metadata]]
                         unique_vals <- levels(mtd_val)
-                    }
+                    # }
 
                     htmp_matrix <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
                     perc_expressed <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
@@ -2030,6 +2095,8 @@ server_comparison_gene_heatmap <- function(id) {
                                     grid::grid.text(sprintf("%.2f", original_htmp_matrix[i, j]), x, y, just = "center", gp = grid::gpar(fontsize = input$text_size))
                                 }
                             },
+                            row_names_gp = grid::gpar(fontsize = input$text_size),
+                            column_names_gp = grid::gpar(fontsize = input$text_size),
                             column_title = paste0("Gene expression heatmap split by ", input$metadata)
                         ))
                     }
@@ -2070,14 +2137,15 @@ server_comparison_gene_heatmap <- function(id) {
             })
 
             shiny::observe({
-                shiny::req(input$gene_expr, heatmap_plot())
-                shiny::req(pkg_env$dimension())
+                shiny::req(input$gene_expr, heatmap_plot(), cancelOutput = TRUE)
+                shiny::req(pkg_env$dimension(), cancelOutput = TRUE)
                 
                 shiny::isolate({
                     output$gene_heatmap <- shiny::renderPlot(
                         width = pkg_env$dimension()[1],
                         height = 220 + length(input$gene_expr) * 70,
                         {
+                            shiny::req(input$gene_expr, heatmap_plot(), cancelOutput = TRUE)
                             if (input$plot_type == "Bubbleplot") {
                                 heatmap_plot()
                             } else {
@@ -2128,15 +2196,17 @@ server_comparison_enrichment <- function(id, marker_genes) {
 
             gprof_result <- shiny::reactive({
                 chosen_markers <- marker_genes()
-                n_top_markers <- input$n_top_markers
-                shiny::req(chosen_markers, n_top_markers > 1)
+                n_top_markers <- input$top_n_markers
+                shiny::req(chosen_markers, n_top_markers > 1 || n_top_markers == -1)
                 shinyjs::disable("enrichment_button")
                 selected_group <- stringr::str_replace(input$group, " ", "_")
 
                 chosen_markers <- chosen_markers[[selected_group]]
                 n_top_markers <- min(n_top_markers, length(chosen_markers))
+                if (n_top_markers == -1) {
+                    n_top_markers <- length(chosen_markers)
+                }
                 chosen_markers <- chosen_markers[seq_len(n_top_markers)]
-
 
                 # TODO use as background only the genes with avg expression over a specific
                 if ("genes" %in% names(pkg_env)) {
@@ -2225,9 +2295,9 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
 
             add_env_variable("stab_obj", list(
-                mbs = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "mbs", cl_method, sep = "/"))[k_values],
-                ecc = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
-                ecc_order = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc_order", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
+                # mbs = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "mbs", cl_method, sep = "/"))[k_values],
+                # ecc = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
+                # ecc_order = rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "ecc_order", sep = "/"))[paste(sprintf("%06d", as.integer(k_values)), cl_method, sep = ";")],
                 umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
             ))
 
@@ -2239,7 +2309,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     session,
                     inputId = glue::glue("metadata_panel_{panels}-metadata"),
                     server = FALSE,
-                    choices = c(colnames(pkg_env$metadata), paste0("stable_", k_values, "_clusters"), paste0("ecc_", k_values)),
+                    # choices = c(colnames(pkg_env$metadata), paste0("stable_", k_values, "_clusters"), paste0("ecc_", k_values)),
+                    choices = colnames(pkg_env$metadata),
                     selected = paste0("stable_", k_values[1], "_clusters")
                 )
 
@@ -2247,7 +2318,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     session,
                     inputId = glue::glue("gene_panel_{panels}-metadata_subset"),
                     server = FALSE,
-                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    # choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    choices = names(pkg_env$metadata_unique),
                     selected = paste0("stable_", k_values[1], "_clusters")
                 )
 
@@ -2255,7 +2327,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     session,
                     inputId = glue::glue("metadata_panel_{panels}-metadata_subset"),
                     server = FALSE,
-                    choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    # choices = c(names(pkg_env$metadata_unique), paste0("stable_", k_values, "_clusters")),
+                    choices = names(pkg_env$metadata_unique),
                     selected = paste0("stable_", k_values[1], "_clusters")
                 )
 
@@ -2310,10 +2383,10 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                 selected = paste0("stable_", k_values[1], "_clusters")
             )
 
-            continuous_metadata <- c(
-                setdiff(colnames(pkg_env$metadata), names(pkg_env$metadata_unique)),
-                paste0("ecc_", k_values)
-            )
+            continuous_metadata <- 
+                setdiff(colnames(pkg_env$metadata), names(pkg_env$metadata_unique))
+                # paste0("ecc_", k_values)
+            
 
             shiny::updateSelectizeInput(
                 session,
@@ -2339,11 +2412,12 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                 )
             )
 
+            server_cell_annotation("cell_annotation")
             server_comparison_metadata_panel("metadata_panel_left")
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
             server_comparison_gene_panel("gene_panel_right")
-            server_comparison_jsi("jsi_plot", append(k_values, discrete))
+            server_comparison_jsi("jsi_plot")
             server_comparison_violin_gene("violin_gene")
             server_comparison_gene_heatmap("gene_heatmap")
             marker_genes <- server_comparison_markers("markers", k_values)
