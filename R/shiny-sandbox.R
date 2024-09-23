@@ -367,23 +367,30 @@ server_colour_picker <- function(id) {
             }) %>% shiny::bindEvent(input$generate_palette)
 
             selected_palette <- shiny::reactive({
-                strsplit(input$colours_input, ",")[[1]]
+                input_hexcodes <- input$colours_input
+                shiny::req(input_hexcodes, length(input_hexcodes) > 0)
+                return(strsplit(input_hexcodes, ",")[[1]])
             })
 
             shiny::observe({
-                current_palette <- selected_palette()
-                shiny::req(length(current_palette) > 0)
-                output$palette_plot <- shiny::renderPlot(height = "400px", {
-                    graphics::par(mar = c(0, 0, 0, 0))
-                    graphics::barplot(
-                        rep(1, length(current_palette)),
-                        col = current_palette,
-                        axes = FALSE,
-                        space = 0,
-                        border = NA
-                    )
-                })
-            })
+                plt_width <- pkg_env$dimension()[1]
+                output$palette_plot <- shiny::renderPlot(
+                    height = 400, 
+                    width = plt_width,
+                    expr = {
+                        current_palette <- selected_palette()
+                        shiny::req(current_palette, length(current_palette) > 0, cancelOutput = TRUE)
+                        graphics::par(mar = c(0, 0, 0, 0))
+                        graphics::barplot(
+                            height = rep(1, length(current_palette)),
+                            col = current_palette,
+                            axes = FALSE,
+                            space = 0,
+                            border = NA
+                        )
+                    }
+                )
+            }) %>% shiny::bindEvent(selected_palette())
 
             shiny::observe({
                 current_palette <- selected_palette()
