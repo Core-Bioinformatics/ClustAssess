@@ -954,6 +954,13 @@ server_dimensionality_choice <- function(id, parent_session) {
             )) %>% shiny::bindEvent(input$fix_feature_button)
 
             shiny::observe({
+                current_user_choice <- user_choice()
+                shiny::req(current_user_choice, length(current_user_choice) == 2)
+                add_env_variable("feature_type", current_user_choice[[1]])
+                add_env_variable("feature_size", current_user_choice[[2]])
+            })
+
+            shiny::observe({
                 shiny::showTab("tabset_id", "Graph Construction", select = FALSE, session = parent_session)
                 shiny::showTab("tabset_id", "Graph Clustering", select = TRUE, session = parent_session)
             }) %>% shiny::bindEvent(input$fix_feature_button, ignoreInit = TRUE)

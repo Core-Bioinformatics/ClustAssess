@@ -342,6 +342,76 @@ server_graph_clustering_choice <- function(id, parent_session) {
 
             shiny::observe({
                 shiny::req(input$select_n_clusters)
+                chosen_method <- input$radio_cluster_method
+                n_clusters <- as.character(input$select_n_clusters)
+
+                current_mtd_df <- pkg_env$metadata
+                current_mtd_unique <- pkg_env$metadata_unique
+
+                for (mtd_col in names(current_mtd_unique)) {
+                    is_cluster <- stringr::str_detect(mtd_col, "^stable_[0-9]+_clusters")
+
+                    if (!is_cluster) {
+                        next
+                    }
+
+                    k_val <- strsplit(mtd_col, "_")[[1]][2]
+
+                    current_mtd_unique[[paste0("stable_", k_val, "_clusters")]] <- NULL
+                    current_mtd_df[, paste0("stable_", k_val, "_clusters")] <- NULL
+                    current_mtd_df[, paste0("ecc_", k_val, "_clusters")] <- NULL
+                }
+
+                mb_path <- paste(
+                    pkg_env$feature_type,
+                    pkg_env$feature_size,
+                    "clustering_stability",
+                    "split_by_k",
+                    "mbs",
+                    chosen_method,
+                    sep = "/"
+                )
+                mbs <- rhdf5::h5read("stability.h5", mb_path)
+
+                ecc_path <- paste(
+                    pkg_env$feature_type,
+                    pkg_env$feature_size,
+                    "clustering_stability",
+                    "split_by_k",
+                    "ecc",
+                    sep = "/"
+                )
+                eccs <- rhdf5::h5read("stability.h5", ecc_path)
+
+                ecc_path <- paste(
+                    pkg_env$feature_type,
+                    pkg_env$feature_size,
+                    "clustering_stability",
+                    "split_by_k",
+                    "ecc_order",
+                    sep = "/"
+                )
+                eccs_order <- rhdf5::h5read("stability.h5", ecc_path)
+
+                for (k_val in n_clusters) {
+                    new_mtd_name_stable <- paste0("stable_", k_val, "_clusters")
+                    new_mtd_name_ecc <- paste0("ecc_", k_val, "_clusters")
+
+                    current_mtd_df[[new_mtd_name_stable]] <- factor(mbs[[k_val]])
+
+                    k_val <- as.integer(k_val)
+                    df_prefix <- sprintf("%06d;%s", k_val, chosen_method)
+
+                    ecc_val <- as.numeric(eccs[[df_prefix]])
+                    ecc_order <- as.integer(eccs_order[[df_prefix]])
+                    ecc_val <- ecc_val[ecc_order]
+                    current_mtd_df[[new_mtd_name_ecc]] <- ecc_val
+
+                    current_mtd_unique[[new_mtd_name_stable]] <- as.character(seq_len(k_val))
+                }
+
+                add_env_variable("metadata", current_mtd_df)
+                add_env_variable("metadata_unique", current_mtd_unique)
                 shiny::showTab("tabset_id", "Comparison", select = TRUE, session = parent_session)
             }) %>% shiny::bindEvent(input$fix_cluster_button, ignoreInit = TRUE)
 
@@ -924,9 +994,6 @@ server_graph_clustering_k_stab <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-            # render_plot_by_height("k_resolution", session)
-            # render_plot_by_height("k_stability", session)
-
             shiny::updateSliderInput(
                 session = session,
                 inputId = "k_occ_thresh",
@@ -968,7 +1035,6 @@ server_graph_clustering_k_stab <- function(id) {
 
             output$k_resolution <- shiny::renderPlot(
                 {
-                    # shiny::req(pkg_env$lock_k())
                     shiny_plot_k_res(
                         summary_df = pkg_env$stab_obj$summary_res,
                         distance_factor = input$res_distance_factor,
