@@ -17,23 +17,19 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
     long long value, n_unique;
     double mu = (n1 * n2) / 2, sigma2 = (n1 * n2 * (n+1)) / 12;
     double U = n1 * n2 + n1 * (n1 + 1) / 2 - mu, factor_n = n * (n+1) * (n-1);
-    // int duration_actual_rankings = 0, duration_initial_rankings = 0, duration_sum = 0, duration_adjustment = 0;
     double freq_val, sum_r1, adjustment;
     double calculated_rank, start, less_val, temp;
 
     NumericVector zuppertail(m), zlowertail(m); // result(m);
 
-    // int unique_rankings[(int) n+1] = {0};
     int* unique_rankings = new int[(int) n+1];
     for (int i = 0; i < n+1; i++) {
         unique_rankings[i] = 0;
     }
-    // double new_ranks[(int) n+1] = {0};
     double* new_ranks = new double[(int) n+1];
     for (int i = 0; i < n+1; i++) {
         new_ranks[i] = 0;
     }
-    // int mappings[max_rank+1] = {0};
     int* mappings = new int[max_rank+1];
     for (int i = 0; i < max_rank+1; i++) {
         mappings[i] = 0;
@@ -43,13 +39,9 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
 
 
     for (int j = 0; j < m; j++) {
-        // auto start_time = high_resolution_clock::now();
-        // int freq[max_rank+1] = {0};
-        // std::cout << initial_rankings.size() << '\n';
         int max = 0;
 
         n_unique = 0;
-        // int freq[max_rank+1] = {0};
         for (int i = 0; i < max_rank+1; i++) {
             freq[i] = 0;
         }
@@ -58,7 +50,6 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
             freq[value]++;
             
             if (freq[value] == 1) {
-                // unique_rankings.push_back(value);
                 unique_rankings[n_unique] = value;
                 n_unique++;
             }
@@ -66,16 +57,10 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
 
         std::sort(unique_rankings, unique_rankings+n_unique);
 
-        // auto stop_time = high_resolution_clock::now();
-        // auto duration_time = duration_cast<microseconds>(stop_time - start_time);
-        
-        // duration_initial_rankings += duration_time.count();
-        // start_time = high_resolution_clock::now();
         start = 1;
         for (int i = 0; i < n_unique; i++) {
             freq_val = freq[unique_rankings[i]];
             if (freq_val == 1) {
-                // new_ranks[i] = 1;
                 new_ranks[i] = start;
                 start++;
             } else {
@@ -88,41 +73,16 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
             mappings[unique_rankings[i]] = i;
         }
 
-        // stop_time = high_resolution_clock::now();
-        // duration_time = duration_cast<microseconds>(stop_time - start_time);
-        // duration_actual_rankings += duration_time.count();
-
         sum_r1 = 0;
-        // start_time = high_resolution_clock::now();
         for (int i = 0; i < n1; i++) {
             sum_r1 += new_ranks[mappings[rank_values(j, i)]];
-
-            // if (j == 3497) {
-            //     std::cout << rank_values(j, i) << ' ' << mappings[rank_values(j,i)] << ' ' << new_ranks[mappings[rank_values(j, i)]] << '\n';
-            // }
         }
 
-
-        // if (j == 0) {
-        //     for(int i = 0; i < n_unique; i++) {
-        //         std::cout << unique_rankings[i] << ' ' << new_ranks[i] << ' ' << mappings[unique_rankings[i]] << '\n';
-        //     }
-        // }
-
-        // stop_time = high_resolution_clock::now();
-        // duration_time = duration_cast<microseconds>(stop_time - start_time);
-        // duration_sum += duration_time.count();
-
-
-        // start_time = high_resolution_clock::now();
         if (n_unique != n) {
             adjustment = 0; 
 
             for (int i = 0; i < n_unique; i++) {
                 freq_val = freq[unique_rankings[i]];
-                // if (j == 3497) {
-                //     std::cout << i << ' ' << freq_val << ' ' << factor_n << '\n';
-                // }
                 adjustment += freq_val * (freq_val - 1) * (freq_val + 1);
             }
 
@@ -130,14 +90,9 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
 
             sigma2 = sigma2 * (1 - adjustment);
         }
-        // stop_time = high_resolution_clock::now();
-        // duration_time = duration_cast<microseconds>(stop_time - start_time);
-        // duration_adjustment += duration_time.count();
-
 
         zlowertail(j) = (U - sum_r1 + 0.5) / sqrt(sigma2); 
         zuppertail(j) = (U - sum_r1 - 0.5) / sqrt(sigma2); 
-
 
         if (n_unique != n) {
             sigma2 = (double) (n1 * n2 * (n+1)) / 12;
@@ -162,7 +117,6 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
         }
 
         pvalue_less[i] = less_val;
-        // pvalue_less[i] = zlowertail(i);
     }
 
 

@@ -320,7 +320,6 @@ color_ggplot <- function(embedding,
     } else {
         unique_values <- levels(droplevels(color_info))
     }
-    print(unique_values)
 
     medians_values <- t(sapply(
         seq_along(unique_values),
