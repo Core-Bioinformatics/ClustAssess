@@ -343,13 +343,20 @@ ui_comparison_gene_heatmap <- function(id) {
                                 label = "Show values",
                                 status = "success",
                                 fill = TRUE,
-                                value = FALSE 
+                                value = FALSE
                             )
                         ),
                         shiny::sliderInput(
                             inputId = ns("clipping_value"),
                             label = "Clipping value",
                             min = 0.01, max = 20, value = 6, step = 0.1
+                        ),
+                        shinyWidgets::prettySwitch(
+                            inputId = ns("adjust_height"),
+                            label = "Adjust the height to the window's",
+                            status = "success",
+                            fill = TRUE,
+                            value = TRUE
                         )
                     ),
                     shiny::tagList(
@@ -860,14 +867,21 @@ server_comparison_markers <- function(id, k_choices) {
 }
 
 server_comparison_markers_panels <- function(session, k_choices) {
-    available_choices <- c(names(pkg_env$metadata_unique), k_choices)
+    available_choices <- names(pkg_env$metadata_unique)
+    selected_choice <- available_choices[1]
+    for (k in available_choices) {
+        if (stringr::str_detect(k, "stable_[0-9]+_clusters")) {
+            selected_choice <- k
+            break
+        }
+    }
     input <- session$input
 
     shiny::updateSelectInput(
         session = session,
         inputId = "group_left-select_k_markers",
         choices = available_choices,
-        selected = available_choices[1]
+        selected = selected_choice
     )
 
     shiny::observe({
@@ -2138,7 +2152,13 @@ server_comparison_gene_heatmap <- function(id) {
                             row_order = seq_len(nrow(htmp_matrix)),
                             column_order = seq_len(ncol(htmp_matrix)),
                             row_names_side = "left",
-                            heatmap_legend_param = list(direction = "horizontal", legend_width = grid::unit(5,  "cm")),
+                            heatmap_legend_param = list(
+                                direction = "horizontal",
+                                legend_width = grid::unit(5,  "cm"),
+                                title_gp = grid::gpar(fontsize = input$text_size),
+                                labels_gp = grid::gpar(fontsize = input$text_size)
+
+                            ),
                             name = paste0(ifelse(input$scale, "scaled ", ""), "expression level"),
                             col = colour_scheme,
                             cell_fun = function(j, i, x, y, width, height, fill) {
@@ -2147,7 +2167,9 @@ server_comparison_gene_heatmap <- function(id) {
                                 }
                             },
                             row_names_gp = grid::gpar(fontsize = input$text_size),
+                            row_title_gp = grid::gpar(fontsize = input$text_size),
                             column_names_gp = grid::gpar(fontsize = input$text_size),
+                            column_title_gp = grid::gpar(fontsize = input$text_size),
                             column_title = paste0("Gene expression heatmap split by ", input$metadata)
                         ))
                     }
@@ -2190,11 +2212,16 @@ server_comparison_gene_heatmap <- function(id) {
             shiny::observe({
                 shiny::req(input$gene_expr, heatmap_plot(), cancelOutput = TRUE)
                 shiny::req(pkg_env$dimension(), cancelOutput = TRUE)
+                adjust_height <- input$adjust_height
                 
                 shiny::isolate({
+                    used_height <- 220 + length(input$gene_expr) * 70
+                    if (adjust_height) {
+                        used_height <- min(used_height, pkg_env$dimension()[2] * 0.75)
+                    }
                     output$gene_heatmap <- shiny::renderPlot(
                         width = pkg_env$dimension()[1],
-                        height = 220 + length(input$gene_expr) * 70,
+                        height = used_height,
                         {
                             shiny::req(input$gene_expr, heatmap_plot(), cancelOutput = TRUE)
                             if (input$plot_type == "Bubbleplot") {
