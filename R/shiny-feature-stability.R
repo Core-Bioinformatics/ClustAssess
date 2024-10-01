@@ -145,7 +145,32 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
             width = "95%",
             multiple = TRUE,
             options = list(
-                plugins = list("remove_button", "drag_drop")
+                plugins = list("remove_button", "drag_drop"),
+                delimiter = ",",
+                create = I("
+                    function(input, callback) {
+                        var transformedInput = input.toUpperCase();
+                        var transformedInput = transformedInput.replace('-', '');
+                        var transformedInput = transformedInput.replace('_', '');
+                        var transformedInput = transformedInput.replace(' ', '');
+                        var transformedInput = transformedInput.replace('\\.', '');
+
+                        if (!(transformedInput in globalGenes)) {
+                            var selectizeInstance = this;
+                            setTimeout(function() {
+                                selectizeInstance.setTextboxValue('');
+                            }, 0);
+                            return false;
+                        }
+
+                        transformedInput = globalGenes[transformedInput];
+                        return {
+                            value: transformedInput,
+                            label: transformedInput,
+                            text: transformedInput
+                        };
+                    }
+                ")
             )
         ),
         shiny::splitLayout(
@@ -1041,9 +1066,7 @@ update_sliders <- function(session) {
             selected = gene_choices[1],
             server = TRUE,
             options = list(
-                maxOptions = 7,
-                create = TRUE,
-                persist = TRUE
+                persist = FALSE
             )
         )
 

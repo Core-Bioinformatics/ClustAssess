@@ -29,6 +29,14 @@ ui_landing_page <- function(id) {
                                         bottom: 8px;
                                         left: 126px;
                                       }")),
+                shiny::tags$script(
+                    shiny::HTML("
+                        var globalGenes = null;
+                        Shiny.addCustomMessageHandler('genes', function(message) {
+                            globalGenes = message;
+                        });
+                    ")
+                ),
                 shiny::HTML('<div class="container" style="width:100%; margin-top: 120px;">
                           <img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-0.4.0/docs/articles/ClustAssess_files/figure-html/ClustAssess_starry_night.png" alt="starry" style="width:100%"/>
                           <!--<div class="bottom-left">Automated pipeline for assessing the robustness of single-cell clustering</div>-->
@@ -155,6 +163,12 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
                 names(index) <- genes
                 add_env_variable("genes_others", index)
             }
+
+            shiny::observe({
+                gene_dict <- as.list(names(genes))
+                names(gene_dict) <- sapply(gene_dict, function(x) gene_name_transformation(x))
+                session$sendCustomMessage("genes", gene_dict)
+            })            
 
             rm(genes)
             rm(index)

@@ -1462,6 +1462,16 @@ update_gears_width <- function() {
     })
 }
 
+gene_name_transformation <- function(gene_name) {
+    gene_name <- toupper(gene_name)
+    gene_name <- gsub(" ", "", gene_name)
+    gene_name <- gsub("-", "", gene_name)
+    gene_name <- gsub("_", "", gene_name)
+    gene_name <- gsub("\\.", "", gene_name)
+
+    return(gene_name)
+}
+
 # split_vector_by_metadata <- function(vec, metadata) {
 #     if (is.factor(metadata)) {
 #         unique_values <- levels(metadata)

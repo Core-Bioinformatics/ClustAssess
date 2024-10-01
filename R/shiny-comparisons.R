@@ -180,7 +180,32 @@ ui_comparison_gene_panel <- function(id, draw_line) {
             width = "95%",
             multiple = TRUE,
             options = list(
-                plugins = list("drag_drop", "remove_button")
+                plugins = list("drag_drop", "remove_button"),
+                delimiter = ",",
+                create = I("
+                    function(input, callback) {
+                        var transformedInput = input.toUpperCase();
+                        var transformedInput = transformedInput.replace('-', '');
+                        var transformedInput = transformedInput.replace('_', '');
+                        var transformedInput = transformedInput.replace(' ', '');
+                        var transformedInput = transformedInput.replace('\\.', '');
+
+                        if (!(transformedInput in globalGenes)) {
+                            var selectizeInstance = this;
+                            setTimeout(function() {
+                                selectizeInstance.setTextboxValue('');
+                            }, 0);
+                            return false;
+                        }
+
+                        transformedInput = globalGenes[transformedInput];
+                        return {
+                            value: transformedInput,
+                            label: transformedInput,
+                            text: transformedInput
+                        };
+                    }
+                ")
             )
         ),
         shiny::verticalLayout(
@@ -361,11 +386,37 @@ ui_comparison_gene_heatmap <- function(id) {
             shiny::selectizeInput(
                 inputId = ns("gene_expr"),
                 choices = NULL,
-                label = "Select a metadata or a gene",
+                label = "Select gene(s)",
                 width = "95%",
                 multiple = TRUE,
                 options = list(
-                    plugins = list("drag_drop", "remove_button")
+                    plugins = list("drag_drop", "remove_button"),
+                    delimiter = ",",
+                    create = I("
+                        function(input, callback) {
+                            var transformedInput = input.toUpperCase();
+                            var transformedInput = transformedInput.replace('-', '');
+                            var transformedInput = transformedInput.replace('_', '');
+                            var transformedInput = transformedInput.replace(' ', '');
+                            var transformedInput = transformedInput.replace('\\.', '');
+                            console.log('working on ' + transformedInput);
+
+                            if (!(transformedInput in globalGenes)) {
+                                var selectizeInstance = this;
+                                setTimeout(function() {
+                                    selectizeInstance.setTextboxValue('');
+                                }, 0);
+                                return false;
+                            }
+
+                            transformedInput = globalGenes[transformedInput];
+                            return {
+                                value: transformedInput,
+                                label: transformedInput,
+                                text: transformedInput
+                            };
+                        }
+                    ")
                 )
             ),
             shiny::selectInput(
@@ -2134,7 +2185,7 @@ server_comparison_gene_heatmap <- function(id) {
                             legend.box.spacing = grid::unit(input$legend_spacing, "in")
                         )
                 })
-            })
+            }) 
 
             shiny::observe({
                 shiny::req(input$gene_expr, heatmap_plot(), cancelOutput = TRUE)
@@ -2343,11 +2394,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     inputId = glue::glue("gene_panel_{panels}-gene_expr"),
                     choices = gene_choices,
                     selected = gene_choices[1],
-                    server = TRUE,
-                    options = list(
-                        maxOptions = 7,
-                        create = TRUE
-                    )
+                    server = TRUE
                 )
             }
 
@@ -2405,11 +2452,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                 inputId = glue::glue("gene_heatmap-gene_expr"),
                 choices = gene_choices,
                 selected = gene_choices[1],
-                server = TRUE,
-                options = list(
-                    maxOptions = 7,
-                    create = TRUE
-                )
+                server = TRUE
             )
 
             server_cell_annotation("cell_annotation")
