@@ -345,8 +345,8 @@ server_graph_clustering_choice <- function(id, parent_session) {
                 chosen_method <- input$radio_cluster_method
                 n_clusters <- as.character(input$select_n_clusters)
 
-                current_mtd_df <- pkg_env$metadata
-                current_mtd_unique <- pkg_env$metadata_unique
+                current_mtd_df <- pkg_env$metadata_temp()
+                current_mtd_unique <- pkg_env$metadata_unique_temp()
 
                 for (mtd_col in names(current_mtd_unique)) {
                     is_cluster <- stringr::str_detect(mtd_col, "^stable_[0-9]+_clusters")
@@ -410,8 +410,10 @@ server_graph_clustering_choice <- function(id, parent_session) {
                     current_mtd_unique[[new_mtd_name_stable]] <- as.character(seq_len(k_val))
                 }
 
-                add_env_variable("metadata", current_mtd_df)
-                add_env_variable("metadata_unique", current_mtd_unique)
+                # add_env_variable("metadata_temp", current_mtd_df)
+                pkg_env$metadata_temp(current_mtd_df)
+                pkg_env$metadata_unique_temp(current_mtd_unique)
+                # add_env_variable("metadata_unique", current_mtd_unique)
                 shiny::showTab("tabset_id", "Comparison", select = TRUE, session = parent_session)
             }) %>% shiny::bindEvent(input$fix_cluster_button, ignoreInit = TRUE)
 

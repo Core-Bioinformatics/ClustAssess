@@ -185,8 +185,10 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             mdt <- readRDS("metadata.rds")
 
             add_env_variable("metadata", mdt$metadata)
+            add_env_variable("metadata_temp", shiny::reactiveVal(mdt$metadata))
             add_env_variable("metadata_colors", mdt$metadata_colors)
             add_env_variable("metadata_unique", mdt$metadata_unique)
+            add_env_variable("metadata_unique_temp", shiny::reactiveVal(mdt$metadata_unique))
             discrete_colors <- rhdf5::h5read("stability.h5", "colors")
             bxplt_color <- rhdf5::h5read("stability.h5", "feature_stability/colours")
             discrete_colors[[as.character(length(bxplt_color))]] <- bxplt_color
