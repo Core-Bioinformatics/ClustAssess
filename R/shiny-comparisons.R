@@ -1,9 +1,36 @@
 ####### UI #######
 
+ui_cell_annotation_element <- function(id, cluster_options) {
+    ns <- shiny::NS(id)
+    
+    shiny::tagList(
+        shiny::splitLayout(
+            shiny::textInput(
+                inputId = ns("group_name"),
+                label = "Group name",
+                placeholder = "Provide a name for the group"
+            ),
+            shiny::selectizeInput(
+                inputId = ns("associated_clusters"),
+                label = "Associated clusters",
+                choices = cluster_options,
+                # selected = cluster_options[1],
+                multiple = TRUE,
+                options = list(
+                    plugins = list("remove_button"),
+                    placeholder = "Select the clusters",
+                    create = FALSE
+                )
+            )
+        )
+    )
+}
+
 ui_cell_annotation <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
+        shiny::p("Warning: The 'Annotation name' and 'Group name' fields should not be empty in order to create the annotation. Also, all clusters of the selected clusters must be used."),
         shiny::splitLayout(
             shiny::selectInput(
                 inputId = ns("selected_clusters"),
@@ -633,44 +660,142 @@ server_cell_annotation <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
-            k_choices <- names(pkg_env$metadata_unique)
-            selected_choice <- k_choices[1]
-            for (k in k_choices) {
-                if (stringr::str_detect(k, "stable_[0-9]+_clusters")) {
-                    selected_choice <- k
-                    break
+            k_choices <- shiny::reactive(names(pkg_env$metadata_unique_temp()))
+            shiny::observe({
+                available_choices <- k_choices()
+                selected_choice <- available_choices[1]
+                for (k in available_choices) {
+                    if (stringr::str_detect(k, "stable_[0-9]+_clusters")) {
+                        selected_choice <- k
+                        break
+                    }
                 }
-            }
 
-            shiny::updateSelectInput(
-                session = session,
-                inputId = "selected_clusters",
-                choices = k_choices,
-                selected = selected_choice
-            )
+                shiny::updateSelectInput(
+                    session = session,
+                    inputId = "selected_clusters",
+                    choices = available_choices,
+                    selected = selected_choice
+                )
+            })
 
             shiny::observe({
                 chosen_metadata <- input$selected_clusters
-                shiny::req(chosen_metadata, chosen_metadata %in% k_choices)
+                available_choices <- k_choices()
+                shiny::req(chosen_metadata, chosen_metadata %in% available_choices)
 
                 shiny::updateSliderInput(
                     session = session,
                     inputId = "number_classes",
                     value = 1,
-                    max = length(pkg_env$metadata_unique[[chosen_metadata]])
+                    max = length(pkg_env$metadata_unique_temp()[[chosen_metadata]])
                 )
             }) %>% shiny::bindEvent(input$selected_clusters)
 
             shiny::observe({
-                nclasses <- input$number_classess
+                nclasses <- input$number_classes
+                shiny::req(nclasses, nclasses > 0)
+                unique_list <- pkg_env$metadata_unique_temp()
+                current_clusters <- input$selected_clusters
+                shiny::req(current_clusters, current_clusters %in% names(unique_list))
+                ns <- session$ns
+
+                output$annotation_ui <- shiny::renderUI({
+                    do.call(
+                        shiny::tagList,
+                        lapply(
+                            seq_len(nclasses),
+                            function(i) {
+                                ui_cell_annotation_element(ns(paste0("annotation_element_", i)), unique_list[[current_clusters]])
+                            }
+                        )
+                    )
+                })
+            }) #%>% shiny::bindEvent(input$number_classes)
+
+            shiny::observe({
+                shinyjs::disable("annotation_button")
+                nclasses <- input$number_classes
                 shiny::req(nclasses, nclasses > 0)
 
+                unique_list <- pkg_env$metadata_unique_temp()
+                selected_clusters <- input$selected_clusters
+                shiny::req(selected_clusters, selected_clusters %in% names(unique_list))
 
+                group_names <- lapply(seq_len(nclasses), function(i) input[[paste0("annotation_element_", i, "-group_name")]])
+                group_clusters <- lapply(seq_len(nclasses), function(i) input[[paste0("annotation_element_", i, "-associated_clusters")]])
 
-            }) %>% shiny::bindEvent(input$number_classess)
+                ann_name <- input$annotation_name
 
-            #TODO finish the rendering and the adding of the new annotation - you will need to make the metadata_unique reactive
+                shiny::isolate({
+                    shiny::req(!is.null(group_names), !is.null(group_clusters), !is.null(group_names[[1]]))
+                    first_condition <- TRUE
+                    second_condition <- ann_name != ""
 
+                    all_clusters <- c()
+                    for (i in seq_len(nclasses)) {
+                        current_clusters <- setdiff(group_clusters[[i]], all_clusters)
+                        shiny::updateSelectizeInput(
+                            session = session,
+                            inputId = paste0("annotation_element_", i, "-associated_clusters"),
+                            selected = current_clusters
+                        )
+
+                        if (length(current_clusters) > 0 && group_names[[i]] == "") {
+                            first_condition <- FALSE
+                        }
+
+                        all_clusters <- c(all_clusters, current_clusters)
+                    }
+
+                    if (any(!(unique_list[[selected_clusters]] %in% all_clusters))) {
+                        second_condition <- FALSE
+                    }
+                })
+
+                if (first_condition && second_condition) {
+                    shinyjs::enable("annotation_button")
+                }
+            })
+
+            shiny::observe({
+                nclasses <- input$number_classes
+                shiny::req(nclasses, nclasses > 0)
+
+                mtd_temp_df <- pkg_env$metadata_temp()
+                unique_list <- pkg_env$metadata_unique_temp()
+                selected_clusters <- input$selected_clusters
+                shiny::req(selected_clusters, selected_clusters %in% names(unique_list))
+
+                group_names <- lapply(seq_len(nclasses), function(i) input[[paste0("annotation_element_", i, "-group_name")]])
+                group_clusters <- lapply(seq_len(nclasses), function(i) input[[paste0("annotation_element_", i, "-associated_clusters")]])
+
+                ann_name <- input$annotation_name
+
+                shiny::isolate({
+                    recode_args <- list(".x" = mtd_temp_df[[selected_clusters]])
+
+                    for (i in seq_len(nclasses)) {
+                        group_name <- group_names[[i]]
+                        group_cluster <- group_clusters[[i]]
+
+                        if (group_name == "") {
+                            next
+                        }
+
+                        for (grp_cluster in group_cluster) {
+                            recode_args[[grp_cluster]] <- group_name
+                        }
+                    }
+
+                    new_mtd <- do.call(dplyr::recode, recode_args)
+                    mtd_temp_df[[ann_name]] <- new_mtd
+                    unique_list[[ann_name]] <- group_names[group_names != ""]
+
+                    pkg_env$metadata_temp(mtd_temp_df)
+                    pkg_env$metadata_unique_temp(unique_list)
+                })
+            }) %>% shiny::bindEvent(input$annotation_button)
         }
     )
 }
