@@ -73,6 +73,9 @@ calculating the average expression of the genes, to avoid the 0 value for
 the denominator. Defaults to \code{1}.}
 
 \item{base}{The base of the logharithm. Defaults to \code{2}.}
+
+\item{verbose}{Whether to print messages about the progress of the function.
+Defaults to TRUE.}
 }
 \value{
 A data frame containing the following columns:

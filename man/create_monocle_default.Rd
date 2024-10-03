@@ -19,15 +19,15 @@ having genes on rows and cells on columns.}
 \item{count_matrix}{The count matrix having genes on rows and cells on
 columns. If NULL, the normalized_expression_matrix will be used.}
 
+\item{pca_embedding}{The PCA embedding of the expression matrix. If NULL, the
+pca will be created using the \code{monocle3} package (default parameters).}
+
+\item{umap_embedding}{The UMAP embedding of the expression matrix. If NULL, the
+umap will be created using the \code{monocle3} package (default parameters).}
+
 \item{metadata_df}{The metadata dataframe having the cell names as rownames.
 If NULL, a dataframe with a single column named \code{identical_ident} will be
 created.}
-
-\item{pca_emb}{The PCA embedding of the expression matrix. If NULL, the
-pca will be created using the \code{monocle3} package (default parameters).}
-
-\item{umap_emb}{The UMAP embedding of the expression matrix. If NULL, the
-umap will be created using the \code{monocle3} package (default parameters).}
 }
 \value{
 A Monocle object of the expression matrix, having the stable number

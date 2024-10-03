@@ -219,9 +219,9 @@ get_info_from_clustassess_app <- function(app_folder,
 #' having genes on rows and cells on columns.
 #' @param count_matrix The count matrix having genes on rows and cells on
 #' columns. If NULL, the normalized_expression_matrix will be used.
-#' @param pca_emb The PCA embedding of the expression matrix. If NULL, the
+#' @param pca_embedding The PCA embedding of the expression matrix. If NULL, the
 #' pca will be created using the `monocle3` package (default parameters).
-#' @param umap_emb The UMAP embedding of the expression matrix. If NULL, the
+#' @param umap_embedding The UMAP embedding of the expression matrix. If NULL, the
 #' umap will be created using the `monocle3` package (default parameters).
 #' @param metadata_df The metadata dataframe having the cell names as rownames.
 #' If NULL, a dataframe with a single column named `identical_ident` will be
@@ -261,7 +261,7 @@ create_monocle_default <- function(normalized_expression_matrix,
 
     # check if normalized expression matrix is sparse
     if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
-        normalized_expression_matrix <- as(normalized_expression_matrix, "dgCMatrix")
+        normalized_expression_matrix <- methods::as(normalized_expression_matrix, "dgCMatrix")
     }
 
     gene_names <- rownames(normalized_expression_matrix)
@@ -604,9 +604,9 @@ update_seurat_object <- function(original_seurat_object,
 #' having genes on rows and cells on columns.
 #' @param count_matrix The count matrix having genes on rows and cells on
 #' columns. If NULL, the normalized_expression_matrix will be used.
-#' @param pca_emb The PCA embedding of the expression matrix. If NULL, the
+#' @param pca_embedding The PCA embedding of the expression matrix. If NULL, the
 #' pca will be created using the `Seurat` package (default parameters).
-#' @param umap_emb The UMAP embedding of the expression matrix. If NULL, the
+#' @param umap_embedding The UMAP embedding of the expression matrix. If NULL, the
 #' umap will be created using the `Seurat` package (default parameters).
 #' @param metadata_df The metadata dataframe having the cell names as rownames.
 #' If NULL, a dataframe with a single column named `identical_ident` will be

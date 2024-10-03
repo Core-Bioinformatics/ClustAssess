@@ -2183,11 +2183,11 @@ server_comparison_gene_heatmap <- function(id) {
                         htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
                         htmp_matrix[htmp_matrix < -input$clipping_value] <- -input$clipping_value
 
-                        colour_scheme <- colorRampPalette(c("blue", "white", "red"))(nelems*2)
+                        colour_scheme <- grDevices::colorRampPalette(c("blue", "white", "red"))(nelems*2)
                     } else {
                         original_htmp_matrix <- htmp_matrix
                         htmp_matrix[htmp_matrix > input$clipping_value] <- input$clipping_value
-                        colour_scheme <- colorRampPalette(c("grey85", "#004c00"))(nelems*2)
+                        colour_scheme <- grDevices::colorRampPalette(c("grey85", "#004c00"))(nelems*2)
                     }
 
                     if (min(htmp_matrix) == max(htmp_matrix)) {
@@ -2247,7 +2247,7 @@ server_comparison_gene_heatmap <- function(id) {
                         ggplot2::xlab("") +
                         ggplot2::ylab("") +
                         ggnewscale::new_scale_fill() +
-                        ggplot2::geom_tile(data = bubbleplot_df, aes(x = .data$metadata, y = input$tile_position, fill = .data$metadata), height = input$tile_height, show.legend = FALSE) +
+                        ggplot2::geom_tile(data = bubbleplot_df, ggplot2::aes(x = .data$metadata, y = input$tile_position, fill = .data$metadata), height = input$tile_height, show.legend = FALSE) +
                         ggplot2::scale_fill_manual(values = tile_colours) +
                         ggplot2::coord_cartesian(clip = "off", ylim = c(1, nrow(htmp_matrix))) +
                         ggplot2::theme(
@@ -2298,9 +2298,9 @@ server_comparison_gene_heatmap <- function(id) {
                                 return()
                             }
 
-                            pdf(file, width = input$width_heatmap, height = input$height_heatmap)
+                            grDevices::pdf(file, width = input$width_heatmap, height = input$height_heatmap)
                             ComplexHeatmap::draw(heatmap_plot(), heatmap_legend_side = "bottom")
-                            dev.off()
+                            grDevices::dev.off()
                         }
                     )
                 })

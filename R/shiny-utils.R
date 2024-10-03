@@ -998,6 +998,8 @@ render_plot_by_height <- function(id, session) {
 #' calculating the average expression of the genes, to avoid the 0 value for
 #' the denominator. Defaults to `1`.
 #' @param base The base of the logharithm. Defaults to `2`.
+#' @param verbose Whether to print messages about the progress of the function.
+#' Defaults to TRUE.
 
 #' @return A data frame containing the following columns:
 #' - `gene`: The gene name.
