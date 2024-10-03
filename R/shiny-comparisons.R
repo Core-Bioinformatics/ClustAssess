@@ -30,6 +30,17 @@ ui_cell_annotation <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_annotation"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+                class = "first-element-tab"
+            ),
+            shiny::h2("Annotation of cell clusters", class = "first-element-tab")
+        ),
         shiny::p("Warning: The 'Annotation name' and 'Group name' fields should not be empty in order to create the annotation. Also, all clusters of the selected clusters must be used."),
         shiny::splitLayout(
             shiny::selectInput(
@@ -57,7 +68,16 @@ ui_comparison_markers <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
-        shiny::h2("Identification of markers"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_markers"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Identification of markers"),
+        ),
         shiny::splitLayout(
             cellWidths = c("90%", "10%"),
             shiny::plotOutput(ns("avg_expression_violin"), height = "auto"),
@@ -287,7 +307,16 @@ ui_comparison_jsi_panel <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
-        shiny::h1("Jaccard Simmilarity Index (JSI)/Cells per cluster"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_heatmap_metadata"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Jaccard Simmilarity Index (JSI)/Cells per cluster"),
+        ),
         shiny::splitLayout(
             cellWidths = c("40px", "40px"),
             shinyWidgets::dropdownButton(
@@ -339,7 +368,16 @@ ui_comparison_gene_heatmap <- function(id) {
     ns <- shiny::NS(id) 
 
     shiny::tagList(
-        shiny::h2("Gene expression heatmap"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_heatmap_gene"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Gene expression heatmap"),
+        ),
         shiny::splitLayout(
             cellWidths = "40px",
             shinyWidgets::dropdownButton(
@@ -473,7 +511,16 @@ ui_comparison_violin_gene <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
-        shiny::h2("Violin Plots - Gene expression"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_violin"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Violin Plots - Gene expression"),
+        ),
         shiny::splitLayout(
             cellWidths = "40px",
             shinyWidgets::dropdownButton(
@@ -568,7 +615,16 @@ ui_comparison_enrichment <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::div(
-        shiny::h2("Enrichment analysis"),
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_enrichment"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Enrichment analysis"),
+        ),
         shiny::splitLayout(
             shinyWidgets::pickerInput(
                 inputId = ns("gprofilerSources"),
@@ -633,9 +689,17 @@ ui_comparisons <- function(id) {
             class = "page-info"
         ),
         shiny::actionButton(ns("show_config"), "Show config", type = "info", class = "btn-info show_config"),
-        shiny::h2("Annotation of cell clusters", class = "first-element-tab"), # style = "margin-bottom:10px ")
         ui_cell_annotation(ns("cell_annotation")),
-        shiny::h2("Compare your current configuration"), # style = "margin-bottom:10px ")
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_umap"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success",
+            ),
+            shiny::h2("Compare your current configuration"), 
+        ),
         shiny::splitLayout(
             cellWidths = c("48%", "48%"),
             ui_comparison_metadata_panel(ns("metadata_panel_left"), TRUE),
@@ -759,6 +823,8 @@ server_cell_annotation <- function(id) {
             })
 
             shiny::observe({
+                button_value <- pkg_env$annotation_button()
+                shiny::req(input$annotation_button > button_value)
                 nclasses <- input$number_classes
                 shiny::req(nclasses, nclasses > 0)
 
@@ -773,7 +839,10 @@ server_cell_annotation <- function(id) {
                 ann_name <- input$annotation_name
 
                 shiny::isolate({
+                    shiny::req(!is.null(group_names), !is.null(group_clusters), !is.null(group_names[[1]]))
                     recode_args <- list(".x" = mtd_temp_df[[selected_clusters]])
+                    print(group_names)
+                    print(group_clusters)
 
                     for (i in seq_len(nclasses)) {
                         group_name <- group_names[[i]]
@@ -787,6 +856,7 @@ server_cell_annotation <- function(id) {
                             recode_args[[grp_cluster]] <- group_name
                         }
                     }
+                    # print(recode_args)
 
                     new_mtd <- do.call(dplyr::recode, recode_args)
                     mtd_temp_df[[ann_name]] <- new_mtd
@@ -794,9 +864,13 @@ server_cell_annotation <- function(id) {
 
                     pkg_env$metadata_temp(mtd_temp_df)
                     pkg_env$metadata_unique_temp(unique_list)
+                    pkg_env$annotation_button(input$annotation_button)
                 })
             }) %>% shiny::bindEvent(input$annotation_button)
+
+            shiny::observe(compar_annotation_info(session)) %>% shiny::bindEvent(input$info_annotation, ignoreInit = TRUE)
         }
+
     )
 }
 
@@ -985,6 +1059,8 @@ server_comparison_markers <- function(id, k_choices) {
                 shiny::req(markers_val())
                 shinyjs::show("markers_download_button")
             }) %>% shiny::bindEvent(markers_val())
+
+            shiny::observe(compar_markers_info(session)) %>% shiny::bindEvent(input$info_markers, ignoreInit = TRUE)
 
             return(shiny::reactive(marker_genes()))
         }
@@ -1743,6 +1819,8 @@ server_comparison_jsi <- function(id) {
                     )
                 }
             )
+
+            shiny::observe(compar_metadata_jsi_info(session)) %>% shiny::bindEvent(input$info_heatmap_metadata, ignoreInit = TRUE)
         }
     )
 }
@@ -2021,6 +2099,8 @@ server_comparison_violin_gene <- function(id) {
                 },
                 rownames = TRUE
             )
+
+            shiny::observe(compar_violin_info(session)) %>% shiny::bindEvent(input$info_violin, ignoreInit = TRUE)
         }
     )
 }
@@ -2225,6 +2305,8 @@ server_comparison_gene_heatmap <- function(id) {
                     )
                 })
             })
+
+            shiny::observe(compar_heatmap_gene_info(session)) %>% shiny::bindEvent(input$info_heatmap_gene, ignoreInit = TRUE)
         }
     )
 }
@@ -2299,6 +2381,8 @@ server_comparison_enrichment <- function(id, marker_genes) {
                     }
                 )
             })
+
+            shiny::observe(compar_enrichment_info(session)) %>% shiny::bindEvent(input$info_enrichment, ignoreInit = TRUE)
         }
     )
 }
@@ -2460,6 +2544,8 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             }) %>% shiny::bindEvent(input$show_config, ignoreInit = TRUE)
 
             shiny::observe(compar_info(session)) %>% shiny::bindEvent(input$info_title, ignoreInit = TRUE)
+
+            shiny::observe(compar_distribution_info(session)) %>% shiny::bindEvent(input$info_umap, ignoreInit = TRUE)
 
             shiny::observe({
                 gc()
