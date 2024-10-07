@@ -425,7 +425,7 @@ only_legend_plot <- function(unique_values,
     }
 
     if (is.null(color_values)) {
-        color_values <- viridis::viridis(50)
+        color_values <- paletteer::paletteer_c(palette = "viridis::viridis", n = 50)
     }
 
     if (is.function(color_values)) {
@@ -532,7 +532,7 @@ color_plot2 <- function(embedding,
     }
 
     if (is.null(color_values)) {
-        color_values <- viridis::viridis(50)
+        color_values <- paletteer::paletteer_c(palette = "viridis::viridis", n = 50)
     }
 
     if (is.function(color_values)) {
@@ -581,15 +581,15 @@ color_plot2 <- function(embedding,
 
     colrs <- color_values[color_info]
     if (!is.null(cell_mask)) {
-        colrs[!cell_mask] <- "ivory4" # #696969"
+        colrs[!cell_mask] <- "ivory4" 
     }
 
     if (display_legend) {
         graphics::layout(
             matrix(c(1, 2), nrow = 2),
             heights = c(
-                graphics::lcm((plt_height - predicted_height) * 2.54),
-                graphics::lcm(predicted_height * 2.54)
+                graphics::lcm((plt_height - predicted_height) * 2.5),
+                graphics::lcm(predicted_height * 2.5)
             )
         )
     }
@@ -724,20 +724,7 @@ color_plot <- function(embedding,
                     col = "black"
                 )
             }
-
-            # graphics::title(xlab = "UMAP_1", ylab = "UMAP_2")
         }
-        # graphics::legend(x = "bottom",
-        #    inset = c(0, -0.2), # You will need to fine-tune the second
-        #                        # value depending on the windows size
-        #    legend = unique_values,
-        #    ncol = 10,
-        #    pch = 20,
-        #    box.lwd = 0,
-        #    col = as.character(colors),
-        #    pt.cex = pt_size / 2,
-        #    xpd = TRUE
-        #    )
     })
 }
 
@@ -766,21 +753,6 @@ color_c_plot <- function(embedding,
             xlab = "UMAP_1",
             ylab = "UMAP_2"
         )
-
-
-        # graphics::title(xlab = "UMAP_1", ylab = "UMAP_2")
-
-        # graphics::legend(x = "bottom",
-        #    inset = c(0, -0.2), # You will need to fine-tune the second
-        #                        # value depending on the windows size
-        #    legend = unique_values,
-        #    ncol = 10,
-        #    pch = 20,
-        #    box.lwd = 0,
-        #    col = as.character(colors),
-        #    pt.cex = pt_size / 2,
-        #    xpd = TRUE
-        #    )
     })
 }
 

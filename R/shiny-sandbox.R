@@ -999,7 +999,7 @@ server_sandbox_gene_panel_left <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+                        grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
@@ -1037,7 +1037,7 @@ server_sandbox_gene_panel_left <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+                        grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
@@ -1055,7 +1055,6 @@ server_sandbox_gene_panel_left <- function(id) {
                         plt_height = input$height_gene * ppi, #- gene_legend_height(),
                         plt_width = input$width_gene * ppi,
                         predicted_height = (gene_legend_height() - 1) / ppi,
-                        # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
                         unique_values = unique_values,
                         color_values = color_values,
                         pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
@@ -1132,7 +1131,7 @@ server_sandbox_gene_panel_right <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+                        grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
@@ -1170,7 +1169,7 @@ server_sandbox_gene_panel_right <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "OrRd"))(n)
+                        grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
@@ -1188,7 +1187,6 @@ server_sandbox_gene_panel_right <- function(id) {
                         plt_height = input$height_gene * ppi, #- gene_legend_height(),
                         plt_width = input$width_gene * ppi,
                         predicted_height = (gene_legend_height() - 1) / ppi,
-                        # color_values = function(n) { paletteer::paletteer_c("grDevices::OrRd", n)},
                         unique_values = unique_values,
                         color_values = color_values,
                         pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),

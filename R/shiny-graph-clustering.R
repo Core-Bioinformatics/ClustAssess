@@ -1557,7 +1557,7 @@ shiny_plot_k_res <- function(summary_df,
     cl_method[!mask] <- ceiling(cl_method[!mask])
     max_distance <- ifelse(n_methods > 1, 0.9 / (n_methods - n_methods %% 2), 0)
 
-    color_values <- viridis::viridis(min(50, nrow(summary_df)))
+    color_values <- paletteer::paletteer_c("viridis::viridis", min(50, nrow(summary_df)))
     color_info <- cut(summary_df$ecc, breaks = min(50, nrow(summary_df)))
     color_info <- color_values[color_info]
 
@@ -1634,7 +1634,7 @@ shiny_plot_k_n_partitions <- function(summary_df,
     cl_method[!mask] <- ceiling(cl_method[!mask])
     max_distance <- ifelse(n_methods > 1, 0.9 / (n_methods - n_methods %% 2), 0)
 
-    color_values <- viridis::viridis(min(50, nrow(summary_df)))
+    color_values <- paletteer::paletteer_c("viridis::viridis", min(50, nrow(summary_df)))
 
     if (max(summary_df$ecc) - min(summary_df$ecc) < 1e-3) {
         color_info <- factor(rep(summary_df$ecc[1], nrow(summary_df)))

@@ -704,7 +704,8 @@ server_dimensionality_distribution <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                            grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
                             unique_values <- c("other", "cells above threshold")
@@ -906,7 +907,8 @@ server_dimensionality_distribution <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                                grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
                                 unique_values <- c("other", "cells above threshold")
