@@ -1128,6 +1128,8 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' the ECS scores between that partition and the other partitions from the list.
 #' The partition with the highest agreement will be  the first on the list.
 #' - "none": do not perform any ordering (not recommended).
+#' @param return_ecs_matrix A logical: if TRUE, the function will add the
+#' ECS matrix to the return list. Defaults to FALSE.
 #' @return a list of the merged partitions
 #' @export
 #' @examples
@@ -1135,7 +1137,8 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' merge_partitions(initial_list, 1)
 merge_partitions <- function(partition_list,
                              ecs_thresh = 1,
-                             order_logic = c("freq", "agreement", "none")) {
+                             order_logic = c("freq", "agreement", "none"),
+                             return_ecs_matrix = FALSE) {
     # check the parameters
     if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
         stop("ecs_thresh parameter should be numeric")
@@ -1240,7 +1243,12 @@ merge_partitions <- function(partition_list,
     #     part_list[[highest_sim_index]]$mb <- temp_mb
     # }
 
-    return(list(partitions = part_list, ecc = consistency$ecc))
+
+    if (!return_ecs_matrix) {
+        return(list(partitions = part_list, ecc = consistency$ecc))
+    }
+
+    return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
 }
 
 #' Element-Wise Consistency Between a Set of Clusterings
@@ -1310,10 +1318,16 @@ element_consistency <- function(clustering_list,
         # merge the identical partitions into the same object
         final_clustering_list <- merge_partitions(
             partition_list = clustering_list,
-            ecs_thresh = 1
+            ecs_thresh = 1,
+            return_ecs_matrix = calculate_sim_matrix
         )
         # TODO check if they do the same thing
-        return(final_clustering_list$ecc)
+        final_clustering_list$partitions <- NULL
+        if (!calculate_sim_matrix) {
+            return(final_clustering_list$ecc)
+        }
+        
+        return(final_clustering_list)
         return(weighted_element_consistency(
             clustering_list = lapply(final_clustering_list, function(x) {
                 x$mb
