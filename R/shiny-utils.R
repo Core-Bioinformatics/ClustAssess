@@ -972,6 +972,8 @@ render_plot_by_height <- function(id, session) {
 #' @param base The base of the logharithm. Defaults to `2`.
 #' @param verbose Whether to print messages about the progress of the function.
 #' Defaults to TRUE.
+#' @param check_difference Whether to perform set difference between the two
+#' cells. Defaults to TRUE.
 
 #' @return A data frame containing the following columns:
 #' - `gene`: The gene name.
@@ -996,8 +998,11 @@ calculate_markers_shiny <- function(cells1,
                                     expression_h5_path = "expression.h5",
                                     pseudocount_use = 1,
                                     base = 2,
-                                    verbose = TRUE) {
-    cells2 <- setdiff(cells2, cells1)
+                                    verbose = TRUE,
+                                    check_difference = TRUE) {
+    if (check_difference) {
+        cells2 <- setdiff(cells2, cells1)
+    }
 
     if (length(cells2) == 0 || length(cells1) == 0) {
         warning("One of the cell groups is empty!")

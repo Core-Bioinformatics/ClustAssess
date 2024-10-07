@@ -1057,8 +1057,8 @@ server_comparison_markers <- function(id, k_choices) {
 
                 shinyjs::disable("markers_button")
                 shinyjs::html("marker_text", "Calculating the markers...")
-                subgroup_left <- input$"group_left-select_k_markers"
-                subgroup_right <- input$"group_right-select_k_markers"
+                # subgroup_left <- input$"group_left-select_k_markers"
+                # subgroup_right <- input$"group_right-select_k_markers"
 
                 # if (is.na(as.numeric(subgroup_left))) {
                 #     mb1 <- pkg_env$metadata_temp()[[subgroup_left]]
@@ -1086,7 +1086,8 @@ server_comparison_markers <- function(id, k_choices) {
                         min_pct_threshold = input$min_pct,
                         logfc_threshold = input$logfc,
                         average_expression_threshold = input$avg_expr_thresh,
-                        average_expression_group1_threshold = input$avg_expr_thresh_gr1
+                        average_expression_group1_threshold = input$avg_expr_thresh_gr1,
+                        check_difference = FALSE
                     )
                 } else { # for backward-compatibility reasons
                     markers_result <- calculate_markers(
