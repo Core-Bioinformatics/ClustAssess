@@ -139,6 +139,7 @@ ui_comparison_markers <- function(id) {
                 ui_comparison_markers_panel(ns("group_right"))
             )
         ),
+        shiny::plotOutput(ns("markers_plot"), height = "auto"),
         shiny::actionButton(ns("markers_button"), "Find markers!", class = "btn-danger"),
         DT::dataTableOutput(ns("markers_dt")),
         shiny::downloadButton(ns("markers_download_button"), "Download markers!")
@@ -941,6 +942,82 @@ server_comparison_markers <- function(id, k_choices) {
             server_comparison_markers_panels(session, k_choices)
             # server_comparison_markers_panels("group_left", k_choices)
 
+            first_group_cells <- shiny::reactive({
+                current_mtd_df <- pkg_env$metadata_temp()
+                chosen_mtd <- input$"group_left-select_k_markers"
+                chosen_groups <- input$"group_left-select_clusters_markers"
+
+                shiny::isolate({
+                    shiny::req(chosen_mtd, chosen_groups)
+
+                    current_cells <- current_mtd_df[[chosen_mtd]]
+                    if (is.numeric(current_cells[1])) {
+                        chosen_groups <- as.numeric(chosen_groups)
+                    }
+
+                    current_cells <- which(current_cells %in% chosen_groups)
+
+                    return(current_cells)
+                })
+            })
+
+            second_group_cells <- shiny::reactive({
+                current_mtd_df <- pkg_env$metadata_temp()
+                chosen_mtd <- input$"group_right-select_k_markers"
+                chosen_groups <- input$"group_right-select_clusters_markers"
+                ref_cells <- first_group_cells()
+
+                shiny::isolate({
+                    shiny::req(chosen_mtd, chosen_groups, ref_cells)
+
+                    current_cells <- current_mtd_df[[chosen_mtd]]
+                    if (is.numeric(current_cells[1])) {
+                        chosen_groups <- as.numeric(chosen_groups)
+                    }
+
+                    current_cells <- which(current_cells %in% chosen_groups)
+
+                    return(setdiff(current_cells, ref_cells))
+                })
+            })
+
+            shiny::observe({
+                second_grp <- second_group_cells()
+                window_size <- pkg_env$dimension()
+
+                shiny::isolate({
+                    first_grp <- first_group_cells()
+                    plt_height <- min(pkg_env$height_ratio * window_size[2], window_size[1])
+                    plt_width <- plt_height
+
+                    output$markers_plot <- shiny::renderPlot(
+                        width = plt_width,
+                        height = plt_height,
+                        {
+                            shiny::req(length(first_grp) > 0, length(second_grp) > 0, cancelOutput = TRUE)
+                            ncells <- nrow(pkg_env$stab_obj$umap)
+                            info_group <- rep("other", ncells)
+                            info_group[first_grp] <- "group1"
+                            info_group[second_grp] <- "group2"
+
+                            color_values <- c("other" = "lightgray", "group2" = "blue", "group1" = "red")
+
+                            color_plot2(
+                                embedding = pkg_env$stab_obj$umap,
+                                color_info = info_group,
+                                plt_height = plt_height,
+                                plt_width = plt_width,
+                                color_values = color_values,
+                                unique_values = names(color_values),
+                                display_legend = TRUE
+
+                            )
+                        }
+                    )
+                })
+
+            })
+
             shiny::observe({
                 current_button_value <- as.integer(shiny::isolate(input$enable_markers))
                 shiny::req(pkg_env$enable_markers_button() != current_button_value)
@@ -965,9 +1042,15 @@ server_comparison_markers <- function(id, k_choices) {
 
             markers_val <- shiny::reactive({
                 current_button_value <- as.integer(shiny::isolate(input$markers_button))
+
+                second_grp <- second_group_cells()
+                first_grp <- first_group_cells()
+
                 shiny::req(
                     input$"group_left-select_clusters_markers",
                     input$"group_right-select_clusters_markers",
+                    length(first_grp) > 0,
+                    length(second_grp) > 0,
                     pkg_env$find_markers_button() != current_button_value
                 )
                 pkg_env$find_markers_button(current_button_value)
@@ -977,25 +1060,27 @@ server_comparison_markers <- function(id, k_choices) {
                 subgroup_left <- input$"group_left-select_k_markers"
                 subgroup_right <- input$"group_right-select_k_markers"
 
-                if (is.na(as.numeric(subgroup_left))) {
-                    mb1 <- pkg_env$metadata_temp()[[subgroup_left]]
-                } else {
-                    mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
-                }
+                # if (is.na(as.numeric(subgroup_left))) {
+                #     mb1 <- pkg_env$metadata_temp()[[subgroup_left]]
+                # } else {
+                #     mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
+                # }
 
-                if (is.na(as.numeric(subgroup_right))) {
-                    mb2 <- pkg_env$metadata_temp()[[subgroup_right]]
-                } else {
-                    mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
-                }
+                # if (is.na(as.numeric(subgroup_right))) {
+                #     mb2 <- pkg_env$metadata_temp()[[subgroup_right]]
+                # } else {
+                #     mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
+                # }
 
-                cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
-                cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
+                # cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
+                # cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
 
                 if ("genes" %in% names(pkg_env)) {
                     markers_result <- calculate_markers_shiny(
-                        cells1 = cells_index_left,
-                        cells2 = cells_index_right,
+                        # cells1 = cells_index_left,
+                        cells1 = first_grp,
+                        # cells2 = cells_index_right,
+                        cells2 = second_grp,
                         norm_method = ifelse(input$norm_type, "LogNormalize", ""),
                         used_slot = "data",
                         min_pct_threshold = input$min_pct,
@@ -1006,8 +1091,8 @@ server_comparison_markers <- function(id, k_choices) {
                 } else { # for backward-compatibility reasons
                     markers_result <- calculate_markers(
                         expression_matrix = pkg_env$expr_matrix, # expression matrix
-                        cells1 = cells_index_left,
-                        cells2 = cells_index_right,
+                        cells1 = first_grp,
+                        cells2 = second_grp,
                         rank_matrix = pkg_env$rank_matrix, # rank matrix
                         norm_method = ifelse(input$norm_type, "LogNormalize", ""),
                         min_pct_threshold = input$min_pct,
@@ -1346,7 +1431,8 @@ server_comparison_metadata_panel <- function(id) {
                             ))
                     } else {
                         ggplot_obj <- ggplot_obj +
-                            ggplot2::scale_colour_gradientn(colours = viridis::viridis(50)) +
+                            # ggplot2::scale_colour_gradientn(colours = viridis::viridis(50)) +
+                            ggplot2::scale_colour_gradientn(colours = paletteer::paletteer_c("viridis::viridis", 50)) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_metadata * 3 / 4, "inches")))
                     }
 
@@ -1491,7 +1577,8 @@ server_comparison_gene_panel <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                            grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
                             unique_values <- c("other", "cells above threshold")
@@ -1570,7 +1657,8 @@ server_comparison_gene_panel <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                                grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
                                 unique_values <- c("other", "cells above threshold")
@@ -1615,7 +1703,8 @@ server_comparison_gene_panel <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                        # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
+                        grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
