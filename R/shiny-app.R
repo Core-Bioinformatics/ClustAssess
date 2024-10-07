@@ -135,8 +135,6 @@ write_objects <- function(clustassess_object,
             res_index <- 1
 
             for (resval in names(clustassess_object$feature_stability$by_steps[[ftype]][[fsize]])) {
-                # mb <- original_stab_obj$feature_stability$by_steps[[ftype]][[fsize_index]][[resval]]$most_frequent_partition$mb # uncomment if you want to include the mb vectors aswell
-
                 ecc_by_step <- clustassess_object$feature_stability$by_steps[[ftype]][[fsize_index]][[resval]]$ecc
                 summary_values_by_step[res_index] <- summary_function(ecc_by_step)
                 res_dt_by_step <- data.frame(ecc = ecc_by_step, res = resval) #  mb = mb if you want to also include the mb vector
@@ -274,12 +272,6 @@ write_objects <- function(clustassess_object,
             # algorithm_names_mapping
 
             for (cl_method in cl_methods) {
-                # mbs_list[[cl_method]] <- list()
-                # ecc_list[[cl_method]] <- list()
-                # ecc_order_list[[cl_method]] <- list()
-                # ecc_order_list_by_res[[cl_method]] <- list()
-                # ecc_list_by_res[[cl_method]] <- list()
-
                 cl_method_index <- algorithm_names_mapping[[cl_method]]
                 # --- split by resolution ---
                 for (res in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]])) {
@@ -292,15 +284,6 @@ write_objects <- function(clustassess_object,
 
                     # create the summary table for the complex plot
                     for (n_clusters in names(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters)) {
-                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions[[1]]$freq
-                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$total_freq <- sum(
-                        #     sapply(
-                        #         clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions,
-                        #         function(x) { x$freq }
-                        #     )
-                        # )
-                        # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_resolution[[cl_method]][[res]]$clusters[[n_clusters]]$partitions <- NULL
-
                         temp_by_res_summary <- data.frame(
                             k = as.integer(n_clusters),
                             res = as.numeric(res),
@@ -332,22 +315,6 @@ write_objects <- function(clustassess_object,
                     unique_n_colors <- union(unique_n_colors, n_clusters)
                     mbs_list[[cl_method]][[n_clusters]] <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$mb)
 
-                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$mb <- as.integer(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$mb)
-                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$first_freq <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq
-                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$total_freq <- sum(
-                    #     sapply(
-                    #         clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions,
-                    #         function(x) { x$freq }
-                    #     )
-                    # )
-                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$n_partitions <- length(clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions)
-                    # clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions <- NULL
-
-                    # temp_n_cl_ecc_dt <- data.table::data.table(
-                    #     ecc = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$ecc,
-                    #     k = n_clusters,
-                    #     cl_method = cl_method_index
-                    # )
                     ecc <- clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$ecc
                     ecc_order <- order(ecc)
                     n_clusters_format <- sprintf("%06d", as.integer(n_clusters))
@@ -369,7 +336,6 @@ write_objects <- function(clustassess_object,
                         first_freq = clustassess_object[[ftype]][[fsize]]$clustering_stability$split_by_k[[cl_method]][[n_clusters]]$partitions[[1]]$freq,
                         ecc = summary_function(ecc)
                     )
-
 
                     if (first_dt_by_k) {
                         first_dt_by_k <- FALSE
@@ -407,10 +373,6 @@ write_objects <- function(clustassess_object,
 
     clustassess_object$feature_ordering <- feature_ordering
     feature_names <- names(feature_ordering$original)
-    # genes_of_interest <- c()
-    # for (feature_name in feature_names) {
-    #     genes_of_interest <- union(genes_of_interest, clustassess_object[[feature_name]]$feature_list)
-    # }
 
     # should sparse matrix be used for storing?
     # advantages: lower required space
@@ -424,17 +386,13 @@ write_objects <- function(clustassess_object,
         chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
         gene_vars <- matrixStats::rowVars(chunk_matrix)
         # filter by var threshold
-        chunk_matrix[gene_vars >= gene_variance_threshold, ]
+        chunk_matrix[gene_vars > gene_variance_threshold, ]
     })
 
     print("merging chunks")
     expression_matrix <- do.call(rbind, dense_chunks)
     print("chunks merged")
-
-    # others_sorted <- sort(rownames(expression_matrix)[!(rownames(expression_matrix) %in% genes_of_interest)])
-    # genes <- rownames(expression_matrix) #c(genes_of_interest, others_sorted)
-    # cells <- colnames(expression_matrix)
-
+    
     gene_avg_expression <- matrixStats::rowMeans2(expression_matrix)
     order_expression <- order(gene_avg_expression, decreasing = TRUE)
     # order the genes based on their average expression
@@ -444,14 +402,6 @@ write_objects <- function(clustassess_object,
     print(glue::glue("[{Sys.time()}] Writing the gene matrix"))
 
     rhdf5::h5createFile(expr_file_name)
-
-    # rhdf5::h5createDataset(expr_file_name, "matrix_of_interest",
-    #     level = compression_level,
-    #     dims = c(length(genes_of_interest), ncol(expression_matrix)),
-    #     storage.mode = "double",
-    #     # chunk = c(length(genes_of_interest), 1)
-    #     chunk = c(1, ncol(expression_matrix))
-    # )
 
     rhdf5::h5createDataset(expr_file_name, "rank_matrix",
         level = compression_level,
@@ -468,15 +418,11 @@ write_objects <- function(clustassess_object,
         chunk = c(1, ncol(expression_matrix))
     )
 
-    # rhdf5::h5write(genes_of_interest, expr_file_name, "genes_of_interest")
-    # rhdf5::h5write(others_sorted, expr_file_name, "genes_others")
     rhdf5::h5write(rownames(expression_matrix), expr_file_name, "genes")
     rhdf5::h5write(colnames(expression_matrix), expr_file_name, "cells")
     rhdf5::h5write(gene_avg_expression, expr_file_name, "average_expression")
     rhdf5::h5write(chunk_size, expr_file_name, "chunk_size")
     rhdf5::h5write(expression_matrix, expr_file_name, "expression_matrix")
-    # rhdf5::h5write(expression_matrix[genes_of_interest, ], expr_file_name, "matrix_of_interest")
-    # rhdf5::h5write(expression_matrix[others_sorted, ], expr_file_name, "matrix_others")
 
     print(glue::glue("[{Sys.time()}] Writing the rank matrix"))
     nchunks <- ceiling(nrow(expression_matrix) / chunk_size)
@@ -518,13 +464,6 @@ write_objects <- function(clustassess_object,
             index = list(index_list, NULL)
         )
     }
-
-    # rank_matrix <- matrix(nrow = length(genes_of_interest), ncol = ncol(expression_matrix))
-
-    # for (i in seq_len(nrow(rank_matrix))) {
-    #   rank_matrix[i, ] <- rank(expression_matrix[genes_of_interest[i], ], ties.method = "min")
-    # }
-    # rhdf5::h5write(rank_matrix, expr_file_name, "rank_of_interest")
 
     print(glue::glue("[{Sys.time()}] Writing the feature stability"))
 
