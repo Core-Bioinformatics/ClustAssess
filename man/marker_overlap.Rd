@@ -53,34 +53,38 @@ marker genes.
 }
 \examples{
 suppressWarnings({
-set.seed(1234)
-library(Seurat)
-data('pbmc_small')
+    set.seed(1234)
+    library(Seurat)
+    data("pbmc_small")
 
-# cluster with Louvain algorithm
-pbmc_small = FindClusters(pbmc_small, resolution=0.8, verbose=FALSE)
+    # cluster with Louvain algorithm
+    pbmc_small <- FindClusters(pbmc_small, resolution = 0.8, verbose = FALSE)
 
-# cluster with k-means
-pbmc.pca = Embeddings(pbmc_small, 'pca')
-pbmc_small@meta.data$kmeans_clusters = kmeans(pbmc.pca, centers=3)$cluster
+    # cluster with k-means
+    pbmc.pca <- Embeddings(pbmc_small, "pca")
+    pbmc_small@meta.data$kmeans_clusters <- kmeans(pbmc.pca, centers = 3)$cluster
 
-# compare the markers
-Idents(pbmc_small) = pbmc_small@meta.data$seurat_clusters
-louvain.markers = FindAllMarkers(pbmc_small,
-                                 logfc.threshold=1,
-                                 test.use='t',
-                                 verbose=FALSE)
+    # compare the markers
+    Idents(pbmc_small) <- pbmc_small@meta.data$seurat_clusters
+    louvain.markers <- FindAllMarkers(pbmc_small,
+        logfc.threshold = 1,
+        test.use = "t",
+        verbose = FALSE
+    )
 
-Idents(pbmc_small) = pbmc_small@meta.data$kmeans_clusters
-kmeans.markers = FindAllMarkers(pbmc_small,
-                                logfc.threshold=1,
-                                test.use='t',
-                                verbose=FALSE)
+    Idents(pbmc_small) <- pbmc_small@meta.data$kmeans_clusters
+    kmeans.markers <- FindAllMarkers(pbmc_small,
+        logfc.threshold = 1,
+        test.use = "t",
+        verbose = FALSE
+    )
 
-pbmc_small@meta.data$jsi = marker_overlap(louvain.markers, kmeans.markers,
-  pbmc_small@meta.data$seurat_clusters, pbmc_small@meta.data$kmeans_clusters)
+    pbmc_small@meta.data$jsi <- marker_overlap(
+        louvain.markers, kmeans.markers,
+        pbmc_small@meta.data$seurat_clusters, pbmc_small@meta.data$kmeans_clusters
+    )
 
-# which cells have the same markers, regardless of clustering?
-FeaturePlot(pbmc_small, 'jsi')
+    # which cells have the same markers, regardless of clustering?
+    FeaturePlot(pbmc_small, "jsi")
 })
 }

@@ -1,0 +1,271 @@
+---
+title: "Flexibility of the dimensionality reduction assessment"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Flexibility of the dimensionality reduction assessment}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r install}
+is_seuratdata <- require("SeuratData", quietly = TRUE)
+if (!is_seuratdata) {
+    devtools::install_github('satijalab/seurat-data', upgrade = "never")
+}
+
+is_harmony <- require("harmony", quietly = TRUE)
+if (!is_harmony) {
+    install.packages("harmony")
+}
+
+is_rsamtool <- require("Rsamtools", quietly = TRUE)
+if (!is_rsamtool) {
+    BiocManager::install("Rsamtools")
+}
+```
+
+```{r load}
+library(Seurat)
+library(SeuratData)
+library(ClustAssess)
+library(ggplot2)
+library(harmony)
+library(data.table)
+
+n_repetitions <- 30
+```
+
+The `matrix processing` parameter of the `assess_feature_stability` function is a function that enables the user to specify any method to perform the dimensionality reduction prior to applying the UMAP algorithm and the clustering pipeline.
+By default, the dimensionality reduction used in `ClustAssess` is a precise PCA using the `prcomp` package.
+However, this function can be easily changed, as it will be shown in the following examples.
+
+# ClustAssess using PCA
+
+For the PCA example, we will use the PBMC 3k dataset from the `SeuratData` package. The preprocessing of the dataset is identical with the one performed in the stability pipeline vignette.
+```{r process_pbmc_rna}
+InstallData("pbmc3k")
+data("pbmc3k")
+pbmc3k <- UpdateSeuratObject(pbmc3k)
+pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^MT-", col.name = "percent.mito")
+pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^RP[SL][[:digit:]]", col.name = "percent.rp")
+# remove MT and RP genes
+all.index <- seq_len(nrow(pbmc3k))
+MT.index <- grep(pattern = "^MT-", x = rownames(pbmc3k), value = FALSE)
+RP.index <- grep(pattern = "^RP[SL][[:digit:]]", x = rownames(pbmc3k), value = FALSE)
+pbmc3k <- pbmc3k[!((all.index %in% MT.index) | (all.index %in% RP.index)), ]
+pbmc3k <- subset(pbmc3k, nFeature_RNA < 2000 & nCount_RNA < 2500 & percent.mito < 7 & percent.rp > 7)
+pbmc3k <- NormalizeData(pbmc3k, verbose = FALSE)
+pbmc3k <- FindVariableFeatures(pbmc3k, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
+
+features <- dimnames(pbmc3k@assays$RNA)[[1]]
+var_features <- pbmc3k@assays[["RNA"]]@var.features
+n_abundant <- 3000
+most_abundant_genes <- rownames(pbmc3k@assays$RNA)[order(Matrix::rowSums(pbmc3k@assays$RNA),
+    decreasing = TRUE
+)]
+
+pbmc3k <- ScaleData(pbmc3k, features = features, verbose = FALSE)
+```
+
+We notice that the `seurat_annotations` column has some missing values. For simplicity, we will replace them with "NA".
+```{r mask_na}
+mask <- is.na(pbmc3k$seurat_annotations)
+pbmc3k$seurat_annotations <- as.character(pbmc3k$seurat_annotations)
+pbmc3k$seurat_annotations[mask] <- "NA"
+```
+
+Select the features used for the stability assessment.
+```{r select_features_rna}
+features <- dimnames(pbmc3k@assays$RNA)[[1]]
+var_features <- pbmc3k@assays[["RNA"]]@var.features
+n_abundant <- 3000
+most_abundant_genes <- rownames(pbmc3k@assays$RNA)[order(Matrix::rowSums(pbmc3k@assays$RNA),
+    decreasing = TRUE
+)]
+
+steps <- seq(from = 500, to = 3000, by = 500)
+ma_hv_genes_intersection_sets <- sapply(steps, function(x) intersect(most_abundant_genes[1:x], var_features[1:x]))
+ma_hv_genes_intersection <- Reduce(union, ma_hv_genes_intersection_sets)
+ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
+```
+
+Assess the stability of the dimensionality reduction when PCA is used as dimensionality reduction.
+```{r feature_stability_pca}
+matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
+    actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
+
+    RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+    embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
+
+    RhpcBLASctl::blas_set_num_threads(1)
+    rownames(embedding) <- rownames(dt_mtx)
+    colnames(embedding) <- paste0("PC_", seq_len(actual_npcs))
+
+    return(embedding)
+}
+
+pca_feature_stability <- assess_feature_stability(
+    data_matrix = pbmc3k@assays[["RNA"]]@scale.data,
+    feature_set = most_abundant_genes,
+    resolution = seq(from = 0.1, to = 1, by = 0.1),
+    steps = steps,
+    n_repetitions = n_repetitions,
+    feature_type = "MA",
+    graph_reduction_type = "PCA",
+    matrix_processing = matrix_processing_function,
+    umap_arguments = list(
+        min_dist = 0.3,
+        n_neighbors = 30,
+        metric = "cosine"
+    ),
+    ecs_thresh = 1,
+    clustering_algorithm = 1
+)
+```
+
+Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.
+```{r umap_pca}
+umap_df <- data.frame(pca_feature_stability$embedding_list$MA$"1000")
+umap_df$celltypes <- pbmc3k$seurat_annotations
+ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
+    geom_point() +
+    theme_classic()
+```
+
+# ClustAssess using Harmony
+
+We can also modify the function by adding an addition post-processing step to the PCA. In this example, we will use the Harmony correction to remove the "batch effect" created by the celltypes.
+*Note*: This example is meant to exemplify how to use the Harmony correction in the ClusAssess pipeline. The batch correction is actually not needed in the PBMC 3k dataset.
+
+```{r feature_stability_harmony}
+matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
+    actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
+
+    RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+    embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
+
+    RhpcBLASctl::blas_set_num_threads(1)
+    rownames(embedding) <- rownames(dt_mtx)
+    colnames(embedding) <- paste0("PC_", seq_len(actual_npcs))
+
+    embedding <- RunHarmony(embedding, pbmc3k$seurat_annotations, verbose = FALSE)
+
+    return(embedding)
+}
+
+pca_harmony_feature_stability <- assess_feature_stability(
+    data_matrix = pbmc3k@assays[["RNA"]]@scale.data,
+    feature_set = most_abundant_genes,
+    resolution = seq(from = 0.1, to = 1, by = 0.1),
+    steps = steps,
+    n_repetitions = n_repetitions,
+    feature_type = "MA",
+    graph_reduction_type = "PCA",
+    matrix_processing = matrix_processing_function,
+    umap_arguments = list(
+        min_dist = 0.3,
+        n_neighbors = 30,
+        metric = "cosine"
+    ),
+    ecs_thresh = 1,
+    clustering_algorithm = 1,
+    verbose = TRUE
+)
+```
+
+Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.
+```{r umap_harmony}
+umap_df <- data.frame(pca_harmony_feature_stability$embedding_list$MA$"1000")
+umap_df$celltypes <- pbmc3k$seurat_annotations
+ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
+    geom_point() +
+    theme_classic()
+```
+
+
+# ClustAssess in the scATAC-seq data
+
+In this example we will showcase the flexibility of the `assess_feature_stability` function by using the ATAC-seq data.
+For this example, we will use the multiome PBMC dataset from the `SeuratData` package.
+```{r load_atac}
+library(Signac)
+InstallData("pbmcMultiome")
+data("pbmc.atac")
+```
+
+As presented in the (Signac)(https://stuartlab.org/signac/articles/pbmc_vignette) package, the ATAC-seq data is usually processed using the TF-IDF normalization followed by the the calculation of the singular values. These two steps are also known as LSI (Latent Semantic Indexing).
+```{r preprocess_atac}
+pbmc.atac <- RunTFIDF(pbmc.atac)
+```
+
+Identify the highly variable peaks.
+```{r features_atac}
+pbmc.atac <- FindTopFeatures(pbmc.atac, min.cutoff = "q5")
+var_peaks <- pbmc.atac@assays$ATAC@var.features[seq_len(3000)]
+```
+
+To speedup the assessment, set a parallel backend with 6 cores.
+
+```{r parallel_backend}
+RhpcBLASctl::blas_set_num_threads(1)
+ncores <- 6
+if (ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+        ncores,
+        type = "PSOCK"
+    )
+
+    doParallel::registerDoParallel(cl = my_cluster)
+}
+```
+Assess the stability of the dimensionality reduction by varying the number of highly variable peaks.
+```{r feature_stability_atac}
+matrix_processing_function <- function(dt_mtx, actual_n_singular_values = 50) {
+    actual_n_singular_values <- min(actual_n_singular_values, ncol(dt_mtx) %/% 2)
+
+    RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+    embedding <- RunSVD(Matrix::t(dt_mtx), n = actual_n_singular_values, verbose = FALSE)@cell.embeddings
+    # remove the first component, as it does contain noise - see the Signac vignette
+    embedding <- embedding[, 2:actual_n_singular_values]
+
+    RhpcBLASctl::blas_set_num_threads(1)
+    rownames(embedding) <- rownames(dt_mtx)
+    colnames(embedding) <- paste0("LSI_", seq_len(actual_n_singular_values - 1))
+
+    return(embedding)
+}
+
+lsi_atac_feature_stability <- assess_feature_stability(
+    data_matrix = pbmc.atac@assays[["ATAC"]]@data,
+    feature_set = var_peaks,
+    resolution = seq(from = 0.1, to = 1, by = 0.1),
+    steps = steps,
+    n_repetitions = n_repetitions,
+    feature_type = "HV_peaks",
+    graph_reduction_type = "PCA",
+    matrix_processing = matrix_processing_function,
+    umap_arguments = list(
+        min_dist = 0.3,
+        n_neighbors = 30,
+        metric = "cosine"
+    ),
+    ecs_thresh = 1,
+    clustering_algorithm = 1,
+    verbose = TRUE
+)
+foreach::registerDoSEQ()
+```
+
+Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Highly Variable peaks.
+```{r umap_atac}
+umap_df <- data.frame(lsi_atac_feature_stability$embedding_list$HV_peaks$"1000")
+umap_df$celltypes <- pbmc.atac$seurat_annotations
+ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
+    geom_point() +
+    theme_classic()
+```
+
+# Session info
+```{r session_info}
+sessionInfo()
+```

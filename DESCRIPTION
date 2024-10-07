@@ -1,12 +1,11 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 0.3.1
-Authors@R: c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk",
-                  role = c("aut", "cre")), person("Andi", "Munteanu",
-                  email="am3019@cam.ac.uk", role="aut"), person("Irina", "Mohorianu",
-                  email="iim22@cam.ac.uk", role="aut"))
-Maintainer: Arash Shahsavari <as3006@cam.ac.uk>
+Version: 1.0.0
+Authors@R: c(person("Andi", "Munteanu",
+                  email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Arash", "Shahsavari", email="arash8579@hotmail.com",
+                  role = c("aut")), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Liviu", "Ciortuz", role=c("ctb"), email="liviu_ciortuz@yahoo.co.uk"), person("Irina", "Mohorianu",
+                  email="iim22@cam.ac.uk", role=c("aut")))
 Description: A set of tools for evaluating clustering robustness using 
     proportion of ambiguously clustered pairs (Senbabaoglu et al. (2014) 
     <doi:10.1038/srep06207>), as well as similarity across methods 
@@ -16,37 +15,72 @@ Description: A set of tools for evaluating clustering robustness using
     pipelines typical in single-cell data analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
+biocViews:
+    rhdf5,
+    SharedObject
 Imports: 
-    ggplot2,
+    ComplexHeatmap,
     dplyr,
+    DT,
     fastcluster,
-    rlang,
-    Matrix,
-    igraph,
-    magrittr,
-    Rcpp,
-    methods,
-    stats,
     foreach,
-    doParallel,
-    irlba,
+    glue,
+    Gmedian,
+    ggnewscale,
+    ggplot2,
+    ggrastr,
+    ggrepel,
+    ggtext,
+    gprofiler2,
+    igraph,
+    jsonlite,
+    Matrix (>= 1.5.0),
+    matrixStats,
+    methods,
     progress,
-    reshape2,
     stringr,
-    gtable,
-    uwot
-RoxygenNote: 7.2.0
+    paletteer,
+    plotly,
+    qualpalr,
+    RANN,
+    reshape2,
+    rlang,
+    shiny,
+    shinyjs,
+    shinyLP,
+    shinyWidgets,
+    stats,
+    uwot,
+    vioplot
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
 LinkingTo: 
-    Rcpp
+    Rcpp,
+    RcppEigen
 Suggests: 
-    knitr,
-    rmarkdown,
-    e1071,
+    colourpicker,
     dbscan,
+    DelayedMatrixStats,
     dendextend,
+    devtools,
+    doParallel,
+    doRNG,
+    e1071,
+    knitr,
+    leidenbase,
+    monocle3,
+    patchwork,
+    ragg,
+    reactlog,
+    rhdf5,
+    rmarkdown,
+    RhpcBLASctl,
+    scales,
     Seurat,
-    readr,
-    patchwork
+    SeuratData,
+    SeuratObject,
+    SharedObject,
+    styler
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr

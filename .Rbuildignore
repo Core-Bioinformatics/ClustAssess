@@ -3,3 +3,5 @@
 ^docs$
 ^LICENSE\.md$
 ^vignettes/stability-based-parameter-assessment\.Rmd$
+^doc$
+^Meta$

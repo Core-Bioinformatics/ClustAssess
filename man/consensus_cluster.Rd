@@ -61,8 +61,8 @@ Calculate consensus clustering and proportion of ambiguously
 clustered pairs (PAC) with hierarchical clustering.
 }
 \examples{
-pac.res = consensus_cluster(iris[,1:4], k_max=20)
-pac_convergence(pac.res, k_plot=c(3,5,7,9))
+pac.res <- consensus_cluster(iris[, 1:4], k_max = 20)
+pac_convergence(pac.res, k_plot = c(3, 5, 7, 9))
 }
 \references{
 Monti, S., Tamayo, P., Mesirov, J., & Golub, T. (2003).

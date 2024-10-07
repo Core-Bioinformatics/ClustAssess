@@ -12,8 +12,7 @@ element_sim_matrix(
   rescale_path_type = "max",
   ppr_implementation = "prpack",
   dist_rescaled = FALSE,
-  row_normalize = TRUE,
-  ncores = 1
+  row_normalize = TRUE
 )
 }
 \arguments{
@@ -52,9 +51,6 @@ rescaled to be in-between 0 and 1.}
 \item{row_normalize}{Whether to normalize all rows in clustering_result
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.}
-
-\item{ncores}{the number of parallel R instances that will run the code.
-If the value is set to 1, the code will be run sequentially.}
 }
 \value{
 A matrix or data.frame containing the pairwise ECS values.
@@ -65,8 +61,8 @@ average element-centric clustering similarities.
 }
 \examples{
 # cluster across 20 random seeds
-clustering.list = lapply(1:20, function(x) kmeans(mtcars, centers=3)$cluster)
-element_sim_matrix(clustering.list, output_type="matrix")
+clustering.list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)
+element_sim_matrix(clustering.list, output_type = "matrix")
 }
 \references{
 Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).

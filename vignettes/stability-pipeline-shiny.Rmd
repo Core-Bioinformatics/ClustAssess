@@ -1,0 +1,176 @@
+---
+title: "Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+set.seed(1001)
+```
+
+```{r install, include = FALSE}
+is_devtools <- require("devtools", quietly = TRUE)
+if (!is_devtools) {
+    install.packages("devtools")
+    library(devtools)
+}
+
+is_seuratdata <- require("SeuratData", quietly = TRUE)
+if (!is_seuratdata) {
+    install_github('satijalab/seurat-data')
+}
+```
+
+`ClustAssess` provide the option to run the entire stability pipeline automatically, by choosing the parameters based on their highest stability.
+Another useful feature is the option to create, based on this object, a shiny app that user can interact with and perform the assessment of the PhenoGraph configuration and of the clusters.
+
+```{r load}
+library(Seurat)
+library(ClustAssess)
+library(SeuratData)
+library(ggplot2)
+packageVersion("ClustAssess") # should be 1.0.0
+```
+
+Process the PBMC 3k Seurat object similarly to the `Stability-based parameter assessment` vignette.
+
+```{r}
+InstallData("pbmc3k")
+data("pbmc3k")
+pbmc3k <- UpdateSeuratObject(pbmc3k)
+pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^MT-", col.name = "percent.mito")
+pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^RP[SL][[:digit:]]", col.name = "percent.rp")
+# remove MT and RP genes
+all.index <- seq_len(nrow(pbmc3k))
+MT.index <- grep(pattern = "^MT-", x = rownames(pbmc3k), value = FALSE)
+RP.index <- grep(pattern = "^RP[SL][[:digit:]]", x = rownames(pbmc3k), value = FALSE)
+pbmc3k <- pbmc3k[!((all.index %in% MT.index) | (all.index %in% RP.index)), ]
+pbmc3k <- subset(pbmc3k, nFeature_RNA < 2000 & nCount_RNA < 2500 & percent.mito < 7 & percent.rp > 7)
+pbmc3k <- NormalizeData(pbmc3k, verbose = FALSE)
+pbmc3k <- FindVariableFeatures(pbmc3k, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
+
+features <- dimnames(pbmc3k@assays$RNA)[[1]]
+var_features <- pbmc3k@assays[["RNA"]]@var.features
+n_abundant <- 3000
+most_abundant_genes <- rownames(pbmc3k@assays$RNA)[order(Matrix::rowSums(pbmc3k@assays$RNA),
+    decreasing = TRUE
+)]
+
+pbmc3k <- ScaleData(pbmc3k, features = features, verbose = FALSE)
+
+pbmc3k <- RunPCA(pbmc3k,
+    npcs = 30,
+    approx = FALSE,
+    verbose = FALSE,
+    features = intersect(most_abundant_genes, pbmc3k@assays$RNA@var.features)
+)
+pbmc3k <- RunUMAP(pbmc3k,
+    reduction = "pca",
+    dims = 1:30,
+    n.neighbors = 30,
+    min.dist = 0.3,
+    metric = "cosine",
+    verbose = FALSE
+)
+```
+
+Initialise the parallel backend.
+
+```{r parallel_framwework}
+RhpcBLASctl::blas_set_num_threads(1)
+ncores <- 1
+my_cluster <- parallel::makeCluster(
+    ncores,
+    type = "PSOCK"
+)
+
+doParallel::registerDoParallel(cl = my_cluster)
+```
+
+Define the feature sets of interest.
+
+```{r feature_sets}
+features <- dimnames(pbmc3k@assays$RNA)[[1]]
+var_features <- pbmc3k@assays[["RNA"]]@var.features
+n_abundant <- 3000
+most_abundant_genes <- rownames(pbmc3k@assays$RNA)[order(Matrix::rowSums(pbmc3k@assays$RNA),
+    decreasing = TRUE
+)]
+
+steps <- seq(from = 500, to = 3000, by = 500)
+ma_hv_genes_intersection_sets <- sapply(steps, function(x) intersect(most_abundant_genes[1:x], var_features[1:x]))
+ma_hv_genes_intersection <- Reduce(union, ma_hv_genes_intersection_sets)
+ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
+```
+
+Apply the automatic assessment.
+
+```{r automatic_run, warning = FALSE}
+automm_output <- automatic_stability_assessment(
+    expression_matrix = pbmc3k@assays$RNA@scale.data,
+    n_repetitions = 10,
+    n_neigh_sequence = seq(from = 5, to = 50, by = 5),
+    resolution_sequence = seq(from = 0.1, to = 1, by = 0.1),
+    features_sets = list(
+        "HV" = var_features,
+        "MA" = most_abundant_genes[1:3000]
+    ),
+    steps = list(
+        "HV" = steps,
+        "MA" = steps
+    ),
+    n_top_configs = 2,
+    umap_arguments = list(
+        min_dist = 0.3,
+        n_neighbors = 30,
+        metric = "cosine"
+    ),
+    save_temp = FALSE,
+    verbose = TRUE
+)
+```
+
+Close the connections opened when using multiple cores.
+```{r remove_parallel}
+foreach::registerDoSEQ()
+```
+
+Create the shiny app based on the ClustAssess output. You should also specify either a seurat object or a normalized expression matrix.
+*Note*: Please make sure that the directory mentioned in the parameter `project_folder` is empty / doesn't exist.
+```{r generate_app, eval = FALSE}
+# generate using a seurat object
+write_shiny_app(
+    object = pbmc3k,
+    assay_name = "RNA",
+    clustassess_object = automm_output,
+    project_folder = "clustassess_app_dir_seurat",
+    shiny_app_title = "PBMC 3k dataset"
+)
+
+# generate using a normalized expression matrix
+write_shiny_app(
+    object = pbmc3k@assays$RNA@data,
+    metadata = pbmc3k@meta.data,
+    clustassess_object = automm_output,
+    project_folder = "clustassess_app_dir_expr",
+    shiny_app_title = "PBMC 3k dataset"
+)
+```
+
+The app can be run using the following command.
+
+```{r run_app, eval = FALSE}
+shiny::runApp("clustassess_app_dir_seurat")
+```
+
+Session info
+```{r ses_info}
+sessionInfo()
+```
