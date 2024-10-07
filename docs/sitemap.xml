@@ -1,234 +1,77 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/articles/ClustAssess.html</loc>
-  </url>
-  <url>
-    <loc>/articles/comparing-soft-and-hierarchical.html</loc>
-  </url>
-  <url>
-    <loc>/articles/dim_reduction_flexibility.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/stability-based-parameter-assessment.html</loc>
-  </url>
-  <url>
-    <loc>/articles/stability-pipeline-description.html</loc>
-  </url>
-  <url>
-    <loc>/articles/stability-pipeline-shiny.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>/reference/add_metadata.html</loc>
-  </url>
-  <url>
-    <loc>/reference/assess_clustering_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/assess_feature_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/assess_nn_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/automatic_stability_assessment.html</loc>
-  </url>
-  <url>
-    <loc>/reference/calculate_markers.html</loc>
-  </url>
-  <url>
-    <loc>/reference/calculate_markers_shiny.html</loc>
-  </url>
-  <url>
-    <loc>/reference/Clustering-class.html</loc>
-  </url>
-  <url>
-    <loc>/reference/consensus_cluster.html</loc>
-  </url>
-  <url>
-    <loc>/reference/create_clustering.html</loc>
-  </url>
-  <url>
-    <loc>/reference/create_monocle_object.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_agreement.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_consistency.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_sim.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_sim_elscore.html</loc>
-  </url>
-  <url>
-    <loc>/reference/element_sim_matrix.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getNNmatrix.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_clustering_difference.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_feature_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_highest_prune_param.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_highest_prune_param_embedding.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_nn_conn_comps.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_nn_importance.html</loc>
-  </url>
-  <url>
-    <loc>/reference/get_resolution_importance.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/length-Clustering-method.html</loc>
-  </url>
-  <url>
-    <loc>/reference/marker_overlap.html</loc>
-  </url>
-  <url>
-    <loc>/reference/merge_partitions.html</loc>
-  </url>
-  <url>
-    <loc>/reference/merge_resolutions.html</loc>
-  </url>
-  <url>
-    <loc>/reference/pac_convergence.html</loc>
-  </url>
-  <url>
-    <loc>/reference/pac_landscape.html</loc>
-  </url>
-  <url>
-    <loc>/reference/pipe.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_clustering_difference_boxplot.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_clustering_difference_facet.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_clustering_overall_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_clustering_per_value_stability.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_connected_comps_evolution.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_overall_stability_boxplot.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_overall_stability_incremental.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_per_resolution_stability_boxplot.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_per_resolution_stability_incremental.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_stability_boxplot.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_stability_ecs_facet.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_stability_ecs_incremental.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_feature_stability_mb_facet.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_k_n_partitions.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_k_resolution_corresp.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_n_neigh_ecs.html</loc>
-  </url>
-  <url>
-    <loc>/reference/plot_n_neigh_k_correspondence.html</loc>
-  </url>
-  <url>
-    <loc>/reference/print-Clustering-method.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_comparisons.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_dimensionality_reduction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_graph_clustering.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_graph_construction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_landing_page.html</loc>
-  </url>
-  <url>
-    <loc>/reference/server_sandbox.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_comparisons.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_dimensionality_reduction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_graph_clustering.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_graph_construction.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_landing_page.html</loc>
-  </url>
-  <url>
-    <loc>/reference/ui_sandbox.html</loc>
-  </url>
-  <url>
-    <loc>/reference/weighted_element_consistency.html</loc>
-  </url>
-  <url>
-    <loc>/reference/write_objects.html</loc>
-  </url>
-  <url>
-    <loc>/reference/write_shiny_app.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/LICENSE.html</loc></url>
+<url><loc>/articles/ClustAssess.html</loc></url>
+<url><loc>/articles/comparing-soft-and-hierarchical.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/stability-dim-reduction-flexibility.html</loc></url>
+<url><loc>/articles/stability-pipeline-description.html</loc></url>
+<url><loc>/articles/stability-pipeline-shiny.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/reference/Clustering-class.html</loc></url>
+<url><loc>/reference/add_metadata.html</loc></url>
+<url><loc>/reference/assess_clustering_stability.html</loc></url>
+<url><loc>/reference/assess_feature_stability.html</loc></url>
+<url><loc>/reference/assess_nn_stability.html</loc></url>
+<url><loc>/reference/automatic_stability_assessment.html</loc></url>
+<url><loc>/reference/calculate_markers.html</loc></url>
+<url><loc>/reference/calculate_markers_shiny.html</loc></url>
+<url><loc>/reference/choose_stable_clusters.html</loc></url>
+<url><loc>/reference/consensus_cluster.html</loc></url>
+<url><loc>/reference/create_clustering.html</loc></url>
+<url><loc>/reference/create_monocle_default.html</loc></url>
+<url><loc>/reference/create_monocle_from_clustassess.html</loc></url>
+<url><loc>/reference/create_monocle_from_clustassess_app.html</loc></url>
+<url><loc>/reference/create_seurat_object_default.html</loc></url>
+<url><loc>/reference/create_seurat_object_from_clustassess_app.html</loc></url>
+<url><loc>/reference/element_agreement.html</loc></url>
+<url><loc>/reference/element_consistency.html</loc></url>
+<url><loc>/reference/element_sim.html</loc></url>
+<url><loc>/reference/element_sim_elscore.html</loc></url>
+<url><loc>/reference/element_sim_matrix.html</loc></url>
+<url><loc>/reference/getNNmatrix.html</loc></url>
+<url><loc>/reference/get_clusters_from_clustassess_object.html</loc></url>
+<url><loc>/reference/get_highest_prune_param.html</loc></url>
+<url><loc>/reference/get_highest_prune_param_embedding.html</loc></url>
+<url><loc>/reference/get_nn_conn_comps.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/length-Clustering-method.html</loc></url>
+<url><loc>/reference/marker_overlap.html</loc></url>
+<url><loc>/reference/merge_partitions.html</loc></url>
+<url><loc>/reference/merge_resolutions.html</loc></url>
+<url><loc>/reference/pac_convergence.html</loc></url>
+<url><loc>/reference/pac_landscape.html</loc></url>
+<url><loc>/reference/plot_clustering_difference_facet.html</loc></url>
+<url><loc>/reference/plot_clustering_overall_stability.html</loc></url>
+<url><loc>/reference/plot_clustering_per_value_stability.html</loc></url>
+<url><loc>/reference/plot_connected_comps_evolution.html</loc></url>
+<url><loc>/reference/plot_feature_overall_stability_boxplot.html</loc></url>
+<url><loc>/reference/plot_feature_overall_stability_incremental.html</loc></url>
+<url><loc>/reference/plot_feature_per_resolution_stability_boxplot.html</loc></url>
+<url><loc>/reference/plot_feature_per_resolution_stability_incremental.html</loc></url>
+<url><loc>/reference/plot_feature_stability_ecs_facet.html</loc></url>
+<url><loc>/reference/plot_feature_stability_mb_facet.html</loc></url>
+<url><loc>/reference/plot_k_n_partitions.html</loc></url>
+<url><loc>/reference/plot_k_resolution_corresp.html</loc></url>
+<url><loc>/reference/plot_n_neigh_ecs.html</loc></url>
+<url><loc>/reference/plot_n_neigh_k_correspondence.html</loc></url>
+<url><loc>/reference/print-Clustering-method.html</loc></url>
+<url><loc>/reference/server_comparisons.html</loc></url>
+<url><loc>/reference/server_dimensionality_reduction.html</loc></url>
+<url><loc>/reference/server_graph_clustering.html</loc></url>
+<url><loc>/reference/server_graph_construction.html</loc></url>
+<url><loc>/reference/server_landing_page.html</loc></url>
+<url><loc>/reference/server_sandbox.html</loc></url>
+<url><loc>/reference/ui_comparisons.html</loc></url>
+<url><loc>/reference/ui_dimensionality_reduction.html</loc></url>
+<url><loc>/reference/ui_graph_clustering.html</loc></url>
+<url><loc>/reference/ui_graph_construction.html</loc></url>
+<url><loc>/reference/ui_landing_page.html</loc></url>
+<url><loc>/reference/ui_sandbox.html</loc></url>
+<url><loc>/reference/weighted_element_consistency.html</loc></url>
+<url><loc>/reference/write_objects.html</loc></url>
+<url><loc>/reference/write_shiny_app.html</loc></url>
 </urlset>
+
