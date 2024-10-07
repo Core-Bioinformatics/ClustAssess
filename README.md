@@ -11,6 +11,7 @@ for evaluating clustering robustness.
   * [Element Centric Clustering Similarity (ECS)](#element-centric-clustering-similarity-ecs)
   * [Marker Gene Overlap](#marker-gene-overlap)
   * [Stability-Based Parameter Assessment](#stability-based-parameter-assessment)
+  * [Interactive Visualization of the Stability Assessment and Downstream Analysis](#interactive-visualization-of-the-stability-assessment-and-downstream-analysis)
 - [Handling Large Datasets](#handling-large-datasets)
 - [Installation](#installation)
 - [Citing ClustAssess](#citing-clustassess)
@@ -19,7 +20,7 @@ for evaluating clustering robustness.
 
 # The Tools
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/man/figures/ClustAssess_diagram_all.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/man/figures/ClustAssess_diagram_all.png width=80%/>
 
 ## Proportion of Ambiguously Clustered Pairs (PAC)
 To assess clustering robustness, the proportion of ambiguously clustered pairs
@@ -37,7 +38,7 @@ It is important that the PAC has converged before using it to assess your data;
 the `pac_convergence` function can be used to visualize the PAC curves across
 iterations:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
 
 As the curves have evened out, we surmize that PAC has converged in this case.
 If the PAC has not converged, increase the `n_reps` value.
@@ -48,7 +49,7 @@ sketch [3] of your data of size <1000, and running PAC on that sketch.
 A local minimum in the PAC landscape, as visualized below using the
 `pac_landscape` function, can be interpreted as an optimal *k* for the dataset:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/reference/pac_landscape-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-2.png width=80%/>
 
 
 ## Element Centric Clustering Similarity (ECS)
@@ -69,7 +70,7 @@ To compare two clusterings with ECS, we use the `element_sim_elscore` function:
 where `1-alpha` is the restart probability of the random walk. We can
 subsequently visualize the ECS on a PCA of the data:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
 
 In addition to flat disjoint clusterings (like the result of k-means for
 example), ClustAssess can also compare overlapping clusterings and hierarchical
@@ -91,7 +92,7 @@ results may lead to two different sets of markers for the cells. The
 output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
 
 
 ## Stability-Based Parameter Assessment
@@ -104,15 +105,15 @@ choices that influence the final clustering, for example to evaluate feature
 sets, we use `get_feature_stability_object`, and plot the results with
 `plot_feature_stability_boxplot`:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/articles/stability-based-parameter-assessment_files/figure-html/stab_boxplot-1.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-pipeline-description_files/figure-html/stab_boxplot-1.png width=80%/>
 
 where the higher element-centric consistency (ECC) indicates more stable
 clustering results across random seeds. For more details, please see [this
-vignette](https://core-bioinformatics.github.io/ClustAssess/articles/stability-based-parameter-assessment.html).
+vignette](https://core-bioinformatics.github.io/ClustAssess/articles/stability-pipeline-description.html).
 
 ## Interactive Visualization of the Stability Assessment and Downstream Analysis
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/man/figures/ClustAssess_app_supp.png height=40%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/man/figures/ClustAssess_app_supp.png height=40%/>
 
 Another feature of the package consists in providing a Shiny application where
 the user can interactively visualize the stability assessment of the clustering
@@ -125,12 +126,13 @@ prompted to select the stable configurations in order to proceed to the next
 section.
 - Comparison of configuration and downstream analysis: the user can visually
 assess the clustering results and the pattern on expression based on the
-variety of visualisations provided in this section, which contains UMAP plots,
-violin and boxplots, gene expression pseudobulk heatmap and bubbleplots,
-metadata association heatmaps. The biological interpretation is enhanced by
-the possibility of identifying the marker genes for each cluster and the
-enrichment analysis of the detected differentially expressed genes. The app
-allows custom annotation of the clusters and the already existing metadata.
+variety of visualisations provided in this section, which contains UMAP plots
+(A - one or multiple gene expression, B - metadata distribution),
+violin and boxplots (G), gene expression pseudobulk heatmap and bubbleplots (E),
+metadata association heatmaps (C). The biological interpretation is enhanced by
+the possibility of identifying the marker genes for each cluster (F) and the
+enrichment analysis of the detected differentially expressed genes (H). The app
+allows custom annotation of the clusters and the already existing metadata (D).
 - Sandbox: this tab provides more flexibility for the user in temrs of the
 selected configuration. This approach is available, but not encouraged, as the
 results might not be stable and reproducible. This tab also contains elements
