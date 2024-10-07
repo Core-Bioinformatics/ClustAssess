@@ -7,7 +7,8 @@
 merge_partitions(
   partition_list,
   ecs_thresh = 1,
-  order_logic = c("freq", "agreement", "none")
+  order_logic = c("freq", "agreement", "none"),
+  return_ecs_matrix = FALSE
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ the ECS scores between that partition and the other partitions from the list.
 The partition with the highest agreement will be  the first on the list.
 \item "none": do not perform any ordering (not recommended).
 }}
+
+\item{return_ecs_matrix}{A logical: if TRUE, the function will add the
+ECS matrix to the return list. Defaults to FALSE.}
 }
 \value{
 a list of the merged partitions

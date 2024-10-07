@@ -17,7 +17,8 @@ calculate_markers_shiny(
   expression_h5_path = "expression.h5",
   pseudocount_use = 1,
   base = 2,
-  verbose = TRUE
+  verbose = TRUE,
+  check_difference = TRUE
 )
 }
 \arguments{
@@ -76,6 +77,9 @@ the denominator. Defaults to \code{1}.}
 
 \item{verbose}{Whether to print messages about the progress of the function.
 Defaults to TRUE.}
+
+\item{check_difference}{Whether to perform set difference between the two
+cells. Defaults to TRUE.}
 }
 \value{
 A data frame containing the following columns:
