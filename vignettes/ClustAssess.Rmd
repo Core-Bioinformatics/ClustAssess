@@ -36,7 +36,7 @@ the clustering. PAC was originally presented in
 https://doi.org/10.1038/srep06207.
 ```{r pac, fig.width=7, fig.height=4.5}
 # retrieve scaled data for PAC calculation
-pbmc.data <- GetAssayData(pbmc_small, assay = "RNA", slot = "scale.data")
+pbmc.data <- GetAssayData(pbmc_small, assay = "RNA", layer = "scale.data")
 
 # perform consensus clustering
 cc.res <- consensus_cluster(t(pbmc.data),
@@ -60,8 +60,8 @@ pac_landscape(cc.res)
 
 ## Element-centric clustering comparison
 We compare the similarity of clustering results between methods (in this case,
-between Louvain community detection and k-means) using element-centric 
-similarity, which quantifies the clustering similarity per cell. Higher ECS
+between Louvain community detection and k-means) using Element-Centric 
+Similarity (ECS), which quantifies the clustering similarity per cell. Higher ECS
 indicates that an observation is clustered similarly across methods. ECS was 
 introduced in https://doi.org/10.1038/s41598-019-44892-y.
 ```{r ecs, fig.width=7, fig.height=4.5}
@@ -83,7 +83,7 @@ pbmc_small@meta.data$ecs <- element_sim_elscore(
     pbmc_small@meta.data$seurat_clusters,
     pbmc_small@meta.data$kmeans_clusters
 )
-FeaturePlot(pbmc_small, "ecs")
+suppressMessages(FeaturePlot(pbmc_small, "ecs") + scale_colour_viridis_c())
 mean(pbmc_small@meta.data$ecs)
 ```
 
@@ -125,7 +125,7 @@ pbmc_small@meta.data$marker.gene.jsi <- marker_overlap(louvain.markers,
 )
 
 # which cells have the same markers, regardless of clustering?
-FeaturePlot(pbmc_small, "marker.gene.jsi")
+suppressMessages(FeaturePlot(pbmc_small, "marker.gene.jsi") + scale_colour_viridis_c())
 mean(pbmc_small@meta.data$marker.gene.jsi)
 ```
 
@@ -152,7 +152,7 @@ for (i in 1:n.reps) {
 pbmc_small@meta.data$consistency <- element_consistency(clustering.list)
 
 # which cells are clustered more consistently?
-FeaturePlot(pbmc_small, "consistency")
+suppressMessages(FeaturePlot(pbmc_small, "consistency") + scale_colour_viridis_c())
 mean(pbmc_small@meta.data$consistency)
 ```
 

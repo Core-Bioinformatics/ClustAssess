@@ -43,6 +43,7 @@ flat overlapping clusterings, and hierarchical clusterings.
 library(ClustAssess)
 library(ggplot2)
 suppressPackageStartupMessages(library(dendextend))
+theme_set(theme_classic())
 
 # we will use the Iris dataset for this vignette
 data <- as.matrix(iris[, 1:4])
@@ -100,7 +101,8 @@ df.iris$dbscan.cmeans.ecs <- element_sim_elscore(
 )
 ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.cmeans.ecs)) +
     geom_point() +
-    labs(title = "DBScan vs c-means similarity")
+    labs(title = "DBScan vs c-means similarity") +
+    scale_colour_viridis_c()
 mean(df.iris$dbscan.cmeans.ecs)
 
 # next compare flat disjoint and hierarchical disjoint clusterings
@@ -110,7 +112,8 @@ df.iris$dbscan.hc.ecs <- element_sim_elscore(
 )
 ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.hc.ecs)) +
     geom_point() +
-    labs(title = "DBScan vs hclust similarity")
+    labs(title = "DBScan vs hclust similarity") +
+    scale_colour_viridis_c()
 mean(df.iris$dbscan.hc.ecs)
 
 # finally compare flat soft and hierarchical disjoint clusterings
@@ -120,7 +123,8 @@ df.iris$cmeans.hc.ecs <- element_sim_elscore(
 )
 ggplot(df.iris, aes(x = PC1, y = PC2, color = cmeans.hc.ecs)) +
     geom_point() +
-    labs(title = "c-means vs hclust similarity")
+    labs(title = "c-means vs hclust similarity") +
+    scale_colour_viridis_c()
 mean(df.iris$cmeans.hc.ecs)
 ```
 

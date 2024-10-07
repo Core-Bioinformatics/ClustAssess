@@ -68,7 +68,7 @@ print(element_sim_elscore(mb1, mb2))
 print(mean(element_sim_elscore(mb1, mb2)))
 print(element_sim(mb1, mb2))
 ```
-```{r}
+```{r ecc_example}
 # create a list of 10 random partitions
 list_mbs <- lapply(1:10, function(i) {
     sample.int(4, 5, replace = TRUE)
@@ -85,14 +85,14 @@ In this vignette we illustrate a data-driven pipeline for the assessment of opti
 
 To illustrate these tools, we will use the PBMC 3k dataset as it is provided in the [SeuratData](https://github.com/satijalab/seurat-data) package. The input is provided as a 13714x 2700 expression level matrix containing the raw quantification (in csv format).
 
-```{r}
+```{r install_pbmc_rna}
 InstallData("pbmc3k")
 data("pbmc3k")
 pbmc3k <- UpdateSeuratObject(pbmc3k)
 pbmc3k
 ```
 
-```{r}
+```{r percent_mt_rp}
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^MT-", col.name = "percent.mito")
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^RP[SL][[:digit:]]", col.name = "percent.rp")
 ```
@@ -113,7 +113,7 @@ pbmc3k <- pbmc3k[!((all.index %in% MT.index) | (all.index %in% RP.index)), ]
 
 We plot the violin plots to visualise the distribution of the number of features, number of counts,
 percentage of mitochondrial genes, and percentage of ribosomal genes.
-```{r, fig.height=10, fig.width=7}
+```{r qc_violin, fig.height=10, fig.width=7}
 VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), ncol = 2)
 ```
 
@@ -123,13 +123,13 @@ After the quality control step, we filter the dataset using the following criter
 - the percentage of mitochondrial genes is less than 7%
 - the percentage of ribosomal genes is greater than 7%
 
-```{r}
+```{r qc_filtering}
 pbmc3k <- subset(pbmc3k, nFeature_RNA < 2000 & nCount_RNA < 2500 & percent.mito < 7 & percent.rp > 7)
 ```
 
 
 We plot again the violin plots to see the distribution of the features after the filtering step.
-```{r, fig.height=10, fig.width=7}
+```{r qc_violin_post, fig.height=10, fig.width=7}
 VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), ncol = 2)
 ```
 
@@ -174,7 +174,7 @@ B – E distributions of sequencing depths (B), number of features (C), and perc
 wrap_plots(lapply(
     c(
         DimPlot(pbmc3k, group.by = c("seurat_annotations"), combine = FALSE),
-        FeaturePlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), combine = FALSE)
+        suppressMessages(FeaturePlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), combine = FALSE) + scale_colour_viridis_c())
     ),
     function(x) {
         x + labs(title = element_blank()) + theme(
@@ -205,7 +205,7 @@ wrap_plots(lapply(
 
 To illustrate the necessity of obtaining reproducible and robust clustering outputs, we will perform only the clustering step several times by only changing the random seed.
 
-```{r}
+```{r default_phenograph}
 pbmc3k <- FindNeighbors(pbmc3k)
 clustering_list <- lapply(seq(from = 1, by = 100, length.out = 10), function(i) {
     pbmc3k <- FindClusters(pbmc3k, algorithm = 3, random.seed = i, verbose = FALSE)
@@ -214,12 +214,12 @@ clustering_list <- lapply(seq(from = 1, by = 100, length.out = 10), function(i) 
 ```
 
 We assess the stability of the clustering by calculating the consistency of the 10 clustering outputs.
-```{r}
+```{r phenograph_instability}
 ecc_value <- element_consistency(clustering_list, calculate_sim_matrix = TRUE)
 print(fivenum(ecc_value$ecc))
 ```
 The similarity between the distinct partitions can be assessed by accessing the `ecs_matrix` field.
-```{r}
+```{r phenograph_sim_matrix}
 print(ecc_value$ecs_matrix)
 
 ```
@@ -227,11 +227,12 @@ print(ecc_value$ecs_matrix)
 The difference between clusters can be visualised using the ECC distribution. Also, comparing the output of the clustering using the second and the fourth seed, we notice that some cells from the top-left island change their identity between the fifth and seventh cluster.
 
 
-```{r, fig.width = 15, fig.height = 5}
+```{r phenograph_different_plots, fig.width = 15, fig.height = 5}
 gplots <- list()
 gplots[[1]] <- ggplot(raw_umap, aes(x = umap_1, y = umap_2, colour = ecc_value$ecc)) +
     geom_point() +
-    theme_classic()
+    theme_classic() +
+    scale_colour_viridis_c()
 raw_umap$clustering <- factor(clustering_list[[2]])
 gplots[[2]] <- ggplot(raw_umap, aes(x = umap_1, y = umap_2, colour = clustering)) +
     geom_point() + theme_classic()
@@ -494,7 +495,6 @@ nn_importance_object <- mapply(c,
         ecs_thresh = 1,
         umap_arguments = list(
             min_dist = 0.3,
-            init = "spca",
             n_neighbors = 30,
             metric = "cosine"
         ),
