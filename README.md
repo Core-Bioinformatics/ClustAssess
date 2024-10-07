@@ -19,7 +19,7 @@ for evaluating clustering robustness.
 
 # The Tools
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/reference/figures/ClustAssess_diagram_all.png width=80%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/man/figures/ClustAssess_diagram_all.png width=80%/>
 
 ## Proportion of Ambiguously Clustered Pairs (PAC)
 To assess clustering robustness, the proportion of ambiguously clustered pairs
@@ -112,7 +112,7 @@ vignette](https://core-bioinformatics.github.io/ClustAssess/articles/stability-b
 
 ## Interactive Visualization of the Stability Assessment and Downstream Analysis
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/docs/reference/figures/ClustAssess_app_supp.png height=40%/>
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-1.0.0/man/figures/ClustAssess_app_supp.png height=40%/>
 
 Another feature of the package consists in providing a Shiny application where
 the user can interactively visualize the stability assessment of the clustering
