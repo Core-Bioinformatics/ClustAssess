@@ -21,6 +21,9 @@ ClustAssess on a small single-cell RNA-seq dataset.
 ```{r setup, fig.width=7, fig.height=4.5}
 library(Seurat)
 library(ClustAssess)
+library(ggplot2)
+theme_set(theme_classic())
+
 data("pbmc_small")
 
 # we will use the pbmc_small single-cell RNA-seq dataset available via Seurat

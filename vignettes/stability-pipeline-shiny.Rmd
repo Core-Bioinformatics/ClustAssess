@@ -35,6 +35,7 @@ Another useful feature is the option to create, based on this object, a shiny ap
 library(Seurat)
 library(ClustAssess)
 library(SeuratData)
+library(ggplot2)
 packageVersion("ClustAssess") # should be 1.0.0
 ```
 
