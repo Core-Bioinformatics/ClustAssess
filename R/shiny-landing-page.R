@@ -79,7 +79,7 @@ ui_landing_page <- function(id) {
               https://www.biorxiv.org/content/10.1101/2022.01.31.478592v1.full
           </a>
           <br>
-          Authors: Arash Shahsavari, Andi Munteanu, Miguel Larraz, Liviu Ciortuz and Irina Mohorianu"
+          Authors: Andi Munteanu, Arash Shahsavari, Rafael Kollyfas, Miguel Larraz, Liviu Ciortuz and Irina Mohorianu"
                 )
             )),
             shiny::column(6, shinyLP::panel_div(

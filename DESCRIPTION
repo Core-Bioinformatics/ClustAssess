@@ -2,9 +2,9 @@ Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
 Version: 1.0.0
-Authors@R: c(person("Arash", "Shahsavari", email="arash8579@hotmail.com",
-                  role = c("aut")), person("Andi", "Munteanu",
-                  email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Irina", "Mohorianu",
+Authors@R: c(person("Andi", "Munteanu",
+                  email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Arash", "Shahsavari", email="arash8579@hotmail.com",
+                  role = c("aut")), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Liviu", "Ciortuz", role=c("ctb"), email="liviu_ciortuz@yahoo.co.uk"), person("Irina", "Mohorianu",
                   email="iim22@cam.ac.uk", role=c("aut")))
 Description: A set of tools for evaluating clustering robustness using 
     proportion of ambiguously clustered pairs (Senbabaoglu et al. (2014) 
@@ -19,41 +19,39 @@ biocViews:
     rhdf5,
     SharedObject
 Imports: 
-    ggplot2,
     ComplexHeatmap,
     dplyr,
     DT,
     fastcluster,
-    rlang,
-    Matrix (>= 1.5.0),
+    foreach,
+    glue,
     Gmedian,
     ggnewscale,
+    ggplot2,
+    ggrastr,
     ggrepel,
     ggtext,
     gprofiler2,
-    ggrastr,
     igraph,
     jsonlite,
+    Matrix (>= 1.5.0),
     matrixStats,
     methods,
-    stats,
-    foreach,
     progress,
-    reshape2,
-    RANN,
     stringr,
     paletteer,
     plotly,
     qualpalr,
-    RColorBrewer,
-    glue,
+    RANN,
+    reshape2,
+    rlang,
     shiny,
     shinyjs,
     shinyLP,
     shinyWidgets,
+    stats,
     uwot,
-    vioplot,
-    viridis
+    vioplot
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 LinkingTo: 
@@ -61,28 +59,28 @@ LinkingTo:
     RcppEigen
 Suggests: 
     colourpicker,
+    dbscan,
     DelayedMatrixStats,
+    dendextend,
     devtools,
-    rhdf5,
-    SharedObject,
-    knitr,
     doParallel,
     doRNG,
-    rmarkdown,
     e1071,
-    dbscan,
-    dendextend,
+    knitr,
     leidenbase,
     monocle3,
     patchwork,
+    ragg,
+    reactlog,
+    rhdf5,
+    rmarkdown,
+    RhpcBLASctl,
     scales,
     Seurat,
     SeuratData,
     SeuratObject,
-    styler,
-    ragg,
-    reactlog,
-    RhpcBLASctl
+    SharedObject,
+    styler
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
