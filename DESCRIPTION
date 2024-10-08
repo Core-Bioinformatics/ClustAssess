@@ -16,8 +16,24 @@ Description: A set of tools for evaluating clustering robustness using
 License: MIT + file LICENSE
 Encoding: UTF-8
 biocViews:
-    rhdf5,
-    SharedObject
+    Software,
+    SingleCell,
+    RNASeq,
+    ATACSeq,
+    Normalization,
+    Preprocessing,
+    DimensionReduction,
+    Visualization,
+    QualityControl,
+    Clustering,
+    Classification,
+    Annotation,
+    GeneExpression,
+    DifferentialExpression
+Depends:
+    R (>= 4.0.0),
+    methods,
+    stats
 Imports: 
     ComplexHeatmap,
     dplyr,
@@ -36,7 +52,6 @@ Imports:
     jsonlite,
     Matrix (>= 1.5.0),
     matrixStats,
-    methods,
     progress,
     stringr,
     paletteer,
@@ -49,7 +64,6 @@ Imports:
     shinyjs,
     shinyLP,
     shinyWidgets,
-    stats,
     uwot,
     vioplot
 RoxygenNote: 7.3.2
@@ -58,7 +72,9 @@ LinkingTo:
     Rcpp,
     RcppEigen
 Suggests: 
+    BiocManager,
     colourpicker,
+    data.table,
     dbscan,
     DelayedMatrixStats,
     dendextend,
@@ -66,24 +82,25 @@ Suggests:
     doParallel,
     doRNG,
     e1071,
+    harmony,
     knitr,
     leidenbase,
     monocle3,
     patchwork,
     ragg,
     reactlog,
+    reticulate,
     rhdf5,
-    rmarkdown,
     RhpcBLASctl,
+    rmarkdown,
+    Rsamtools,
     scales,
     Seurat,
     SeuratData,
     SeuratObject,
+    Signac,
     SharedObject,
     styler
-Remotes:
-    cole-trapnell-lab/monocle3
-    satijalab/seurat-data
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
