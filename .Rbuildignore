@@ -1,8 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.Rhistory$
 ^docs$
 ^LICENSE\.md$
-^vignettes/stability-based-parameter-assessment\.Rmd$
 ^doc$
 ^Meta$
 ^.github
+^.git
+^man/figures$
