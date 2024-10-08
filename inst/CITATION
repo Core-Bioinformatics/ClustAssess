@@ -1,9 +1,9 @@
 citHeader("To cite ClustAssess in publications use:")
 
-citEntry(
-  entry    = "Article",
+bibentry(
+  bibtype = "Article",
   title    = "ClustAssess: tools for assessing the robustness of single-cell clustering",
-  author   = personList(person("Arash", "Shahsavari", email="as3006@cam.ac.uk"), person("Andi", "Munteanu", email="am3019@cam.ac.uk"), person("Irina", "Mohorianu", email="iim22@cam.ac.uk")),
+  author   = c(person("Arash", "Shahsavari", email="as3006@cam.ac.uk"), person("Andi", "Munteanu", email="am3019@cam.ac.uk"), person("Irina", "Mohorianu", email="iim22@cam.ac.uk")),
   journal  = "bioRxiv",
   year     = "2022",
   doi      = "10.1101/2022.01.31.478592",
