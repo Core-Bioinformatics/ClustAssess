@@ -6,6 +6,9 @@
 This repo contains the ClustAssess R package, which provides a set of tools
 for evaluating clustering robustness.
 
+Please check the [ClustAssessPy](https://github.com/Core-Bioinformatics/ClustAssessPy) module for a Python
+implementation of the ClustAssess package.
+
 - [The Tools](#the-tools)
   * [Proportion of Ambiguously Clustered Pairs (PAC)](#proportion-of-ambiguously-clustered-pairs-pac)
   * [Element Centric Clustering Similarity (ECS)](#element-centric-clustering-similarity-ecs)
