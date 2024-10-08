@@ -204,6 +204,7 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #'
 #' @export
 #' @examples
+#' \dontrun{
 #' set.seed(2024)
 #' # create an already-transposed artificial expression matrix
 #' expr_matrix <- matrix(
@@ -244,6 +245,7 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' plot_feature_overall_stability_boxplot(autom_object$feature_stability)
 #' plot_n_neigh_ecs(autom_object$set1$"5"$nn_stability)
 #' plot_k_n_partitions(autom_object$set1$"5"$clustering_stability)
+#' }
 automatic_stability_assessment <- function(expression_matrix,
                                            n_repetitions,
                                            n_neigh_sequence,

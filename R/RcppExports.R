@@ -13,10 +13,6 @@ calculate_pac_cpp <- function(indicator, connectivity, lower_lim, upper_lim) {
     .Call('_ClustAssess_calculate_pac_cpp', PACKAGE = 'ClustAssess', indicator, connectivity, lower_lim, upper_lim)
 }
 
-filterNNmatrix <- function(oldNN, nnRanked, oldK, newK, prune = 0) {
-    .Call('_ClustAssess_filterNNmatrix', PACKAGE = 'ClustAssess', oldNN, nnRanked, oldK, newK, prune)
-}
-
 pruneSNN <- function(snnMatrix, prune = 0) {
     .Call('_ClustAssess_pruneSNN', PACKAGE = 'ClustAssess', snnMatrix, prune)
 }

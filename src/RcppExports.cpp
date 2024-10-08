@@ -51,20 +51,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// filterNNmatrix
-List filterNNmatrix(Eigen::SparseMatrix<double> oldNN, Eigen::MatrixXd nnRanked, int oldK, int newK, double prune);
-RcppExport SEXP _ClustAssess_filterNNmatrix(SEXP oldNNSEXP, SEXP nnRankedSEXP, SEXP oldKSEXP, SEXP newKSEXP, SEXP pruneSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< Eigen::SparseMatrix<double> >::type oldNN(oldNNSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type nnRanked(nnRankedSEXP);
-    Rcpp::traits::input_parameter< int >::type oldK(oldKSEXP);
-    Rcpp::traits::input_parameter< int >::type newK(newKSEXP);
-    Rcpp::traits::input_parameter< double >::type prune(pruneSEXP);
-    rcpp_result_gen = Rcpp::wrap(filterNNmatrix(oldNN, nnRanked, oldK, newK, prune));
-    return rcpp_result_gen;
-END_RCPP
-}
 // pruneSNN
 Eigen::SparseMatrix<double> pruneSNN(Eigen::SparseMatrix<double> snnMatrix, double prune);
 RcppExport SEXP _ClustAssess_pruneSNN(SEXP snnMatrixSEXP, SEXP pruneSEXP) {
@@ -132,7 +118,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 4},
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
-    {"_ClustAssess_filterNNmatrix", (DL_FUNC) &_ClustAssess_filterNNmatrix, 5},
     {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},
     {"_ClustAssess_getNNmatrix", (DL_FUNC) &_ClustAssess_getNNmatrix, 4},

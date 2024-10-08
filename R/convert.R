@@ -232,6 +232,7 @@ get_info_from_clustassess_app <- function(app_folder,
 #'
 #' @export
 #' @examples
+#' \dontrun{
 #' set.seed(2024)
 #' # create an already-transposed artificial expression matrix
 #' expr_matrix <- matrix(
@@ -248,6 +249,7 @@ get_info_from_clustassess_app <- function(app_folder,
 #'     umap_emb = NULL,
 #'     metadata_df = NULL
 #' )
+#' }
 create_monocle_default <- function(normalized_expression_matrix,
                                    count_matrix = NULL,
                                    pca_embedding = NULL,
@@ -348,6 +350,7 @@ create_monocle_default <- function(normalized_expression_matrix,
 #'
 #' @export
 #' @examples
+#' \dontrun{
 #' set.seed(2024)
 #' # create an already-transposed artificial expression matrix
 #' expr_matrix <- matrix(
@@ -394,6 +397,7 @@ create_monocle_default <- function(normalized_expression_matrix,
 #' #     stable_feature_set_size = "5",
 #' #     stable_clustering_method = "Louvain"
 #' # )
+#' }
 create_monocle_from_clustassess <- function(normalized_expression_matrix,
                                             count_matrix = NULL,
                                             clustassess_object,
