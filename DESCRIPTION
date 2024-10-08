@@ -81,6 +81,9 @@ Suggests:
     SeuratObject,
     SharedObject,
     styler
+Remotes:
+    cole-trapnell-lab/monocle3
+    satijalab/seurat-data
 URL: https://github.com/Core-Bioinformatics/ClustAssess
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr

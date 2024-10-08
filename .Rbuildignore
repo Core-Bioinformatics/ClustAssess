@@ -5,3 +5,4 @@
 ^vignettes/stability-based-parameter-assessment\.Rmd$
 ^doc$
 ^Meta$
+^.github
