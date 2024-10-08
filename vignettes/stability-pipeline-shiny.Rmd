@@ -18,7 +18,7 @@ set.seed(1001)
 ```{r install, include = FALSE}
 is_devtools <- require("devtools", quietly = TRUE)
 if (!is_devtools) {
-    install.packages("devtools")
+    install.packages("devtools", repos = "https://cloud.r-project.org")
     library(devtools)
 }
 

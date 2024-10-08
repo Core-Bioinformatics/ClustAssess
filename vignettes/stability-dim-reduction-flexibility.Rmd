@@ -15,12 +15,18 @@ if (!is_seuratdata) {
 
 is_harmony <- require("harmony", quietly = TRUE)
 if (!is_harmony) {
-    install.packages("harmony")
+    install.packages("harmony", repos = "https://cloud.r-project.org")
 }
 
 is_rsamtool <- require("Rsamtools", quietly = TRUE)
 if (!is_rsamtool) {
-    BiocManager::install("Rsamtools")
+    is_biocmanager <- require("BiocManager", quietly = TRUE)
+    if (!is_biocmanager) {
+        install.packages("BiocManager", repos = "https://cloud.r-project.org")
+        library(BiocManager)
+    }
+
+    install("Rsamtools")
 }
 ```
 
@@ -31,6 +37,7 @@ library(ClustAssess)
 library(ggplot2)
 library(harmony)
 library(data.table)
+library(Rsamtools)
 
 n_repetitions <- 30
 ```
@@ -90,7 +97,7 @@ ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
 ```
 
 Assess the stability of the dimensionality reduction when PCA is used as dimensionality reduction.
-```{r feature_stability_pca}
+```{r feature_stability_pca, cache = TRUE}
 matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
     actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
 
@@ -137,7 +144,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
 We can also modify the function by adding an addition post-processing step to the PCA. In this example, we will use the Harmony correction to remove the "batch effect" created by the celltypes.
 *Note*: This example is meant to exemplify how to use the Harmony correction in the ClusAssess pipeline. The batch correction is actually not needed in the PBMC 3k dataset.
 
-```{r feature_stability_harmony}
+```{r feature_stability_harmony, cache = TRUE}
 matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
     actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
 
@@ -208,7 +215,7 @@ To speedup the assessment, set a parallel backend with 6 cores.
 
 ```{r parallel_backend}
 RhpcBLASctl::blas_set_num_threads(1)
-ncores <- 6
+ncores <- 1
 if (ncores > 1) {
     my_cluster <- parallel::makeCluster(
         ncores,
@@ -219,7 +226,7 @@ if (ncores > 1) {
 }
 ```
 Assess the stability of the dimensionality reduction by varying the number of highly variable peaks.
-```{r feature_stability_atac}
+```{r feature_stability_atac, cache = TRUE}
 matrix_processing_function <- function(dt_mtx, actual_n_singular_values = 50) {
     actual_n_singular_values <- min(actual_n_singular_values, ncol(dt_mtx) %/% 2)
 

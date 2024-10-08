@@ -20,13 +20,13 @@ In case some packages cannot be installed because of the locks, remove and reins
 ```{r install, include = FALSE}
 is_devtools <- require("devtools", quietly = TRUE)
 if (!is_devtools) {
-    install.packages("devtools")
+    install.packages("devtools", repos = "https://cloud.r-project.org")
     library(devtools)
 }
 
 is_rhpcblas <- require("RhpcBLASctl", quietly = TRUE)
 if (!is_rhpcblas) {
-    install.packages("RhpcBLASctl")
+    install.packages("RhpcBLASctl", repos = "https://cloud.r-project.org")
 }
 
 is_seuratdata <- require("SeuratData", quietly = TRUE)
@@ -36,7 +36,7 @@ if (!is_seuratdata) {
 
 is_patchwork <- require("patchwork", quietly = TRUE)
 if (!is_patchwork) {
-    install.packages("patchwork")
+    install.packages("patchwork", repos = "https://cloud.r-project.org")
 }
 ```
 
@@ -294,7 +294,7 @@ start_time_feature_stability <- Sys.time()
 ```
 
 
-```{r feature_stability, warning=FALSE}
+```{r feature_stability, warning=FALSE, cache = TRUE}
 pca_feature_stability_object <- mapply(c,
     assess_feature_stability(
         data_matrix = pbmc3k@assays[["RNA"]]@scale.data,
@@ -479,7 +479,7 @@ stop_time_nn_conn <- Sys.time()
 start_time_nn_importance <- Sys.time()
 ```
 
-```{r nn_importance}
+```{r nn_importance, cache = TRUE}
 nn_importance_object <- mapply(c,
     assess_nn_stability(
         embedding = pbmc3k@reductions$pca@cell.embeddings,
@@ -539,7 +539,7 @@ start_time_clustering <- Sys.time()
 
 As previously suggested, the resolution parameter affects the number of clusters obtained. The `get_resolution_importance` evaluates the effect of a range of values for the resolution parameter on the stability of the output. Besides the resolution, the user can input multiple values of the following parameters: number of neighbours, the graph type and the clustering method. The function will return a list associated with each parameter value combination. For each resolution value, the list will contain multiple sublists of partitions corresponding to specific number of clusters.
 
-```{r resolution_importance, warning=FALSE}
+```{r resolution_importance, warning=FALSE, cache = TRUE}
 clustering_stability <- assess_clustering_stability(
     graph_adjacency_matrix = adj_matrix,
     resolution = seq(from = 0.1, to = 2, by = 0.1),

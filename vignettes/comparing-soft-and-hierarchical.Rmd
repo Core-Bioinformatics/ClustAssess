@@ -18,21 +18,23 @@ set.seed(1001)
 ```{r install}
 is_e1071 <- require("e1071", quietly = TRUE)
 if (!is_e1071) {
-    install.packages("e1071")
+    install.packages("e1071", repos = "https://cloud.r-project.org")
     library(e1071)
 }
 
 is_dbscan <- require("dbscan", quietly = TRUE)
 if (!is_dbscan) {
-    install.packages("dbscan")
+    install.packages("dbscan", repos = "https://cloud.r-project.org")
     library(dbscan)
 }
 
 is_dendextend <- require("dendextend", quietly = TRUE)
 if (!is_dendextend) {
-    install.packages("dendextend")
+    install.packages("dendextend", repos = "https://cloud.r-project.org")
     library(dendextend)
 }
+
+install.packages("harmony", repos = "https://cloud.r-project.org")
 ```
 
 
