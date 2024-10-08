@@ -54,6 +54,7 @@ Use the object generated using the ClustAssess
 which has the stable number of clusters.
 }
 \examples{
+\dontrun{
 set.seed(2024)
 # create an already-transposed artificial expression matrix
 expr_matrix <- matrix(
@@ -100,4 +101,5 @@ autom_object <- automatic_stability_assessment(
 #     stable_feature_set_size = "5",
 #     stable_clustering_method = "Louvain"
 # )
+}
 }

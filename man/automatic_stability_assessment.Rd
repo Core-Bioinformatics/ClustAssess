@@ -142,6 +142,7 @@ the resolution parameter and compare, using the EC Consistency score, the
 partitions obtained at different seeds.
 }
 \examples{
+\dontrun{
 set.seed(2024)
 # create an already-transposed artificial expression matrix
 expr_matrix <- matrix(
@@ -182,4 +183,5 @@ autom_object <- automatic_stability_assessment(
 plot_feature_overall_stability_boxplot(autom_object$feature_stability)
 plot_n_neigh_ecs(autom_object$set1$"5"$nn_stability)
 plot_k_n_partitions(autom_object$set1$"5"$clustering_stability)
+}
 }

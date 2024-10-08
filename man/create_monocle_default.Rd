@@ -38,6 +38,7 @@ Use a normalized expression matrix and, potentially, an already
 generated PCA / UMAP embedding, to create a Monocle object.
 }
 \examples{
+\dontrun{
 set.seed(2024)
 # create an already-transposed artificial expression matrix
 expr_matrix <- matrix(
@@ -54,4 +55,5 @@ mon_obj <- create_monocle_default(
     umap_emb = NULL,
     metadata_df = NULL
 )
+}
 }
