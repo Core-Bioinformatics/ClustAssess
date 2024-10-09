@@ -38,7 +38,7 @@ ui_landing_page <- function(id) {
                     ")
                 ),
                 shiny::HTML('<div class="container" style="width:100%; margin-top: 120px;">
-                          <img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/release-0.4.0/docs/articles/ClustAssess_files/figure-html/ClustAssess_starry_night.png" alt="starry" style="width:100%"/>
+                          <img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/man/figures/ClustAssess_starry_night.png" alt="starry" style="width:100%"/>
                           <!--<div class="bottom-left">Automated pipeline for assessing the robustness of single-cell clustering</div>-->
                        </div>')
             )
