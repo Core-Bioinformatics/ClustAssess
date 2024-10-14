@@ -658,7 +658,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                         }
                     } else {
                         unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                        color_values <- pkg_env$metadata_colors[[input$metadata]]
+                        color_values <- pkg_env$discrete_colors[[input$metadata]]
                         color_info <- pkg_env$metadata[[input$metadata]]
                     }
 
@@ -852,7 +852,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                         }
                     } else {
                         unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                        color_values <- pkg_env$metadata_colors[[input$metadata]]
+                        color_values <- pkg_env$discrete_colors[[input$metadata]]
                         color_info <- pkg_env$metadata[[input$metadata]]
                     }
 
@@ -896,7 +896,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                     }
                 } else {
                     unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                    color_values <- pkg_env$metadata_colors[[input$metadata]]
+                    color_values <- pkg_env$discrete_colors[[input$metadata]]
                     color_info <- pkg_env$metadata[[input$metadata]]
                 }
 

@@ -464,7 +464,7 @@ only_legend_metadata_plot <- function(metadata_name,
                                       text_size = 1,
                                       plt_width) {
     unique_values <- pkg_env$metadata_unique[[metadata_name]]
-    color_values <- pkg_env$metadata_colors[[metadata_name]]
+    color_values <- pkg_env$discrete_colors[[metadata_name]]
     color_info <- pkg_env$metadata[, metadata_name]
 
     if (!is.null(unique_values) && !is.null(groups)) {
