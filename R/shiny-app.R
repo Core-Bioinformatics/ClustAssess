@@ -76,13 +76,13 @@ write_objects <- function(clustassess_object,
     metadata_unique <- list()
     for (mtd_col in metadata_columns) {
         if (is.factor(metadata[, mtd_col])) {
-            metadata[, mtd_col] <- droplevels(metadata[, mtd_col])
+            metadata[, mtd_col] <- as.character(metadata[, mtd_col])
             metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
+            metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
             if (length(metadata_unique[[mtd_col]]) > 502) {
                 next
             }
-
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.character(metadata[, mtd_col])) {

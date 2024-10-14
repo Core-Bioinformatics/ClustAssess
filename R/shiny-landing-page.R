@@ -182,20 +182,45 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             add_env_variable("plt_width", shiny::reactive(pkg_env$dimension()[1]))
             add_env_variable("plt_width_half", shiny::reactive(pkg_env$dimension()[1] * 0.43))
 
-            mdt <- readRDS("metadata.rds")
-
-            add_env_variable("metadata", mdt$metadata)
-            add_env_variable("metadata_temp", shiny::reactiveVal(mdt$metadata))
-            add_env_variable("metadata_colors", mdt$metadata_colors)
-            add_env_variable("metadata_unique", mdt$metadata_unique)
-            add_env_variable("metadata_unique_temp", shiny::reactiveVal(mdt$metadata_unique))
             discrete_colors <- rhdf5::h5read("stability.h5", "colors")
             bxplt_color <- rhdf5::h5read("stability.h5", "feature_stability/colours")
             discrete_colors[[as.character(length(bxplt_color))]] <- bxplt_color
-            for (color_options in mdt$metadata_colors) {
+
+            mtd <- readRDS("metadata.rds")
+            for (color_options in mtd$metadata_colors) {
                 ncolors <- as.character(length(color_options))
                 discrete_colors[[ncolors]] <- color_options
             }
+
+            if (packageVersion("ClustAssess") <= "1.0.0") {
+                for (discr_metadata in names(mtd$metadata_unique)) {
+                    # transform NA values in factor
+                    current_vals <- as.character(mtd$metadata[[discr_metadata]])
+                    current_vals[is.na(current_vals)] <- "N/A"
+                    current_vals <- factor(current_vals)
+
+                    mtd$metadata[[discr_metadata]] <- current_vals
+                    nlevs <- nlevels(current_vals)
+
+                    if (nlevs == length(mtd$metadata_unique[[discr_metadata]])) {
+                        next
+                    }
+
+                    mtd$metadata_unique[[discr_metadata]] <- levels(current_vals)
+
+                    if (as.character(nlevs) %in% names(discrete_colors)) {
+                        next
+                    }
+
+                    discrete_colors[[as.character(nlevs)]] <- generate_colours(nlevs, "pretty_dark")
+                }
+            }
+
+            add_env_variable("metadata", mtd$metadata)
+            add_env_variable("metadata_temp", shiny::reactiveVal(mtd$metadata))
+            # add_env_variable("metadata_colors", mtd$metadata_colors)
+            add_env_variable("metadata_unique", mtd$metadata_unique)
+            add_env_variable("metadata_unique_temp", shiny::reactiveVal(mtd$metadata_unique))
 
             add_env_variable("discrete_colors", discrete_colors)
             add_env_variable("organism", organism)
@@ -203,7 +228,7 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             add_env_variable("enable_markers_button", shiny::reactiveVal(-1))
             add_env_variable("find_markers_button", shiny::reactiveVal(-1))
             add_env_variable("annotation_button", shiny::reactiveVal(-1))
-            rm(mdt)
+            rm(mtd)
 
             shiny::observe({
                 shiny::req(
