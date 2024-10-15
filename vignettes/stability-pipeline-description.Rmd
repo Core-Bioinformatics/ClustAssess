@@ -18,23 +18,24 @@ Make sure you have Rtools installed: https://cran.r-project.org/bin/windows/Rtoo
 In case some packages cannot be installed because of the locks, remove and reinstall them.
 
 ```{r install, include = FALSE}
-is_devtools <- require("devtools", quietly = TRUE)
+is_devtools <- require("devtools", character.only = TRUE, quietly = TRUE)
 if (!is_devtools) {
     install.packages("devtools", repos = "https://cloud.r-project.org")
     library(devtools)
 }
 
-is_rhpcblas <- require("RhpcBLASctl", quietly = TRUE)
+is_rhpcblas <- require("RhpcBLASctl", character.only = TRUE, quietly = TRUE)
 if (!is_rhpcblas) {
     install.packages("RhpcBLASctl", repos = "https://cloud.r-project.org")
 }
 
-is_seuratdata <- require("SeuratData", quietly = TRUE)
+is_seuratdata <- require("SeuratData", character.only = TRUE, quietly = TRUE)
 if (!is_seuratdata) {
     install_github('satijalab/seurat-data')
+    require("SeuratData", character.only = TRUE, quietly = TRUE)
 }
 
-is_patchwork <- require("patchwork", quietly = TRUE)
+is_patchwork <- require("patchwork", character.only = TRUE, quietly = TRUE)
 if (!is_patchwork) {
     install.packages("patchwork", repos = "https://cloud.r-project.org")
 }
