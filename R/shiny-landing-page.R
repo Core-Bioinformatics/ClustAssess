@@ -192,7 +192,7 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
                 discrete_colors[[ncolors]] <- color_options
             }
 
-            if (packageVersion("ClustAssess") <= "1.0.0") {
+            if (utils::packageVersion("ClustAssess") <= "1.0.0") {
                 for (discr_metadata in names(mtd$metadata_unique)) {
                     # transform NA values in factor
                     current_vals <- as.character(mtd$metadata[[discr_metadata]])

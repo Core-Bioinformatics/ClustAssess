@@ -64,6 +64,7 @@ Imports:
     shinyjs,
     shinyLP,
     shinyWidgets,
+    utils,
     uwot,
     vioplot
 RoxygenNote: 7.3.2
