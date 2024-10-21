@@ -2,6 +2,7 @@
 
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/ClustAssess)](https://github.com/r-hub/cranlogs.app)
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
+[![CRAN status](https://www.r-pkg.org/badges/version/ClustAssess)](https://CRAN.R-project.org/package=ClustAssess)
 
 This repo contains the ClustAssess R package, which provides a set of tools
 for evaluating clustering robustness.
@@ -234,7 +235,29 @@ vignettes, the following packages are also needed:
 * SharedObject
 * styler
 
-*Note*: Please check the other branches as well for the latest development version.
+To manually install the required dependencies, please use the following commands:
+```r
+install.packages(c("dplyr", "DT", "fastcluster", "foreach", "glue", "Gmedian", "ggnewscale", "ggplot2", "ggrastr", "ggrepel", "ggtext", "gprofiler2", "igraph", "jsonlite", "Matrix", "matrixStats", "methods", "progress", "stringr", "paletteer", "plotly", "qualpalr", "RANN", "reshape2", "rlang", "shiny", "shinyjs", "shinyLP", "shinyWidgets", "stats", "uwot", "vioplot"), Ncpus = 1)
+install.packages("BiocManager")
+BiocManager::install(c("ComplexHeatmap"))
+```
+
+To manually install the suggested dependencies, please use the following commands:
+```r
+install.packages(c("colourpicker", "dbscan", "dendextend", "devtools", "doParallel", "doRNG", "e1071", "knitr", "leidenbase", "patchwork", "ragg", "reactlog", "rmarkdown", "RhpcBLASctl", "scales", "Seurat", "SeuratObject", "styler"), Ncpus = 1)
+
+install.packages("BiocManager")
+BiocManager::install(c("DelayedMatrixStats", "rhdf5"))
+
+devtools::install_github('cole-trapnell-lab/monocle3')
+devtools::install_github('satijalab/seurat-data')
+devtools::install_github("Jiefei-Wang/SharedObject")
+```
+
+
+
+
+*Note*: The package is under active development, and the release branches might contain additional features and bug fixes. 
 
 
 # Citing ClustAssess
