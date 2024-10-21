@@ -80,18 +80,12 @@ write_objects <- function(clustassess_object,
             metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
-            if (length(metadata_unique[[mtd_col]]) > 502) {
-                next
-            }
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.character(metadata[, mtd_col])) {
             metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
-            if (length(metadata_unique[[mtd_col]]) > 502) {
-                next
-            }
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
         } else if (is.logical(metadata[, mtd_col])) {
@@ -528,7 +522,8 @@ write_shiny_app.default <- function(object,
                                     organism_enrichment = "hsapiens",
                                     height_ratio = 0.6,
                                     qualpalr_colorspace = "pretty") {
-    nFeature <- DelayedMatrixStats::colSums2(object > 0)
+    # nFeature <- DelayedMatrixStats::colSums2(object > 0)
+    nFeature <- colSums(object > 0)
     warning_message <- ""
     shiny_app_title <- paste("ClustAssess ShinyApp -", shiny_app_title)
 
@@ -544,7 +539,12 @@ write_shiny_app.default <- function(object,
         while (TRUE) {
             # FIXME this doens't work on console, with `Rscript` check if scan() would work / if writing a isoalted function
             warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nPlease type `yes` or `no` if you want to continue creating the ClustAssess shiny app."), immediate. = TRUE)
-            user_input <- readline()
+            if (interactive()) {
+                user_input <- readline()
+            } else {
+                user_input <- readLines("stdin", n = 1)
+            }
+
             if (user_input == "no") {
                 return()
             }
