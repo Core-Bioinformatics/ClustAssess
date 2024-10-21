@@ -523,7 +523,12 @@ write_shiny_app.default <- function(object,
                                     height_ratio = 0.6,
                                     qualpalr_colorspace = "pretty") {
     # nFeature <- DelayedMatrixStats::colSums2(object > 0)
-    nFeature <- colSums(object > 0)
+    if (inherits(object, "dgCMatrix")) {
+        nFeature <- Matrix::colSums(object > 0)
+    } else {
+        nFeature <- matrixStats::colSums2(object > 0)
+    }
+
     warning_message <- ""
     shiny_app_title <- paste("ClustAssess ShinyApp -", shiny_app_title)
 
