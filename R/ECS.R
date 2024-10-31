@@ -1123,32 +1123,39 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' It can take these three values:
 #' - "freq": order the partitions based on their frequencies. The partition with
 #' the highest frequency will be the first on the list (default).
-#' - "agreement": order the partitions based on their average agreement index.
+#' - "avg_agreement": order the partitions based on their average agreement index.
 #' The average agreement index of a partition is calculated as the mean of
 #' the ECS scores between that partition and the other partitions from the list.
 #' The partition with the highest agreement will be  the first on the list.
-#' - "none": do not perform any ordering (not recommended).
+#' - "none": do not perform any ordering (not recommended). If selected, the
+#' average agreement scores will not be calculated.
 #' @param return_ecs_matrix A logical: if TRUE, the function will add the
 #' ECS matrix to the return list. Defaults to FALSE.
-#' @return a list of the merged partitions
+#' @param check_ties A logical value that indicates whether to check for ties
+#' in the highest frequency partitions or not. If TRUE, the function will put
+#' at the first position the partition that has the highest similarity
+#' with the other partitions. Defaults to `FALSE`.
+#' @return a list of the merged partitions, together with their associated
+#' ECC score. If `return_ecs_matrix` is set to TRUE, the function will also
+#' return the ECS matrix.
 #' @export
 #' @examples
 #' initial_list <- list(c(1, 1, 2), c(2, 2, 2), c("B", "B", "A"))
 #' merge_partitions(initial_list, 1)
 merge_partitions <- function(partition_list,
                              ecs_thresh = 1,
-                             order_logic = c("freq", "agreement", "none"),
-                             return_ecs_matrix = FALSE) {
+                             order_logic = c("freq", "avg_agreement", "none"),
+                             return_ecs_matrix = FALSE,
+                             check_ties = TRUE) {
     # check the parameters
     if (!is.numeric(ecs_thresh) || length(ecs_thresh) > 1) {
         stop("ecs_thresh parameter should be numeric")
     }
 
     order_logic <- order_logic[1]
-    if (!(order_logic %in% c("freq", "agreement", "none"))) {
-        stop("order parameter should be either `freq`, `agreement` or `none`")
+    if (!(order_logic %in% c("freq", "avg_agreement", "none"))) {
+        stop("order parameter should be either `freq`, `avg_agreement` or `none`")
     }
-
 
     # check the type of object that is provided in the list
     if (!inherits(partition_list[[1]], "list")) { # the elements should be membership vectors
@@ -1193,59 +1200,83 @@ merge_partitions <- function(partition_list,
         calculate_sim_matrix = TRUE
     )
 
+    if (!(order_logic %in% c("freq", "avg_agreement")) && !return_ecs_matrix) {
+        return(list(partitions = part_list, ecc = consistency$ecc))
+    }
+
+    if (!(order_logic %in% c("freq", "avg_agreement")) && return_ecs_matrix) {
+        return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
+    }
+
     # add average aggreement index for each membership - how similar it is
     # with the other clusterings
-    average_agreement <- (
-        rowSums(consistency$ecs_matrix, na.rm = TRUE) +
-        colSums(consistency$ecs_matrix, na.rm = TRUE)
-    ) / (nrow(consistency$ecs_matrix) - 1)
+    n_unique_parts <- nrow(consistency$ecs_matrix)
+    n_total_parts <- sum(sapply(part_list, function(x) x$freq))
+    average_agreement <- sapply(
+        seq_len(n_unique_parts),
+        function(i) {
+
+            total_sim <- (partition_list[[i]]$freq - 1) / (n_total_parts - 1)
+            for (j in seq_len(ncol(consistency$ecs_matrix))) {
+                if (i == j) {
+                    next
+                }
+
+                total_sim <- total_sim + consistency$ecs_matrix[i, j] * partition_list[[j]]$freq / (n_total_parts - 1)
+            }
+
+            return(total_sim)
+        }
+    )
 
     for (i in seq_len(nrow(consistency$ecs_matrix))) {
         part_list[[i]]$avg_agreement <- average_agreement[i]
     }
 
-    if (order_logic == "none") {
-        return(part_list)
-    }
-
-    # order the newly merged partitions based on their frequencies
-    if (order_logic == "freq") {
-        ordered_indices <- order(sapply(part_list, function(x) {
-            x$freq
-        }), decreasing = TRUE)
-    } else {
-        ordered_indices <- order(sapply(part_list, function(x) {
-            x$avg_agreement
-        }), decreasing = TRUE)
-    }
+    # order the newly merged partitions based on their frequencies / agreement
+    ordered_indices <- order(sapply(part_list, function(x) {
+        x[[order_logic]]
+    }), decreasing = TRUE)
     part_list <- part_list[ordered_indices]
 
-    # NOTE this code was used to check for ties and use the agreement as
-    # additional decider; now that sorting by agreement is possible, the code
-    # is not needed anymore, but it will kept for now
-    # max_freq <- part_list[[1]]$freq
+    if (return_ecs_matrix) {
+        consistency$ecs_matrix <- consistency$ecs_matrix[ordered_indices, ordered_indices]
+    }
 
-    # for (i in seq(from = 2, to = nrow(consistency$ecs_matrix), by = 1)) {
-    #     if (part_list[[i]]$freq != max_freq) {
-    #         i <- i - 1
-    #         break
-    #     }
-    # }
-    # nmax <- i
+    check_ties <- check_ties && length(part_list) > 1
 
-    # # in case of ties on the highest frequency, put at the first position the partition that has the highest similarity with the others
-    # if (nmax > 1) {
-    #     highest_sim_index <- which.max(average_agreement[seq_len(nmax)])
+    if (!check_ties && !return_ecs_matrix) {
+        return(list(partitions = part_list, ecc = consistency$ecc))
+    }
 
-    #     temp_mb <- part_list[[1]]$mb
-    #     part_list[[1]]$mb <- part_list[[highest_sim_index]]$mb
-    #     part_list[[1]]$avg_agreement <- part_list[[highest_sim_index]]$avg_agreement
-    #     part_list[[highest_sim_index]]$mb <- temp_mb
-    # }
+    if (!check_ties && return_ecs_matrix) {
+        return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
+    }
 
+    second_key <- setdiff(c("freq", "avg_agreement"), order_logic)
+    reference_value <- part_list[[1]][[order_logic]]
+
+    for (i in seq(from = 2, to = length(part_list), by = 1)) {
+        if (part_list[[i]][[order_logic]] != reference_value) {
+            break
+        }
+    }
+
+    i <- i - 1
+    if (i > 1) {
+        ordered_indices <- order(sapply(part_list[seq_len(i)], function(x) {
+            x[[second_key]]
+        }), decreasing = TRUE)
+
+        part_list[seq_len(i)] <- part_list[ordered_indices]
+    }
 
     if (!return_ecs_matrix) {
         return(list(partitions = part_list, ecc = consistency$ecc))
+    }
+
+    if (i > 1) {
+        consistency$ecs_matrix[seq_len(i), seq_len(i)] <- consistency$ecs_matrix[ordered_indices, ordered_indices]
     }
 
     return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
@@ -1275,9 +1306,6 @@ merge_partitions <- function(partition_list,
 #' * "linkage" : use the linkage distances in the clustering.
 #' @param dist_rescaled A logical: if TRUE, the linkage distances are linearly
 #' rescaled to be in-between 0 and 1.
-#' @param calculate_sim_matrix A logical value that indicates whether to
-#' calculate the similarity matrix or not along with the consistency score.
-#' Defaults to `FALSE`.
 #'
 #' @return A vector containing the element-wise consistency. If
 #' `calculate_sim_matrix` is set to `TRUE`, the element similarity matrix
@@ -1297,8 +1325,7 @@ element_consistency <- function(clustering_list,
                                 rescale_path_type = "max",
                                 ppr_implementation = "prpack",
                                 dist_rescaled = FALSE,
-                                row_normalize = TRUE,
-                                calculate_sim_matrix = FALSE) {
+                                row_normalize = TRUE) {
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
         inherits(x, c("numeric", "integer", "factor", "character"))
@@ -1319,24 +1346,11 @@ element_consistency <- function(clustering_list,
         final_clustering_list <- merge_partitions(
             partition_list = clustering_list,
             ecs_thresh = 1,
-            return_ecs_matrix = calculate_sim_matrix
+            order_logic = "none",
+            return_ecs_matrix = FALSE
         )
-        # TODO check if they do the same thing
-        final_clustering_list$partitions <- NULL
-        if (!calculate_sim_matrix) {
-            return(final_clustering_list$ecc)
-        }
         
-        return(final_clustering_list)
-        return(weighted_element_consistency(
-            clustering_list = lapply(final_clustering_list, function(x) {
-                x$mb
-            }),
-            weights = sapply(final_clustering_list, function(x) {
-                x$freq
-            }),
-            calculate_sim_matrix = calculate_sim_matrix
-        ))
+        return(final_clustering_list$ecc)
     }
 
     clustering_list <- create_clustering_list(
@@ -1416,25 +1430,32 @@ weighted_element_consistency <- function(clustering_list,
 
     consistency <- 0
     total_weights <- sum(weights)
+    norm_factor <- total_weights * (total_weights - 1) / 2
     for (i in seq_len(n_clusterings - 1)) {
         # add the ecc of 1 for identical partitions
-        consistency <- consistency + weights[i] * (weights[i] - 1) / 2
+        consistency <- consistency + weights[i] / norm_factor * (weights[i] - 1) / 2
 
         for (j in seq(from = i + 1, to = n_clusterings)) {
             current_ecs <- element_sim_elscore(clustering_list[[i]], clustering_list[[j]])
             if (calculate_sim_matrix) {
                 ecs_sim_matrix[i, j] <- mean(current_ecs)
+                ecs_sim_matrix[j, i] <- ecs_sim_matrix[i, j]
             }
 
-            consistency <- consistency + current_ecs * weights[i] * weights[j]
+            consistency <- consistency + current_ecs * weights[i] / norm_factor * weights[j]
+        }
+        
+        if (calculate_sim_matrix) {
+            ecs_sim_matrix[i, i] <- 1
         }
     }
-    consistency <- consistency + weights[n_clusterings] * (weights[n_clusterings] - 1) / 2
-    consistency <- consistency / (total_weights * (total_weights - 1) / 2)
+    consistency <- consistency + weights[n_clusterings] / norm_factor * (weights[n_clusterings] - 1) / 2
 
     if (!calculate_sim_matrix) {
         return(consistency)
     }
+
+    ecs_sim_matrix[n_clusterings, n_clusterings] <- 1
 
     return(list(ecc = consistency, ecs_matrix = ecs_sim_matrix))
 }
