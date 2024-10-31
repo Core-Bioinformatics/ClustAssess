@@ -21,35 +21,24 @@ IntegerMatrix myContTable(IntegerVector &a, IntegerVector &b, int minim_mb1, int
 NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
 	int minim_mb1 = min(mb1), minim_mb2 = min(mb2);
 	int cluster1, cluster2;
-	double c1, c2, pointECS, intersectSize;
 	
 	IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
     int n = mb1.size(), nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
 
 	NumericMatrix uniqueECSvals(nClusters1, nClusters2);
 	NumericVector ecsScore(n);
-	IntegerVector clustersSizes1 = rowSums(contTable), clusterSizes2 = colSums(contTable);
-	uniqueECSvals.fill(-1);
+	IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
+
+	for (int i = 0; i < nClusters1; i++) {
+		for (int j = nClusters2 - 1; j >= 0; j--) {
+			uniqueECSvals(i, j) = contTable(i, j) / std::max(clustersSizes1(i), clustersSizes2(j));
+		}
+	}
 
 	for (int i = 0; i < n; i++) {
 		cluster1 = mb1(i) - minim_mb1;
 		cluster2 = mb2(i) - minim_mb2;
-
-		if (uniqueECSvals(cluster1, cluster2) != -1) {
-			ecsScore(i) = uniqueECSvals(cluster1, cluster2);
-			continue;
-		}
-
-		c1 = clustersSizes1(cluster1);
-		c2 = clusterSizes2(cluster2);
-		intersectSize = contTable(cluster1, cluster2);
-		pointECS = (1 / c1 - 1 / c2) * intersectSize;
-		if (pointECS < 0) {
-			pointECS *= -1;
-		}
-
-		ecsScore(i) = 1 - 0.5 * (pointECS + (c1 - intersectSize) / c1 + (c2 - intersectSize) / c2);
-		uniqueECSvals(cluster1, cluster2) = ecsScore(i);
+		ecsScore(i) = uniqueECSvals(cluster1, cluster2);
 	}
 
 	return(ecsScore);
