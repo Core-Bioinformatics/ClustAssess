@@ -218,7 +218,7 @@ clustering_list <- lapply(seq(from = 1, by = 100, length.out = 10), function(i) 
 
 We assess the stability of the clustering by calculating the consistency of the 10 clustering outputs.
 ```{r phenograph_instability}
-ecc_value <- element_consistency(clustering_list, calculate_sim_matrix = TRUE)
+ecc_value <- merge_partitions(clustering_list, return_ecs_matrix = TRUE)
 print(fivenum(ecc_value$ecc))
 ```
 The similarity between the distinct partitions can be assessed by accessing the `ecs_matrix` field.
