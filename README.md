@@ -2,7 +2,10 @@
 
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/ClustAssess)](https://github.com/r-hub/cranlogs.app)
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
-[![CRAN status](https://www.r-pkg.org/badges/version/ClustAssess)](https://CRAN.R-project.org/package=ClustAssess)
+[![](https://img.shields.io/github/languages/code-size/Core-Bioinformatics/ClustAssess.svg)](https://github.com/Core-Bioinformatics/ClustAssess)
+[![CRAN status](https://www.r-pkg.org/badges/version/ClustAssess?color=orange)](https://CRAN.R-project.org/package=ClustAssess)
+[![](https://img.shields.io/badge/devel%20version-1.0.0-green.svg)](https://github.com/Core-Bioinformatics/ClustAssess)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/Core-Bioinformatics/ClustAssess/main?style=flat&color=white)
 
 This repo contains the ClustAssess R package, which provides a set of tools
 for evaluating clustering robustness.
