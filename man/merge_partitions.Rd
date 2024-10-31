@@ -7,8 +7,9 @@
 merge_partitions(
   partition_list,
   ecs_thresh = 1,
-  order_logic = c("freq", "agreement", "none"),
-  return_ecs_matrix = FALSE
+  order_logic = c("freq", "avg_agreement", "none"),
+  return_ecs_matrix = FALSE,
+  check_ties = TRUE
 )
 }
 \arguments{
@@ -21,18 +22,26 @@ It can take these three values:
 \itemize{
 \item "freq": order the partitions based on their frequencies. The partition with
 the highest frequency will be the first on the list (default).
-\item "agreement": order the partitions based on their average agreement index.
+\item "avg_agreement": order the partitions based on their average agreement index.
 The average agreement index of a partition is calculated as the mean of
 the ECS scores between that partition and the other partitions from the list.
 The partition with the highest agreement will be  the first on the list.
-\item "none": do not perform any ordering (not recommended).
+\item "none": do not perform any ordering (not recommended). If selected, the
+average agreement scores will not be calculated.
 }}
 
 \item{return_ecs_matrix}{A logical: if TRUE, the function will add the
 ECS matrix to the return list. Defaults to FALSE.}
+
+\item{check_ties}{A logical value that indicates whether to check for ties
+in the highest frequency partitions or not. If TRUE, the function will put
+at the first position the partition that has the highest similarity
+with the other partitions. Defaults to \code{FALSE}.}
 }
 \value{
-a list of the merged partitions
+a list of the merged partitions, together with their associated
+ECC score. If \code{return_ecs_matrix} is set to TRUE, the function will also
+return the ECS matrix.
 }
 \description{
 Merge flat disjoint clusterings whose pairwise ECS score is

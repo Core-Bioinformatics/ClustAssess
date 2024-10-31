@@ -11,8 +11,7 @@ element_consistency(
   rescale_path_type = "max",
   ppr_implementation = "prpack",
   dist_rescaled = FALSE,
-  row_normalize = TRUE,
-  calculate_sim_matrix = FALSE
+  row_normalize = TRUE
 )
 }
 \arguments{
@@ -48,10 +47,6 @@ rescaled to be in-between 0 and 1.}
 \item{row_normalize}{Whether to normalize all rows in clustering_result
 so they sum to one before calculating ECS. It is recommended to set this to
 TRUE, which will lead to slightly different ECS values compared to clusim.}
-
-\item{calculate_sim_matrix}{A logical value that indicates whether to
-calculate the similarity matrix or not along with the consistency score.
-Defaults to \code{FALSE}.}
 }
 \value{
 A vector containing the element-wise consistency. If
