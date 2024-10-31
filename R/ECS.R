@@ -941,6 +941,7 @@ element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type =
     sim_matrix <- matrix(NA, nrow = n_clusterings, ncol = n_clusterings)
     sim_matrix[lower.tri(sim_matrix, diag = FALSE)] <- ecs_values
     sim_matrix <- t(sim_matrix)
+    sim_matrix[lower.tri(sim_matrix, diag = FALSE)] <- ecs_values
     diag(sim_matrix) <- 1
 
     if (output_type == "data.frame") {
@@ -1240,7 +1241,7 @@ merge_partitions <- function(partition_list,
     part_list <- part_list[ordered_indices]
 
     if (return_ecs_matrix) {
-        consistency$ecs_matrix <- consistency$ecs_matrix[ordered_indices, ordered_indices]
+        consistency$ecs_matrix <- consistency$ecs_matrix[ordered_indices, ordered_indices, drop = FALSE]
     }
 
     check_ties <- check_ties && length(part_list) > 1
@@ -1258,17 +1259,18 @@ merge_partitions <- function(partition_list,
 
     for (i in seq(from = 2, to = length(part_list), by = 1)) {
         if (part_list[[i]][[order_logic]] != reference_value) {
+            i <- i - 1
             break
         }
     }
 
-    i <- i - 1
     if (i > 1) {
-        ordered_indices <- order(sapply(part_list[seq_len(i)], function(x) {
+        ties_ordered_indices <- order(sapply(part_list[seq_len(i)], function(x) {
             x[[second_key]]
         }), decreasing = TRUE)
 
-        part_list[seq_len(i)] <- part_list[ordered_indices]
+        part_list[seq_len(i)] <- part_list[ties_ordered_indices]
+        # ordered_indices[seq_len(i)] <- ordered_indices[ties_ordered_indices]
     }
 
     if (!return_ecs_matrix) {
@@ -1276,7 +1278,7 @@ merge_partitions <- function(partition_list,
     }
 
     if (i > 1) {
-        consistency$ecs_matrix[seq_len(i), seq_len(i)] <- consistency$ecs_matrix[ordered_indices, ordered_indices]
+        consistency$ecs_matrix[seq_len(i), seq_len(i), drop = FALSE] <- consistency$ecs_matrix[ties_ordered_indices, ties_ordered_indices, drop = FALSE]
     }
 
     return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
