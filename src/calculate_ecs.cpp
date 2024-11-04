@@ -31,7 +31,7 @@ NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
 
 	for (int i = 0; i < nClusters1; i++) {
 		for (int j = nClusters2 - 1; j >= 0; j--) {
-			uniqueECSvals(i, j) = contTable(i, j) / std::max(clustersSizes1(i), clustersSizes2(j));
+			uniqueECSvals(i, j) = (double) contTable(i, j) / std::max(clustersSizes1(i), clustersSizes2(j));
 		}
 	}
 
