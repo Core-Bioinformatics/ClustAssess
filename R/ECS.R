@@ -891,20 +891,28 @@ element_sim_matrix <- function(clustering_list,
     }
     diag(sim_matrix) <- 1
 
-    if (output_type == "data.frame") {
-        sim_matrix <- data.frame(
-            i.clustering = rep(
-                1:n.clusterings,
-                n.clusterings
-            ),
-            j.clustering = rep(1:n.clusterings,
-                each = n.clusterings
-            ),
-            element_sim = c(sim_matrix)
-        )
+    if (output_type == "matrix") {
+        for (i in 1:(n.clusterings - 1)) {
+            for (j in (i + 1):n.clusterings) {
+                sim_matrix[j, i] <- sim_matrix[i, j]
+            }
+        }
+        return(sim_matrix)
     }
 
+    sim_matrix <- data.frame(
+        i.clustering = rep(
+            1:n.clusterings,
+            n.clusterings
+        ),
+        j.clustering = rep(1:n.clusterings,
+            each = n.clusterings
+        ),
+        element_sim = c(sim_matrix)
+    )
+
     return(sim_matrix)
+
 }
 
 # calculate the similarity matrix when all the objects are flat disjoint memberships
@@ -1278,7 +1286,13 @@ merge_partitions <- function(partition_list,
     }
 
     if (i > 1) {
-        consistency$ecs_matrix[seq_len(i), seq_len(i), drop = FALSE] <- consistency$ecs_matrix[ties_ordered_indices, ties_ordered_indices, drop = FALSE]
+        reordered_matrix <- consistency$ecs_matrix[ties_ordered_indices, ties_ordered_indices, drop = FALSE]
+
+        for (j in seq_len(i)) {
+            for (l in seq_len(i)) {
+                consistency$ecs_matrix[j, l] <- reordered_matrix[j, l]
+            }
+        }
     }
 
     return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
