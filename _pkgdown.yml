@@ -1,0 +1,42 @@
+template:
+  light-switch: true
+  bootstrap: 5
+navbar:
+  structure:
+    left: [intro, reference, articles, tutorials]
+    right: [search, github, lightswitch]
+  components:
+    tutorials:
+      text: "ClustAssess Shiny app Tutorial"
+      href: "tutorials/index.html"
+url: https://core-bioinformatics.github.io/ClustAssess/
+reference:
+- title: Element-Centric Scores
+- contents:
+  - starts_with("element_")
+  - marker_overlap
+  - starts_with("merge_")
+  - weighted_element_consistency
+- title: Clustering Assessment Pipeline
+- contents:
+  - starts_with("assess_")
+  - starts_with("plot_")
+  - starts_with("get")
+  - automatic_stability_assessment
+  - choose_stable_clusters
+- title: Shiny App Components
+- contents:
+  - starts_with("ui_")
+  - starts_with("server_")
+  - starts_with("write_")
+  - add_metadata
+  - calculate_markers
+  - calculate_markers_shiny
+- title: Convert to other packages
+- contents:
+  - starts_with("create_")
+- title: PAC
+- contents:
+  - consensus_cluster
+  - starts_with("pac_")
+
