@@ -237,6 +237,7 @@ vignettes, the following packages are also needed:
 * SeuratObject
 * SharedObject
 * styler
+* testthat
 
 To manually install the required dependencies, please use the following commands:
 ```r
@@ -247,7 +248,7 @@ BiocManager::install(c("ComplexHeatmap"))
 
 To manually install the suggested dependencies, please use the following commands:
 ```r
-install.packages(c("colourpicker", "dbscan", "dendextend", "devtools", "doParallel", "doRNG", "e1071", "knitr", "leidenbase", "patchwork", "ragg", "reactlog", "rmarkdown", "RhpcBLASctl", "scales", "Seurat", "SeuratObject", "styler"), Ncpus = 1)
+install.packages(c("colourpicker", "dbscan", "dendextend", "devtools", "doParallel", "doRNG", "e1071", "knitr", "leidenbase", "patchwork", "ragg", "reactlog", "rmarkdown", "RhpcBLASctl", "scales", "Seurat", "SeuratObject", "styler", "testthat"), Ncpus = 1)
 
 install.packages("BiocManager")
 BiocManager::install(c("DelayedMatrixStats", "rhdf5"))
