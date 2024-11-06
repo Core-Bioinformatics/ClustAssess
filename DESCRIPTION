@@ -101,7 +101,9 @@ Suggests:
     SeuratObject,
     Signac,
     SharedObject,
-    styler
-URL: https://github.com/Core-Bioinformatics/ClustAssess
+    styler,
+    testthat (>= 3.0.0)
+URL: https://github.com/Core-Bioinformatics/ClustAssess, https://core-bioinformatics.github.io/ClustAssess/
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 VignetteBuilder: knitr
+Config/testthat/edition: 3
