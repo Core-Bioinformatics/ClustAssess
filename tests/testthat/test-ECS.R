@@ -66,7 +66,6 @@ test_that("ECS produces consistent results with clusim", {
 
         expect_equal(ecs1, ecs2)
     }
-
 })
 
 test_that("ECS produces consistent results with ClustAssessPy", {

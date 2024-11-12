@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+//[[Rcpp::depends(RcppEigen)]]
 
 using namespace Rcpp;
 
@@ -42,4 +43,28 @@ NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
 	}
 
 	return(ecsScore);
+}
+
+// [[Rcpp::export]]
+double disjointECSaverage(IntegerVector mb1, IntegerVector mb2) {
+	// NOTE Eigen doesn't seem to improve performance
+	int minim_mb1 = min(mb1), minim_mb2 = min(mb2);
+	int cluster1, cluster2;
+	
+	IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
+    int nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
+	int n = sum(contTable);
+
+	double avgECS = 0, intersectSize;
+
+	IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
+
+	for (int i = 0; i < nClusters1; i++) {
+		for (int j = nClusters2 - 1; j >= 0; j--) {
+			intersectSize = contTable(i, j);
+			avgECS += intersectSize * intersectSize / (n * std::max(clustersSizes1(i), clustersSizes2(j)));
+		}
+	}
+
+	return(avgECS);
 }

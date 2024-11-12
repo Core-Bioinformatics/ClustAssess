@@ -37,6 +37,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// disjointECSaverage
+double disjointECSaverage(IntegerVector mb1, IntegerVector mb2);
+RcppExport SEXP _ClustAssess_disjointECSaverage(SEXP mb1SEXP, SEXP mb2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type mb1(mb1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type mb2(mb2SEXP);
+    rcpp_result_gen = Rcpp::wrap(disjointECSaverage(mb1, mb2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calculate_pac_cpp
 double calculate_pac_cpp(IntegerMatrix indicator, NumericMatrix connectivity, double lower_lim, double upper_lim);
 RcppExport SEXP _ClustAssess_calculate_pac_cpp(SEXP indicatorSEXP, SEXP connectivitySEXP, SEXP lower_limSEXP, SEXP upper_limSEXP) {
@@ -117,6 +129,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 4},
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
+    {"_ClustAssess_disjointECSaverage", (DL_FUNC) &_ClustAssess_disjointECSaverage, 2},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},

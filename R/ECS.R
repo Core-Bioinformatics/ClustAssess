@@ -69,6 +69,18 @@ element_sim <- function(clustering1,
                         ppr_implementation_cl2 = "prpack",
                         dist_rescaled_cl2 = FALSE,
                         row_normalize_cl2 = TRUE) {
+    if (inherits(clustering1, c("numeric", "integer", "factor")) &&
+        inherits(clustering2, c("numeric", "integer", "factor"))) {
+        if (length(clustering1) != length(clustering2)) {
+            stop("clustering1 and clustering2 do not have the same length.")
+        }
+        if (any(names(clustering1) != names(clustering2))) {
+            stop("Not all elements of clustering1 and clustering2 are the same.")
+        }
+
+        return(disjointECSaverage(clustering1, clustering2))
+    }
+
     element_scores <- element_sim_elscore(
         clustering1,
         clustering2,
