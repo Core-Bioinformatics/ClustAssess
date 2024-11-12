@@ -112,7 +112,7 @@ ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
 
 Apply the automatic assessment.
 
-```{r automatic_run, warning = FALSE, cache = TRUE}
+```{r automatic_run, warning = FALSE, cache = FALSE}
 automm_output <- automatic_stability_assessment(
     expression_matrix = pbmc3k@assays$RNA@scale.data,
     n_repetitions = 10,

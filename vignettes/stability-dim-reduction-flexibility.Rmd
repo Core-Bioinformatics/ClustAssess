@@ -97,7 +97,7 @@ ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
 ```
 
 Assess the stability of the dimensionality reduction when PCA is used as dimensionality reduction.
-```{r feature_stability_pca, cache = TRUE}
+```{r feature_stability_pca, cache = FALSE}
 matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
     actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
 
@@ -144,7 +144,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
 We can also modify the function by adding an addition post-processing step to the PCA. In this example, we will use the Harmony correction to remove the "batch effect" created by the celltypes.
 *Note*: This example is meant to exemplify how to use the Harmony correction in the ClusAssess pipeline. The batch correction is actually not needed in the PBMC 3k dataset.
 
-```{r feature_stability_harmony, cache = TRUE}
+```{r feature_stability_harmony, cache = FALSE}
 matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
     actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
 
@@ -226,7 +226,7 @@ if (ncores > 1) {
 }
 ```
 Assess the stability of the dimensionality reduction by varying the number of highly variable peaks.
-```{r feature_stability_atac, cache = TRUE}
+```{r feature_stability_atac, cache = FALSE}
 matrix_processing_function <- function(dt_mtx, actual_n_singular_values = 50) {
     actual_n_singular_values <- min(actual_n_singular_values, ncol(dt_mtx) %/% 2)
 
