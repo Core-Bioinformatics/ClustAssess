@@ -9,7 +9,9 @@ add_metadata(app_folder, metadata, qualpalr_colorspace = "pretty")
 \arguments{
 \item{app_folder}{The folder containing the ClustAssess ShinyApp}
 
-\item{metadata}{The new metadata to be added}
+\item{metadata}{The new metadata to be added. This parameter should be a
+dataframe that follows the same row ordering as the already existing
+metadata from the ClustAssess app.}
 
 \item{qualpalr_colorspace}{The colorspace to be used for the metadata}
 }

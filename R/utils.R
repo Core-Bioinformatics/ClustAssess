@@ -82,10 +82,13 @@ process_clustering_arguments <- function(clustering_arguments, clustering_method
 #' optionally, the number of clusters.
 #'
 #' @param clustassess_object Output of the `automatic_stability_assessment`.
-#' @param feature_type Type of feature used for dimensionality reduction.
-#' @param feature_size Size of the feature set used for clustering.
-#' @param clustering_method Clustering method used.
-#' @param nclusters Number of clusters to extract. If NULL, all clusters are
+#' @param feature_type Type of feature used for dimensionality reduction. If
+#' `NULL`, it will select the first available feature.
+#' @param feature_size Size of the feature set used for clustering. If `NULL`,
+#' it will select the first available feature size.
+#' @param clustering_method Clustering method used. If `NULL`, it will select
+#' the first available clustering method.
+#' @param nclusters Number of clusters to extract. If `NULL`, all clusters are
 #' returned.
 #'
 #' @return A list of clusters that are specific to the given configuration.
@@ -94,10 +97,14 @@ process_clustering_arguments <- function(clustering_arguments, clustering_method
 #'
 #' @export
 get_clusters_from_clustassess_object <- function(clustassess_object,
-                                                 feature_type,
-                                                 feature_size,
-                                                 clustering_method,
+                                                 feature_type = NULL,
+                                                 feature_size = NULL,
+                                                 clustering_method = NULL,
                                                  nclusters = NULL) {
+
+    if (is.null(feature_type)) {
+        feature_type <- setdiff(names(clustassess_object), "feature_stability")[1]
+    }
 
     if (!(feature_type %in% names(clustassess_object))) {
         available_options <- setdiff(names(clustassess_object), "feature_stability")
@@ -105,6 +112,9 @@ get_clusters_from_clustassess_object <- function(clustassess_object,
     }
 
     clustassess_object <- clustassess_object[[feature_type]]
+    if (is.null(feature_size)) {
+        feature_size <- setdiff(names(clustassess_object), "feature_list")[1]
+    }
     if (!(feature_size %in% names(clustassess_object))) {
         available_options <- paste(setdiff(names(clustassess_object), "feature_list"), collapse = ", ")
         stop(glue::glue("Feature size not found in clustassess object.\nAvailable options: {available_options}"))
@@ -113,6 +123,10 @@ get_clusters_from_clustassess_object <- function(clustassess_object,
     feature_size <- as.character(feature_size)
 
     clustassess_object <- clustassess_object[[feature_size]]$clustering_stability$split_by_k
+    if (is.null(clustering_method)) {
+        clustering_method <- names(clustassess_object)[1]
+    }
+
     if (!(clustering_method %in% names(clustassess_object))) {
         available_options <- paste(names(clustassess_object), collapse = ", ")
         stop(glue::glue("Clustering method not found in clustassess object.\nAvailable options: {available_options}"))

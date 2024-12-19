@@ -6,22 +6,25 @@
 \usage{
 get_clusters_from_clustassess_object(
   clustassess_object,
-  feature_type,
-  feature_size,
-  clustering_method,
+  feature_type = NULL,
+  feature_size = NULL,
+  clustering_method = NULL,
   nclusters = NULL
 )
 }
 \arguments{
 \item{clustassess_object}{Output of the \code{automatic_stability_assessment}.}
 
-\item{feature_type}{Type of feature used for dimensionality reduction.}
+\item{feature_type}{Type of feature used for dimensionality reduction. If
+\code{NULL}, it will select the first available feature.}
 
-\item{feature_size}{Size of the feature set used for clustering.}
+\item{feature_size}{Size of the feature set used for clustering. If \code{NULL},
+it will select the first available feature size.}
 
-\item{clustering_method}{Clustering method used.}
+\item{clustering_method}{Clustering method used. If \code{NULL}, it will select
+the first available clustering method.}
 
-\item{nclusters}{Number of clusters to extract. If NULL, all clusters are
+\item{nclusters}{Number of clusters to extract. If \code{NULL}, all clusters are
 returned.}
 }
 \value{
