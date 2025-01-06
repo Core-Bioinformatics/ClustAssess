@@ -31,16 +31,45 @@ ranking_functions <- list(
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
 seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start = 10, num_iter = 10, ...) {
-    cluster_result <- Seurat::FindClusters(
-        object,
+    if (algorithm != 4) {
+        cluster_result <- Seurat::FindClusters(
+            object,
+            resolution = resolution,
+            random.seed = seed,
+            algorithm = algorithm,
+            n.start = num_start,
+            n.iter = num_iter,
+            ...
+        )
+        return(as.integer(cluster_result[[colnames(cluster_result)[1]]]))
+    }
+
+    if (!(inherits(object, "igraph"))) {
+        object <- Seurat::as.sparse(object)
+        is_nn <- all(object@x == 1)
+        if (is_nn) {
+            object <- igraph::graph_from_adjacency_matrix(
+                adjmatrix = object,
+                mode = "directed"
+            )
+        } else {
+            object <- igraph::graph_from_adjacency_matrix(
+                adjmatrix = object,
+                mode = "undirected",
+                weighted = TRUE
+            )
+        }
+    }
+    
+    cluster_result <- leiden::leiden(
+        object = object,
+        weights = igraph::E(object)$weight,
         resolution = resolution,
-        random.seed = seed,
-        algorithm = algorithm,
-        n.start = num_start,
-        n.iter = num_iter,
+        n_iterations = num_iter,
+        seed = seed,
         ...
     )
-    as.integer(cluster_result[[colnames(cluster_result)[1]]])
+    return(cluster_result)
 }
 
 leiden_clustering <- function(g,
