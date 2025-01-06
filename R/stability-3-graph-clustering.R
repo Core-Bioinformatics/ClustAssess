@@ -200,8 +200,14 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         "alg_index",
         "current_clustering_arguments"
     )
+    package_needed <- c()
+    if (4 %in% clustering_algorithm) {
+        package_needed <- c(package_needed, "leiden")
+    }
     all_vars <- ls()
     seed <- 0
+
+
 
     for (alg_index in clustering_algorithm) {
         # FIXME edit this once you will be able to share an igraph
@@ -242,7 +248,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 seed = seed_sequence,
                 .inorder = FALSE,
                 .noexport = all_vars[!(all_vars %in% needed_vars)],
-                .export = needed_vars
+                .export = needed_vars,
+                .packages = package_needed
             ) %dopar% {
                 # apply the clustering, which should return a membership vector
                 do.call(

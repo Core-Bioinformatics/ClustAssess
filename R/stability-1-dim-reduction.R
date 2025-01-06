@@ -287,6 +287,11 @@ assess_feature_stability <- function(data_matrix,
             }
         }
 
+        package_needed <- c()
+        if (4 %in% clustering_arguments$algorithm) {
+            package_needed <- c(package_needed, "leiden")
+        }
+
         all_vars <- ls()
         seed <- 0
 
@@ -294,7 +299,8 @@ assess_feature_stability <- function(data_matrix,
         partitions_list[[step]] <- foreach::foreach(
             seed = seed_sequence,
             .inorder = FALSE,
-            .noexport = all_vars[!(all_vars %in% needed_vars)]
+            .noexport = all_vars[!(all_vars %in% needed_vars)],
+            .packages = package_needed
         ) %dopar% {
             if (graph_reduction_type == "UMAP") {
                 row_names <- rownames(shared_embedding)

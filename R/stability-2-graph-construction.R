@@ -618,6 +618,10 @@ assess_nn_stability_pca <- function(embedding,
     rm(nn2_res)
     gc()
 
+    package_needed <- c()
+    if (4 %in% clustering_algorithm) {
+        package_needed <- c(package_needed, "leiden")
+    }
     for (n_neigh in as.character(n_neigh_sequence)) {
         partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
 
@@ -641,7 +645,8 @@ assess_nn_stability_pca <- function(embedding,
         partitions_list_temp <- foreach::foreach(
             seed = seed_sequence,
             .inorder = FALSE,
-            .noexport = all_vars[!(all_vars %in% needed_vars)]
+            .noexport = all_vars[!(all_vars %in% needed_vars)],
+            .packages = package_needed
         ) %dopar% {
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type != 1) {
@@ -789,12 +794,17 @@ assess_nn_stability_umap <- function(embedding,
     seed <- NA
     all_vars <- ls()
 
+    package_needed <- c("ClustAssess")
+    if (4 %in% clustering_algorithm) {
+        package_needed <- c(package_needed, "leiden")
+    }
+
     seed_list <- foreach::foreach(
         seed = seed_sequence,
         .inorder = FALSE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
         .export = c("getNNmatrix"),
-        .packages = c("ClustAssess")
+        .packages = package_needed
     ) %dopar% {
         # perform the dimensionality reduction
         set.seed(seed)
