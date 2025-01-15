@@ -50,6 +50,7 @@ Imports:
     gprofiler2,
     igraph,
     jsonlite,
+    leiden,
     Matrix (>= 1.5.0),
     matrixStats,
     progress,
