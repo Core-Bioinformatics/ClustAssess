@@ -3,7 +3,7 @@ ppi <- 72
 single_color <- "#025147"
 generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color = "#017c6b") {
     if (n_unique_values > 99) {
-        return(sample(grDevices::colors(), n_unique_values))
+        return(sample(grDevices::colors(distinct = TRUE), n_unique_values))
     }
 
     if (n_unique_values > 1) {
@@ -542,7 +542,6 @@ write_shiny_app.default <- function(object,
 
     if (stringr::str_length(warning_message) > 0) {
         while (TRUE) {
-            # FIXME this doens't work on console, with `Rscript` check if scan() would work / if writing a isoalted function
             warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nPlease type `yes` or `no` if you want to continue creating the ClustAssess shiny app."), immediate. = TRUE)
             if (interactive()) {
                 user_input <- readline()
@@ -742,7 +741,9 @@ write_shiny_app.default <- function(object,
 #' to update the object and re-create the app.
 #'
 #' @param app_folder The folder containing the ClustAssess ShinyApp
-#' @param metadata The new metadata to be added
+#' @param metadata The new metadata to be added. This parameter should be a
+#' dataframe that follows the same row ordering as the already existing
+#' metadata from the ClustAssess app.
 #' @param qualpalr_colorspace The colorspace to be used for the metadata
 #'
 #' @return NULL - the metadata object is updated in the app folder
