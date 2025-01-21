@@ -50,6 +50,7 @@ However, this function can be easily changed, as it will be shown in the followi
 
 For the PCA example, we will use the PBMC 3k dataset from the `SeuratData` package. The preprocessing of the dataset is identical with the one performed in the stability pipeline vignette.
 ```{r process_pbmc_rna}
+options(timeout=3600)
 InstallData("pbmc3k")
 data("pbmc3k")
 pbmc3k <- UpdateSeuratObject(pbmc3k)
