@@ -64,9 +64,9 @@ optionally, the number of clusters.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_clusters_from_clustassess_object</span><span class="op">(</span></span>
 <span>  <span class="va">clustassess_object</span>,</span>
-<span>  <span class="va">feature_type</span>,</span>
-<span>  <span class="va">feature_size</span>,</span>
-<span>  <span class="va">clustering_method</span>,</span>
+<span>  feature_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  feature_size <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  clustering_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nclusters <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -80,19 +80,22 @@ optionally, the number of clusters.</p>
 
 
 <dt id="arg-feature-type">feature_type<a class="anchor" aria-label="anchor" href="#arg-feature-type"></a></dt>
-<dd><p>Type of feature used for dimensionality reduction.</p></dd>
+<dd><p>Type of feature used for dimensionality reduction. If
+<code>NULL</code>, it will select the first available feature.</p></dd>
 
 
 <dt id="arg-feature-size">feature_size<a class="anchor" aria-label="anchor" href="#arg-feature-size"></a></dt>
-<dd><p>Size of the feature set used for clustering.</p></dd>
+<dd><p>Size of the feature set used for clustering. If <code>NULL</code>,
+it will select the first available feature size.</p></dd>
 
 
 <dt id="arg-clustering-method">clustering_method<a class="anchor" aria-label="anchor" href="#arg-clustering-method"></a></dt>
-<dd><p>Clustering method used.</p></dd>
+<dd><p>Clustering method used. If <code>NULL</code>, it will select
+the first available clustering method.</p></dd>
 
 
 <dt id="arg-nclusters">nclusters<a class="anchor" aria-label="anchor" href="#arg-nclusters"></a></dt>
-<dd><p>Number of clusters to extract. If NULL, all clusters are
+<dd><p>Number of clusters to extract. If <code>NULL</code>, all clusters are
 returned.</p></dd>
 
 </dl></div>

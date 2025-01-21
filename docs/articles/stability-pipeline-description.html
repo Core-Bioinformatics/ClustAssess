@@ -540,7 +540,15 @@
 <span>    n_repetitions <span class="op">=</span> <span class="va">n_repetitions</span>,</span>
 <span>    clustering_algorithm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">4</span>,</span>
 <span>    ecs_thresh <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; using environment: r-reticulate</span></span>
+<span><span class="co">#&gt; conda environment r-reticulate installed</span></span>
+<span><span class="co">#&gt; install dependencies (yes/no)?</span></span>
+<span><span class="co">#&gt; no (use interactive mode)</span></span>
+<span><span class="co">#&gt; Unable to install python modules igraph and leidenalg</span></span>
+<span><span class="co">#&gt; run in terminal:</span></span>
+<span><span class="co">#&gt; conda install -n r-reticulate -c conda-forge leidenalg python-igraph pandas umap-learn</span></span>
+<span><span class="co">#&gt; python modules igraph and leidenalg installed</span></span></code></pre></div>
 <p>The stability of the methods is evaluated using the Element-Centric Consistency (ECC), which is applied on the partition list obtained over multiple runs. The following summary plot underlines the variation of the consistency as the resolution parameter increases. Above each boxplot, we display the number of clusters corresponding to the most frequent partition for the clustering method with the specific resolution parameter. Increasing the resolution leads to more clusters. We notice a high stability for all four methods for a low number of clusters. Starting with <code>k = 8</code>, Leiden and SLM perform better than Louvain and Louvain refined.</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html" class="external-link">wrap_plots</a></span><span class="op">(</span></span>
@@ -599,7 +607,7 @@
 <span>        units <span class="op">=</span> <span class="st">"mins"</span></span>
 <span>    <span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Feature stability methods runtime: 2.995788 minutes"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Feature stability methods runtime: 3.417054 minutes"</span></span></code></pre></div>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
 <span>    <span class="st">"NN - # connected components methods runtime:"</span>,</span>
@@ -607,7 +615,7 @@
 <span>        units <span class="op">=</span> <span class="st">"mins"</span></span>
 <span>    <span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "NN - # connected components methods runtime: 0.4642025 minutes"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "NN - # connected components methods runtime: 0.5294519 minutes"</span></span></code></pre></div>
 <div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
 <span>    <span class="st">"NN stability methods runtime:"</span>,</span>
@@ -615,7 +623,7 @@
 <span>        units <span class="op">=</span> <span class="st">"mins"</span></span>
 <span>    <span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "NN stability methods runtime: 1.759847 minutes"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "NN stability methods runtime: 1.825545 minutes"</span></span></code></pre></div>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Clustering stability methods runtime:"</span>,</span>
@@ -623,7 +631,7 @@
 <span>        units <span class="op">=</span> <span class="st">"mins"</span></span>
 <span>    <span class="op">)</span><span class="op">)</span>, <span class="st">"minutes"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Clustering stability methods runtime: 8.3383 minutes"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Clustering stability methods runtime: 5.624132 minutes"</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -653,13 +661,13 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] ClustAssess_1.0.0             ggplot2_3.5.1.9000           </span></span>
-<span><span class="co">#&gt;  [3] Seurat_5.1.0                  SeuratObject_5.0.2           </span></span>
-<span><span class="co">#&gt;  [5] sp_2.1-4                      Matrix_1.7-0                 </span></span>
-<span><span class="co">#&gt;  [7] patchwork_1.2.0               pbmcMultiome.SeuratData_0.1.4</span></span>
-<span><span class="co">#&gt;  [9] pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9001        </span></span>
-<span><span class="co">#&gt; [11] RhpcBLASctl_0.23-42           devtools_2.4.5               </span></span>
-<span><span class="co">#&gt; [13] usethis_2.2.3                </span></span>
+<span><span class="co">#&gt;  [1] leiden_0.4.3.1                ClustAssess_1.0.0            </span></span>
+<span><span class="co">#&gt;  [3] ggplot2_3.5.1.9000            Seurat_5.1.0                 </span></span>
+<span><span class="co">#&gt;  [5] SeuratObject_5.0.2            sp_2.1-4                     </span></span>
+<span><span class="co">#&gt;  [7] Matrix_1.7-0                  patchwork_1.2.0              </span></span>
+<span><span class="co">#&gt;  [9] pbmcMultiome.SeuratData_0.1.4 pbmc3k.SeuratData_3.1.4      </span></span>
+<span><span class="co">#&gt; [11] SeuratData_0.2.2.9001         RhpcBLASctl_0.23-42          </span></span>
+<span><span class="co">#&gt; [13] devtools_2.4.5                usethis_2.2.3                </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;   [1] RColorBrewer_1.1-3     jsonlite_1.8.8         magrittr_2.0.3        </span></span>
@@ -671,7 +679,7 @@
 <span><span class="co">#&gt;  [19] KernSmooth_2.23-22     bslib_0.7.0            htmlwidgets_1.6.4     </span></span>
 <span><span class="co">#&gt;  [22] desc_1.4.3             ica_1.0-3              plyr_1.8.9            </span></span>
 <span><span class="co">#&gt;  [25] plotly_4.10.4          zoo_1.8-12             cachem_1.1.0          </span></span>
-<span><span class="co">#&gt;  [28] igraph_2.0.3           iterators_1.0.14       mime_0.12             </span></span>
+<span><span class="co">#&gt;  [28] igraph_2.1.3           iterators_1.0.14       mime_0.12             </span></span>
 <span><span class="co">#&gt;  [31] lifecycle_1.0.4        pkgconfig_2.0.3        R6_2.5.1              </span></span>
 <span><span class="co">#&gt;  [34] fastmap_1.2.0          fitdistrplus_1.1-11    future_1.33.2         </span></span>
 <span><span class="co">#&gt;  [37] shiny_1.8.1.1          digest_0.6.35          colorspace_2.1-1      </span></span>
@@ -708,8 +716,7 @@
 <span><span class="co">#&gt; [130] prettyunits_1.2.0      dotCall64_1.1-1        profvis_0.3.8         </span></span>
 <span><span class="co">#&gt; [133] urlchecker_1.0.1       listenv_0.9.1          viridisLite_0.4.2     </span></span>
 <span><span class="co">#&gt; [136] scales_1.3.0           ggridges_0.5.6         crayon_1.5.3          </span></span>
-<span><span class="co">#&gt; [139] leiden_0.4.3.1         purrr_1.0.2            rlang_1.1.4           </span></span>
-<span><span class="co">#&gt; [142] cowplot_1.1.3</span></span></code></pre></div>
+<span><span class="co">#&gt; [139] purrr_1.0.2            rlang_1.1.4            cowplot_1.1.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
