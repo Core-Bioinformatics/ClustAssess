@@ -8,3 +8,6 @@
 ^.github
 ^.git
 ^man/figures$
+_pkgdown\.yml
+vignettes
+cran-comments\.md
