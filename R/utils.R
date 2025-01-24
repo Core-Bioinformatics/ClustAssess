@@ -196,3 +196,7 @@ choose_stable_clusters <- function(clusters_list,
 
     return(clusters_list[index_chosen])
 }
+
+is_package_installed <- function(package_name) {
+    return(package_name %in% rownames(utils::installed.packages()))
+}
