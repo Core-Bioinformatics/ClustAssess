@@ -17,10 +17,10 @@ get_nn_conn_comps_umap <- function(embedding,
     umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
 
     nn_conn_comps_list <- list()
-    if (ncores == 1) {
-        shared_embedding <- embedding
-    } else {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_embedding <- SharedObject::share(embedding)
+    } else {
+        shared_embedding <- embedding
     }
 
     if (length(n_neigh_sequence) > 1) {
@@ -87,7 +87,7 @@ get_nn_conn_comps_umap <- function(embedding,
         n_comps
     }
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_embedding <- SharedObject::unshare(embedding)
     }
 
@@ -116,10 +116,10 @@ get_nn_conn_comps_pca <- function(embedding,
         k = max(n_neigh_sequence)
     )$nn.idx
 
-    if (ncores == 1) {
-        shared_nn2_res <- nn2_res
-    } else {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
+    } else {
+        shared_nn2_res <- nn2_res
     }
 
     if (length(n_neigh_sequence) > 1) {
@@ -151,7 +151,7 @@ get_nn_conn_comps_pca <- function(embedding,
         )
     }
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::unshare(nn2_res)
     }
 
@@ -568,7 +568,7 @@ assess_nn_stability_pca <- function(embedding,
         k = max(n_neigh_sequence)
     )$nn.idx
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
     } else {
         shared_nn2_res <- nn2_res
@@ -610,7 +610,7 @@ assess_nn_stability_pca <- function(embedding,
 
     names(neigh_matrices) <- as.character(n_neigh_sequence)
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::unshare(nn2_res)
         rm(shared_nn2_res)
     }
@@ -625,7 +625,7 @@ assess_nn_stability_pca <- function(embedding,
     for (n_neigh in as.character(n_neigh_sequence)) {
         partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
 
-        if (ncores > 1) {
+        if (ncores > 1 && is_package_installed("SharedObject")) {
             shared_neigh_matrix <- SharedObject::share(neigh_matrices[[n_neigh]])
         } else {
             shared_neigh_matrix <- neigh_matrices[[n_neigh]]
@@ -773,7 +773,7 @@ assess_nn_stability_umap <- function(embedding,
     ncells <- nrow(embedding)
     umap_arguments <- process_umap_arguments(umap_arguments, ncells)
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_embedding <- SharedObject::share(embedding)
     } else {
         shared_embedding <- embedding
@@ -879,7 +879,7 @@ assess_nn_stability_umap <- function(embedding,
         return(seed_result)
     }
 
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_embedding <- SharedObject::unshare(embedding)
     }
 

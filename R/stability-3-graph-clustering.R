@@ -184,7 +184,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     # additional arguments used by the clustering method
 
     # if (min(algorithm) < 4) {
-    if (ncores > 1) {
+    if (ncores > 1 && is_package_installed("SharedObject")) {
         graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
     } else {
         graph_adjacency_matrix_shared <- graph_adjacency_matrix
@@ -337,7 +337,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
 
     on.exit(
         {
-            if (ncores > 1) {
+            if (ncores > 1 && is_package_installed("SharedObject")) {
                 graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
                 rm(graph_adjacency_matrix_shared)
             }

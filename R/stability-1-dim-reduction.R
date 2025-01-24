@@ -273,14 +273,14 @@ assess_feature_stability <- function(data_matrix,
 
         if (graph_reduction_type == "PCA") {
             needed_vars <- c(needed_vars, "shared_neigh_matrix")
-            if (ncores > 1) {
+            if (ncores > 1 && is_package_installed("SharedObject")) {
                 shared_neigh_matrix <- SharedObject::share(neigh_matrix)
             } else {
                 shared_neigh_matrix <- neigh_matrix
             }
         } else {
             needed_vars <- c(needed_vars, "shared_embedding")
-            if (ncores > 1) {
+            if (ncores > 1 && is_package_installed("SharedObject")) {
                 shared_embedding <- SharedObject::share(embedding)
             } else {
                 shared_embedding <- embedding
@@ -395,10 +395,12 @@ assess_feature_stability <- function(data_matrix,
             cluster_results
         }
 
-        if (graph_reduction_type == "PCA") {
-            shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
-        } else {
-            shared_embedding <- SharedObject::unshare(embedding)
+        if (is_package_installed("SharedObject")) {
+            if (graph_reduction_type == "PCA") {
+                shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
+            } else {
+                shared_embedding <- SharedObject::unshare(embedding)
+            }
         }
 
         set.seed(42) # to match Seurat's default
