@@ -367,6 +367,12 @@ ui_comparison_jsi_panel <- function(id) {
 
 ui_comparison_gene_heatmap <- function(id) {
     ns <- shiny::NS(id) 
+    plot_options <- c("Bubbleplot")
+    if (is_package_installed("ComplexHeatmap")) {
+        plot_options <- c("Heatmap", "Bubbleplot")
+    } else {
+        message("ComplexHeatmap is not installed. The Bubbleplot will be used instead.\nIf you want to generate heatmaps, please run the following command: `BiocManager::install('ComplexHeatmap')`")
+    }
 
     shiny::tagList(
         shiny::splitLayout(
@@ -500,8 +506,8 @@ ui_comparison_gene_heatmap <- function(id) {
             shinyWidgets::radioGroupButtons(
                 inputId = ns("plot_type"),
                 label = "Plot type",
-                choices = c("Heatmap", "Bubbleplot"),
-                selected = "Heatmap"
+                choices = plot_options,
+                selected = plot_options[1]
             )
         ),
         shiny::plotOutput(ns("gene_heatmap"), height = "auto"),
