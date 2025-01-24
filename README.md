@@ -192,6 +192,7 @@ The following packages are required for ClustAssess:
 * gprofiler2
 * igraph
 * jsonlite
+* leiden
 * Matrix (>= 1.5.0)
 * matrixStats
 * methods
@@ -203,6 +204,7 @@ The following packages are required for ClustAssess:
 * RANN
 * reshape2
 * rlang
+* Seurat
 * shiny
 * shinyjs
 * shinyLP
@@ -232,7 +234,6 @@ vignettes, the following packages are also needed:
 * rmarkdown
 * RhpcBLASctl
 * scales
-* Seurat
 * SeuratData
 * SeuratObject
 * SharedObject
@@ -241,24 +242,28 @@ vignettes, the following packages are also needed:
 
 To manually install the required dependencies, please use the following commands:
 ```r
-install.packages(c("dplyr", "DT", "fastcluster", "foreach", "glue", "Gmedian", "ggnewscale", "ggplot2", "ggrastr", "ggrepel", "ggtext", "gprofiler2", "igraph", "jsonlite", "Matrix", "matrixStats", "methods", "progress", "stringr", "paletteer", "plotly", "qualpalr", "RANN", "reshape2", "rlang", "shiny", "shinyjs", "shinyLP", "shinyWidgets", "stats", "uwot", "vioplot"), Ncpus = 1)
+install.packages(c("dplyr", "DT", "fastcluster", "foreach", "glue", "Gmedian", "ggnewscale", "ggplot2", "ggrastr", "ggrepel", "ggtext", "gprofiler2", "igraph", "jsonlite", "leiden", "Matrix", "matrixStats", "methods", "progress", "stringr", "paletteer", "plotly", "qualpalr", "RANN", "reshape2", "rlang", "Seurat", "shiny", "shinyjs", "shinyLP", "shinyWidgets", "stats", "uwot", "vioplot"), Ncpus = 1)
 install.packages("BiocManager")
 BiocManager::install(c("ComplexHeatmap"))
 ```
 
 To manually install the suggested dependencies, please use the following commands:
 ```r
-install.packages(c("colourpicker", "dbscan", "dendextend", "devtools", "doParallel", "doRNG", "e1071", "knitr", "leidenbase", "patchwork", "ragg", "reactlog", "rmarkdown", "RhpcBLASctl", "scales", "Seurat", "SeuratObject", "styler", "testthat"), Ncpus = 1)
+install.packages(c("colourpicker", "devtools", "doParallel", "doRNG", "knitr", "leidenbase", "patchwork", "ragg", "rmarkdown", "RhpcBLASctl", "scales", "SeuratObject", "styler", "testthat"), Ncpus = 1)
 
 install.packages("BiocManager")
 BiocManager::install(c("DelayedMatrixStats", "rhdf5"))
 
 devtools::install_github('cole-trapnell-lab/monocle3')
-devtools::install_github('satijalab/seurat-data')
 devtools::install_github("Jiefei-Wang/SharedObject")
 ```
 
-
+To manually install the packages that are exclusively used to build the vignettes, please use the following commands:
+```r
+devtools::install_github('satijalab/seurat-data')
+install.packages(c("harmony", "Signac"))
+BiocManager::install("Rsamtools")
+```
 
 
 *Note*: The package is under active development, and the release branches might contain additional features and bug fixes. 
