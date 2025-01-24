@@ -1,9 +1,3 @@
-Sys.unsetenv("RETICULATE_PYTHON")
-library(reticulate)
-virtualenv_create("ClustAssess-env", packages = c("numpy", "clusim", "ClustAssessPy"))
-use_python("~/.virtualenvs/ClustAssess-env/bin/python")
-use_virtualenv("ClustAssess-env", required = TRUE)
-
 test_that("ECS is between 0 and 1", {
     set.seed(1234)
     for (i in seq_len(100)) {
@@ -50,6 +44,14 @@ test_that("`element_sim` produces the average of `element_sim_elscore`", {
 })
 
 test_that("ECS produces consistent results with clusim", {
+    testthat::skip_on_cran()
+    testthat::skip_if(!requireNamespace("reticulate", quietly = TRUE), "Package `reticulate` not installed")
+    testthat::skip_if(!is.null(Sys.getenv("RETICULATE_PYTHON")), "Python environment not set")
+    testthat::skip_if(
+        !reticulate::py_module_available("clusim"),
+        "Packages `clusim` not installed"
+    )
+
     csim <- import("clusim")
 
     set.seed(1234)
@@ -62,13 +64,22 @@ test_that("ECS produces consistent results with clusim", {
         cl1$from_membership_list(x)
         cl2 <- csim$clustering$Clustering()
         cl2$from_membership_list(y)
-        ecs2 <- csim$sim$element_sim_elscore(cl1, cl2)[[1]]$tolist()
+        ecs2 <- as.numeric(csim$sim$element_sim_elscore(cl1, cl2)[[1]])
 
         expect_equal(ecs1, ecs2)
     }
 })
 
 test_that("ECS produces consistent results with ClustAssessPy", {
+    testthat::skip_on_cran()
+    testthat::skip_if(!requireNamespace("reticulate", quietly = TRUE), "Package `reticulate` not installed")
+    testthat::skip_if(!is.null(Sys.getenv("RETICULATE_PYTHON")), "Python environment not set")
+    testthat::skip_if(
+        !(reticulate::py_module_available("numpy") &&
+        reticulate::py_module_available("ClustAssessPy")),
+        "Packages `numpy` and `ClustAssessPy` not installed"
+    )
+
     np <- import("numpy")
     cpy <- import("ClustAssessPy")
 
@@ -77,7 +88,7 @@ test_that("ECS produces consistent results with ClustAssessPy", {
         x <- sample.int(10, size = 100, replace = TRUE)
         y <- sample.int(10, size = 100, replace = TRUE)
         ecs1 <- element_sim_elscore(x, y)
-        ecs2 <- py_to_r(cpy$element_sim_elscore(np$array(x), np$array(y))$tolist())
+        ecs2 <- as.numeric(py_to_r(cpy$element_sim_elscore(np$array(x), np$array(y))))
 
         expect_equal(ecs1, ecs2)
     }
