@@ -495,7 +495,7 @@ write_shiny_app.Seurat <- function(object,
                                    height_ratio = 0.6,
                                    qualpalr_colorspace = "pretty") {
     write_shiny_app(
-        object = object@assays[[assay_name]]@data,
+        object = Seurat::GetAssayData(object, assay = assay_name, layer = "data"),
         metadata = object@meta.data,
         clustassess_object = clustassess_object,
         project_folder = project_folder,
