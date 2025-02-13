@@ -1,7 +1,7 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(person("Andi", "Munteanu",
                   email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Arash", "Shahsavari", email="arash8579@hotmail.com",
                   role = c("aut")), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Liviu", "Ciortuz", role=c("ctb"), email="liviu_ciortuz@yahoo.co.uk"), person("Irina", "Mohorianu",
@@ -15,6 +15,7 @@ Description: A set of tools for evaluating clustering robustness using
     pipelines typical in single-cell data analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Additional_repositories: https://blaserlab.r-universe.dev
 biocViews:
     Software,
     SingleCell,
@@ -97,5 +98,4 @@ Suggests:
     testthat (>= 3.0.0)
 URL: https://github.com/Core-Bioinformatics/ClustAssess, https://core-bioinformatics.github.io/ClustAssess/
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
-VignetteBuilder: knitr
 Config/testthat/edition: 3
