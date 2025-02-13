@@ -380,13 +380,17 @@ write_objects <- function(clustassess_object,
         chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
         gene_vars <- matrixStats::rowVars(chunk_matrix)
         # filter by var threshold
-        chunk_matrix[gene_vars > gene_variance_threshold, ]
+        mask <- gene_vars > gene_variance_threshold
+        if (sum(mask) == 0) {
+            return(NULL)
+        }
+        return(chunk_matrix[gene_vars > gene_variance_threshold, , drop = FALSE])
     })
 
     print("merging chunks")
     expression_matrix <- do.call(rbind, dense_chunks)
     print("chunks merged")
-    
+ 
     gene_avg_expression <- matrixStats::rowMeans2(expression_matrix)
     order_expression <- order(gene_avg_expression, decreasing = TRUE)
     # order the genes based on their average expression
