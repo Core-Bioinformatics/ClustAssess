@@ -609,12 +609,23 @@ ui_comparison_violin_gene <- function(id) {
             )
         ),
         shiny::plotOutput(ns("violin_gene"), height = "auto"),
-        shiny::selectInput(
-            inputId = ns("stat_mtd_group"),
-            label = "Select the group for the stats table",
-            choices = NULL
-        ),
-        shiny::tableOutput(ns("stats"))
+        shiny::splitLayout(
+                shiny::tagList(
+                    shiny::splitLayout(
+                        shiny::selectInput( inputId = ns("stat_mtd_group"),
+                            label = "Select the group for the stats table",
+                            choices = NULL
+                        ),
+                        shinyWidgets::prettyRadioButtons(inputId = ns("type_percentage"),
+                            label = "Show percentage?",
+                            choices = c("Yes", "No")
+                        )
+                    ),
+                    shiny::tableOutput(ns("stats"))
+                )
+                # TODO add barplots
+
+            )
     )
 }
 
@@ -2134,6 +2145,7 @@ server_comparison_violin_gene <- function(id) {
                     mtd_group_info <- metadata_group_info()
                     mtd_group_info$color_info <- mtd_group_info$color_info[mtd_mask]
                     selected_group <- input$stat_mtd_group
+                    show_percentage <- input$type_percentage
                     shiny::req(
                         distr_vector,
                         mtd_split_info,
@@ -2180,18 +2192,28 @@ server_comparison_violin_gene <- function(id) {
 
                     stats_df <- rbind(
                         stats_df,
+                        sapply(seq_along(split_vals), function(x) { sum(split_vals[[x]] > 0)}),
                         sapply(seq_along(split_vals), function(x) { sum(split_vals[[x]] > stats_df[1, x])}),
                         sapply(seq_along(split_vals), function(x) { sum(split_vals[[x]] < stats_df[5, x])})
                     )
 
                     colnames(stats_df) <- names(split_vals)
-                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells", "# cells above min", "# cells under max")
+                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells", "# cells above 0", "# cells above min", "# cells under max")
 
                     breaks_df <- sapply(split_vals, function(x) {
                         table(cut(x, breaks = break_points))
                     })
 
-                    rbind(stats_df, breaks_df)
+                    final_df <- rbind(stats_df, breaks_df)
+                    if (show_percentage == "Yes") {
+                        for (i in seq(from = 6, to = nrow(final_df))) {
+                            final_df[i, ] <- final_df[i, ] / sum(final_df[i, ]) * 100
+                            rownames(final_df)[i] <- paste0(rownames(final_df)[i], " (%)")
+                        }
+                    }
+
+                    return(final_df)
+                    
                 },
                 rownames = TRUE
             )
