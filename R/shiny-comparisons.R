@@ -617,8 +617,8 @@ ui_comparison_violin_gene <- function(id) {
                             choices = NULL
                         ),
                         shinyWidgets::prettyRadioButtons(inputId = ns("type_percentage"),
-                            label = "Show percentage?",
-                            choices = c("Yes", "No")
+                            label = "Information shown",
+                            choices = c("Count", "Percentage (relative to the group)", "Percentage (relative to the total)")
                         )
                     ),
                     shiny::tableOutput(ns("stats"))
@@ -2205,9 +2205,14 @@ server_comparison_violin_gene <- function(id) {
                     })
 
                     final_df <- rbind(stats_df, breaks_df)
-                    if (show_percentage == "Yes") {
+                    if (show_percentage == "Percentage (relative to the group)") {
                         for (i in seq(from = 6, to = nrow(final_df))) {
                             final_df[i, ] <- final_df[i, ] / sum(final_df[i, ]) * 100
+                            rownames(final_df)[i] <- paste0(rownames(final_df)[i], " (%)")
+                        }
+                    } else if (show_percentage != "Count") {
+                        for (i in seq(from = 7, to = nrow(final_df))) {
+                            final_df[i, ] <- final_df[i, ] / final_df[6, ] * 100
                             rownames(final_df)[i] <- paste0(rownames(final_df)[i], " (%)")
                         }
                     }
