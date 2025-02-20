@@ -64,6 +64,42 @@ ui_cell_annotation <- function(id) {
     )
 }
 
+ui_metadata_split <- function(id) {
+    ns <- shiny::NS(id)
+
+    shiny::tagList(
+        shiny::splitLayout(
+            cellWidths = c("40px", "90%"),
+            shinyWidgets::circleButton(
+                inputId = ns("info_split"),
+                icon = shiny::icon("info"),
+                size = "sm",
+                status = "success"
+            ),
+            shiny::h2("Metadata splitting")
+        ),
+        shiny::splitLayout(
+            shiny::selectInput(
+                inputId = ns("first_metadata"),
+                label = "Select the first metadata group",
+                choices = NULL
+            ),
+            shiny::selectInput(
+                inputId = ns("second_metadata"),
+                label = "Select the second metadata group",
+                choices = NULL
+            ),
+            shiny::textInput(
+                inputId = ns("new_metadata_name"),
+                label = "New metadata name",
+                placeholder = "Provide a name for the new metadata"
+            )
+        ),
+        shiny::actionButton(ns("split_button"), "Split metadata!", class = "btn-danger"),
+        shiny::br()
+    )
+}
+
 ui_comparison_markers <- function(id) {
     ns <- shiny::NS(id)
 
@@ -708,6 +744,7 @@ ui_comparisons <- function(id) {
         ),
         shiny::actionButton(ns("show_config"), "Show config", type = "info", class = "btn-info show_config"),
         ui_cell_annotation(ns("cell_annotation")),
+        ui_metadata_split(ns("metadata_split")),
         shiny::splitLayout(
             cellWidths = c("40px", "90%"),
             shinyWidgets::circleButton(
@@ -889,6 +926,91 @@ server_cell_annotation <- function(id) {
             shiny::observe(compar_annotation_info(session)) %>% shiny::bindEvent(input$info_annotation, ignoreInit = TRUE)
         }
 
+    )
+}
+
+server_metadata_split <- function(id) {
+    shiny::moduleServer(
+        id,
+        function(input, output, session) {
+            k_choices <- shiny::reactive(names(pkg_env$metadata_unique_temp()))
+            shiny::observe({
+                available_choices <- k_choices()
+                selected_choice <- available_choices[1]
+                for (k in available_choices) {
+                    if (stringr::str_detect(k, "stable_[0-9]+_clusters")) {
+                        selected_choice <- k
+                        break
+                    }
+                }
+
+                shiny::updateSelectInput(
+                    session = session,
+                    inputId = "first_metadata",
+                    choices = available_choices,
+                    selected = selected_choice
+                )
+                shiny::updateSelectInput(
+                    session = session,
+                    inputId = "second_metadata",
+                    choices = available_choices,
+                    selected = selected_choice
+                )
+            })
+
+            shiny::observe({
+                first_mtd <- input$first_metadata
+                second_mtd <- input$second_metadata
+
+                shiny::updateTextInput(
+                    session = session,
+                    inputId = "new_metadata_name",
+                    value = paste(first_mtd, second_mtd, sep = "_")
+                )
+            })
+
+            shiny::observe({
+                shinyjs::disable("split_button")
+                first_mtd <- input$first_metadata
+                second_mtd <- input$second_metadata
+                new_mtd <- input$new_metadata_name
+                unique_list <- pkg_env$metadata_unique_temp()
+
+                shiny::isolate({
+                    shiny::req(first_mtd %in% names(unique_list), second_mtd %in% names(unique_list), new_mtd != "")
+                    shiny::req(first_mtd != second_mtd)
+                    shiny::req(!(new_mtd %in% names(unique_list)))
+
+                    shinyjs::enable("split_button")
+                })
+            })
+
+            shiny::observe({
+                button_value <- pkg_env$split_button()
+                shiny::req(input$split_button > button_value)
+
+                mtd_temp_df <- pkg_env$metadata_temp()
+                unique_list <- pkg_env$metadata_unique_temp()
+
+                first_mtd <- input$first_metadata
+                second_mtd <- input$second_metadata
+                new_mtd <- input$new_metadata_name
+
+                shiny::isolate({
+                    shiny::req(first_mtd %in% names(mtd_temp_df), second_mtd %in% names(mtd_temp_df), new_mtd != "", first_mtd != second_mtd)
+                    new_mtd_vals <- factor(paste(mtd_temp_df[[first_mtd]], mtd_temp_df[[second_mtd]], sep = "_"))
+                    mtd_temp_df[[new_mtd]] <- new_mtd_vals
+                    unique_list[[new_mtd]] <- levels(new_mtd_vals)
+
+                    pkg_env$metadata_temp(mtd_temp_df)
+                    pkg_env$metadata_unique_temp(unique_list)
+                    pkg_env$split_button(input$split_button)
+                })
+
+            }) %>% shiny::bindEvent(input$split_button)
+
+            shiny::observe(compar_split_info(session)) %>% shiny::bindEvent(input$info_split, ignoreInit = TRUE)
+        }
     )
 }
 
@@ -2649,6 +2771,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             }) #%>% shiny::bindEvent(pkg_env$metadata_temp())
 
             server_cell_annotation("cell_annotation")
+            server_metadata_split("metadata_split")
             server_comparison_metadata_panel("metadata_panel_left")
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
