@@ -18,6 +18,7 @@
 #' @param organism_enrichment The organism used for the enrichment analysis; the default is `hsapiens`
 #' @param height_ratio The ratio of the height of the plot to the height of the browser; the default is `0.6`
 #' @param qualpalr_colorspace The colorspace used for generating the colors; the default is `pretty`
+#' @param prompt_feature_choice Should the user be prompted to choose if he wants to continue with the selection of features even if it is lower than median sequence depth; the default is `TRUE`
 #' @rdname write_shiny_app
 #' @export
 write_shiny_app <- function(object,
@@ -30,6 +31,7 @@ write_shiny_app <- function(object,
                             shiny_app_title = "",
                             organism_enrichment = "hsapiens",
                             height_ratio = 0.6,
-                            qualpalr_colorspace = "pretty") {
+                            qualpalr_colorspace = "pretty",
+                            prompt_feature_choice = TRUE) {
     UseMethod(generic = "write_shiny_app", object = object)
 }

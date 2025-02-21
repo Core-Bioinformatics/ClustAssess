@@ -17,7 +17,8 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty"
+  qualpalr_colorspace = "pretty",
+  prompt_feature_choice = TRUE
 )
 
 \method{write_shiny_app}{Seurat}(
@@ -31,7 +32,8 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty"
+  qualpalr_colorspace = "pretty",
+  prompt_feature_choice = TRUE
 )
 
 \method{write_shiny_app}{default}(
@@ -45,7 +47,8 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty"
+  qualpalr_colorspace = "pretty",
+  prompt_feature_choice = TRUE
 )
 }
 \arguments{
@@ -73,6 +76,8 @@ a Seurat object.}
 \item{height_ratio}{The ratio of the height of the plot to the height of the browser; the default is \code{0.6}}
 
 \item{qualpalr_colorspace}{The colorspace used for generating the colors; the default is \code{pretty}}
+
+\item{prompt_feature_choice}{Should the user be prompted to choose if he wants to continue with the selection of features even if it is lower than median sequence depth; the default is \code{TRUE}}
 }
 \description{
 Creates the ClustAssess ShinyApp based on the output of the

@@ -497,7 +497,8 @@ write_shiny_app.Seurat <- function(object,
                                    shiny_app_title = "",
                                    organism_enrichment = "hsapiens",
                                    height_ratio = 0.6,
-                                   qualpalr_colorspace = "pretty") {
+                                   qualpalr_colorspace = "pretty",
+                                   prompt_feature_choice = TRUE) {
     write_shiny_app(
         object = Seurat::GetAssayData(object, assay = assay_name, layer = "data"),
         metadata = object@meta.data,
@@ -508,7 +509,8 @@ write_shiny_app.Seurat <- function(object,
         shiny_app_title = shiny_app_title,
         organism_enrichment = organism_enrichment,
         height_ratio = height_ratio,
-        qualpalr_colorspace = qualpalr_colorspace
+        qualpalr_colorspace = qualpalr_colorspace,
+        prompt_feature_choice = prompt_feature_choice
     )
 }
 
@@ -525,8 +527,8 @@ write_shiny_app.default <- function(object,
                                     shiny_app_title = "",
                                     organism_enrichment = "hsapiens",
                                     height_ratio = 0.6,
-                                    qualpalr_colorspace = "pretty") {
-    # nFeature <- DelayedMatrixStats::colSums2(object > 0)
+                                    qualpalr_colorspace = "pretty",
+                                    prompt_feature_choice = TRUE) {
     if (inherits(object, "dgCMatrix")) {
         nFeature <- Matrix::colSums(object > 0)
     } else {
@@ -544,7 +546,7 @@ write_shiny_app.default <- function(object,
         }
     }
 
-    if (stringr::str_length(warning_message) > 0) {
+    if (prompt_feature_choice && stringr::str_length(warning_message) > 0) {
         while (TRUE) {
             warning(glue::glue("WARNING: The following configurations -- {warning_message} have a size above the average number of nFeatures per cell - {median(nFeature)}.\nIncreasing the number of features above the average will lead to introduction of noise in the data, thus we recommed re-running ClustAssess with lower values for the feature steps.\nPlease type `yes` or `no` if you want to continue creating the ClustAssess shiny app."), immediate. = TRUE)
             if (interactive()) {
