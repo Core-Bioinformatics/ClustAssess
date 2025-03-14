@@ -347,16 +347,16 @@ compar_distribution_info <- function(session) {
     )
 }
 
-compar_metadata_jsi_info <- function(session) {
+compar_metadata_comparison_info <- function(session) {
     shiny::showModal(
         shiny::modalDialog(
-            shiny::h3(shiny::strong("Metadata JSI")),
+            shiny::h3(shiny::strong("Metadata comparison - Contingency heatmap and Proportion barplot")),
             shiny::br(),
-            shiny::h5("Here the user can visualise the relationship between the discrete metadata and the clustering results."),
+            shiny::h5("Here the user can visualise the relationship between two discrete metadatas"),
             shiny::h5("\n"),
-            shiny::h5("This can be useful in the context of identifying relationships between 'super-clusters' and more fine-grained metadata."),
+            shiny::h5("This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner."),
             shiny::h5("\n"),
-            shiny::h5("The displayed information can be either the number of common cells, or the Jaccard Similarity Index (JSI); the JSI is calculated row-wise."),
+            shiny::h5("The proportion can be visualised, both as number of cells as percentages, in a barplot."),
             easyClose = TRUE
         ),
         session

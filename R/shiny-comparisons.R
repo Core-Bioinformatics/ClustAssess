@@ -340,7 +340,7 @@ ui_comparison_gene_panel <- function(id, draw_line) {
     )
 }
 
-ui_comparison_jsi_panel <- function(id) {
+ui_comparison_metadata_table_barplot_panel <- function(id) {
     ns <- shiny::NS(id)
 
     shiny::tagList(
@@ -352,7 +352,7 @@ ui_comparison_jsi_panel <- function(id) {
                 size = "sm",
                 status = "success",
             ),
-            shiny::h2("Jaccard Simmilarity Index (JSI)/Cells per cluster"),
+            shiny::h2("Metadata comparison - Contingency heatmap and Proportion barplot")
         ),
         shiny::splitLayout(
             cellWidths = c("40px", "40px"),
@@ -361,19 +361,8 @@ ui_comparison_jsi_panel <- function(id) {
                 icon = shiny::icon("cog"),
                 status = "success",
                 size = "sm",
-                shiny::radioButtons(ns("heatmap_type"), "Calculate similarity", choices = c("JSI", "Cells per cluster"), width = "100%")
+                shiny::radioButtons(ns("heatmap_type"), "Calculate similarity", choices = c("Cells per cluster", "JSI"), width = "100%")
             ),
-            shinyWidgets::dropMenu(shinyWidgets::circleButton(ns("Info"), status = "success", icon = shiny::icon("info"), size = "sm"),
-                shiny::h3(shiny::strong("Jaccard Simmilarity Index (JSI) between clusters")),
-                shiny::br(),
-                shiny::h5("This plot aims to showcase the behaviour of the individual clusters on the different partitions. JSI is calculated for the cell barcodes for every cluster, in both configurations, in a pair-wise manner."),
-                shiny::h1("\n"),
-                shiny::h5("For more information please go to:"),
-                shiny::tagList("", shiny::a("https://github.com/Core-Bioinformatics/ClustAssess", href = "https://github.com/Core-Bioinformatics/ClustAssess", target = "_blank")),
-                placement = "right",
-                arrow = FALSE
-            ),
-            #  maxWidth = '700px'),
             shinyWidgets::dropdownButton(
                 label = "",
                 icon = shiny::icon("download"),
@@ -387,17 +376,81 @@ ui_comparison_jsi_panel <- function(id) {
                 shiny::downloadButton(ns("download_heatmap"), label = "Download Plot")
             )
         ),
-        shiny::selectInput(
-            inputId = ns("jsi_k_1"),
-            label = "Select the number of clusters (k) or metadata, for the first comparison",
-            choices = ""
+        shiny::splitLayout(
+            shiny::selectInput(
+                inputId = ns("jsi_k_1"),
+                label = "Select the number of clusters (k) or metadata, for the first comparison",
+                choices = ""
+            ),
+            shinyWidgets::pickerInput(
+                inputId = ns("subgroup1"),
+                label = "Select the groups you want to compare",
+                choices = NULL,
+                options = list(
+                    `actions-box` = TRUE,
+                    title = "Select/deselect groups",
+                    size = 10,
+                    width = "90%",
+                    `selected-text-format` = "count > 3"
+                ),
+                multiple = TRUE
+            )
         ),
-        shiny::selectInput(
-            inputId = ns("jsi_k_2"),
-            label = "Select the number of clusters (k)or metadata, for the second comparison",
-            choices = ""
+        shiny::splitLayout(
+            shiny::selectInput(
+                inputId = ns("jsi_k_2"),
+                label = "Select the number of clusters (k)or metadata, for the second comparison",
+                choices = ""
+            ),
+            shinyWidgets::pickerInput(
+                inputId = ns("subgroup2"),
+                label = "Select the groups you want to compare",
+                choices = NULL,
+                options = list(
+                    `actions-box` = TRUE,
+                    title = "Select/deselect groups",
+                    size = 10,
+                    width = "90%",
+                    `selected-text-format` = "count > 3"
+                ),
+                multiple = TRUE
+            )
         ),
-        shiny::plotOutput(ns("barcode_heatmap"), height = "auto", width = "98%")
+        shiny::plotOutput(ns("barcode_heatmap"), height = "auto", width = "98%"),
+                shiny::splitLayout(
+            cellWidths = c("40px", "40px"),
+            shinyWidgets::dropdownButton(
+                shiny::sliderInput(
+                    inputId = ns("text_size"),
+                    label = "Text size",
+                    min = 5, max = 50, value = 15, step = 0.5
+                ),
+                shiny::sliderInput(
+                    inputId = ns("legend_text_size"),
+                    label = "Legend text size",
+                    min = 5, max = 50, value = 15, step = 0.5
+                ),
+                shinyWidgets::radioGroupButtons(
+                    inputId = ns("barplot_value"),
+                    label = "Information type",
+                    choices = c("Count", "Percentage"),
+                    selected = "Count"
+                ),
+                shinyWidgets::prettySwitch(
+                    inputId = ns("flip_axis"),
+                    label = "Flip axis",
+                    status = "success",
+                    fill = TRUE,
+                    value = FALSE
+                ),
+                circle = TRUE,
+                status = "success",
+                size = "sm",
+                icon = shiny::icon("cog")
+            ),
+            gear_download(ns, "barplot", "barplot")
+        ),
+        shiny::plotOutput(ns("barplot"), height = "auto", width = "98%")
     )
 }
 
@@ -765,7 +818,7 @@ ui_comparisons <- function(id) {
             ui_comparison_gene_panel(ns("gene_panel_left"), TRUE),
             ui_comparison_gene_panel(ns("gene_panel_right"), FALSE)
         ),
-        ui_comparison_jsi_panel(ns("jsi_plot")),
+        ui_comparison_metadata_table_barplot_panel(ns("table_barplot")),
         ui_comparison_violin_gene(ns("violin_gene")),
         ui_comparison_gene_heatmap(ns("gene_heatmap")),
         ui_comparison_markers(ns("markers")),
@@ -1901,7 +1954,7 @@ server_comparison_gene_panel <- function(id) {
     )
 }
 
-server_comparison_jsi <- function(id) {
+server_comparison_metadata_table_barplot <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
@@ -1930,78 +1983,161 @@ server_comparison_jsi <- function(id) {
                 )
             }) %>% shiny::bindEvent(pkg_env$metadata_unique_temp())
 
+            shiny::observe({
+                temp_df <- pkg_env$metadata_unique_temp()
+                chosen_k1 <- input$jsi_k_1
+                chosen_k2 <- input$jsi_k_2
+                shiny::req(chosen_k1, chosen_k2, chosen_k1 %in% names(temp_df), chosen_k2 %in% names(temp_df))
+
+                mtd_names <- temp_df[[chosen_k1]]
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "subgroup1",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                mtd_names <- temp_df[[chosen_k2]]
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "subgroup2",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+            })
+
             plt_height <- shiny::reactive(
                 floor(pkg_env$height_ratio * pkg_env$dimension()[2])
             )
 
+            metadata_contingency <- shiny::reactive({
+                sbgrp1 <- input$subgroup1
+                sbgrp2 <- input$subgroup2
+
+                temp_df <- pkg_env$metadata_temp()
+                chosen_k1 <- input$jsi_k_1
+                chosen_k2 <- input$jsi_k_2
+
+                shiny::req(chosen_k1, chosen_k2, chosen_k1 %in% colnames(temp_df), chosen_k2 %in% colnames(temp_df))
+                cont_table <- table(temp_df[[chosen_k1]], temp_df[[chosen_k2]])
+                dmn <- dimnames(cont_table)
+                cont_table <- matrix(cont_table, nrow = nrow(cont_table), ncol = ncol(cont_table))
+                dimnames(cont_table) <- dmn
+                shiny::req(sbgrp1 %in% rownames(cont_table), sbgrp2 %in% colnames(cont_table))
+
+                return(cont_table[sbgrp1, sbgrp2, drop = FALSE])
+            })
+
             barcode_heatmap <- shiny::reactive({
                 shiny::req(input$jsi_k_1, input$jsi_k_2)
-                if (!is.na(as.numeric(input$jsi_k_1))) {
-                    clustering_1 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_1)]])
-                    df_1 <- data.frame(clustering_1)
-                } else {
-                    meta_category <- pkg_env$metadata_temp()[, input$jsi_k_1]
-                    df_1 <- data.frame(meta_category)
-                }
-                df_1$cell <- rownames(df_1)
-                if (!is.na(as.numeric(input$jsi_k_2))) {
-                    clustering_2 <- as.matrix(pkg_env$stab_obj$mbs[[as.character(input$jsi_k_2)]])
-                    df_2 <- data.frame(clustering_2)
-                } else {
-                    meta_category <- pkg_env$metadata_temp()[, input$jsi_k_2]
-                    df_2 <- data.frame(meta_category)
-                }
-                df_2$cell <- rownames(df_2)
-                all_clusters_1 <- unique(df_1[, 1])
-                all_clusters_2 <- unique(df_2[, 1])
+                htmp_type <- input$heatmap_type
+                mtd_cont <- metadata_contingency()
+                shiny::req(mtd_cont)
 
-                mat <- matrix(,
-                    nrow = length(all_clusters_2),
-                    ncol = length(all_clusters_1)
-                )
-                colnames(mat) <- sort(all_clusters_1)
-                rownames(mat) <- sort(all_clusters_2)
-                if (input$heatmap_type == "JSI") {
-                    for (m in all_clusters_1) {
-                        cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
-                        for (n in all_clusters_2) {
-                            cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
-                            mat[as.character(n), as.character(m)] <- jaccard_index(cluster_1, cluster_2)
-                            label <- "JSI"
+                shiny::isolate({
+                    if (htmp_type == "JSI") {
+                        cluster_sizes1 <- rowSums(mtd_cont)
+                        cluster_sizes2 <- colSums(mtd_cont)
+
+                        for (i in seq_along(cluster_sizes1)) {
+                            for (j in seq_along(cluster_sizes2)) {
+                                union_size <- cluster_sizes1[i] + cluster_sizes2[j] - mtd_cont[i, j]
+                                if (union_size == 0) {
+                                    mtd_cont[i, j] <- 0
+                                } else {
+                                    mtd_cont[i, j] <- mtd_cont[i, j] / union_size
+                                }
+                            }
+                        }
+                        mtd_cont <- round(mtd_cont, 2)
+                    }
+
+                    df_mat <- reshape2::melt(mtd_cont)
+
+                    ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(.data$Var1), as.factor(.data$Var2))) +
+                        ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
+                        ggplot2::geom_text(ggplot2::aes(label = .data$value)) +
+                        ggplot2::scale_fill_gradient2(
+                            low = scales::muted("darkred"),
+                            mid = "white",
+                            high = scales::muted("green"),
+                            midpoint = 0
+                        ) +
+                        ggplot2::theme(
+                            panel.background = ggplot2::element_rect(fill = "white"),
+                            axis.text.x = ggplot2::element_text(hjust = 1, vjust = 1, size = 10, face = "bold"),
+                            axis.text.y = ggplot2::element_text(size = 10, face = "bold"),
+                            axis.title = ggplot2::element_text(size = 14, face = "bold"),
+                            axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
+                            axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))
+                        ) +
+                        ggplot2::xlab(input$jsi_k_1) +
+                        ggplot2::ylab(input$jsi_k_2) +
+                        ggplot2::labs(fill = htmp_type)
+                })
+            })
+
+            bar_plot <- shiny::reactive({
+                mtd_cont <- metadata_contingency()
+
+                shiny::req(class(mtd_cont) == "matrix")
+                flip_axis <- input$flip_axis
+                info_type <- input$barplot_value
+                text_size <- input$text_size
+                legend_text_size <- input$legend_text_size
+
+                shiny::isolate({
+                    # create the stacking effect
+                    pileup_list <- rep(0, nrow(mtd_cont))
+                    copy_mtd_cont <- mtd_cont
+
+                    if (info_type == "Percentage") {
+                        for (i in seq_len(nrow(mtd_cont))) {
+                            mtd_cont[i, ] <- mtd_cont[i, ] / sum(mtd_cont[i, ]) * 100
                         }
                     }
-                } else {
-                    for (m in all_clusters_1) {
-                        cluster_1 <- rownames(df_1[df_1[, 1] == m, ])
-                        for (n in all_clusters_2) {
-                            cluster_2 <- rownames(df_2[df_2[, 1] == n, ])
-                            mat[as.character(n), as.character(m)] <- length(intersect(cluster_1, cluster_2))
-                            label <- "Shared cells"
+
+                    for (i in seq_len(nrow(mtd_cont))) {
+                        for (j in seq_len(ncol(mtd_cont))) {
+                            copy_mtd_cont[i, j] <- mtd_cont[i, j] + pileup_list[i]
+                            pileup_list[i] <- pileup_list[i] + mtd_cont[i, j]
                         }
                     }
-                }
-                df_mat <- reshape2::melt(mat)
+                    copy_df_mat <- reshape2::melt(mtd_cont)
+                    df_mat <- reshape2::melt(copy_mtd_cont)
+                    df_mat$original_value <- copy_df_mat$value
+                    df_mat <- df_mat %>% filter(.data$original_value > 0)
+                    df_mat$Var1 <- factor(df_mat$Var1, levels = rownames(mtd_cont))
+                    df_mat$Var2 <- factor(df_mat$Var2, levels = colnames(mtd_cont))
 
-                ggplot2::ggplot(df_mat, ggplot2::aes(as.factor(.data$Var1), as.factor(.data$Var2))) +
-                    ggplot2::geom_tile(ggplot2::aes(fill = .data$value)) +
-                    ggplot2::geom_text(ggplot2::aes(label = round(.data$value, 2))) +
-                    ggplot2::scale_fill_gradient2(
-                        low = scales::muted("darkred"),
-                        mid = "white",
-                        high = scales::muted("green"),
-                        midpoint = 0
-                    ) +
-                    ggplot2::theme(
-                        panel.background = ggplot2::element_rect(fill = "white"),
-                        axis.text.x = ggplot2::element_text(hjust = 1, vjust = 1, size = 10, face = "bold"),
-                        axis.text.y = ggplot2::element_text(size = 10, face = "bold"),
-                        axis.title = ggplot2::element_text(size = 14, face = "bold"),
-                        axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
-                        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30))
-                    ) +
-                    ggplot2::xlab("Configuration 2") +
-                    ggplot2::ylab("Configuration 1") +
-                    ggplot2::labs(fill = label)
+                    unique_values <- pkg_env$metadata_unique_temp()
+                    unique_values_order <- which(colnames(mtd_cont) %in% unique_values[[input$jsi_k_2]])
+
+                    unique_colours <- pkg_env$discrete_colors[[as.character(length(unique_values[[input$jsi_k_2]]))]]
+                    unique_colours <- unique_colours[unique_values_order]
+                    names(unique_colours) <- colnames(mtd_cont)
+
+                    gplot_obj <- ggplot2::ggplot(df_mat, ggplot2::aes(x = as.factor(.data$Var1), y = .data$original_value, fill = as.factor(.data$Var2))) +
+                        ggplot2::geom_bar(stat = "identity") +
+                        ggplot2::scale_fill_manual(values = unique_colours, name = input$jsi_k_2) +
+                        ggplot2::theme(
+                            axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, vjust = 0.5, size = text_size, face = "bold"),
+                            axis.text.y = ggplot2::element_text(size = text_size, face = "bold"),
+                            axis.title = ggplot2::element_text(size = text_size * 1.2, face = "bold"),
+                            axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 20, l = 30)),
+                            axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 20, b = 30)),
+                            legend.text = ggplot2::element_text(size = legend_text_size),
+                            legend.title = ggplot2::element_text(size = legend_text_size)
+                        ) +
+                        ggplot2::xlab(input$jsi_k_2) +
+                        ggplot2::ylab(paste("Cell", info_type))
+
+                    if (flip_axis) {
+                        gplot_obj <- gplot_obj + ggplot2::coord_flip()
+                    }
+
+                    return(gplot_obj)
+                })
             })
 
             output$barcode_heatmap <- shiny::renderPlot(
@@ -2011,6 +2147,18 @@ server_comparison_jsi <- function(id) {
                             ggplot2::theme_void())
                     } else {
                         barcode_heatmap()
+                    }
+                },
+                height = plt_height()
+            )
+
+            output$barplot <- shiny::renderPlot(
+                {
+                    if (is.null(input$jsi_k_1) | is.null(input$jsi_k_2)) {
+                        return(ggplot2::ggplot() +
+                            ggplot2::theme_void())
+                    } else {
+                        bar_plot()
                     }
                 },
                 height = plt_height()
@@ -2049,7 +2197,28 @@ server_comparison_jsi <- function(id) {
                 }
             )
 
-            shiny::observe(compar_metadata_jsi_info(session)) %>% shiny::bindEvent(input$info_heatmap_metadata, ignoreInit = TRUE)
+            output$download_barplot <- shiny::downloadHandler(
+                filename = function() {
+                    paste0(input$filename_barplot, ".", tolower(input$filetype_barplot))
+                },
+                content = function(file) {
+                    gplot_obj <- bar_plot()
+                    shiny::req(gplot_obj)
+
+                    if (input$raster_barplot == "Yes") {
+                        gplot_obj <- ggrastr::rasterise(gplot_obj, dpi = 300)
+                    }
+
+                    ggplot2::ggsave(
+                        filename = file,
+                        plot = gplot_obj,
+                        height = input$height_barplot,
+                        width = input$width_barplot
+                    )
+                }
+            )
+
+            shiny::observe(compar_metadata_comparison_info(session)) %>% shiny::bindEvent(input$info_heatmap_metadata, ignoreInit = TRUE)
         }
     )
 }
@@ -2776,7 +2945,7 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
             server_comparison_metadata_panel("metadata_panel_right")
             server_comparison_gene_panel("gene_panel_left")
             server_comparison_gene_panel("gene_panel_right")
-            server_comparison_jsi("jsi_plot")
+            server_comparison_metadata_table_barplot("table_barplot")
             server_comparison_violin_gene("violin_gene")
             server_comparison_gene_heatmap("gene_heatmap")
             marker_genes <- server_comparison_markers("markers", k_values)
