@@ -1417,7 +1417,7 @@ gear_download <- function(ns, id, label = "") {
         shiny::numericInput(ns(paste0("width_", id)), "Width (in):", 7, 3, 100, 0.1),
         shiny::numericInput(ns(paste0("height_", id)), "Height (in):", 7, 3, 100, 0.1),
         shiny::selectInput(ns(paste0("filetype_", id)), "Filetype", choices = names(filetypes), selected = names(filetypes)[1], width = "80%"),
-        shinyWidgets::prettyRadioButtons(ns(paste0("raster_", id)), "Rasterize", choices = c("Yes", "No"), selected = "Yes"),
+        shinyWidgets::prettyRadioButtons(ns(paste0("raster_", id)), "Rasterize", choices = c("Yes", "No"), selected = "No"),
         shiny::downloadButton(ns(paste0("download_", id)), label = "Download Plot")
     )
 }
