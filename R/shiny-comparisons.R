@@ -2111,7 +2111,7 @@ server_comparison_metadata_table_barplot <- function(id) {
                     df_mat$Var2 <- factor(df_mat$Var2, levels = colnames(mtd_cont))
 
                     unique_values <- pkg_env$metadata_unique_temp()
-                    unique_values_order <- which(colnames(mtd_cont) %in% unique_values[[input$jsi_k_2]])
+                    unique_values_order <- match(colnames(mtd_cont), unique_values[[input$jsi_k_2]])
 
                     unique_colours <- pkg_env$discrete_colors[[as.character(length(unique_values[[input$jsi_k_2]]))]]
                     unique_colours <- unique_colours[unique_values_order]
