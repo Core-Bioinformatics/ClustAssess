@@ -1394,6 +1394,11 @@ element_consistency <- function(clustering_list,
     # calculate the consistency between the Clustering objects
     n.clusterings <- length(clustering_list)
     consistency <- rep(0, length(clustering_list[[1]]))
+
+    if (n.clusterings <= 1) {
+        return(consistency)
+    }
+
     for (i in 1:(n.clusterings - 1)) {
         i.aff <- clustering_list[[i]]@affinity_matrix
         for (j in (i + 1):n.clusterings) {
@@ -1446,10 +1451,10 @@ weighted_element_consistency <- function(clustering_list,
     if (n_clusterings == 1) {
         if (calculate_sim_matrix) {
             ecs_matrix[1, 1] <- 1
-            return(list(ecc = rep(1, length(clustering_list[[1]])), ecs_matrix = ecs_sim_matrix))
+            return(list(ecc = rep(0, length(clustering_list[[1]])), ecs_matrix = ecs_sim_matrix))
         }
 
-        return(rep(1, length(clustering_list[[1]])))
+        return(rep(0, length(clustering_list[[1]])))
     }
 
     if (is.null(weights)) {
