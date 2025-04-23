@@ -424,7 +424,7 @@ assess_feature_stability <- function(data_matrix,
                     x[[r]]
                 }),
                 ecs_thresh = ecs_thresh,
-                order_logic = "freq"
+                order_logic = "freq" # TODO change to avg agreement
             )
         })
 

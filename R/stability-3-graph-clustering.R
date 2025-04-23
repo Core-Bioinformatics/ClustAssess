@@ -295,7 +295,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 different_partitions[[k]] <- merge_partitions(
                     partition_list = different_partitions[[k]],
                     ecs_thresh = ecs_thresh,
-                    order_logic = "freq"
+                    order_logic = "freq" # TODO change to avg agreement
                 )
 
                 unique_partitions <- c(
@@ -317,6 +317,18 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 # different_partitions[[k]][["ecc"]] <- ec_consistency
             }
 
+            if (verbose) {
+                pb$tick(tokens = list(res = res))
+            }
+
+            if (length(unique_partitions) == 1) {
+                result_object[[alg_name]][[as.character(res)]] <- list(
+                    clusters = different_partitions,
+                    ecc = rep(1, length(unique_partitions[[1]]$mb))
+                )
+                next
+            }
+
             result_object[[alg_name]][[as.character(res)]] <- list(
                 clusters = different_partitions,
                 ecc = weighted_element_consistency(
@@ -329,9 +341,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 )
             )
 
-            if (verbose) {
-                pb$tick(tokens = list(res = res))
-            }
         }
     }
 
