@@ -1371,6 +1371,10 @@ element_consistency <- function(clustering_list,
     # if the condition is met, perform element consistency using only the membership vector
     if (all(are_all_flat_disjoint == TRUE)) {
         # merge the identical partitions into the same object
+        if (length(clustering_list) == 1) {
+            stop("At least two clusterings are required to calculate the consistency.")
+        }
+
         final_clustering_list <- merge_partitions(
             partition_list = clustering_list,
             ecs_thresh = 1,
