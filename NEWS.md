@@ -7,3 +7,4 @@
 
 ### Fixes
 - Fix the case in `write_object` when the gene variance filtering leaves the chunk with one or zero genes.
+- Stop allowing the user to calculate the ECC or perform the merging to a list with less than two partitions by raising an exception.
