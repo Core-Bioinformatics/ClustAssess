@@ -2106,7 +2106,7 @@ server_comparison_metadata_table_barplot <- function(id) {
                     copy_df_mat <- reshape2::melt(mtd_cont)
                     df_mat <- reshape2::melt(copy_mtd_cont)
                     df_mat$original_value <- copy_df_mat$value
-                    df_mat <- df_mat %>% filter(.data$original_value > 0)
+                    df_mat <- df_mat %>% dplyr::filter(.data$original_value > 0)
                     df_mat$Var1 <- factor(df_mat$Var1, levels = rownames(mtd_cont))
                     df_mat$Var2 <- factor(df_mat$Var2, levels = colnames(mtd_cont))
 
