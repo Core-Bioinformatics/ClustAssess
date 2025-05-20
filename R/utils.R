@@ -200,3 +200,51 @@ choose_stable_clusters <- function(clusters_list,
 is_package_installed <- function(package_name) {
     return(package_name %in% rownames(utils::installed.packages()))
 }
+
+#' @title Get the vector of colours from a palette
+#'
+#' @description Using the `paletteer` package, this function retrieves a vector
+#' of colours from a specified palette. The function will look for both
+#' discrete and continuous palettes. If the palette is not found, a default
+#' option will be used.
+#'
+#' @param palette_name The name of the palette to retrieve. The naming should
+#' follow the guidelines described in the `paletteer` package.
+#' @param is_inverse Logical. If `TRUE`, the colours will be reversed.
+#' @param placeholder The default palette to use if the specified palette is not
+#' found. The default is "viridis::viridis".
+#'
+#' @return A vector of colours from the specified palette. If the palette is not
+#' found, a default palette will be used. If `paletter` is not installed, an
+#' error will be thrown.
+get_colour_vector_from_palette <- function(palette_name, is_inverse = FALSE, placeholder = "viridis::viridis") {
+    if (!is_package_installed("paletteer")) {
+        stop("`paletteer` package is not installed. Please install using the command: `install.packages('paletteer')`.")
+    }
+
+    palette_colours <- NULL
+    tryCatch({
+        palette_colours <- paletteer::paletteer_c(palette_name, 100)
+    }, error = function(e) {
+        # catch an error if the palette is not found
+    })
+
+    if (is.null(palette_colours)) {
+        tryCatch({
+            palette_colours <- paletteer::paletteer_d(palette_name)
+        }, error = function(e) {
+            # catch an error if the palette is not found
+        })
+    }
+
+    if (is.null(palette_colours)) {
+        warning(paste("Palette", palette_name, "not found. Using default palette: ", placeholder))
+        palette_colours <- paletteer::paletteer_c(placeholder, 100)
+    }
+
+    if (is_inverse) {
+        palette_colours <- rev(palette_colours)
+    }
+
+    return(palette_colours)
+}
