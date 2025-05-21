@@ -146,7 +146,10 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
         function(input, output, session) {
             print(paste(Sys.time(), "landing - loading"))
             ggplot2::theme_set(ggplot2::theme_classic())
-            add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
+            add_env_variable("full_version", file.exists("stability.h5"))
+            if (pkg_env$full_version) {
+                add_env_variable("feature_ordering", rhdf5::h5read("stability.h5", "feature_ordering"))
+            }
 
             if ("genes" %in% rhdf5::h5ls("expression.h5")$name) {
                 genes <- rhdf5::h5read("expression.h5", "genes")
@@ -174,7 +177,9 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             rm(index)
             # gc()
             add_env_variable("cells", rhdf5::h5read("expression.h5", "cells"))
-            add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
+            if (pkg_env$full_version) {
+                add_env_variable("feature_types", names(pkg_env$feature_ordering$original))
+            }
             add_env_variable("height_ratio", height_ratio)
 
             add_env_variable("dimension", dimension)
@@ -182,9 +187,13 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
             add_env_variable("plt_width", shiny::reactive(pkg_env$dimension()[1]))
             add_env_variable("plt_width_half", shiny::reactive(pkg_env$dimension()[1] * 0.43))
 
-            discrete_colors <- rhdf5::h5read("stability.h5", "colors")
-            bxplt_color <- rhdf5::h5read("stability.h5", "feature_stability/colours")
-            discrete_colors[[as.character(length(bxplt_color))]] <- bxplt_color
+            if (pkg_env$full_version) {
+                discrete_colors <- rhdf5::h5read("stability.h5", "colors")
+                bxplt_color <- rhdf5::h5read("stability.h5", "feature_stability/colours")
+                discrete_colors[[as.character(length(bxplt_color))]] <- bxplt_color
+            } else {
+                discrete_colors <- list()
+            }
 
             mtd <- readRDS("metadata.rds")
             for (color_options in mtd$metadata_colors) {
@@ -216,6 +225,13 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
                 }
             }
 
+            if (!pkg_env$full_version && length(intersect(c("UMAP_1", "UMAP_2"), colnames(mtd$metadata))) == 2) {
+                umap_df <- mtd$metadata[, c("UMAP_1", "UMAP_2")]
+                mtd$metadata <- mtd$metadata[, setdiff(colnames(mtd$metadata), c("UMAP_1", "UMAP_2"))]
+                stab_obj <- list(umap = umap_df)
+                add_env_variable("stab_obj", stab_obj)
+            }
+
             add_env_variable("metadata", mtd$metadata)
             add_env_variable("metadata_temp", shiny::reactiveVal(mtd$metadata))
             # add_env_variable("metadata_colors", mtd$metadata_colors)
@@ -238,7 +254,7 @@ server_landing_page <- function(id, height_ratio, dimension, parent_session, org
                 )
 
 
-                shiny::showTab("tabset_id", "Dimensionality Reduction", select = FALSE, session = parent_session)
+                shiny::showTab("tabset_id", ifelse(pkg_env$full_version, "Dimensionality Reduction", "Comparison"), select = FALSE, session = parent_session)
                 shiny::showTab("tabset_id", "Sandbox", select = FALSE, session = parent_session)
             }) %>% shiny::bindEvent(pkg_env$dimension(), once = TRUE)
 

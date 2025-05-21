@@ -2821,21 +2821,23 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
         id,
         function(input, output, session) {
             shinyjs::hide("enrichment-enrichment_id")
-            isolated_chosen_config <- shiny::isolate(chosen_config())
-            ftype <- isolated_chosen_config$chosen_feature_type
-            fsize <- isolated_chosen_config$chosen_set_size
+            if (pkg_env$full_version) {
+                isolated_chosen_config <- shiny::isolate(chosen_config())
+                ftype <- isolated_chosen_config$chosen_feature_type
+                fsize <- isolated_chosen_config$chosen_set_size
 
-            isolated_chosen_method <- shiny::isolate(chosen_method())
-            cl_method <- isolated_chosen_method$method_name
+                isolated_chosen_method <- shiny::isolate(chosen_method())
+                cl_method <- isolated_chosen_method$method_name
 
-            k_values <- isolated_chosen_method$n_clusters
-            stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
+                k_values <- isolated_chosen_method$n_clusters
+                stable_config <- rhdf5::h5read("stability.h5", paste(ftype, fsize, "stable_config", sep = "/"))
 
-            add_env_variable("stab_obj", list(
-                umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
-            ))
+                add_env_variable("stab_obj", list(
+                    umap = rhdf5::h5read("stability.h5", paste(ftype, fsize, "umap", sep = "/"))
+                ))
 
-            add_env_variable("used_genes", rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))])
+                add_env_variable("used_genes", rhdf5::h5read("stability.h5", paste(ftype, "feature_list", sep = "/"))[seq_len(as.numeric(fsize))])
+            }
             add_env_variable("current_tab", "Comparison")
 
             for (panels in c("left", "right")) {
@@ -2872,7 +2874,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         inputId = glue::glue("metadata_panel_{panels}-metadata"),
                         server = FALSE,
                         choices = colnames(current_mtd),
-                        selected = paste0("stable_", k_values[1], "_clusters")
+                        selected = ifelse(
+                            pkg_env$full_version,
+                            paste0("stable_", k_values[1], "_clusters"),
+                            colnames(current_mtd)[1]
+                        )
                     )
 
                     shiny::updateSelectizeInput(
@@ -2880,7 +2886,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         inputId = glue::glue("gene_panel_{panels}-metadata_subset"),
                         server = FALSE,
                         choices = names(current_mtd_unique),
-                        selected = paste0("stable_", k_values[1], "_clusters")
+                        selected = ifelse(
+                            pkg_env$full_version,
+                            paste0("stable_", k_values[1], "_clusters"),
+                            colnames(current_mtd)[1]
+                        )
                     )
 
                     shiny::updateSelectizeInput(
@@ -2888,7 +2898,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         inputId = glue::glue("metadata_panel_{panels}-metadata_subset"),
                         server = FALSE,
                         choices = names(current_mtd_unique),
-                        selected = paste0("stable_", k_values[1], "_clusters")
+                        selected = ifelse(
+                            pkg_env$full_version,
+                            paste0("stable_", k_values[1], "_clusters"),
+                            colnames(current_mtd)[1]
+                        )
                     )
                 }
 
@@ -2897,7 +2911,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     inputId = glue::glue("violin_gene-metadata_split"),
                     server = FALSE,
                     choices = names(current_mtd_unique),
-                    selected = paste0("stable_", k_values[1], "_clusters")
+                    selected = ifelse(
+                        pkg_env$full_version,
+                        paste0("stable_", k_values[1], "_clusters"),
+                        colnames(current_mtd)[1]
+                    )
                 )
 
                 shiny::updateSelectizeInput(
@@ -2921,7 +2939,11 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                     inputId = glue::glue("gene_heatmap-metadata"),
                     server = FALSE,
                     choices = names(current_mtd_unique),
-                    selected = paste0("stable_", k_values[1], "_clusters")
+                    selected = ifelse(
+                        pkg_env$full_version,
+                        paste0("stable_", k_values[1], "_clusters"),
+                        colnames(current_mtd)[1]
+                    )
                 )
 
                 continuous_metadata <- setdiff(colnames(current_mtd), names(current_mtd_unique))

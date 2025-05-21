@@ -997,9 +997,6 @@ plot_k_n_partitions <- function(clust_object,
     return(main_plot)
 }
 
-#####
-
-
 #' @description Given a data frame that has a partitioning on each column, this
 #' function determines the unique number of clusters. Based on the maximum
 #' number of clusters, the lower k values will be remapped on the y axis such
