@@ -7,6 +7,7 @@
 - Add option to combine (split) metadata and dynamically create a new metadata column in the Shiny context.
 - Add option to calculate the percentage of cells expressing gene above a threshold in the summary table from the Shiny Violin section.
 - Add hierarchical plot that shows the relationship between partitions with different number of clusters.
+- Add the option to create the ClustAssess app without the need to run the stability assessment (the light version). If the clustassess parameter is NULL, the app will contain only the 'Comparison' tab. In this case, the user should provide the UMAP coordinates in the metadata dataframe.
 
 ### Fixes
 - Fix the case in `write_object` when the gene variance filtering leaves the chunk with one or zero genes.
