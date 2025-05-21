@@ -9,3 +9,4 @@ src/*.dll
 /Meta/
 *tar.gz
 *Rcheck/
+test.R
