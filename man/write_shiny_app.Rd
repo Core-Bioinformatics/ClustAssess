@@ -25,7 +25,7 @@ write_shiny_app(
   object,
   metadata = NULL,
   assay_name,
-  clustassess_object,
+  clustassess_object = NULL,
   project_folder,
   compression_level = 6,
   summary_function = stats::median,
@@ -40,7 +40,7 @@ write_shiny_app(
   object,
   metadata = NULL,
   assay_name = NULL,
-  clustassess_object,
+  clustassess_object = NULL,
   project_folder,
   compression_level = 6,
   summary_function = stats::median,
@@ -61,7 +61,10 @@ the object is a Seurat object.}
 from the Seurat object. This parameter will be ignored if the object is not
 a Seurat object.}
 
-\item{clustassess_object}{The output of the ClustAssess automatic pipeline}
+\item{clustassess_object}{The output of the ClustAssess automatic pipeline.
+If the ClustAssess object is not provided (NULL), the function will create
+the light version of the ShinyApp, that will not contain the assessment
+results.}
 
 \item{project_folder}{The folder where the files will be written}
 
@@ -82,5 +85,10 @@ a Seurat object.}
 \description{
 Creates the ClustAssess ShinyApp based on the output of the
 automatic ClustAssess pipeline. In addition to that, the expression matrix
-and the metadata dataframe are provided as input to the ShinyApp.
+and the metadata dataframe are provided as input to the ShinyApp. If the
+clustassess object is not provided, the function will create the light
+version of the ClustAssess ShinyApp, that will not contain the
+assessment results. For this case, the \code{metadata} parameter should contain
+two aditional columns named 'UMAP_1" and 'UMAP_2' that will correspond to
+the 2D embedding of the cells.
 }

@@ -9,7 +9,7 @@ marker genes."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ClustAssess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,18 +132,18 @@ extracted.</p></dd>
 <span class="r-in"><span>    <span class="va">pbmc_small</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span><span class="va">pbmc_small</span>, resolution <span class="op">=</span> <span class="fl">0.8</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>    <span class="co"># cluster with k-means</span></span></span>
-<span class="r-in"><span>    <span class="va">pbmc.pca</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mojaveazure.github.io/seurat-object/reference/Embeddings.html" class="external-link">Embeddings</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"pca"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="va">pbmc.pca</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/Embeddings.html" class="external-link">Embeddings</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"pca"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>    <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">kmeans_clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">pbmc.pca</span>, centers <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>    <span class="co"># compare the markers</span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://mojaveazure.github.io/seurat-object/reference/Idents.html" class="external-link">Idents</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">seurat_clusters</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/Idents.html" class="external-link">Idents</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">seurat_clusters</span></span></span>
 <span class="r-in"><span>    <span class="va">louvain.markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindAllMarkers.html" class="external-link">FindAllMarkers</a></span><span class="op">(</span><span class="va">pbmc_small</span>,</span></span>
 <span class="r-in"><span>        logfc.threshold <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>        test.use <span class="op">=</span> <span class="st">"t"</span>,</span></span>
 <span class="r-in"><span>        verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span>    <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://mojaveazure.github.io/seurat-object/reference/Idents.html" class="external-link">Idents</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">kmeans_clusters</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/Idents.html" class="external-link">Idents</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">kmeans_clusters</span></span></span>
 <span class="r-in"><span>    <span class="va">kmeans.markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindAllMarkers.html" class="external-link">FindAllMarkers</a></span><span class="op">(</span><span class="va">pbmc_small</span>,</span></span>
 <span class="r-in"><span>        logfc.threshold <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>        test.use <span class="op">=</span> <span class="st">"t"</span>,</span></span>
@@ -158,16 +158,6 @@ extracted.</p></dd>
 <span class="r-in"><span>    <span class="co"># which cells have the same markers, regardless of clustering?</span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"jsi"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required package: SeuratObject</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required package: sp</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ‘SeuratObject’ was built with package ‘Matrix’ 1.7.0 but the current</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> version is 1.7.2; it is recomended that you reinstall ‘SeuratObject’ as</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> the ABI for ‘Matrix’ may have changed</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘SeuratObject’</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, t</span>
 <span class="r-plt img"><img src="marker_overlap-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
@@ -180,7 +170,7 @@ extracted.</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
