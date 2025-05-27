@@ -8,8 +8,8 @@
 <title>Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app • ClustAssess</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app">
 </head>
 <body>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ClustAssess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,7 @@
     <li><a class="dropdown-item" href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item"><a class="nav-link" href="../tutorials/index.html">ClustAssess Shiny app Tutorial</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -81,9 +82,6 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; Loading required package: SeuratObject</span></span>
 <span><span class="co">#&gt; Loading required package: sp</span></span>
-<span><span class="co">#&gt; 'SeuratObject' was built with package 'Matrix' 1.7.0 but the current</span></span>
-<span><span class="co">#&gt; version is 1.7.2; it is recomended that you reinstall 'SeuratObject' as</span></span>
-<span><span class="co">#&gt; the ABI for 'Matrix' may have changed</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Attaching package: 'SeuratObject'</span></span>
 <span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
@@ -92,20 +90,15 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.satijalab.org/seurat" class="external-link">SeuratData</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'ggplot2'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     is.element</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"ClustAssess"</span><span class="op">)</span> <span class="co"># should be 1.0.0</span></span>
-<span><span class="co">#&gt; [1] '1.0.0'</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] '1.1.0'</span></span></code></pre></div>
 <p>Process the PBMC 3k Seurat object similarly to the <code>Stability-based parameter assessment</code> vignette.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: The following packages are already installed and will not be</span></span>
 <span><span class="co">#&gt; reinstalled: pbmc3k</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span>
-<span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mojaveazure.github.io/seurat-object/reference/UpdateSeuratObject.html" class="external-link">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">)</span></span>
+<span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/UpdateSeuratObject.html" class="external-link">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Validating object structure</span></span>
 <span><span class="co">#&gt; Updating object slots</span></span>
 <span><span class="co">#&gt; Ensuring keys are in the proper structure</span></span>
@@ -199,13 +192,13 @@
 <span>    save_temp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [2025-01-24 14:02:41.237144] Assessing the stability of the dimensionality reduction</span></span>
+<span><span class="co">#&gt; [2025-05-27 20:58:56.095424] Assessing the stability of the dimensionality reduction</span></span>
 <span><span class="co">#&gt; [1] "HV"</span></span>
 <span><span class="co">#&gt; [1] "MA"</span></span>
-<span><span class="co">#&gt; [2025-01-24 14:05:00.443982] Choosing the top 2</span></span>
-<span><span class="co">#&gt; [2025-01-24 14:05:00.637581] Assessing the stability of the connected components</span></span>
-<span><span class="co">#&gt; [2025-01-24 14:05:04.282798] Assessing the stability of the graph construction parameters</span></span>
-<span><span class="co">#&gt; [2025-01-24 14:06:47.220848] Assessing the stability of the graph clustering method</span></span>
+<span><span class="co">#&gt; [2025-05-27 21:05:12.935983] Choosing the top 2</span></span>
+<span><span class="co">#&gt; [2025-05-27 21:05:13.236092] Assessing the stability of the connected components</span></span>
+<span><span class="co">#&gt; [2025-05-27 21:05:18.567446] Assessing the stability of the graph construction parameters</span></span>
+<span><span class="co">#&gt; [2025-05-27 21:08:00.101528] Assessing the stability of the graph clustering method</span></span>
 <span><span class="co">#&gt; [1] "HV 500"</span></span>
 <span><span class="co">#&gt; [1] "HV 1000"</span></span>
 <span><span class="co">#&gt; [1] "MA 2000"</span></span>
@@ -238,13 +231,13 @@
 <p>Session info</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span><span class="co">#&gt; R version 4.4.1 (2024-06-14)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
 <span><span class="co">#&gt; Running under: Ubuntu 22.04.4 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
-<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
-<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0</span></span>
+<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 </span></span>
+<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; locale:</span></span>
 <span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
@@ -259,58 +252,58 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] ggplot2_3.5.1.9000            ClustAssess_1.0.0            </span></span>
-<span><span class="co">#&gt;  [3] Seurat_5.2.0                  SeuratObject_5.0.2           </span></span>
+<span><span class="co">#&gt;  [1] ggplot2_3.5.1                 ClustAssess_1.1.0            </span></span>
+<span><span class="co">#&gt;  [3] Seurat_5.1.0                  SeuratObject_5.0.2           </span></span>
 <span><span class="co">#&gt;  [5] sp_2.1-4                      pbmcMultiome.SeuratData_0.1.4</span></span>
-<span><span class="co">#&gt;  [7] pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9001        </span></span>
-<span><span class="co">#&gt;  [9] devtools_2.4.5                usethis_3.1.0                </span></span>
+<span><span class="co">#&gt;  [7] pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9002        </span></span>
+<span><span class="co">#&gt;  [9] devtools_2.4.5                usethis_2.2.3                </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;   [1] RColorBrewer_1.1-3     jsonlite_1.8.9         magrittr_2.0.3        </span></span>
-<span><span class="co">#&gt;   [4] spatstat.utils_3.1-2   farver_2.1.2           rmarkdown_2.29        </span></span>
-<span><span class="co">#&gt;   [7] fs_1.6.5               ragg_1.3.3             vctrs_0.6.5           </span></span>
-<span><span class="co">#&gt;  [10] ROCR_1.0-11            memoise_2.0.1          spatstat.explore_3.3-4</span></span>
-<span><span class="co">#&gt;  [13] progress_1.2.3         htmltools_0.5.8.1      sass_0.4.9            </span></span>
-<span><span class="co">#&gt;  [16] sctransform_0.4.1      parallelly_1.41.0      KernSmooth_2.23-26    </span></span>
-<span><span class="co">#&gt;  [19] bslib_0.8.0            htmlwidgets_1.6.4      desc_1.4.3            </span></span>
-<span><span class="co">#&gt;  [22] ica_1.0-3              plyr_1.8.9             plotly_4.10.4         </span></span>
-<span><span class="co">#&gt;  [25] zoo_1.8-12             cachem_1.1.0           igraph_2.1.4          </span></span>
-<span><span class="co">#&gt;  [28] iterators_1.0.14       mime_0.12              lifecycle_1.0.4       </span></span>
-<span><span class="co">#&gt;  [31] pkgconfig_2.0.3        Matrix_1.7-2           R6_2.5.1              </span></span>
-<span><span class="co">#&gt;  [34] fastmap_1.2.0          fitdistrplus_1.2-2     future_1.34.0         </span></span>
-<span><span class="co">#&gt;  [37] shiny_1.10.0           digest_0.6.37          colorspace_2.1-1      </span></span>
-<span><span class="co">#&gt;  [40] patchwork_1.3.0        tensor_1.5             RSpectra_0.16-2       </span></span>
-<span><span class="co">#&gt;  [43] irlba_2.3.5.1          pkgload_1.4.0          textshaping_1.0.0     </span></span>
-<span><span class="co">#&gt;  [46] progressr_0.15.1       spatstat.sparse_3.1-0  httr_1.4.7            </span></span>
-<span><span class="co">#&gt;  [49] polyclip_1.10-7        abind_1.4-8            compiler_4.4.0        </span></span>
-<span><span class="co">#&gt;  [52] remotes_2.5.0          doParallel_1.0.17      withr_3.0.2           </span></span>
-<span><span class="co">#&gt;  [55] fastDummies_1.7.5      pkgbuild_1.4.6         MASS_7.3-64           </span></span>
-<span><span class="co">#&gt;  [58] rappdirs_0.3.3         sessioninfo_1.2.2      tools_4.4.0           </span></span>
-<span><span class="co">#&gt;  [61] lmtest_0.9-40          httpuv_1.6.15          future.apply_1.11.3   </span></span>
-<span><span class="co">#&gt;  [64] goftest_1.2-3          glue_1.8.0             nlme_3.1-166          </span></span>
-<span><span class="co">#&gt;  [67] promises_1.3.2         grid_4.4.0             Rtsne_0.17            </span></span>
-<span><span class="co">#&gt;  [70] cluster_2.1.8          reshape2_1.4.4         generics_0.1.3        </span></span>
-<span><span class="co">#&gt;  [73] gtable_0.3.6           spatstat.data_3.1-4    tidyr_1.3.1           </span></span>
-<span><span class="co">#&gt;  [76] hms_1.1.3              data.table_1.16.4      BiocGenerics_0.52.0   </span></span>
-<span><span class="co">#&gt;  [79] spatstat.geom_3.3-5    RcppAnnoy_0.0.22       foreach_1.5.2         </span></span>
-<span><span class="co">#&gt;  [82] ggrepel_0.9.6          RANN_2.6.2             pillar_1.10.1         </span></span>
-<span><span class="co">#&gt;  [85] stringr_1.5.1          spam_2.11-1            RcppHNSW_0.6.0        </span></span>
-<span><span class="co">#&gt;  [88] later_1.4.1            splines_4.4.0          dplyr_1.1.4           </span></span>
-<span><span class="co">#&gt;  [91] lattice_0.22-6         survival_3.8-3         deldir_2.0-4          </span></span>
-<span><span class="co">#&gt;  [94] tidyselect_1.2.1       miniUI_0.1.1.1         pbapply_1.7-2         </span></span>
-<span><span class="co">#&gt;  [97] knitr_1.49             gridExtra_2.3          scattermore_1.2       </span></span>
-<span><span class="co">#&gt; [100] RhpcBLASctl_0.23-42    xfun_0.50              SharedObject_1.20.0   </span></span>
-<span><span class="co">#&gt; [103] matrixStats_1.5.0      stringi_1.8.4          lazyeval_0.2.2        </span></span>
-<span><span class="co">#&gt; [106] yaml_2.3.10            evaluate_1.0.3         codetools_0.2-20      </span></span>
-<span><span class="co">#&gt; [109] tibble_3.2.1           cli_3.6.3              uwot_0.2.2            </span></span>
-<span><span class="co">#&gt; [112] xtable_1.8-4           reticulate_1.40.0      systemfonts_1.2.1     </span></span>
-<span><span class="co">#&gt; [115] munsell_0.5.1          jquerylib_0.1.4        Rcpp_1.0.14           </span></span>
-<span><span class="co">#&gt; [118] globals_0.16.3         spatstat.random_3.3-2  png_0.1-8             </span></span>
-<span><span class="co">#&gt; [121] spatstat.univar_3.1-1  parallel_4.4.0         ellipsis_0.3.2        </span></span>
-<span><span class="co">#&gt; [124] pkgdown_2.1.1          prettyunits_1.2.0      dotCall64_1.2         </span></span>
-<span><span class="co">#&gt; [127] profvis_0.4.0          urlchecker_1.0.1       listenv_0.9.1         </span></span>
-<span><span class="co">#&gt; [130] viridisLite_0.4.2      scales_1.3.0           ggridges_0.5.6        </span></span>
-<span><span class="co">#&gt; [133] crayon_1.5.3           purrr_1.0.2            rlang_1.1.5           </span></span>
+<span><span class="co">#&gt;   [1] RColorBrewer_1.1-3     jsonlite_1.8.8         magrittr_2.0.3        </span></span>
+<span><span class="co">#&gt;   [4] spatstat.utils_3.0-5   rmarkdown_2.27         fs_1.6.4              </span></span>
+<span><span class="co">#&gt;   [7] ragg_1.4.0             vctrs_0.6.5            ROCR_1.0-11           </span></span>
+<span><span class="co">#&gt;  [10] memoise_2.0.1          spatstat.explore_3.3-1 progress_1.2.3        </span></span>
+<span><span class="co">#&gt;  [13] htmltools_0.5.8.1      sass_0.4.9             sctransform_0.4.1     </span></span>
+<span><span class="co">#&gt;  [16] parallelly_1.37.1      KernSmooth_2.23-20     bslib_0.7.0           </span></span>
+<span><span class="co">#&gt;  [19] htmlwidgets_1.6.4      desc_1.4.3             ica_1.0-3             </span></span>
+<span><span class="co">#&gt;  [22] plyr_1.8.9             plotly_4.10.4          zoo_1.8-12            </span></span>
+<span><span class="co">#&gt;  [25] cachem_1.1.0           igraph_2.0.3           iterators_1.0.14      </span></span>
+<span><span class="co">#&gt;  [28] mime_0.12              lifecycle_1.0.4        pkgconfig_2.0.3       </span></span>
+<span><span class="co">#&gt;  [31] Matrix_1.7-0           R6_2.5.1               fastmap_1.2.0         </span></span>
+<span><span class="co">#&gt;  [34] fitdistrplus_1.2-1     future_1.33.2          shiny_1.8.1.1         </span></span>
+<span><span class="co">#&gt;  [37] digest_0.6.36          colorspace_2.1-0       patchwork_1.2.0       </span></span>
+<span><span class="co">#&gt;  [40] tensor_1.5             RSpectra_0.16-1        irlba_2.3.5.1         </span></span>
+<span><span class="co">#&gt;  [43] pkgload_1.4.0          textshaping_0.4.0      progressr_0.14.0      </span></span>
+<span><span class="co">#&gt;  [46] spatstat.sparse_3.1-0  httr_1.4.7             polyclip_1.10-6       </span></span>
+<span><span class="co">#&gt;  [49] abind_1.4-5            compiler_4.4.1         remotes_2.5.0         </span></span>
+<span><span class="co">#&gt;  [52] doParallel_1.0.17      withr_3.0.0            fastDummies_1.7.3     </span></span>
+<span><span class="co">#&gt;  [55] pkgbuild_1.4.4         MASS_7.3-55            rappdirs_0.3.3        </span></span>
+<span><span class="co">#&gt;  [58] sessioninfo_1.2.2      tools_4.4.1            lmtest_0.9-40         </span></span>
+<span><span class="co">#&gt;  [61] httpuv_1.6.15          future.apply_1.11.2    goftest_1.2-3         </span></span>
+<span><span class="co">#&gt;  [64] glue_1.7.0             nlme_3.1-155           promises_1.3.0        </span></span>
+<span><span class="co">#&gt;  [67] grid_4.4.1             Rtsne_0.17             cluster_2.1.2         </span></span>
+<span><span class="co">#&gt;  [70] reshape2_1.4.4         generics_0.1.3         gtable_0.3.5          </span></span>
+<span><span class="co">#&gt;  [73] spatstat.data_3.1-2    tidyr_1.3.1            hms_1.1.3             </span></span>
+<span><span class="co">#&gt;  [76] data.table_1.15.4      BiocGenerics_0.50.0    spatstat.geom_3.3-2   </span></span>
+<span><span class="co">#&gt;  [79] RcppAnnoy_0.0.22       foreach_1.5.2          ggrepel_0.9.5         </span></span>
+<span><span class="co">#&gt;  [82] RANN_2.6.1             pillar_1.10.1          stringr_1.5.1         </span></span>
+<span><span class="co">#&gt;  [85] spam_2.10-0            RcppHNSW_0.6.0         later_1.3.2           </span></span>
+<span><span class="co">#&gt;  [88] splines_4.4.1          dplyr_1.1.4            lattice_0.22-6        </span></span>
+<span><span class="co">#&gt;  [91] survival_3.2-13        deldir_2.0-4           tidyselect_1.2.1      </span></span>
+<span><span class="co">#&gt;  [94] miniUI_0.1.1.1         pbapply_1.7-2          knitr_1.49            </span></span>
+<span><span class="co">#&gt;  [97] gridExtra_2.3          scattermore_1.2        RhpcBLASctl_0.23-42   </span></span>
+<span><span class="co">#&gt; [100] xfun_0.50              SharedObject_1.19.1    matrixStats_1.3.0     </span></span>
+<span><span class="co">#&gt; [103] stringi_1.8.4          lazyeval_0.2.2         yaml_2.3.9            </span></span>
+<span><span class="co">#&gt; [106] evaluate_0.24.0        codetools_0.2-18       tibble_3.2.1          </span></span>
+<span><span class="co">#&gt; [109] cli_3.6.3              uwot_0.2.2             xtable_1.8-4          </span></span>
+<span><span class="co">#&gt; [112] reticulate_1.38.0      systemfonts_1.1.0      munsell_0.5.1         </span></span>
+<span><span class="co">#&gt; [115] jquerylib_0.1.4        Rcpp_1.0.12            globals_0.16.3        </span></span>
+<span><span class="co">#&gt; [118] spatstat.random_3.3-1  png_0.1-8              spatstat.univar_3.0-0 </span></span>
+<span><span class="co">#&gt; [121] parallel_4.4.1         ellipsis_0.3.2         pkgdown_2.1.3         </span></span>
+<span><span class="co">#&gt; [124] prettyunits_1.2.0      dotCall64_1.1-1        profvis_0.3.8         </span></span>
+<span><span class="co">#&gt; [127] urlchecker_1.0.1       listenv_0.9.1          viridisLite_0.4.2     </span></span>
+<span><span class="co">#&gt; [130] scales_1.3.0           ggridges_0.5.6         crayon_1.5.3          </span></span>
+<span><span class="co">#&gt; [133] leiden_0.4.3.1         purrr_1.0.2            rlang_1.1.4           </span></span>
 <span><span class="co">#&gt; [136] cowplot_1.1.3</span></span></code></pre></div>
   </main>
 </div>
@@ -322,7 +315,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

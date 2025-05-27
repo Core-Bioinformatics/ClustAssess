@@ -8,8 +8,8 @@
 <title>Flexibility of the dimensionality reduction assessment • ClustAssess</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Flexibility of the dimensionality reduction assessment">
 </head>
 <body>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ClustAssess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,7 @@
     <li><a class="dropdown-item" href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item"><a class="nav-link" href="../tutorials/index.html">ClustAssess Shiny app Tutorial</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -77,19 +78,23 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">is_seuratdata</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="http://www.satijalab.org/seurat" class="external-link">"SeuratData"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## ── <span style="font-weight: bold;">Installed datasets</span> ──────────────────────────────── SeuratData v0.2.2.9001 ──</span></span></code></pre>
-<pre><code><span><span class="co">## <span style="color: #00BB00;">✔</span> <span style="color: #0000BB;">pbmc3k      </span> 3.1.4                    <span style="color: #00BB00;">✔</span> <span style="color: #0000BB;">pbmcMultiome</span> 0.1.4</span></span></code></pre>
-<pre><code><span><span class="co">## ────────────────────────────────────── Key ─────────────────────────────────────</span></span></code></pre>
-<pre><code><span><span class="co">## <span style="color: #00BB00;">✔</span> Dataset loaded successfully</span></span>
-<span><span class="co">## <span style="color: #BBBB00;">❯</span> Dataset built with a newer version of Seurat than installed</span></span>
-<span><span class="co">## <span style="color: #BB0000;">❓</span> Unknown version of Seurat installed</span></span></code></pre>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_seuratdata</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">is_seuratdata</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="http://www.satijalab.org/seurat" class="external-link">"SeuratData"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_seuratdata</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">'satijalab/seurat-data'</span>, upgrade <span class="op">=</span> <span class="st">"never"</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">is_harmony</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/immunogenomics/harmony" class="external-link">"harmony"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<pre><code><span><span class="co">## Downloading GitHub repo satijalab/seurat-data@HEAD</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #00BBBB;">──</span> <span style="color: #00BBBB;">R CMD build</span> <span style="color: #00BBBB;">─────────────────────────────────────────────────────────────────</span></span></span>
+<span><span class="co">## * checking for file ‘/tmp/RtmppyRYcT/remotesc6e337361af/satijalab-seurat-data-3e51f44/DESCRIPTION’ ... OK</span></span>
+<span><span class="co">## * preparing ‘SeuratData’:</span></span>
+<span><span class="co">## * checking DESCRIPTION meta-information ... OK</span></span>
+<span><span class="co">## * checking for LF line-endings in source and make files and shell scripts</span></span>
+<span><span class="co">## * checking for empty or unneeded directories</span></span>
+<span><span class="co">## Omitted ‘LazyData’ from DESCRIPTION</span></span>
+<span><span class="co">## * building ‘SeuratData_0.2.2.9002.tar.gz’</span></span></code></pre>
+<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
+<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">is_harmony</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/immunogenomics/harmony" class="external-link">"harmony"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_harmony</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"harmony"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
@@ -106,8 +111,8 @@
 <span><span class="co">##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,</span></span>
 <span><span class="co">##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,</span></span>
 <span><span class="co">##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,</span></span>
-<span><span class="co">##     Position, rank, rbind, Reduce, rownames, sapply, saveRDS, setdiff,</span></span>
-<span><span class="co">##     table, tapply, union, unique, unsplit, which.max, which.min</span></span></code></pre>
+<span><span class="co">##     Position, rank, rbind, Reduce, rownames, sapply, setdiff, table,</span></span>
+<span><span class="co">##     tapply, union, unique, unsplit, which.max, which.min</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Attaching package: 'S4Vectors'</span></span></code></pre>
 <pre><code><span><span class="co">## The following object is masked from 'package:utils':</span></span>
@@ -121,7 +126,7 @@
 <pre><code><span><span class="co">## The following object is masked from 'package:base':</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##     strsplit</span></span></code></pre>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_rsamtool</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">is_biocmanager</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://bioconductor.github.io/BiocManager/" class="external-link">"BiocManager"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>    <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_biocmanager</span><span class="op">)</span> <span class="op">{</span></span>
@@ -131,7 +136,7 @@
 <span></span>
 <span>    <span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"Rsamtools"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Loading required package: SeuratObject</span></span></code></pre>
 <pre><code><span><span class="co">## Loading required package: sp</span></span></code></pre>
@@ -140,9 +145,6 @@
 <pre><code><span><span class="co">## The following object is masked from 'package:IRanges':</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##     %over%</span></span></code></pre>
-<pre><code><span><span class="co">## 'SeuratObject' was built with package 'Matrix' 1.7.0 but the current</span></span>
-<span><span class="co">## version is 1.7.2; it is recomended that you reinstall 'SeuratObject' as</span></span>
-<span><span class="co">## the ABI for 'Matrix' may have changed</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Attaching package: 'SeuratObject'</span></span></code></pre>
 <pre><code><span><span class="co">## The following object is masked from 'package:Biostrings':</span></span>
@@ -166,17 +168,11 @@
 <pre><code><span><span class="co">## The following objects are masked from 'package:base':</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##     intersect, t</span></span></code></pre>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.satijalab.org/seurat" class="external-link">SeuratData</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## </span></span>
-<span><span class="co">## Attaching package: 'ggplot2'</span></span></code></pre>
-<pre><code><span><span class="co">## The following object is masked from 'package:base':</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">##     is.element</span></span></code></pre>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/immunogenomics/harmony" class="external-link">harmony</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/immunogenomics/harmony" class="external-link">harmony</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Attaching package: 'data.table'</span></span></code></pre>
@@ -189,7 +185,7 @@
 <pre><code><span><span class="co">## The following objects are masked from 'package:S4Vectors':</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##     first, second</span></span></code></pre>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://bioconductor.org/packages/Rsamtools" class="external-link">Rsamtools</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">n_repetitions</span> <span class="op">&lt;-</span> <span class="fl">30</span></span></code></pre></div>
@@ -198,14 +194,14 @@
 <h2 id="clustassess-using-pca">ClustAssess using PCA<a class="anchor" aria-label="anchor" href="#clustassess-using-pca"></a>
 </h2>
 <p>For the PCA example, we will use the PBMC 3k dataset from the <code>SeuratData</code> package. The preprocessing of the dataset is identical with the one performed in the stability pipeline vignette.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>timeout<span class="op">=</span><span class="fl">3600</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: The following packages are already installed and will not be</span></span>
-<span><span class="co">## reinstalled: pbmc3k</span></span></code></pre>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
+<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span>
-<span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mojaveazure.github.io/seurat-object/reference/UpdateSeuratObject.html" class="external-link">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/UpdateSeuratObject.html" class="external-link">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Validating object structure</span></span></code></pre>
 <pre><code><span><span class="co">## Updating object slots</span></span></code></pre>
 <pre><code><span><span class="co">## Ensuring keys are in the proper structure</span></span></code></pre>
@@ -215,7 +211,7 @@
 <pre><code><span><span class="co">## Updating slots in RNA</span></span></code></pre>
 <pre><code><span><span class="co">## Validating object structure for Assay 'RNA'</span></span></code></pre>
 <pre><code><span><span class="co">## Object representation is consistent with the most current Seurat version</span></span></code></pre>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/PercentageFeatureSet.html" class="external-link">PercentageFeatureSet</a></span><span class="op">(</span><span class="va">pbmc3k</span>, pattern <span class="op">=</span> <span class="st">"^MT-"</span>, col.name <span class="op">=</span> <span class="st">"percent.mito"</span><span class="op">)</span></span>
 <span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/PercentageFeatureSet.html" class="external-link">PercentageFeatureSet</a></span><span class="op">(</span><span class="va">pbmc3k</span>, pattern <span class="op">=</span> <span class="st">"^RP[SL][[:digit:]]"</span>, col.name <span class="op">=</span> <span class="st">"percent.rp"</span><span class="op">)</span></span>
 <span><span class="co"># remove MT and RP genes</span></span>
@@ -236,12 +232,12 @@
 <span></span>
 <span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/ScaleData.html" class="external-link">ScaleData</a></span><span class="op">(</span><span class="va">pbmc3k</span>, features <span class="op">=</span> <span class="va">features</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>We notice that the <code>seurat_annotations</code> column has some missing values. For simplicity, we will replace them with “NA”.</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mask</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span><span class="op">)</span></span>
 <span><span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span><span class="op">)</span></span>
 <span><span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span><span class="op">[</span><span class="va">mask</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"NA"</span></span></code></pre></div>
 <p>Select the features used for the stability assessment.</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">features</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">RNA</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">var_features</span> <span class="op">&lt;-</span> <span class="va">pbmc3k</span><span class="op">@</span><span class="va">assays</span><span class="op">[[</span><span class="st">"RNA"</span><span class="op">]</span><span class="op">]</span><span class="op">@</span><span class="va">var.features</span></span>
 <span><span class="va">n_abundant</span> <span class="op">&lt;-</span> <span class="fl">3000</span></span>
@@ -254,7 +250,7 @@
 <span><span class="va">ma_hv_genes_intersection</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="va">union</span>, <span class="va">ma_hv_genes_intersection_sets</span><span class="op">)</span></span>
 <span><span class="va">ma_hv_steps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ma_hv_genes_intersection_sets</span>, <span class="va">length</span><span class="op">)</span></span></code></pre></div>
 <p>Assess the stability of the dimensionality reduction when PCA is used as dimensionality reduction.</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">matrix_processing_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dt_mtx</span>, <span class="va">actual_npcs</span> <span class="op">=</span> <span class="fl">30</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">actual_npcs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -287,7 +283,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Warning: executing %dopar% sequentially: no parallel backend registered</span></span></code></pre>
 <p>Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.</p>
-<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">umap_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">pca_feature_stability</span><span class="op">$</span><span class="va">embedding_list</span><span class="op">$</span><span class="va">MA</span><span class="op">$</span><span class="st">"1000"</span><span class="op">)</span></span>
 <span><span class="va">umap_df</span><span class="op">$</span><span class="va">celltypes</span> <span class="op">&lt;-</span> <span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -299,7 +295,7 @@
 <h2 id="clustassess-using-harmony">ClustAssess using Harmony<a class="anchor" aria-label="anchor" href="#clustassess-using-harmony"></a>
 </h2>
 <p>We can also modify the function by adding an addition post-processing step to the PCA. In this example, we will use the Harmony correction to remove the “batch effect” created by the celltypes. <em>Note</em>: This example is meant to exemplify how to use the Harmony correction in the ClusAssess pipeline. The batch correction is actually not needed in the PBMC 3k dataset.</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">matrix_processing_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dt_mtx</span>, <span class="va">actual_npcs</span> <span class="op">=</span> <span class="fl">30</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">actual_npcs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -334,7 +330,7 @@
 <span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">umap_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">pca_harmony_feature_stability</span><span class="op">$</span><span class="va">embedding_list</span><span class="op">$</span><span class="va">MA</span><span class="op">$</span><span class="st">"1000"</span><span class="op">)</span></span>
 <span><span class="va">umap_df</span><span class="op">$</span><span class="va">celltypes</span> <span class="op">&lt;-</span> <span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -346,25 +342,25 @@
 <h2 id="clustassess-in-the-scatac-seq-data">ClustAssess in the scATAC-seq data<a class="anchor" aria-label="anchor" href="#clustassess-in-the-scatac-seq-data"></a>
 </h2>
 <p>In this example we will showcase the flexibility of the <code>assess_feature_stability</code> function by using the ATAC-seq data. For this example, we will use the multiome PBMC dataset from the <code>SeuratData</code> package.</p>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stuart-lab/signac" class="external-link">Signac</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmcMultiome"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: The following packages are already installed and will not be</span></span>
-<span><span class="co">## reinstalled: pbmcMultiome</span></span></code></pre>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
+<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc.atac"</span><span class="op">)</span></span></code></pre></div>
 <p>As presented in the (Signac)(<a href="https://stuartlab.org/signac/articles/pbmc_vignette" class="external-link uri">https://stuartlab.org/signac/articles/pbmc_vignette</a>) package, the ATAC-seq data is usually processed using the TF-IDF normalization followed by the the calculation of the singular values. These two steps are also known as LSI (Latent Semantic Indexing).</p>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc.atac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://stuartlab.org/signac/reference/RunTFIDF.html" class="external-link">RunTFIDF</a></span><span class="op">(</span><span class="va">pbmc.atac</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Performing TF-IDF normalization</span></span></code></pre>
 <pre><code><span><span class="co">## Warning in RunTFIDF.default(object = GetAssayData(object = object, layer =</span></span>
 <span><span class="co">## "counts"), : Some features contain 0 total counts</span></span></code></pre>
 <p>Identify the highly variable peaks.</p>
-<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc.atac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://stuartlab.org/signac/reference/FindTopFeatures.html" class="external-link">FindTopFeatures</a></span><span class="op">(</span><span class="va">pbmc.atac</span>, min.cutoff <span class="op">=</span> <span class="st">"q5"</span><span class="op">)</span></span>
 <span><span class="va">var_peaks</span> <span class="op">&lt;-</span> <span class="va">pbmc.atac</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">ATAC</span><span class="op">@</span><span class="va">var.features</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">3000</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>To speedup the assessment, set a parallel backend with 6 cores.</p>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">ncores</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">ncores</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
@@ -376,7 +372,7 @@
 <span>    <span class="fu">doParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html" class="external-link">registerDoParallel</a></span><span class="op">(</span>cl <span class="op">=</span> <span class="va">my_cluster</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Assess the stability of the dimensionality reduction by varying the number of highly variable peaks.</p>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">matrix_processing_function</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dt_mtx</span>, <span class="va">actual_n_singular_values</span> <span class="op">=</span> <span class="fl">50</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">actual_n_singular_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_n_singular_values</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
@@ -416,10 +412,10 @@
 <span><span class="co">## No assay specified, setting assay as RNA by default.</span></span>
 <span><span class="co">## No assay specified, setting assay as RNA by default.</span></span>
 <span><span class="co">## No assay specified, setting assay as RNA by default.</span></span></code></pre>
-<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/registerDoSEQ.html" class="external-link">registerDoSEQ</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Highly Variable peaks.</p>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">umap_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">lsi_atac_feature_stability</span><span class="op">$</span><span class="va">embedding_list</span><span class="op">$</span><span class="va">HV_peaks</span><span class="op">$</span><span class="st">"1000"</span><span class="op">)</span></span>
 <span><span class="va">umap_df</span><span class="op">$</span><span class="va">celltypes</span> <span class="op">&lt;-</span> <span class="va">pbmc.atac</span><span class="op">$</span><span class="va">seurat_annotations</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -430,15 +426,15 @@
 <div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb71"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## R version 4.4.0 (2024-04-24)</span></span>
+<pre><code><span><span class="co">## R version 4.4.1 (2024-06-14)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
 <span><span class="co">## Running under: Ubuntu 22.04.4 LTS</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Matrix products: default</span></span>
-<span><span class="co">## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
-<span><span class="co">## LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0</span></span>
+<span><span class="co">## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 </span></span>
+<span><span class="co">## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## locale:</span></span>
 <span><span class="co">##  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
@@ -454,62 +450,67 @@
 <span><span class="co">## [8] base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
-<span><span class="co">##  [1] Signac_1.14.0                 data.table_1.16.4            </span></span>
-<span><span class="co">##  [3] ggplot2_3.5.1.9000            ClustAssess_1.0.0            </span></span>
-<span><span class="co">##  [5] Seurat_5.2.0                  SeuratObject_5.0.2           </span></span>
-<span><span class="co">##  [7] sp_2.1-4                      Rsamtools_2.22.0             </span></span>
-<span><span class="co">##  [9] Biostrings_2.74.1             XVector_0.46.0               </span></span>
-<span><span class="co">## [11] GenomicRanges_1.58.0          GenomeInfoDb_1.42.1          </span></span>
-<span><span class="co">## [13] IRanges_2.40.1                S4Vectors_0.44.0             </span></span>
-<span><span class="co">## [15] BiocGenerics_0.52.0           harmony_1.2.3                </span></span>
-<span><span class="co">## [17] Rcpp_1.0.14                   pbmcMultiome.SeuratData_0.1.4</span></span>
-<span><span class="co">## [19] pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9001        </span></span>
+<span><span class="co">##  [1] pbmcMultiome.SeuratData_0.1.4 Signac_1.14.0                </span></span>
+<span><span class="co">##  [3] pbmc3k.SeuratData_3.1.4       data.table_1.15.4            </span></span>
+<span><span class="co">##  [5] ggplot2_3.5.1                 ClustAssess_1.1.0            </span></span>
+<span><span class="co">##  [7] SeuratData_0.2.2.9002         Seurat_5.1.0                 </span></span>
+<span><span class="co">##  [9] SeuratObject_5.0.2            sp_2.1-4                     </span></span>
+<span><span class="co">## [11] Rsamtools_2.20.0              Biostrings_2.72.1            </span></span>
+<span><span class="co">## [13] XVector_0.44.0                GenomicRanges_1.56.1         </span></span>
+<span><span class="co">## [15] GenomeInfoDb_1.40.1           IRanges_2.38.1               </span></span>
+<span><span class="co">## [17] S4Vectors_0.42.1              BiocGenerics_0.50.0          </span></span>
+<span><span class="co">## [19] harmony_1.2.3                 Rcpp_1.0.12                  </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
-<span><span class="co">##   [1] RColorBrewer_1.1-3      jsonlite_1.8.9          magrittr_2.0.3         </span></span>
-<span><span class="co">##   [4] spatstat.utils_3.1-2    farver_2.1.2            rmarkdown_2.29         </span></span>
-<span><span class="co">##   [7] zlibbioc_1.52.0         fs_1.6.5                ragg_1.3.3             </span></span>
-<span><span class="co">##  [10] vctrs_0.6.5             ROCR_1.0-11             spatstat.explore_3.3-4 </span></span>
-<span><span class="co">##  [13] RcppRoll_0.3.1          progress_1.2.3          htmltools_0.5.8.1      </span></span>
-<span><span class="co">##  [16] sass_0.4.9              sctransform_0.4.1       parallelly_1.41.0      </span></span>
-<span><span class="co">##  [19] KernSmooth_2.23-26      bslib_0.8.0             htmlwidgets_1.6.4      </span></span>
-<span><span class="co">##  [22] desc_1.4.3              ica_1.0-3               plyr_1.8.9             </span></span>
-<span><span class="co">##  [25] plotly_4.10.4           zoo_1.8-12              cachem_1.1.0           </span></span>
-<span><span class="co">##  [28] igraph_2.1.4            iterators_1.0.14        mime_0.12              </span></span>
-<span><span class="co">##  [31] lifecycle_1.0.4         pkgconfig_2.0.3         Matrix_1.7-2           </span></span>
-<span><span class="co">##  [34] R6_2.5.1                fastmap_1.2.0           GenomeInfoDbData_1.2.13</span></span>
-<span><span class="co">##  [37] fitdistrplus_1.2-2      future_1.34.0           shiny_1.10.0           </span></span>
-<span><span class="co">##  [40] digest_0.6.37           colorspace_2.1-1        patchwork_1.3.0        </span></span>
-<span><span class="co">##  [43] tensor_1.5              RSpectra_0.16-2         irlba_2.3.5.1          </span></span>
-<span><span class="co">##  [46] textshaping_1.0.0       labeling_0.4.3          progressr_0.15.1       </span></span>
-<span><span class="co">##  [49] spatstat.sparse_3.1-0   httr_1.4.7              polyclip_1.10-7        </span></span>
-<span><span class="co">##  [52] abind_1.4-8             compiler_4.4.0          withr_3.0.2            </span></span>
-<span><span class="co">##  [55] BiocParallel_1.40.0     fastDummies_1.7.5       MASS_7.3-64            </span></span>
-<span><span class="co">##  [58] rappdirs_0.3.3          tools_4.4.0             lmtest_0.9-40          </span></span>
-<span><span class="co">##  [61] httpuv_1.6.15           future.apply_1.11.3     goftest_1.2-3          </span></span>
-<span><span class="co">##  [64] glue_1.8.0              nlme_3.1-166            promises_1.3.2         </span></span>
-<span><span class="co">##  [67] grid_4.4.0              Rtsne_0.17              cluster_2.1.8          </span></span>
-<span><span class="co">##  [70] reshape2_1.4.4          generics_0.1.3          gtable_0.3.6           </span></span>
-<span><span class="co">##  [73] spatstat.data_3.1-4     tidyr_1.3.1             hms_1.1.3              </span></span>
-<span><span class="co">##  [76] spatstat.geom_3.3-5     RcppAnnoy_0.0.22        foreach_1.5.2          </span></span>
-<span><span class="co">##  [79] ggrepel_0.9.6           RANN_2.6.2              pillar_1.10.1          </span></span>
-<span><span class="co">##  [82] stringr_1.5.1           spam_2.11-1             RcppHNSW_0.6.0         </span></span>
-<span><span class="co">##  [85] later_1.4.1             splines_4.4.0           dplyr_1.1.4            </span></span>
-<span><span class="co">##  [88] lattice_0.22-6          survival_3.8-3          deldir_2.0-4           </span></span>
-<span><span class="co">##  [91] tidyselect_1.2.1        miniUI_0.1.1.1          pbapply_1.7-2          </span></span>
-<span><span class="co">##  [94] knitr_1.49              gridExtra_2.3           scattermore_1.2        </span></span>
-<span><span class="co">##  [97] RhpcBLASctl_0.23-42     xfun_0.50               SharedObject_1.20.0    </span></span>
-<span><span class="co">## [100] matrixStats_1.5.0       UCSC.utils_1.2.0        stringi_1.8.4          </span></span>
-<span><span class="co">## [103] lazyeval_0.2.2          yaml_2.3.10             evaluate_1.0.3         </span></span>
-<span><span class="co">## [106] codetools_0.2-20        tibble_3.2.1            cli_3.6.3              </span></span>
-<span><span class="co">## [109] uwot_0.2.2              xtable_1.8-4            reticulate_1.40.0      </span></span>
-<span><span class="co">## [112] systemfonts_1.2.1       munsell_0.5.1           jquerylib_0.1.4        </span></span>
-<span><span class="co">## [115] globals_0.16.3          spatstat.random_3.3-2   png_0.1-8              </span></span>
-<span><span class="co">## [118] spatstat.univar_3.1-1   parallel_4.4.0          pkgdown_2.1.1          </span></span>
-<span><span class="co">## [121] prettyunits_1.2.0       dotCall64_1.2           bitops_1.0-9           </span></span>
-<span><span class="co">## [124] listenv_0.9.1           viridisLite_0.4.2       scales_1.3.0           </span></span>
-<span><span class="co">## [127] ggridges_0.5.6          purrr_1.0.2             crayon_1.5.3           </span></span>
-<span><span class="co">## [130] rlang_1.1.5             fastmatch_1.1-6         cowplot_1.1.3</span></span></code></pre>
+<span><span class="co">##   [1] RcppAnnoy_0.0.22        splines_4.4.1           later_1.3.2            </span></span>
+<span><span class="co">##   [4] bitops_1.0-7            tibble_3.2.1            polyclip_1.10-6        </span></span>
+<span><span class="co">##   [7] fastDummies_1.7.3       lifecycle_1.0.4         globals_0.16.3         </span></span>
+<span><span class="co">##  [10] processx_3.8.4          lattice_0.22-6          MASS_7.3-55            </span></span>
+<span><span class="co">##  [13] magrittr_2.0.3          plotly_4.10.4           sass_0.4.9             </span></span>
+<span><span class="co">##  [16] rmarkdown_2.27          jquerylib_0.1.4         yaml_2.3.9             </span></span>
+<span><span class="co">##  [19] remotes_2.5.0           httpuv_1.6.15           sctransform_0.4.1      </span></span>
+<span><span class="co">##  [22] spam_2.10-0             sessioninfo_1.2.2       pkgbuild_1.4.4         </span></span>
+<span><span class="co">##  [25] spatstat.sparse_3.1-0   reticulate_1.38.0       cowplot_1.1.3          </span></span>
+<span><span class="co">##  [28] pbapply_1.7-2           RColorBrewer_1.1-3      abind_1.4-5            </span></span>
+<span><span class="co">##  [31] pkgload_1.4.0           zlibbioc_1.50.0         Rtsne_0.17             </span></span>
+<span><span class="co">##  [34] purrr_1.0.2             rappdirs_0.3.3          GenomeInfoDbData_1.2.12</span></span>
+<span><span class="co">##  [37] ggrepel_0.9.5           irlba_2.3.5.1           listenv_0.9.1          </span></span>
+<span><span class="co">##  [40] spatstat.utils_3.0-5    goftest_1.2-3           RSpectra_0.16-1        </span></span>
+<span><span class="co">##  [43] spatstat.random_3.3-1   fitdistrplus_1.2-1      parallelly_1.37.1      </span></span>
+<span><span class="co">##  [46] pkgdown_2.1.3           RcppRoll_0.3.1          leiden_0.4.3.1         </span></span>
+<span><span class="co">##  [49] codetools_0.2-18        tidyselect_1.2.1        farver_2.1.2           </span></span>
+<span><span class="co">##  [52] UCSC.utils_1.0.0        matrixStats_1.3.0       spatstat.explore_3.3-1 </span></span>
+<span><span class="co">##  [55] jsonlite_1.8.8          ellipsis_0.3.2          progressr_0.14.0       </span></span>
+<span><span class="co">##  [58] ggridges_0.5.6          survival_3.2-13         iterators_1.0.14       </span></span>
+<span><span class="co">##  [61] systemfonts_1.1.0       foreach_1.5.2           progress_1.2.3         </span></span>
+<span><span class="co">##  [64] tools_4.4.1             ragg_1.4.0              ica_1.0-3              </span></span>
+<span><span class="co">##  [67] glue_1.7.0              gridExtra_2.3           xfun_0.50              </span></span>
+<span><span class="co">##  [70] usethis_2.2.3           dplyr_1.1.4             withr_3.0.0            </span></span>
+<span><span class="co">##  [73] fastmap_1.2.0           callr_3.7.6             digest_0.6.36          </span></span>
+<span><span class="co">##  [76] R6_2.5.1                mime_0.12               textshaping_0.4.0      </span></span>
+<span><span class="co">##  [79] colorspace_2.1-0        scattermore_1.2         tensor_1.5             </span></span>
+<span><span class="co">##  [82] spatstat.data_3.1-2     RhpcBLASctl_0.23-42     tidyr_1.3.1            </span></span>
+<span><span class="co">##  [85] generics_0.1.3          prettyunits_1.2.0       httr_1.4.7             </span></span>
+<span><span class="co">##  [88] htmlwidgets_1.6.4       uwot_0.2.2              pkgconfig_2.0.3        </span></span>
+<span><span class="co">##  [91] gtable_0.3.5            lmtest_0.9-40           htmltools_0.5.8.1      </span></span>
+<span><span class="co">##  [94] profvis_0.3.8           dotCall64_1.1-1         scales_1.3.0           </span></span>
+<span><span class="co">##  [97] png_0.1-8               spatstat.univar_3.0-0   knitr_1.49             </span></span>
+<span><span class="co">## [100] reshape2_1.4.4          nlme_3.1-155            curl_5.2.1             </span></span>
+<span><span class="co">## [103] cachem_1.1.0            zoo_1.8-12              stringr_1.5.1          </span></span>
+<span><span class="co">## [106] KernSmooth_2.23-20      parallel_4.4.1          miniUI_0.1.1.1         </span></span>
+<span><span class="co">## [109] desc_1.4.3              pillar_1.10.1           grid_4.4.1             </span></span>
+<span><span class="co">## [112] vctrs_0.6.5             RANN_2.6.1              urlchecker_1.0.1       </span></span>
+<span><span class="co">## [115] promises_1.3.0          xtable_1.8-4            cluster_2.1.2          </span></span>
+<span><span class="co">## [118] evaluate_0.24.0         cli_3.6.3               compiler_4.4.1         </span></span>
+<span><span class="co">## [121] rlang_1.1.4             crayon_1.5.3            future.apply_1.11.2    </span></span>
+<span><span class="co">## [124] labeling_0.4.3          ps_1.7.7                plyr_1.8.9             </span></span>
+<span><span class="co">## [127] fs_1.6.4                stringi_1.8.4           viridisLite_0.4.2      </span></span>
+<span><span class="co">## [130] deldir_2.0-4            BiocParallel_1.38.0     munsell_0.5.1          </span></span>
+<span><span class="co">## [133] lazyeval_0.2.2          devtools_2.4.5          spatstat.geom_3.3-2    </span></span>
+<span><span class="co">## [136] SharedObject_1.19.1     Matrix_1.7-0            RcppHNSW_0.6.0         </span></span>
+<span><span class="co">## [139] hms_1.1.3               patchwork_1.2.0         future_1.33.2          </span></span>
+<span><span class="co">## [142] shiny_1.8.1.1           ROCR_1.0-11             igraph_2.0.3           </span></span>
+<span><span class="co">## [145] memoise_2.0.1           bslib_0.7.0             fastmatch_1.1-6</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -522,7 +523,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

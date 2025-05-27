@@ -3,7 +3,7 @@ template:
   bootstrap: 5
 navbar:
   structure:
-    left: [intro, reference, articles, tutorials]
+    left: [intro, reference, articles, news, tutorials]
     right: [search, github, lightswitch]
   components:
     tutorials:

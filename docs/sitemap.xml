@@ -10,6 +10,7 @@
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/articles/stability-pipeline-shiny.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/authors.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/index.html</loc></url>
+<url><loc>https://core-bioinformatics.github.io/ClustAssess/news/index.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/Clustering-class.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/add_metadata.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/assess_clustering_stability.html</loc></url>
@@ -33,6 +34,7 @@
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/element_sim_matrix.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/getNNmatrix.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/get_clusters_from_clustassess_object.html</loc></url>
+<url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/get_colour_vector_from_palette.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/get_highest_prune_param.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/get_highest_prune_param_embedding.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/get_nn_conn_comps.html</loc></url>
@@ -43,6 +45,7 @@
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/merge_resolutions.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/pac_convergence.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/pac_landscape.html</loc></url>
+<url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/plot_clust_hierarchical.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/plot_clustering_difference_facet.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/plot_clustering_overall_stability.html</loc></url>
 <url><loc>https://core-bioinformatics.github.io/ClustAssess/reference/plot_clustering_per_value_stability.html</loc></url>

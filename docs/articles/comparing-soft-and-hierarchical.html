@@ -8,8 +8,8 @@
 <title>Comparing soft and hierarchical clusterings with element-centric similarity • ClustAssess</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
-<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.4.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Comparing soft and hierarchical clusterings with element-centric similarity">
 </head>
 <body>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ClustAssess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,7 @@
     <li><a class="dropdown-item" href="../articles/stability-pipeline-shiny.html">Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item"><a class="nav-link" href="../tutorials/index.html">ClustAssess Shiny app Tutorial</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -84,17 +85,25 @@
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">is_dbscan</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/mhahsler/dbscan" class="external-link">"dbscan"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dbscan</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dbscan"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mhahsler/dbscan" class="external-link">dbscan</a></span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
+<span><span class="co">#&gt; (as 'lib' is unspecified)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Attaching package: 'dbscan'</span></span>
 <span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     as.dendrogram</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dbscan</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dbscan"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
-<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mhahsler/dbscan" class="external-link">dbscan</a></span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">is_dendextend</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://talgalili.github.io/dendextend/" class="external-link">"dendextend"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dendextend</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dendextend"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
+<span><span class="co">#&gt; (as 'lib' is unspecified)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ---------------------</span></span>
 <span><span class="co">#&gt; Welcome to dendextend version 1.19.0</span></span>
@@ -114,25 +123,16 @@
 <span><span class="co">#&gt; The following object is masked from 'package:stats':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     cutree</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_dendextend</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dendextend"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
-<span>    <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"harmony"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Installing package into '/tmp/RtmpSSh2Tm/temp_libpath4b630469b6e23'</span></span>
+<span><span class="co">#&gt; Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
 <span><span class="co">#&gt; (as 'lib' is unspecified)</span></span></code></pre></div>
 <p>In this vignette we will illustrate how element-centric similarity can be used to compare different kinds of clustering results: flat disjoint clusterings, flat overlapping clusterings, and hierarchical clusterings.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'ggplot2'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     is.element</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://talgalili.github.io/dendextend/" class="external-link">dendextend</a></span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/get_theme.html" class="external-link">theme_set</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme_get.html" class="external-link">theme_set</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># we will use the Iris dataset for this vignette</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span></span>
@@ -225,13 +225,13 @@
 </h2>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span><span class="co">#&gt; R version 4.4.1 (2024-06-14)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
 <span><span class="co">#&gt; Running under: Ubuntu 22.04.4 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
-<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
-<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0</span></span>
+<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 </span></span>
+<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; locale:</span></span>
 <span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
@@ -246,24 +246,24 @@
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_3.5.1.9000 ClustAssess_1.0.0  dendextend_1.19.0  dbscan_1.2-0      </span></span>
-<span><span class="co">#&gt; [5] e1071_1.7-16      </span></span>
+<span><span class="co">#&gt; [1] ggplot2_3.5.1     ClustAssess_1.1.0 dendextend_1.19.0 dbscan_1.2.2     </span></span>
+<span><span class="co">#&gt; [5] e1071_1.7-14     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] viridis_0.6.5     sass_0.4.9        generics_0.1.3    class_7.3-23     </span></span>
-<span><span class="co">#&gt;  [5] lattice_0.22-6    digest_0.6.37     magrittr_2.0.3    evaluate_1.0.3   </span></span>
-<span><span class="co">#&gt;  [9] grid_4.4.0        iterators_1.0.14  fastmap_1.2.0     foreach_1.5.2    </span></span>
-<span><span class="co">#&gt; [13] jsonlite_1.8.9    Matrix_1.7-2      gridExtra_2.3     viridisLite_0.4.2</span></span>
-<span><span class="co">#&gt; [17] scales_1.3.0      codetools_0.2-20  textshaping_1.0.0 jquerylib_0.1.4  </span></span>
-<span><span class="co">#&gt; [21] cli_3.6.3         rlang_1.1.5       munsell_0.5.1     withr_3.0.2      </span></span>
-<span><span class="co">#&gt; [25] cachem_1.1.0      yaml_2.3.10       tools_4.4.0       dplyr_1.1.4      </span></span>
-<span><span class="co">#&gt; [29] colorspace_2.1-1  vctrs_0.6.5       R6_2.5.1          proxy_0.4-27     </span></span>
-<span><span class="co">#&gt; [33] lifecycle_1.0.4   fs_1.6.5          htmlwidgets_1.6.4 ragg_1.3.3       </span></span>
-<span><span class="co">#&gt; [37] pkgconfig_2.0.3   desc_1.4.3        pkgdown_2.1.1     pillar_1.10.1    </span></span>
-<span><span class="co">#&gt; [41] bslib_0.8.0       gtable_0.3.6      glue_1.8.0        Rcpp_1.0.14      </span></span>
-<span><span class="co">#&gt; [45] systemfonts_1.2.1 xfun_0.50         tibble_3.2.1      tidyselect_1.2.1 </span></span>
-<span><span class="co">#&gt; [49] knitr_1.49        farver_2.1.2      igraph_2.1.4      htmltools_0.5.8.1</span></span>
-<span><span class="co">#&gt; [53] rmarkdown_2.29    labeling_0.4.3    compiler_4.4.0</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] viridis_0.6.5     sass_0.4.9        generics_0.1.3    class_7.3-20     </span></span>
+<span><span class="co">#&gt;  [5] lattice_0.22-6    digest_0.6.36     magrittr_2.0.3    evaluate_0.24.0  </span></span>
+<span><span class="co">#&gt;  [9] grid_4.4.1        iterators_1.0.14  fastmap_1.2.0     foreach_1.5.2    </span></span>
+<span><span class="co">#&gt; [13] jsonlite_1.8.8    Matrix_1.7-0      gridExtra_2.3     viridisLite_0.4.2</span></span>
+<span><span class="co">#&gt; [17] scales_1.3.0      codetools_0.2-18  textshaping_0.4.0 jquerylib_0.1.4  </span></span>
+<span><span class="co">#&gt; [21] cli_3.6.3         rlang_1.1.4       munsell_0.5.1     withr_3.0.0      </span></span>
+<span><span class="co">#&gt; [25] cachem_1.1.0      yaml_2.3.9        tools_4.4.1       dplyr_1.1.4      </span></span>
+<span><span class="co">#&gt; [29] colorspace_2.1-0  vctrs_0.6.5       R6_2.5.1          proxy_0.4-27     </span></span>
+<span><span class="co">#&gt; [33] lifecycle_1.0.4   fs_1.6.4          htmlwidgets_1.6.4 ragg_1.4.0       </span></span>
+<span><span class="co">#&gt; [37] pkgconfig_2.0.3   desc_1.4.3        pkgdown_2.1.3     pillar_1.10.1    </span></span>
+<span><span class="co">#&gt; [41] bslib_0.7.0       gtable_0.3.5      glue_1.7.0        Rcpp_1.0.12      </span></span>
+<span><span class="co">#&gt; [45] systemfonts_1.1.0 xfun_0.50         tibble_3.2.1      tidyselect_1.2.1 </span></span>
+<span><span class="co">#&gt; [49] knitr_1.49        farver_2.1.2      igraph_2.0.3      htmltools_0.5.8.1</span></span>
+<span><span class="co">#&gt; [53] rmarkdown_2.27    labeling_0.4.3    compiler_4.4.1</span></span></code></pre></div>
 </div>
   </main>
 </div>
@@ -275,7 +275,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

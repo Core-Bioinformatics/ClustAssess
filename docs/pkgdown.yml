@@ -1,5 +1,5 @@
 pandoc: 2.9.2.1
-pkgdown: 2.1.1
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   ClustAssess: ClustAssess.html
@@ -7,7 +7,7 @@ articles:
   stability-dim-reduction-flexibility: stability-dim-reduction-flexibility.html
   stability-pipeline-description: stability-pipeline-description.html
   stability-pipeline-shiny: stability-pipeline-shiny.html
-last_built: 2025-01-24T11:19Z
+last_built: 2025-05-27T16:45Z
 urls:
   reference: https://core-bioinformatics.github.io/ClustAssess/reference
   article: https://core-bioinformatics.github.io/ClustAssess/articles
