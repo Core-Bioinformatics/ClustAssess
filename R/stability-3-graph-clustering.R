@@ -40,7 +40,8 @@ merge_resolutions <- function(res_obj) {
         }
     }
 
-    k_vals <- names(clusters_obj)
+    k_vals <- stringr::str_sort(names(clusters_obj), numeric = TRUE)
+    clusters_obj <- clusters_obj[k_vals]
 
     # if (ncores > 1) {
     #     shared_clusters_obj <- SharedObject::share(clusters_obj)
@@ -295,7 +296,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 different_partitions[[k]] <- merge_partitions(
                     partition_list = different_partitions[[k]],
                     ecs_thresh = ecs_thresh,
-                    order_logic = "freq"
+                    order_logic = "freq" # TODO change to avg agreement
                 )
 
                 unique_partitions <- c(
@@ -317,6 +318,18 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 # different_partitions[[k]][["ecc"]] <- ec_consistency
             }
 
+            if (verbose) {
+                pb$tick(tokens = list(res = res))
+            }
+
+            if (length(unique_partitions) == 1) {
+                result_object[[alg_name]][[as.character(res)]] <- list(
+                    clusters = different_partitions,
+                    ecc = rep(1, length(unique_partitions[[1]]$mb))
+                )
+                next
+            }
+
             result_object[[alg_name]][[as.character(res)]] <- list(
                 clusters = different_partitions,
                 ecc = weighted_element_consistency(
@@ -329,9 +342,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 )
             )
 
-            if (verbose) {
-                pb$tick(tokens = list(res = res))
-            }
         }
     }
 
@@ -985,4 +995,288 @@ plot_k_n_partitions <- function(clust_object,
         )
 
     return(main_plot)
+}
+
+#' @description Given a data frame that has a partitioning on each column, this
+#' function determines the unique number of clusters. Based on the maximum
+#' number of clusters, the lower k values will be remapped on the y axis such
+#' that they are equally spaced.
+clust_hierplot_get_y_mapping <- function(df) {
+    cl_names <- colnames(df)
+    y_mapping <- list()
+    n_max_cl <- 0
+
+    for (i in cl_names) {
+        # unique_cl <- stringr::str_sort(unique(df[, i]), numeric = TRUE)
+        if (is.factor(df[, i])) {
+            unique_cl <- levels(df[, i])
+        } else {
+            unique_cl <- unique(df[, i])
+        }
+        y_mapping[[i]] <- lapply(unique_cl, I)
+        names(y_mapping[[i]]) <- unique_cl
+
+        n_max_cl <- max(n_max_cl, length(unique_cl))
+    }
+
+    for (i in cl_names) {
+        y_fact <- n_max_cl / length(y_mapping[[i]])
+        for (j in seq_along(y_mapping[[i]])) {
+            y_mapping[[i]][[j]] <- y_fact * j - y_fact / 2
+        }
+    }
+
+    return(y_mapping)
+}
+
+#' @description Given a data frame that has a partitioning on each column, this
+#' function creates a data frame describing each node. A node is defined as
+#' a cluster in a partition. The data frame will contain the information about
+#' the cluster name and the partition name it belongs to, as well the average
+#' ECC score of the cluster and its size.
+clust_hierplot_create_node_df <- function(df, consistency_list, y_mapping) {
+    nodes_df <- NA
+    for (i in seq(from = 1, to = length(y_mapping))) {
+        cl <- df[, i]
+        unique_cl <- names(y_mapping[[names(y_mapping)[i]]])
+
+        for (cl_name in unique_cl) {
+            temp_df <- data.frame(
+                part_name = names(y_mapping)[i],
+                clust_name = cl_name,
+                ecc = mean(consistency_list[[names(y_mapping)[i]]][cl == cl_name]),
+                cluster_size = sum(cl == cl_name),
+                actual_y = y_mapping[[names(y_mapping)[i]]][[cl_name]]
+            )
+
+            if (!is.data.frame(nodes_df) && is.na(nodes_df)) {
+                nodes_df <- temp_df
+            } else {
+                nodes_df <- rbind(nodes_df, temp_df)
+            }
+        }
+    }
+    nodes_df$part_name <- factor(nodes_df$part_name, levels = names(y_mapping))
+    nodes_df$clust_name <- as.character(nodes_df$clust_name)
+
+    return(nodes_df)
+}
+
+#' @description Given a data frame that has a partitioning on each column, this
+#' function creates a data frame describing the edges between the nodes. An edge
+#' defines the relationship between two clusters from two different partitions.
+#' The data frame will contain information about the cluster names, the
+#' partition names, the number of shared points and the average ECS score.
+clust_hierplot_create_edge_df <- function(df, y_mapping) {
+    edges_df <- NA
+    for (i in seq(from = 1, to = length(y_mapping) - 1)) {
+        cl1 <- df[, i]
+        cl2 <- df[, i + 1]
+
+        ctg_table <- table(cl1, cl2)
+        cl_sizes1 <- rowSums(ctg_table)
+        cl_sizes2 <- colSums(ctg_table)
+
+        for (j in rownames(ctg_table)) {
+            for (k in colnames(ctg_table)) {
+                ecs_val <- ctg_table[j, k] / max(cl_sizes1[j], cl_sizes2[k])
+
+                if (ctg_table[j, k] == 0) {
+                    next
+                }
+
+                temp_df <- data.frame(
+                    part_name_from = names(y_mapping)[i],
+                    part_name_to = names(y_mapping)[i + 1],
+                    clust_name_from = y_mapping[[names(y_mapping)[i]]][[j]],
+                    clust_name_to = y_mapping[[names(y_mapping)[i + 1]]][[k]],
+                    ecs = ecs_val,
+                    intersect_size = ctg_table[j, k]
+                )
+
+                if (!is.data.frame(edges_df) && is.na(edges_df)) {
+                    edges_df <- temp_df
+                } else {
+                    edges_df <- rbind(edges_df, temp_df)
+                }
+            }
+        }
+    }
+    edges_df$part_name_from <- factor(edges_df$part_name_from, levels = names(y_mapping))
+    edges_df$part_name_to <- factor(edges_df$part_name_to, levels = names(y_mapping))
+
+    return(edges_df %>% dplyr::arrange(.data$intersect_size))
+}
+
+#' @description GIve a data frame that has a partitioning on each column, this
+#' function generates the list with the node and edge data frames. The edge
+#' data frame is trimmed based on the `edge_threshold` parameter, which removes
+#' the edges with the intersection size below the quantile threshold.
+clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3) {
+    y_mapping <- clust_hierplot_get_y_mapping(df)
+    node_df <- clust_hierplot_create_node_df(df, consistency_list, y_mapping)
+    edge_df <- clust_hierplot_create_edge_df(df, y_mapping)
+    quantile_thresh <- stats::quantile(edge_df$intersect_size, edge_threshold)
+    edge_df <- edge_df %>% dplyr::filter(.data$intersect_size >= quantile_thresh)
+    return(list(
+        node_df,
+        edge_df
+    ))
+}
+
+#' @description The default case for the `plot_clust_hierarchical` function. It
+#' creates the built based on a clustering data frame and a consistency list.
+#' The data frame should have a partition on each column and the number of
+#' clusters should be ordered. The consistency list should contain the ECC
+#' distribution vector for each partition.
+#' 
+#' @note All partitions should have the same number of cells.
+plot_clust_hierarchical_default <- function(clustering_df,
+                                            consistency_list,
+                                            edge_threshold = 0.3,
+                                            range_point_size = c(1, 6),
+                                            range_edge_width = c(0.01, 3),
+                                            edge_palette_name = "RColorBrewer::Greys",
+                                            edge_palette_inverse = FALSE,
+                                            node_palette_name = "viridis::rocket",
+                                            node_palette_inverse = TRUE) {
+    node_edge_list <- clust_hierplot_create_dfs(clustering_df, consistency_list, edge_threshold)
+    edge_pal_colours <- get_colour_vector_from_palette(edge_palette_name, edge_palette_inverse, "RColorBrewer::Greys")
+    node_pal_colours <- get_colour_vector_from_palette(node_palette_name, node_palette_inverse, "viridis::viridis")
+    
+    gplot_obj <- ggplot2::ggplot() +
+        ggplot2::geom_segment(data = node_edge_list[[2]], ggplot2::aes(x = .data$part_name_from, y = .data$clust_name_from, xend = .data$part_name_to, yend = .data$clust_name_to, colour = .data$ecs, linewidth = .data$intersect_size), show.legend = TRUE) +
+        ggplot2::scale_colour_gradientn(colours = edge_pal_colours, name = "ECS") +
+        ggplot2::scale_linewidth_continuous(range = range_edge_width, name = "Intersection size") +
+        ggnewscale::new_scale("colour") +
+        ggplot2::geom_point(data = node_edge_list[[1]], ggplot2::aes(x = .data$part_name, y = .data$actual_y, colour = .data$ecc, size = .data$cluster_size), show.legend = TRUE) +
+        ggplot2::scale_colour_gradientn(colours = node_pal_colours, name = "ECC") +
+        ggplot2::scale_size_continuous(range = range_point_size, name = "Cluster size") +
+        ggplot2::scale_y_continuous(breaks = NULL) +
+        ggplot2::theme_classic() +
+        ggplot2::xlab("k") +
+        ggplot2::theme(
+            axis.text.y = ggplot2::element_blank(),
+            axis.ticks.y = ggplot2::element_blank(),
+            axis.title.y = ggplot2::element_blank(),
+            panel.grid.major.y = ggplot2::element_blank()
+        )
+
+    return(gplot_obj)
+}
+
+#' @title Hierarchical relationship between partitions with different number of
+#' clusters
+#' 
+#' @description After assessing the stability of the clustering step, the user
+#' can visualise the relationship between the partitions as the number of
+#' clusters changes. The aim is to understand the hierarchical relationship
+#' between super and sub celltypes. The function will create a plot that will
+#' represent the clusters of each partition as nodes. The colours of the nodes
+#' will indicate the stability of the cluster. The size is proportional to the
+#' number of cells in the cluster. The edges will represent the relationship
+#' between the clusters of two partitions. The colour of the edges will indicate
+#' the stability of the relationship between the clusters. The thickness of the
+#' edges will indicate the number of cells that are shared between the two
+#' clusters.
+#' 
+#' @param clustering_assessment An object returned by the
+#' `assess_clustering_stability` method.
+#' @param clustering_method A string that specifies the clustering method.
+#' Should be one of the following: 'Louvain', 'Louvain.refined', 'SLM', 'Leiden'.
+#' If `NULL`, the first clustering method will be used. Defaults to `NULL`.
+#' @param k A vector of integers that specifies the number of clusters. If
+#' `NULL`, all available values will be used. Defaults to `NULL`.
+#' @param edge_threshold A numeric value that specifies the quantile threshold
+#' for the edges. The edges with the intersection size below the quantile
+#' threshold will be removed. Defaults to `0.3`.
+#' @param range_point_size A numeric vector of length 2 that specifies the
+#' minimum and the maximum size of the nodes. Defaults to `c(1, 6)`.
+#' @param range_edge_width A numeric vector of length 2 that specifies the
+#' minimum and the maximum width of the edges. Defaults to `c(0.01, 3)`.
+#' @param edge_palette_name A string that specifies the name of the palette
+#' that will be used for the edges. Defaults to `"RColorBrewer::Greys"`.
+#' @param edge_palette_inverse A boolean value that specifies whether the
+#' palette should be inverted. Defaults to `FALSE`.
+#' @param node_palette_name A string that specifies the name of the palette
+#' that will be used for the nodes. Defaults to `"viridis::rocket"`.
+#' @param node_palette_inverse A boolean value that specifies whether the
+#' palette should be inverted. Defaults to `TRUE`.
+#'
+#' @note The names of the colour palettes should follow the format defined in
+#' the `paletteer` package.
+#'
+#' @return A ggplot object following the details from description.
+#'
+#' @export
+#' @examples
+#' set.seed(2024)
+#' # create an artificial PCA embedding
+#' pca_embedding <- matrix(runif(100 * 30), nrow = 100)
+#' rownames(pca_embedding) <- paste0("cell_", seq_len(nrow(pca_embedding)))
+#' colnames(pca_embedding) <- paste0("PC_", 1:30)
+#'
+#'
+#' adj_matrix <- getNNmatrix(
+#'     RANN::nn2(pca_embedding, k = 10)$nn.idx,
+#'     10,
+#'     0,
+#'     -1
+#' )$nn
+#' rownames(adj_matrix) <- paste0("cell_", seq_len(nrow(adj_matrix)))
+#' colnames(adj_matrix) <- paste0("cell_", seq_len(ncol(adj_matrix)))
+#'
+#' # alternatively, the adj_matrix can be calculated
+#' # using the `Seurat::FindNeighbors` function.
+#'
+#' clust_diff_obj <- assess_clustering_stability(
+#'     graph_adjacency_matrix = adj_matrix,
+#'     resolution = c(0.5, 1),
+#'     n_repetitions = 10,
+#'     clustering_algorithm = 1:2,
+#'     verbose = TRUE
+#' )
+#' plot_clust_hierarchical(clust_diff_obj)
+plot_clust_hierarchical <- function(clustering_assessment,
+                                    clustering_method = NULL,
+                                    k = NULL,
+                                    edge_threshold = 0.3,
+                                    range_point_size = c(1, 6),
+                                    range_edge_width = c(0.01, 3),
+                                    edge_palette_name = "RColorBrewer::Greys",
+                                    edge_palette_inverse = FALSE,
+                                    node_palette_name = "viridis::rocket",
+                                    node_palette_inverse = TRUE) {
+    clustering_assessment <- clustering_assessment$split_by_k
+    cl_methods <- names(clustering_assessment)
+    if (is.null(clustering_method) || !(clustering_method %in% cl_methods)) {
+        clustering_method <- cl_methods[1]
+    }
+    clustering_assessment <- clustering_assessment[[clustering_method]]
+    available_k <- names(clustering_assessment)
+    if (is.null(k)) {
+        k <- available_k
+    } else {
+        k <- intersect(k, available_k)
+        if (length(k) == 0) {
+            k <- available_k
+        }
+    }
+    clustering_assessment <- clustering_assessment[k]
+    ecc_list <- lapply(k, function(x) clustering_assessment[[x]]$ecc)
+    names(ecc_list) <- k
+    clustering_assessment <- data.frame(lapply(k, function(x) clustering_assessment[[x]]$partitions[[1]]$mb))
+    colnames(clustering_assessment) <- k
+
+    plot_clust_hierarchical_default(
+        clustering_df = clustering_assessment,
+        consistency_list = ecc_list,
+        edge_threshold = edge_threshold,
+        range_point_size = range_point_size,
+        range_edge_width = range_edge_width,
+        edge_palette_name = edge_palette_name,
+        edge_palette_inverse = edge_palette_inverse,
+        node_palette_name = node_palette_name,
+        node_palette_inverse = node_palette_inverse
+    )
 }

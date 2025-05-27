@@ -1371,6 +1371,10 @@ element_consistency <- function(clustering_list,
     # if the condition is met, perform element consistency using only the membership vector
     if (all(are_all_flat_disjoint == TRUE)) {
         # merge the identical partitions into the same object
+        if (length(clustering_list) == 1) {
+            stop("At least two clusterings are required to calculate the consistency.")
+        }
+
         final_clustering_list <- merge_partitions(
             partition_list = clustering_list,
             ecs_thresh = 1,
@@ -1393,7 +1397,12 @@ element_consistency <- function(clustering_list,
 
     # calculate the consistency between the Clustering objects
     n.clusterings <- length(clustering_list)
+    if (n.clusterings <= 1) {
+        stop("At least two clusterings are required to calculate the consistency.")
+    }
+
     consistency <- rep(0, length(clustering_list[[1]]))
+
     for (i in 1:(n.clusterings - 1)) {
         i.aff <- clustering_list[[i]]@affinity_matrix
         for (j in (i + 1):n.clusterings) {
@@ -1439,17 +1448,19 @@ weighted_element_consistency <- function(clustering_list,
                                          calculate_sim_matrix = FALSE) {
     n_clusterings <- length(clustering_list)
 
-    if (calculate_sim_matrix) {
-        ecs_sim_matrix <- matrix(0, nrow = n_clusterings, ncol = n_clusterings)
-    }
-
-    if (n_clusterings == 1) {
+    if (n_clusterings <= 1) {
+        stop("At least two clusterings are required to calculate the consistency.")
+        # TODO delete following lines
         if (calculate_sim_matrix) {
             ecs_matrix[1, 1] <- 1
-            return(list(ecc = rep(1, length(clustering_list[[1]])), ecs_matrix = ecs_sim_matrix))
+            return(list(ecc = rep(0, length(clustering_list[[1]])), ecs_matrix = ecs_sim_matrix))
         }
 
-        return(rep(1, length(clustering_list[[1]])))
+        return(rep(0, length(clustering_list[[1]])))
+    }
+    
+    if (calculate_sim_matrix) {
+        ecs_sim_matrix <- matrix(0, nrow = n_clusterings, ncol = n_clusterings)
     }
 
     if (is.null(weights)) {

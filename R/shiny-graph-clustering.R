@@ -410,10 +410,8 @@ server_graph_clustering_choice <- function(id, parent_session) {
                     current_mtd_unique[[new_mtd_name_stable]] <- as.character(seq_len(k_val))
                 }
 
-                # add_env_variable("metadata_temp", current_mtd_df)
                 pkg_env$metadata_temp(current_mtd_df)
                 pkg_env$metadata_unique_temp(current_mtd_unique)
-                # add_env_variable("metadata_unique", current_mtd_unique)
                 shiny::showTab("tabset_id", "Comparison", select = TRUE, session = parent_session)
             }) %>% shiny::bindEvent(input$fix_cluster_button, ignoreInit = TRUE)
 

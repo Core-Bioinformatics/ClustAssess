@@ -7,3 +7,6 @@ src/*.so
 src/*.dll
 /doc/
 /Meta/
+*tar.gz
+*Rcheck/
+test.R
