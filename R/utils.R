@@ -248,3 +248,50 @@ get_colour_vector_from_palette <- function(palette_name, is_inverse = FALSE, pla
 
     return(palette_colours)
 }
+
+read_sparse_matrix_from_app <- function(app_folder, nrows_chunk = 1000, refresh_interval = 1) {
+    app_path <- file.path(app_folder, "expression.h5")
+    if (!file.exists(app_path)) {
+        stop("The file 'expression.h5' does not exist in the specified app folder.")
+    }
+
+    if (!("expression_matrix" %in% rhdf5::h5ls(app_path, recursive = 1)$name)) {
+        stop("The 'expression_matrix' dataset is not found in the 'expression.h5' file.")
+    }
+
+    matrix_size <- rhdf5::h5ls(app_path, recursive = 1)
+    matrix_size <- strsplit(matrix_size[matrix_size$name == "expression_matrix", "dim"], " x ")[[1]]
+
+    nchunks <- floor(as.numeric(matrix_size[1]) / nrows_chunk)
+
+    final_matrix <- NULL
+    for (i in seq_len(nchunks)) {
+        start_row <- (i - 1) * nrows_chunk + 1
+        end_row <- min(i * nrows_chunk, as.numeric(matrix_size[1]))
+
+        chunk <- methods::as(rhdf5::h5read(app_path, "expression_matrix", index = list(start_row:end_row, NULL)), "dgCMatrix")
+        if (is.null(final_matrix)) {
+            final_matrix <- chunk
+        } else {
+            final_matrix <- rbind(final_matrix, chunk)
+        }
+
+        if (i %% refresh_interval == 0) {
+            gc()
+        }
+    }
+
+    if (nchunks * nrows_chunk < as.numeric(matrix_size[1])) {
+        start_row <- nchunks * nrows_chunk + 1
+        end_row <- as.numeric(matrix_size[1])
+        chunk <- methods::as(rhdf5::h5read(app_path, "expression_matrix", index = list(start_row:end_row, NULL)), "dgCMatrix")
+        final_matrix <- rbind(final_matrix, chunk)
+    }
+
+    rownames(final_matrix) <- as.character(rhdf5::h5read(app_path, "genes"))
+    colnames(final_matrix) <- as.character(rhdf5::h5read(app_path, "cells"))
+
+    gc()
+
+    return(final_matrix)
+}

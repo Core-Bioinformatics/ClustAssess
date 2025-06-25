@@ -264,6 +264,7 @@ create_monocle_default <- function(normalized_expression_matrix,
     # check if normalized expression matrix is sparse
     if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
         normalized_expression_matrix <- methods::as(normalized_expression_matrix, "dgCMatrix")
+        gc()
     }
 
     gene_names <- rownames(normalized_expression_matrix)
@@ -486,6 +487,10 @@ create_monocle_from_clustassess <- function(normalized_expression_matrix,
 #' @param use_all_genes A boolean value indicating if the expression matrix
 #' should be truncated to the genes used in the stability assessment. Defaults
 #' to `FALSE`.
+#' @param nrows_chunk The size of the chunk (in number of rows) to read from
+#' the expression.h5 file to form the sparse matrix. Defaults to 1000.
+#' @param refresh_interval The periodicity of chunks reading prior to running
+#' the garbage collector. Defaults to 1 iteration. 
 #'
 #' @return A Monocle object of the expression matrix, having the stable number
 #' of clusters identified by ClustAssess.
@@ -496,7 +501,9 @@ create_monocle_from_clustassess_app <- function(app_folder,
                                                 stable_feature_set_size,
                                                 stable_clustering_method,
                                                 stable_n_clusters = NULL,
-                                                use_all_genes = FALSE) {
+                                                use_all_genes = FALSE,
+                                                nrows_chunk = 1000,
+                                                refresh_interval = 1) {
     if (!dir.exists(app_folder)) {
         stop(paste0("The provided app_folder: ", app_folder, " does not exist."))
     }
@@ -511,9 +518,8 @@ create_monocle_from_clustassess_app <- function(app_folder,
     #     sparse = TRUE,
     #     dimnames = list(gene_names, cell_names)
     # )
-    expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
-    rownames(expr_matrix) <- gene_names
-    colnames(expr_matrix) <- cell_names
+
+    expr_matrix <- read_sparse_matrix_from_app(app_folder, nrows_chunk, refresh_interval)
 
     available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
     available_ftypes <- names(available_configs)
@@ -527,7 +533,7 @@ create_monocle_from_clustassess_app <- function(app_folder,
     if (!stable_feature_set_size %in% available_fsizes) {
         stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
     }
-
+ 
     if (!use_all_genes) {
         used_genes <- rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list"))
         used_genes <- used_genes[seq_len(as.integer(stable_feature_set_size))]
