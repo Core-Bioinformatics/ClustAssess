@@ -3,6 +3,7 @@
 ---
 
 ### Updates
+- Add subsetting option for the Shiny heatmaps and bubbleplots. The subset is based on already existing metadata columns.
 
 ### Fixes
 
