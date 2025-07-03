@@ -592,6 +592,26 @@ ui_comparison_gene_heatmap <- function(id) {
                 choices = NULL,
                 label = "Split by metadata"
             ),
+            shiny::selectInput(
+                inputId = ns("metadata_subset"),
+                label = "Subset by metadata",
+                choices = NULL
+            ),
+            shiny::verticalLayout(
+                shiny::tags$b("Select subset groups"),
+                shinyWidgets::pickerInput(
+                    inputId = ns("metadata_groups_subset"),
+                    choices = NULL,
+                    options = list(
+                        `actions-box` = TRUE,
+                        title = "Select/deselect groups",
+                        size = 10,
+                        width = "90%",
+                        `selected-text-format` = "count > 3"
+                    ),
+                    multiple = TRUE
+                )
+            ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns("plot_type"),
                 label = "Plot type",
@@ -2523,6 +2543,23 @@ server_comparison_gene_heatmap <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            changed_metadata <- shiny::reactiveVal(FALSE)
+
+            shiny::observe({
+                shiny::req(input$metadata_subset)
+
+                mtd_names <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "metadata_groups_subset",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                changed_metadata(TRUE)
+            }) %>% shiny::bindEvent(input$metadata_subset)
+
             shiny::observe({
                 shiny::updateSliderInput(
                     session,
@@ -2536,16 +2573,35 @@ server_comparison_gene_heatmap <- function(id) {
                     value = 0.15 + 0.03 * length(input$gene_expr)
                 )
             }) %>% shiny::bindEvent(input$gene_expr)
+            
+            metadata_mask <- shiny::reactive({
+                shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
+                shiny::isolate({
+                    all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+
+                        changed_metadata(FALSE)
+                    }
+
+                    return(pkg_env$metadata_temp()[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                })
+            })
 
             heatmap_plot <- shiny::reactive({
                 shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, input$tile_position, input$tile_height, input$legend_spacing, input$lower_margin, cancelOutput = TRUE)
+                mtd_mask <- metadata_mask()
 
                 shiny::isolate({
                     if (!(input$metadata %in% colnames(pkg_env$metadata_temp()))) {
                         return(NULL)
                     }
-                    mtd_val <- pkg_env$metadata_temp()[[input$metadata]]
-                    unique_vals <- levels(mtd_val)
+                    mtd_val <- pkg_env$metadata_temp()[[input$metadata]][mtd_mask]
+                    unique_vals <- levels(droplevels(mtd_val))
 
                     htmp_matrix <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
                     perc_expressed <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
@@ -2558,7 +2614,7 @@ server_comparison_gene_heatmap <- function(id) {
                         index_gene <- pkg_env$genes[input$gene_expr]
 
                         for (i in seq_along(input$gene_expr)) {
-                            expr_profile <- rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene[i], NULL))
+                            expr_profile <- rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene[i], NULL))[mtd_mask]
                             for (j in seq_along(unique_vals)) {
                                 filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
                                 htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
@@ -2944,6 +3000,14 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         paste0("stable_", k_values[1], "_clusters"),
                         colnames(current_mtd)[1]
                     )
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("gene_heatmap-metadata_subset"),
+                    server = FALSE,
+                    choices = names(current_mtd_unique),
+                    selected = "one_level"
                 )
 
                 continuous_metadata <- setdiff(colnames(current_mtd), names(current_mtd_unique))
