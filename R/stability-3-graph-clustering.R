@@ -1007,11 +1007,10 @@ clust_hierplot_get_y_mapping <- function(df) {
     n_max_cl <- 0
 
     for (i in cl_names) {
-        # unique_cl <- stringr::str_sort(unique(df[, i]), numeric = TRUE)
         if (is.factor(df[, i])) {
             unique_cl <- levels(df[, i])
         } else {
-            unique_cl <- unique(df[, i])
+            unique_cl <- stringr::str_sort(unique(df[, i]), numeric = TRUE)
         }
         y_mapping[[i]] <- lapply(unique_cl, I)
         names(y_mapping[[i]]) <- unique_cl
