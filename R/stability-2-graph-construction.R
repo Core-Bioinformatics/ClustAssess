@@ -1049,6 +1049,11 @@ assess_nn_stability <- function(embedding,
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
     }
 
+    if (is.null(rownames(embedding))) {
+        warning("The provided embedding does not have row names. The cell names will be set to the row numbers of the embedding matrix.")
+        rownames(embedding) <- paste0("cell_", seq_len(nrow(embedding)))
+    }
+
     ncells <- nrow(embedding)
     n_neigh_sequence <- n_neigh_sequence[which(n_neigh_sequence < ncells)]
 

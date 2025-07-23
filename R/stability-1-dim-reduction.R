@@ -171,6 +171,11 @@ assess_feature_stability <- function(data_matrix,
         stop("algorithm should be a number between 1 and 4")
     }
 
+    if (is.null(rownames(data_matrix))) {
+        warning("The provided matrix does not have row names. The cell names will be set to the row numbers of the matrix.")
+        rownames(data_matrix) <- paste0("cell_", seq_len(nrow(data_matrix)))
+    }
+
     ncores <- foreach::getDoParWorkers()
 
     partitions_list <- list()
