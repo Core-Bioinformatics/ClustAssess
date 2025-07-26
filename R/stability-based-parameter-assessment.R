@@ -31,7 +31,7 @@ ranking_functions <- list(
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
 seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start = 10, num_iter = 10, ...) {
-    if (algorithm != 4) {
+    if (algorithm %in% 1:4) {
         cluster_result <- Seurat::FindClusters(
             object,
             resolution = resolution,
