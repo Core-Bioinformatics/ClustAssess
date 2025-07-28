@@ -795,7 +795,7 @@ assess_nn_stability_umap <- function(embedding,
     all_vars <- ls()
 
     package_needed <- c("ClustAssess")
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
 
