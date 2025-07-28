@@ -1,6 +1,7 @@
 # TODO check user interrupt
 # TODO add logging options to files - maybe verbose lvels
 #' @importFrom foreach %dopar%
+#' @importFrom leiden leiden
 NULL
 
 ranking_functions <- list(
@@ -67,7 +68,7 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
         )
     }
     
-    cluster_result <- leiden::leiden(
+    cluster_result <- leiden(
         object = object,
         weights = NULL,
         resolution_parameter = resolution,

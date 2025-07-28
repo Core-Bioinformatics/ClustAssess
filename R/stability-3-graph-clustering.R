@@ -202,7 +202,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         "current_clustering_arguments"
     )
     package_needed <- c()
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
     all_vars <- ls()

@@ -619,7 +619,7 @@ assess_nn_stability_pca <- function(embedding,
     gc()
 
     package_needed <- c()
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
     for (n_neigh in as.character(n_neigh_sequence)) {
