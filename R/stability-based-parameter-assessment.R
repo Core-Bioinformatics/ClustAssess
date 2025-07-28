@@ -66,14 +66,13 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
             weighted = TRUE
         )
     }
-
+    
     cluster_result <- leiden::leiden(
         object = object,
         weights = NULL,
         resolution_parameter = resolution,
         n_iterations = num_iter,
-        seed = seed,
-        ...
+        seed = seed
     )
     return(cluster_result)
 }
