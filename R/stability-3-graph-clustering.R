@@ -157,8 +157,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     # convert n_repetitions to an integer
     n_repetitions <- as.integer(n_repetitions)
 
-    if (!is.numeric(clustering_algorithm) || !(all(clustering_algorithm %in% 1:4))) {
-        stop("algorithm should be a vector of numbers between 1 and 4")
+    if (!is.numeric(clustering_algorithm) || !(all(clustering_algorithm %in% 1:5))) {
+        stop("algorithm should be a vector of numbers between 1 and 5")
     }
 
     if (!is.logical(verbose)) {

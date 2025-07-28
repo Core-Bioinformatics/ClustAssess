@@ -167,8 +167,8 @@ assess_feature_stability <- function(data_matrix,
         stop("ecs_thresh parameter should be numeric")
     }
 
-    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:4)) {
-        stop("algorithm should be a number between 1 and 4")
+    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:5)) {
+        stop("algorithm should be a number between 1 and 5")
     }
 
     if (is.null(rownames(data_matrix))) {
