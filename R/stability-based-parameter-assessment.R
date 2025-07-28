@@ -31,7 +31,7 @@ ranking_functions <- list(
 # wrapper of the Seurat's `FindClusters` method, that returns
 # only the membership vector
 seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start = 10, num_iter = 10, ...) {
-    if (algorithm %in% 1:4) {
+    if (algorithm %in% 1:3) {
         cluster_result <- Seurat::FindClusters(
             object,
             resolution = resolution,
@@ -44,27 +44,33 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
         return(as.integer(cluster_result[[colnames(cluster_result)[1]]]))
     }
 
-    if (!(inherits(object, "igraph"))) {
+    if (algorithm == 5) {
+        object <- as(object = object,  Class = "matrix")
+    } else if (!(inherits(object, "igraph"))) {
+        # is_nn <- all(object@x == 1)
+        # if (is_nn) {
+        #     object <- igraph::graph_from_adjacency_matrix(
+        #         adjmatrix = object,
+        #         mode = "directed"
+        #     )
+        # } else {
+        #     object <- igraph::graph_from_adjacency_matrix(
+        #         adjmatrix = object,
+        #         mode = "undirected",
+        #         weighted = TRUE
+        #     )
+        # }
         object <- Seurat::as.sparse(object)
-        is_nn <- all(object@x == 1)
-        if (is_nn) {
-            object <- igraph::graph_from_adjacency_matrix(
-                adjmatrix = object,
-                mode = "directed"
-            )
-        } else {
-            object <- igraph::graph_from_adjacency_matrix(
-                adjmatrix = object,
-                mode = "undirected",
-                weighted = TRUE
-            )
-        }
+        object <- igraph::graph_from_adjacency_matrix(
+            adjmatrix = object,
+            weighted = TRUE
+        )
     }
-    
+
     cluster_result <- leiden::leiden(
         object = object,
-        weights = igraph::E(object)$weight,
-        resolution = resolution,
+        weights = NULL,
+        resolution_parameter = resolution,
         n_iterations = num_iter,
         seed = seed,
         ...
@@ -119,7 +125,7 @@ clustering_functions <- function(object,
                                  num_starts = 10,
                                  ...) {
     # FIXME change it to 1:3 once you will be able to share an igraph
-    if (algorithm %in% 1:4) {
+    if (algorithm %in% 1:5) {
         return(seurat_clustering(
             object = object,
             resolution = resolution,
