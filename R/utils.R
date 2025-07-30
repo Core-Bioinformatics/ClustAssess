@@ -62,7 +62,7 @@ process_clustering_arguments <- function(clustering_arguments, clustering_method
         clustering_arguments$num_iter <- NULL
     }
 
-    if (!("verbose" %in% names(clustering_arguments)) && clustering_method != 4) {
+    if (!("verbose" %in% names(clustering_arguments)) && !(clustering_method %in% 4:5)) {
         clustering_arguments$verbose <- FALSE
     }
 

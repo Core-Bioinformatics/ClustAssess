@@ -1,13 +1,15 @@
 # 3. The assessment of the stability for clustering paramters
 # (such as clustering method, number of clusters)
 
-algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
+algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leiden_matrix")
 algorithm_names_mapping <- list(
     Louvain = 1,
     Louvain.refined = 2,
     SLM = 3,
-    Leiden = 4
+    Leiden = 4,
+    Leiden_matrix = 5
 )
+seed <- NULL
 
 #' Merge Partitions from different Resolutions
 #'
@@ -206,7 +208,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         package_needed <- c(package_needed, "leiden")
     }
     all_vars <- ls()
-    seed <- 0
 
 
 
@@ -249,11 +250,10 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 seed = seed_sequence,
                 .inorder = FALSE,
                 .noexport = all_vars[!(all_vars %in% needed_vars)],
-                .export = needed_vars,
                 .packages = package_needed
             ) %dopar% {
                 # apply the clustering, which should return a membership vector
-                do.call(
+                res <- do.call(
                     clustering_functions,
                     c(
                         list(
@@ -264,7 +264,24 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                         current_clustering_arguments
                     )
                 )
+                return(res)
             }
+
+            # different_partitions_temp <- future_lapply(seed_sequence, function(seed) {
+            #     res <- do.call(
+            #         clustering_functions,
+            #         c(
+            #             list(
+            #                 object = graph_adjacency_matrix_shared,
+            #                 resolution = res,
+            #                 seed = seed
+            #             ),
+            #             current_clustering_arguments
+            #         )
+            #     )
+            #     res
+            # })
+            # names(different_partitions_temp) <- seed_sequence
             different_partitions <- list()
 
             # group the partitions by the number of clusters
