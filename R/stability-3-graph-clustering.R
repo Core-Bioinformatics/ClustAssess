@@ -253,7 +253,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 .packages = package_needed
             ) %dopar% {
                 # apply the clustering, which should return a membership vector
-                res <- do.call(
+                cl_result <- do.call(
                     clustering_functions,
                     c(
                         list(
@@ -264,24 +264,9 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                         current_clustering_arguments
                     )
                 )
-                return(res)
+                return(cl_result)
             }
 
-            # different_partitions_temp <- future_lapply(seed_sequence, function(seed) {
-            #     res <- do.call(
-            #         clustering_functions,
-            #         c(
-            #             list(
-            #                 object = graph_adjacency_matrix_shared,
-            #                 resolution = res,
-            #                 seed = seed
-            #             ),
-            #             current_clustering_arguments
-            #         )
-            #     )
-            #     res
-            # })
-            # names(different_partitions_temp) <- seed_sequence
             different_partitions <- list()
 
             # group the partitions by the number of clusters
