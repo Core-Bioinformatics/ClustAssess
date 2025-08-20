@@ -30,7 +30,7 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
 #' @param chunk_size The chunk size for the rank matrix (See `rhdf5::h5createDataset` for more details)
 #' @param gene_variance_threshold The threshold for the gene variance; genes with variance below this threshold will be removed
 #' @param summary_function The function used for summarizing the stability values; the default is `median`
-#' @param qualpalr_colorspace The colorspace used for generating the colors; the default is `pretty`
+#' @param qualpalr_colorspace The colorspace used for generating the colors; we use the default as defined in the `qualpalr` package
 #'
 #' @return NULL (the files are written in the project_folder)
 #'
@@ -43,7 +43,7 @@ write_objects <- function(clustassess_object,
                           chunk_size = 100,
                           gene_variance_threshold = 0,
                           summary_function = stats::median,
-                          qualpalr_colorspace = "pretty") {
+                          qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))) {
     metadata_file_name <- file.path(project_folder, "metadata.rds")
     stability_file_name <- file.path(project_folder, "stability.h5")
     expr_file_name <- file.path(project_folder, "expression.h5")
@@ -501,7 +501,7 @@ write_shiny_app.Seurat <- function(object,
                                    shiny_app_title = "",
                                    organism_enrichment = "hsapiens",
                                    height_ratio = 0.6,
-                                   qualpalr_colorspace = "pretty",
+                                   qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
                                    prompt_feature_choice = TRUE) {
     mtd_df <- object@meta.data
     if ("umap" %in% names(object@reductions)) {
@@ -536,7 +536,7 @@ write_shiny_app.default <- function(object,
                                     shiny_app_title = "",
                                     organism_enrichment = "hsapiens",
                                     height_ratio = 0.6,
-                                    qualpalr_colorspace = "pretty",
+                                    qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
                                     prompt_feature_choice = TRUE) {
     if (inherits(object, "dgCMatrix")) {
         nFeature <- Matrix::colSums(object > 0)

@@ -17,7 +17,7 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty",
+  qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
   prompt_feature_choice = TRUE
 )
 
@@ -32,7 +32,7 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty",
+  qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
   prompt_feature_choice = TRUE
 )
 
@@ -47,7 +47,7 @@ write_shiny_app(
   shiny_app_title = "",
   organism_enrichment = "hsapiens",
   height_ratio = 0.6,
-  qualpalr_colorspace = "pretty",
+  qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
   prompt_feature_choice = TRUE
 )
 }
@@ -78,7 +78,7 @@ results.}
 
 \item{height_ratio}{The ratio of the height of the plot to the height of the browser; the default is \code{0.6}}
 
-\item{qualpalr_colorspace}{The colorspace used for generating the colors; the default is \code{pretty}}
+\item{qualpalr_colorspace}{The colorspace used for generating the colors; we use the default as defined in the \code{qualpalr} package}
 
 \item{prompt_feature_choice}{Should the user be prompted to choose if he wants to continue with the selection of features even if it is lower than median sequence depth; the default is \code{TRUE}}
 }

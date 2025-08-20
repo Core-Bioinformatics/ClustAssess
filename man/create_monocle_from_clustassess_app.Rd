@@ -10,7 +10,9 @@ create_monocle_from_clustassess_app(
   stable_feature_set_size,
   stable_clustering_method,
   stable_n_clusters = NULL,
-  use_all_genes = FALSE
+  use_all_genes = FALSE,
+  nrows_chunk = 1000,
+  refresh_interval = 1
 )
 }
 \arguments{
@@ -30,6 +32,12 @@ all the clusters will be provided. Defaults to \code{NULL}.}
 \item{use_all_genes}{A boolean value indicating if the expression matrix
 should be truncated to the genes used in the stability assessment. Defaults
 to \code{FALSE}.}
+
+\item{nrows_chunk}{The size of the chunk (in number of rows) to read from
+the expression.h5 file to form the sparse matrix. Defaults to 1000.}
+
+\item{refresh_interval}{The periodicity of chunks reading prior to running
+the garbage collector. Defaults to 1 iteration.}
 }
 \value{
 A Monocle object of the expression matrix, having the stable number

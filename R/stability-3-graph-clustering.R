@@ -1109,7 +1109,7 @@ clust_hierplot_create_edge_df <- function(df, y_mapping) {
     return(edges_df %>% dplyr::arrange(.data$intersect_size))
 }
 
-#' @description GIve a data frame that has a partitioning on each column, this
+#' @description Give a data frame that has a partitioning on each column, this
 #' function generates the list with the node and edge data frames. The edge
 #' data frame is trimmed based on the `edge_threshold` parameter, which removes
 #' the edges with the intersection size below the quantile threshold.

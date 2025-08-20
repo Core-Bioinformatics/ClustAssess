@@ -57,7 +57,7 @@ Imports:
     stringr,
     paletteer,
     plotly,
-    qualpalr,
+    qualpalr (>= 1.0.0),
     RANN,
     reshape2,
     rlang,
