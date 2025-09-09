@@ -295,3 +295,40 @@ read_sparse_matrix_from_app <- function(app_folder, nrows_chunk = 1000, refresh_
 
     return(final_matrix)
 }
+
+parallel_nn2_idx <- function(embedding, k) {
+    ncores <- foreach::getDoParWorkers()
+
+    if (ncores == 1) {
+        return(RANN::nn2(embedding, k = k)$nn.idx)
+    }
+
+    chunk_size <- nrow(embedding) %/% ncores
+    chunks <- split(seq_len(chunk_size * ncores), rep(seq_len(ncores), each = chunk_size))
+
+    if (chunk_size * ncores != nrow(embedding)) {
+        chunks[[ncores]] <- c(chunks[[ncores]], (chunk_size * ncores + 1):nrow(embedding))
+    }
+
+    shared_emb <- SharedObject::share(embedding)
+    i <- NULL
+
+    # HACK check if there is another way to not get the `already exported variable` warning
+    nn_result <- suppressWarnings(foreach::foreach (
+        i = seq_len(ncores),
+        .inorder = TRUE,
+        .combine = rbind,
+        .export = c("shared_emb", "chunks", "k")
+    ) %dopar% {
+        RANN::nn2(
+            data = shared_emb,
+            query = shared_emb[chunks[[i]], , drop = FALSE],
+            k = k,
+            eps = 0
+        )$nn.idx
+    })
+
+    shared_emb <- SharedObject::unshare(shared_emb)
+
+    nn_result
+}

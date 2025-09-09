@@ -246,7 +246,8 @@ assess_feature_stability <- function(data_matrix,
 
             if (prune_value >= 0) {
                 neigh_matrix <- getNNmatrix(
-                    RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                    # RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                    parallel_nn2_idx(embedding, used_n_neigh),
                     used_n_neigh,
                     0,
                     prune_value
@@ -254,7 +255,8 @@ assess_feature_stability <- function(data_matrix,
             } else {
                 neigh_matrix <- get_highest_prune_param(
                     nn_matrix = getNNmatrix(
-                        RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                        # RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
+                        parallel_nn2_idx(embedding, used_n_neigh),
                         used_n_neigh,
                         0,
                         -1

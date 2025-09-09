@@ -595,15 +595,21 @@ automatic_stability_assessment <- function(expression_matrix,
             #     nn.method = "rann",
             #     compute.SNN = FALSE
             # )$nn
-            feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- getNNmatrix(
-                RANN::nn2(
-                    feature_configs[[set_name]][[n_steps]][[base_embedding]],
-                    k = best_nn,
-                )$nn.idx,
+            feature_configs[[set_name]][[n_steps]]$adj_matrix <- getNNmatrix(
+                feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx,
                 best_nn,
                 0,
                 -1
             )$nn
+            # feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- getNNmatrix(
+            #     RANN::nn2(
+            #         feature_configs[[set_name]][[n_steps]][[base_embedding]],
+            #         k = best_nn,
+            #     )$nn.idx,
+            #     best_nn,
+            #     0,
+            #     -1
+            # )$nn
             highest_prune_param <- 0
 
             if (graph_type == "snn") {

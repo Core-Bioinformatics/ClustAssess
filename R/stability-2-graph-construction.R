@@ -111,10 +111,11 @@ get_nn_conn_comps_pca <- function(embedding,
     nn_conn_comps_list <- list()
 
 
-    nn2_res <- RANN::nn2(
-        embedding,
-        k = max(n_neigh_sequence)
-    )$nn.idx
+    nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
+    # nn2_res <- RANN::nn2(
+        # embedding,
+        # k = max(n_neigh_sequence)
+    # )$nn.idx
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
@@ -563,10 +564,12 @@ assess_nn_stability_pca <- function(embedding,
         partitions_list[[paste("PCA", "nn", sep = "_")]] <- list()
     }
 
-    nn2_res <- RANN::nn2(
-        embedding,
-        k = max(n_neigh_sequence)
-    )$nn.idx
+    nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
+
+    # nn2_res <- RANN::nn2(
+        # embedding,
+        # k = max(n_neigh_sequence)
+    # )$nn.idx
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
@@ -749,7 +752,8 @@ assess_nn_stability_pca <- function(embedding,
             sapply(config, function(n_neigh) {
                 length(n_neigh)
             })
-        })
+        }),
+        nn_idx = nn2_res
     )
 }
 
