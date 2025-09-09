@@ -1323,7 +1323,7 @@ server_comparison_markers <- function(id, k_choices) {
                 marker_genes(list(
                     all_genes = all_genes,
                     group_1 = as.vector(genes_group1),
-                    group_2 = as.vector(markers_result$gene[seq(from = length(genes_group1) + 1, to = nrow(markers_result))])
+                    group_2 = as.vector(markers_result$gene[seq(from = length(genes_group1) + 1, to = nrow(markers_result))] %>% rev)
                 ))
 
                 shinyjs::show("markers_dt")
@@ -2832,22 +2832,25 @@ server_comparison_enrichment <- function(id, marker_genes) {
             }) %>% shiny::bindEvent(input$enrichment_button)
 
             shiny::observe({
-                shiny::req(gprof_result())
+                gp_res <- gprof_result()
 
                 output$gost_table <- DT::renderDT({
-                    gprof_result()$result[, seq_len(ncol(gprof_result()$result) - 2)]
+                    shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                    gp_res$result[, seq_len(ncol(gprof_result()$result) - 2)]
                 })
 
-                output$gost_plot <- plotly::renderPlotly(
-                    gprofiler2::gostplot(gprof_result())
-                )
+                output$gost_plot <- plotly::renderPlotly({
+                    shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                    gprofiler2::gostplot(gp_res)
+                })
 
                 output$download_gost <- shiny::downloadHandler(
                     filename = function() {
                         "enrichment_results.csv"
                     },
                     content = function(file) {
-                        utils::write.csv(gprof_result()$result, file)
+                        shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                        utils::write.csv(gp_res$result, file)
                     }
                 )
             })
