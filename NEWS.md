@@ -8,6 +8,8 @@
 
 ### Fixes
 - Ensure the expression matrix or embedding has row names. If not, set them to "cell_1", "cell_2", etc.
+- Treat the case when enrichment analysis returns no results.
+- Sort the group 2 markers for enrichment analysis based on the absolute logfoldchange.
 
 ---
 
