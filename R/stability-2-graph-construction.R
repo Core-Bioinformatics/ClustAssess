@@ -618,8 +618,8 @@ assess_nn_stability_pca <- function(embedding,
         rm(shared_nn2_res)
     }
 
-    rm(nn2_res)
-    gc()
+    # rm(nn2_res)
+    # gc()
 
     package_needed <- c()
     if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
