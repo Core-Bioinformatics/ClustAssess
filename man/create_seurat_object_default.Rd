@@ -9,7 +9,8 @@ create_seurat_object_default(
   count_matrix = NULL,
   pca_embedding = NULL,
   umap_embedding = NULL,
-  metadata_df = NULL
+  metadata_df = NULL,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ umap will be created using the \code{Seurat} package (default parameters).}
 \item{metadata_df}{The metadata dataframe having the cell names as rownames.
 If NULL, a dataframe with a single column named \code{identical_ident} will be
 created.}
+
+\item{verbose}{Set the level of verbosity of the Seurat functions. Defaults
+to \code{FALSE}.}
 }
 \value{
 A Seurat object of the expression matrix, having the stable number

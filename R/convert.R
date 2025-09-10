@@ -621,6 +621,8 @@ update_seurat_object <- function(original_seurat_object,
 #' @param metadata_df The metadata dataframe having the cell names as rownames.
 #' If NULL, a dataframe with a single column named `identical_ident` will be
 #' created.
+#' @param verbose Set the level of verbosity of the Seurat functions. Defaults
+#' to `FALSE`.
 #'
 #' @return A Seurat object of the expression matrix, having the stable number
 #' of clusters identified by ClustAssess.
@@ -630,9 +632,8 @@ create_seurat_object_default <- function(normalized_expression_matrix,
                                          count_matrix = NULL,
                                          pca_embedding = NULL,
                                          umap_embedding = NULL,
-                                         metadata_df = NULL) {
-
-
+                                         metadata_df = NULL,
+                                         verbose = FALSE) {
     if (is.null(count_matrix)) {
         count_matrix <- normalized_expression_matrix
     } else {
@@ -663,11 +664,11 @@ create_seurat_object_default <- function(normalized_expression_matrix,
         meta.data = metadata_df
     )
 
-    seurat_obj <- Seurat::NormalizeData(seurat_obj)
+    seurat_obj <- Seurat::NormalizeData(seurat_obj, verbose = verbose)
     seurat_obj@assays$RNA@layers$data <- normalized_expression_matrix
-    seurat_obj <- Seurat::ScaleData(seurat_obj)
-    seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
-    seurat_obj <- Seurat::RunPCA(seurat_obj)
+    seurat_obj <- Seurat::ScaleData(seurat_obj, verbose = verbose)
+    seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000, verbose = verbose)
+    seurat_obj <- Seurat::RunPCA(seurat_obj, verbose = verbose)
 
     if (!is.null(pca_embedding)) {
         rownames(pca_embedding) <- cell_names
@@ -678,7 +679,7 @@ create_seurat_object_default <- function(normalized_expression_matrix,
         )
     }
 
-    seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = 1:30)
+    seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = 1:30, verbose = verbose)
 
     if (!is.null(umap_embedding)) {
         rownames(umap_embedding) <- cell_names
