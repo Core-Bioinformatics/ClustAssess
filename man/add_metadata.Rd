@@ -4,7 +4,11 @@
 \alias{add_metadata}
 \title{Add metadata to ClustAssess ShinyApp}
 \usage{
-add_metadata(app_folder, metadata, qualpalr_colorspace = "pretty")
+add_metadata(
+  app_folder,
+  metadata,
+  qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))
+)
 }
 \arguments{
 \item{app_folder}{The folder containing the ClustAssess ShinyApp}

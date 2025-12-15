@@ -770,7 +770,7 @@ write_shiny_app.default <- function(object,
 #' @export
 add_metadata <- function(app_folder,
                          metadata,
-                         qualpalr_colorspace = "pretty") {
+                         qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))) { 
     metadata_file_name <- file.path(app_folder, "metadata.rds")
 
     if (!file.exists(metadata_file_name)) {
