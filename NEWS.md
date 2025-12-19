@@ -25,6 +25,7 @@
 - Add option to calculate the percentage of cells expressing gene above a threshold in the summary table from the Shiny Violin section.
 - Add hierarchical plot that shows the relationship between partitions with different number of clusters.
 - Add the option to create the ClustAssess app without the need to run the stability assessment (the light version). If the clustassess parameter is NULL, the app will contain only the 'Comparison' tab. In this case, the user should provide the UMAP coordinates in the metadata dataframe.
+- Enable live filtering of the marker genes based on all the columns. The filtered table will be used as input for the enrichment analysis.
 
 ### Fixes
 - Fix the case in `write_object` when the gene variance filtering leaves the chunk with one or zero genes.

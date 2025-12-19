@@ -666,7 +666,7 @@ ui_comparison_violin_gene <- function(id) {
                     inputId = ns("graph_type"),
                     label = "Graph type (multiple)",
                     choices = c("Violin", "Boxplot"),
-                    selected = c("Violin", "Boxplot")
+                    selected = "Violin"
                 ),
                 circle = TRUE,
                 status = "success",
@@ -752,6 +752,7 @@ ui_comparison_enrichment <- function(id) {
             ),
             shiny::h2("Enrichment analysis"),
         ),
+        shiny::textOutput(ns("infoGenes")),
         shiny::splitLayout(
             shinyWidgets::pickerInput(
                 inputId = ns("gprofilerSources"),
@@ -984,7 +985,6 @@ server_cell_annotation <- function(id) {
                             recode_args[[grp_cluster]] <- group_name
                         }
                     }
-                    # print(recode_args)
 
                     new_mtd <- do.call(dplyr::recode, recode_args)
                     mtd_temp_df[[ann_name]] <- new_mtd
@@ -1138,8 +1138,6 @@ server_comparison_markers <- function(id, k_choices) {
                 )
             }
 
-            marker_genes <- shiny::reactiveVal(NULL)
-
             # it would be nice to have gene umaps
             shinyjs::html("marker_text", "Warning: Enabling DEG analysis will results into loading the memory. This process might take some time.")
             shinyjs::hide("group_left-select_k_markers")
@@ -1269,23 +1267,6 @@ server_comparison_markers <- function(id, k_choices) {
 
                 shinyjs::disable("markers_button")
                 shinyjs::html("marker_text", "Calculating the markers...")
-                # subgroup_left <- input$"group_left-select_k_markers"
-                # subgroup_right <- input$"group_right-select_k_markers"
-
-                # if (is.na(as.numeric(subgroup_left))) {
-                #     mb1 <- pkg_env$metadata_temp()[[subgroup_left]]
-                # } else {
-                #     mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
-                # }
-
-                # if (is.na(as.numeric(subgroup_right))) {
-                #     mb2 <- pkg_env$metadata_temp()[[subgroup_right]]
-                # } else {
-                #     mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
-                # }
-
-                # cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
-                # cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
 
                 if ("genes" %in% names(pkg_env)) {
                     markers_result <- calculate_markers_shiny(
@@ -1313,18 +1294,20 @@ server_comparison_markers <- function(id, k_choices) {
                     )
                 }
 
-                all_genes <- as.vector(markers_result$gene)
 
                 markers_result <- markers_result %>%
-                    dplyr::filter(.data$p_val_adj <= input$pval) %>%
-                    dplyr::arrange(dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
-                genes_group1 <- (markers_result %>% dplyr::filter(.data$avg_log2FC >= 0))$gene
+                    dplyr::filter(.data$p_val_adj <= input$pval)
 
-                marker_genes(list(
-                    all_genes = all_genes,
-                    group_1 = as.vector(genes_group1),
-                    group_2 = as.vector(markers_result$gene[seq(from = length(genes_group1) + 1, to = nrow(markers_result))] %>% rev)
-                ))
+                if (nrow(markers_result) == 0) {
+                    shinyjs::show("markers_dt")
+                    shinyjs::show("markers_download_button")
+                    shinyjs::enable("markers_button")
+                    shinyjs::html("marker_text", "")
+                    return(NULL)
+                }
+
+                    
+                markers_result <- dplyr::arrange(markers_result, dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
 
                 shinyjs::show("markers_dt")
                 shinyjs::show("markers_download_button")
@@ -1337,19 +1320,55 @@ server_comparison_markers <- function(id, k_choices) {
             shiny::observe(
                 output$markers_dt <- DT::renderDataTable(
                     {
-                        shiny::req(markers_val())
-                        markers_val()
+                        current_df <- markers_val()
+                        shiny::req(current_df)
+
+                        current_df
                     },
-                    rownames = FALSE
+                    rownames = FALSE,
+                    filter = "top"
                 )
             ) %>% shiny::bindEvent(markers_val())
+
+            mk_genes <- shiny::reactive({
+                current_rows <- input$markers_dt_rows_all
+                shiny::req(current_rows)
+                mk_df <- markers_val()
+                shiny::req(mk_df)
+                current_rows <- sort(current_rows)
+                mk_df <- mk_df[current_rows, , drop = FALSE]
+                index_negative <- 1
+                while (index_negative <= nrow(mk_df) && mk_df$avg_log2FC[index_negative] >= 0) {
+                    index_negative <- index_negative + 1
+                }
+
+                all_genes <- mk_df$gene
+
+                genes_group1 <- NULL
+                if (index_negative > 1) {
+                    genes_group1 <- all_genes[seq_len(index_negative - 1)]
+                }
+
+                genes_group2 <- NULL
+                if (index_negative <= length(all_genes)) {
+                    genes_group2 <- all_genes[seq(from = index_negative, to = length(all_genes))]
+                }
+
+                return(list(
+                    all_genes = all_genes,
+                    group_1 = as.vector(genes_group1),
+                    group_2 = as.vector(genes_group2)
+                ))
+            })
 
             output$markers_download_button <- shiny::downloadHandler(
                 filename = function() {
                     "markers.csv"
                 },
                 content = function(file) {
-                    utils::write.csv(markers_val(), file)
+                    mk_df <- markers_val()
+                    shiny::req(mk_df, nrow(mk_df) > 0)
+                    utils::write.csv(mk_df, file)
                 }
             )
 
@@ -1360,7 +1379,7 @@ server_comparison_markers <- function(id, k_choices) {
 
             shiny::observe(compar_markers_info(session)) %>% shiny::bindEvent(input$info_markers, ignoreInit = TRUE)
 
-            return(shiny::reactive(marker_genes()))
+            return(mk_genes)
         }
     )
 }
@@ -2496,7 +2515,8 @@ server_comparison_violin_gene <- function(id) {
 
                     stats_df <- rbind(
                         data.frame(sapply(seq_along(split_vals), function(i) {
-                            stats::fivenum(split_vals[[i]])
+                            fvn <- stats::fivenum(split_vals[[i]])
+                            c(fvn[1], fvn[2], fvn[3], mean(split_vals[[i]]), fvn[4], fvn[5])
                         })),
                         sapply(split_vals, length)
                     )
@@ -2509,7 +2529,7 @@ server_comparison_violin_gene <- function(id) {
                     )
 
                     colnames(stats_df) <- names(split_vals)
-                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells", "# cells above 0", "# cells above min", "# cells under max")
+                    rownames(stats_df) <- c("Min", "Q1", "Median", "Mean", "Q3", "Max", "# cells", "# cells above 0", "# cells above min", "# cells under max")
 
                     breaks_df <- sapply(split_vals, function(x) {
                         table(cut(x, breaks = break_points))
@@ -2791,6 +2811,15 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 shinyjs::hide("download_gost")
             }) %>% shiny::bindEvent(marker_genes(), once = TRUE)
 
+            shiny::observe({
+                chosen_markers <- marker_genes()
+                shiny::req(chosen_markers)
+
+                output$infoGenes <- shiny::renderText({
+                    paste0("The filtered markers will be used in the analysis. Currently, there are ", length(chosen_markers$group_1), " markers for group_1 and ", length(chosen_markers$group_2), " for group_2")
+                })
+            })
+
             gprof_result <- shiny::reactive({
                 chosen_markers <- marker_genes()
                 n_top_markers <- input$top_n_markers
@@ -2799,6 +2828,8 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 selected_group <- stringr::str_replace(input$group, " ", "_")
 
                 chosen_markers <- chosen_markers[[selected_group]]
+                shiny::req(chosen_markers, length(chosen_markers) > 0)
+
                 n_top_markers <- min(n_top_markers, length(chosen_markers))
                 if (n_top_markers == -1) {
                     n_top_markers <- length(chosen_markers)
