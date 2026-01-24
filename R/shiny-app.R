@@ -2,9 +2,14 @@
 ppi <- 72
 single_color <- "#025147"
 generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color = "#017c6b") {
-    if (n_unique_values > 99) {
-        return(sample(grDevices::colors(distinct = TRUE), n_unique_values))
+    if (n_unique_values > 500) {
+        warning("Number of unique values is too high for visualisation. The metadata column will not be shown in the ShinyApp.")
+        return(NULL)
     }
+
+    # if (n_unique_values > 99) {
+        # return(sample(grDevices::colors(distinct = TRUE), n_unique_values))
+    # }
 
     if (n_unique_values > 1) {
         return(qualpalr::qualpal(n_unique_values, colorspace = qualpalr_colorspace)$hex)
@@ -82,12 +87,20 @@ write_objects <- function(clustassess_object,
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
+            if (is.null(metadata_colors[[mtd_col]])) {
+                metadata_unique[[mtd_col]] <- NULL
+                metadata[, mtd_col] <- NULL
+            }
         } else if (is.character(metadata[, mtd_col])) {
             metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
+            if (is.null(metadata_colors[[mtd_col]])) {
+                metadata_unique[[mtd_col]] <- NULL
+                metadata[, mtd_col] <- NULL
+            }
         } else if (is.logical(metadata[, mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
             metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
