@@ -97,12 +97,16 @@ leiden_clustering <- function(g,
     }
 
     for (i in seq_len(num_starts)) {
+        starting_seed <- seed
+        if (num_starts > 1) {
+            starting_seed <- NULL
+        }
         cluster_result <- leidenbase::leiden_find_partition(
             igraph = g,
             edge_weights = igraph::E(g)$weight,
             resolution_parameter = resolution,
             num_iter = num_iter,
-            seed = ifelse(num_starts == 1, seed, NULL),
+            seed = starting_seed,
             initial_membership = initial_membership,
             ...
         )
@@ -134,6 +138,22 @@ clustering_functions <- function(object,
             num_iter = num_iters,
             ...
         ))
+    }
+
+    if (!inherits(object, "igraph")) {
+        is_nn <- all(object@x == 1)
+        if (is_nn) {
+            object <- igraph::graph_from_adjacency_matrix(
+                adjmatrix = object,
+                mode = "directed"
+            )
+        } else {
+            object <- igraph::graph_from_adjacency_matrix(
+                adjmatrix = object,
+                mode = "undirected",
+                weighted = TRUE
+            )
+        }
     }
 
     return(
