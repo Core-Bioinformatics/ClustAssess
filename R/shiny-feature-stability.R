@@ -201,18 +201,15 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
             ),
             shiny::verticalLayout(
                 shiny::tags$b("Select the highlighted groups"),
-                shinyWidgets::pickerInput(
+                shiny::selectizeInput(
                     inputId = ns("select_groups"),
-                    choices = "",
-                    inline = FALSE,
+                    label = "Select groups",
+                    choices = NULL,
+                    multiple = TRUE,
                     options = list(
-                        `actions-box` = TRUE,
-                        title = "Select/deselect groups",
-                        size = 10,
-                        width = "90%",
-                        `selected-text-format` = "count > 3"
-                    ),
-                    multiple = TRUE
+                        plugins = list("remove_button", "drag_drop"),
+                        delimiter = ","
+                    )
                 )
             )
         ),
@@ -651,7 +648,7 @@ server_dimensionality_distribution <- function(id) {
                 mtd_names <- pkg_env$metadata_unique[[input$metadata]]
                 if (is.null(mtd_names)) {
                     shinyjs::hide(id = "select_groups")
-                    shinyWidgets::updatePickerInput(
+                    shiny::updateSelectizeInput(
                         session,
                         inputId = "select_groups",
                         choices = NULL,
@@ -659,7 +656,7 @@ server_dimensionality_distribution <- function(id) {
                     )
                 } else {
                     shinyjs::show(id = "select_groups")
-                    shinyWidgets::updatePickerInput(
+                    shiny::updateSelectizeInput(
                         session,
                         inputId = "select_groups",
                         choices = mtd_names,
@@ -859,7 +856,9 @@ server_dimensionality_distribution <- function(id) {
 
                                 # color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
                                 unique_values <- pkg_env$metadata_unique[[current_metadata]][matched_elems]
-                                color_values <- pkg_env$discrete_colors[[as.character(length(unique_values))]]
+                                color_values <- pkg_env$discrete_colors[[as.character(length(pkg_env$metadata_unique[[current_metadata]]))]]
+                                names(color_values) <- pkg_env$metadata_unique[[current_metadata]]
+                                color_values <- color_values[unique_values]
                             } else {
                                 color_values <- NULL
                                 unique_values <- NULL

@@ -227,17 +227,16 @@ ui_comparison_metadata_panel <- function(id, draw_line) {
             ),
             shiny::verticalLayout(
                 shiny::tags$b("Select groups"),
-                shinyWidgets::pickerInput(
+                shiny::selectizeInput(
                     inputId = ns("metadata_groups_subset"),
+                    label = "Select groups",
                     choices = NULL,
+                    multiple = TRUE,
                     options = list(
-                        `actions-box` = TRUE,
-                        title = "Select/deselect groups",
-                        size = 10,
-                        width = "90%",
-                        `selected-text-format` = "count > 3"
-                    ),
-                    multiple = TRUE
+                        plugins = list("remove_button", "drag_drop"),
+                        placeholder = "Select the groups",
+                        delimiter = ","
+                    )
                 )
             )
         ),
@@ -1479,7 +1478,7 @@ server_comparison_metadata_panel <- function(id) {
                 shiny::req(input$metadata_subset)
                 mtd_names <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
 
-                shinyWidgets::updatePickerInput(
+                shiny::updateSelectizeInput(
                     session,
                     inputId = "metadata_groups_subset",
                     choices = mtd_names,
@@ -1573,9 +1572,15 @@ server_comparison_metadata_panel <- function(id) {
                         }
                         graphics::par(old_par)
                         metadata_legend_height(text_height * ppi)
+
+                        group_ordering <- order(match(plot_data()$color_info, input$metadata_groups_subset))
+                        embedding <- pkg_env$stab_obj$umap[group_ordering, , drop = FALSE]
+                        color_info <- plot_data()$color_info[group_ordering]
+                        cell_mask <- metadata_mask()[group_ordering]
+
                         color_plot2(
-                            embedding = pkg_env$stab_obj$umap,
-                            color_info = plot_data()$color_info,
+                            embedding = embedding,
+                            color_info = color_info,
                             color_values = plot_data()$color_values,
                             unique_values = plot_data()$unique_values,
                             plt_height = plt_height(),
@@ -1587,7 +1592,7 @@ server_comparison_metadata_panel <- function(id) {
                             text_size = input$metadata_text_size,
                             axis_size = input$metadata_axis_size,
                             labels = input$metadata_labels,
-                            cell_mask = metadata_mask()
+                            cell_mask = cell_mask
                         )
                     })
                 }

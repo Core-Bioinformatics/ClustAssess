@@ -364,16 +364,22 @@ metadata_plot <- function(embedding,
                           labels = FALSE) {
     if (is.null(groups_highlight)) {
         metadata_mask <- rep(TRUE, nrow(embedding))
+        color_info <- pkg_env$metadata[[metadata_name]]
     } else {
-        metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
+        ordering <- match(pkg_env$metadata[[metadata_name]], groups_highlight)
+        embedding <- embedding[order(ordering), ]
+        color_info <- pkg_env$metadata[[metadata_name]][order(ordering)]
+
+        metadata_mask <- color_info %in% groups_highlight
     }
 
     mtd_unique <- pkg_env$metadata_unique[[metadata_name]]
 
+
+
     color_plot2(
         embedding = embedding,
-        color_info = pkg_env$metadata[[metadata_name]],
-        # color_values = pkg_env$metadata_colors[[metadata_name]],
+        color_info = color_info,
         color_values = pkg_env$discrete_colors[[as.character(length(mtd_unique))]],
         unique_values = mtd_unique,
         plt_height = plt_height,
