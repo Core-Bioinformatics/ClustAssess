@@ -7,6 +7,7 @@
 - Use `leidenbase` package for Leiden clustering instead of `leiden` (aligning with Seurat's changes). Algorithm=6 contains the leidenbase implementation, whereas algorithm=4 and 5 are associated with leiden (for matrix and igraph input objects, respectively).
 - Minimise redundant calculations of the adjacency matrix in the automatic assessment.
 - Add function that calculates the nn2 index in parallel.
+- Add an ordering of the points in the metadata shiny plots based on the order of the input subgroups.
 
 ### Fixes
 - Ensure the expression matrix or embedding has row names. If not, set them to "cell_1", "cell_2", etc.
