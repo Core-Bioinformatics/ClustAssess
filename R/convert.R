@@ -668,7 +668,6 @@ create_seurat_object_default <- function(normalized_expression_matrix,
     seurat_obj@assays$RNA@layers$data <- normalized_expression_matrix
     seurat_obj <- Seurat::ScaleData(seurat_obj, verbose = verbose)
     seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000, verbose = verbose)
-    seurat_obj <- Seurat::RunPCA(seurat_obj, verbose = verbose)
 
     if (!is.null(pca_embedding)) {
         rownames(pca_embedding) <- cell_names
@@ -677,9 +676,11 @@ create_seurat_object_default <- function(normalized_expression_matrix,
             embedding = pca_embedding,
             key = "PCA"
         )
+        npcs <- ncol(pca_embedding)
+    } else {
+        npcs <- min(30, ncol(normalized_expression_matrix) %/% 2)
+        seurat_obj <- Seurat::RunPCA(seurat_obj, npcs = npcs, verbose = verbose)
     }
-
-    seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = 1:30, verbose = verbose)
 
     if (!is.null(umap_embedding)) {
         rownames(umap_embedding) <- cell_names
@@ -688,6 +689,8 @@ create_seurat_object_default <- function(normalized_expression_matrix,
             embedding = umap_embedding,
             key = "UMAP"
         )
+    } else {
+        seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = seq_len(npcs), verbose = verbose)
     }
 
     return(seurat_obj)
