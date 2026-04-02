@@ -634,15 +634,17 @@ create_seurat_object_default <- function(normalized_expression_matrix,
                                          umap_embedding = NULL,
                                          metadata_df = NULL,
                                          verbose = FALSE) {
+    if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
+        normalized_expression_matrix <- Matrix::Matrix(normalized_expression_matrix, sparse = TRUE)
+    }
+
     if (is.null(count_matrix)) {
-        count_matrix <- normalized_expression_matrix
+        count_matrix <- normalized_expression_matrix + min(normalized_expression_matrix@x)
     } else {
         count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
     }
 
-    if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
-        normalized_expression_matrix <- Matrix::Matrix(normalized_expression_matrix, sparse = TRUE)
-    }
+
 
     cell_names <- colnames(normalized_expression_matrix)
 
