@@ -14,6 +14,7 @@
 - Treat the case when enrichment analysis returns no results.
 - Sort the group 2 markers for enrichment analysis based on the absolute logfoldchange.
 - Discard the metadata columns with too many unique values for visualisation in the Shiny app.
+- When creating a Seurat object, the number of PCs is set to the minimum between 30 and half the number of genes. This is to avoid errors when the number of genes is low.
 
 ---
 
