@@ -8,6 +8,7 @@
 - Minimise redundant calculations of the adjacency matrix in the automatic assessment.
 - Add function that calculates the nn2 index in parallel.
 - Add an ordering of the points in the metadata shiny plots based on the order of the input subgroups.
+- Scale the colour values of gene expression in ShinyApp based on provided cap value.
 
 ### Fixes
 - Ensure the expression matrix or embedding has row names. If not, set them to "cell_1", "cell_2", etc.

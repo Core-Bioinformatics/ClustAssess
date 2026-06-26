@@ -268,6 +268,8 @@ expression_ggplot <- function(embedding, expression, threshold = 0) {
 color_ggplot <- function(embedding,
                          color_info,
                          cell_mask = NULL,
+                         value_cap = NULL,
+                         colour_values = NULL,
                          sort_cells = c("original", "highest", "lowest"),
                          labels = FALSE,
                          text_size = 20,
@@ -281,6 +283,35 @@ color_ggplot <- function(embedding,
         color_info[!cell_mask] <- NA
     }
     is_continuous <- !(is.factor(color_info) || is.character(color_info))
+
+    if (is_continuous && !is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(color_info, na.rm = TRUE)
+        observed_max <- max(color_info, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        value_cap <- sort(value_cap)
+        color_info <- pmin(color_info, value_cap[2])
+        color_info <- pmax(color_info, value_cap[1])
+    }
+
+    continuous_scale_limits <- NULL
+    if (is_continuous) {
+        if (!is.null(value_cap) && !all(is.na(value_cap))) {
+            continuous_scale_limits <- c(value_cap[1], value_cap[2])
+        } else {
+            continuous_scale_limits <- range(color_info, na.rm = TRUE)
+        }
+    }
+
     df$cell_colour <- color_info
 
     cell_ordering <- switch(sort_cells[1],
@@ -309,6 +340,29 @@ color_ggplot <- function(embedding,
             plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = axis_text_size * 1.5),
             aspect.ratio = 1
         )
+
+    if (is_continuous) {
+        if (continuous_scale_limits[2] == continuous_scale_limits[1]) {
+            continuous_scale_limits[2] <- continuous_scale_limits[1] * 1.05
+        }
+
+        continuous_breaks <- seq(
+            continuous_scale_limits[1],
+            continuous_scale_limits[2],
+            length.out = 5
+        )
+
+        if (is.null(colour_values)) {
+            colour_values <- cList[[1]]
+        }
+       
+        ggplot_obj <- ggplot_obj + ggplot2::scale_color_gradientn(
+            colors = colour_values,
+            limits = continuous_scale_limits,
+            breaks = continuous_breaks,
+            oob = scales::squish
+        )
+    }
 
 
     if (!labels || is_continuous) {
@@ -400,13 +454,34 @@ only_legend_plot <- function(unique_values,
                              color_values,
                              color_info,
                              plt_width,
+                             value_cap = NULL,
                              text_size = 1) {
     is_continuous <- is.null(unique_values)
     plt_width <- plt_width / ppi
 
     if (is_continuous) {
         graphics::par(mai = c(0.1, 0, 0.1, 0))
-        unique_values <- c(min(color_info), max(color_info))
+        if (!is.null(value_cap) && !all(is.na(value_cap))) {
+            observed_min <- min(color_info, na.rm = TRUE)
+            observed_max <- max(color_info, na.rm = TRUE)
+
+            if (length(value_cap) == 1) {
+                value_cap <- c(observed_min, value_cap)
+            } else {
+                value_cap <- value_cap[1:2]
+            }
+
+            if (any(is.na(value_cap))) {
+                value_cap <- c(observed_min, observed_max)
+            }
+
+            value_cap <- sort(value_cap)
+            color_info <- pmin(color_info, value_cap[2])
+            color_info <- pmax(color_info, value_cap[1])
+            unique_values <- value_cap
+        } else {
+            unique_values <- c(min(color_info), max(color_info))
+        }
     } else {
         graphics::par(mar = c(0, 0, 0, 0))
         # calculate space needed for the legend
@@ -495,6 +570,7 @@ color_plot2 <- function(embedding,
                         cell_mask = NULL,
                         groups_highlight = NULL,
                         unique_values = NULL,
+                        value_cap = NULL,
                         pt_size = 1,
                         pch = ".",
                         text_size = 1,
@@ -519,6 +595,37 @@ color_plot2 <- function(embedding,
 
         if (!is_continuous && !is_logical) {
             unique_values <- unique(color_info[cell_mask])
+        }
+    }
+
+    if (is_continuous && !is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(color_info, na.rm = TRUE)
+        observed_max <- max(color_info, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        value_cap <- sort(value_cap)
+        color_info <- pmin(color_info, value_cap[2])
+        color_info <- pmax(color_info, value_cap[1])
+    }
+
+    continuous_scale_min <- NULL
+    continuous_scale_max <- NULL
+    if (is_continuous) {
+        if (is.null(value_cap) || all(is.na(value_cap))) {
+            continuous_scale_max <- max(color_info, na.rm = TRUE)
+            continuous_scale_min <- min(color_info, na.rm = TRUE)
+        } else {
+            continuous_scale_max <- value_cap[2]
+            continuous_scale_min <- value_cap[1]
         }
     }
 
@@ -548,7 +655,7 @@ color_plot2 <- function(embedding,
 
     if (display_legend) {
         if (is_continuous) {
-            unique_values <- c(min(color_info), max(color_info))
+            unique_values <- c(continuous_scale_min, continuous_scale_max)
             number_rows <- 2
 
             if (is.null(predicted_height)) {
@@ -582,7 +689,17 @@ color_plot2 <- function(embedding,
     }
 
     if (is_continuous) {
-        color_info <- cut(color_info, breaks = 50)
+        if (continuous_scale_min == continuous_scale_max) {
+            binned_color_info <- rep(1L, length(color_info))
+            binned_color_info[is.na(color_info)] <- NA_integer_
+            color_info <- factor(binned_color_info, levels = seq_len(50))
+        } else {
+            color_info <- cut(
+                color_info,
+                breaks = seq(continuous_scale_min, continuous_scale_max, length.out = 51),
+                include.lowest = TRUE
+            )
+        }
     }
 
     colrs <- color_values[color_info]
@@ -1402,6 +1519,12 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                     label = "Show labels",
                     status = "success",
                     fill = TRUE
+                )
+            } else {
+                shiny::numericInput(
+                    inputId = ns(paste0(id, "_value_cap")),
+                    label = "Cap values at",
+                    value = 3, min = 0, max = 100, step = 0.01
                 )
             }
         ),

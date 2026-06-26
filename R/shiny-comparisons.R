@@ -1787,6 +1787,7 @@ server_comparison_gene_panel <- function(id) {
                     input$gene_pt_size
                     input$gene_pt_order
                     input$metadata_groups_subset
+                    value_cap <- input$gene_value_cap
 
                     shiny::isolate({
                         all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
@@ -1840,6 +1841,7 @@ server_comparison_gene_panel <- function(id) {
                             display_legend = FALSE,
                             cell_mask = metadata_mask,
                             unique_values = unique_values,
+                            value_cap = c(0, value_cap),
                             color_values = color_values,
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
@@ -1869,6 +1871,7 @@ server_comparison_gene_panel <- function(id) {
                         relaxation <- input$relaxation
                         input$gene_expr
                         input$gene_legend_size
+                        input$gene_value_cap
                         input$metadata_groups_subset
 
                         shiny::isolate({
@@ -1892,6 +1895,7 @@ server_comparison_gene_panel <- function(id) {
                             }
 
                             unique_values <- NULL
+                            value_cap <- input$gene_value_cap
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
                                 # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
@@ -1913,6 +1917,7 @@ server_comparison_gene_panel <- function(id) {
                                 color_values = color_values,
                                 color_info = used_matrix[metadata_mask],
                                 plt_width = plt_height(),
+                                value_cap = c(0, value_cap),
                                 text_size = input$gene_legend_size
                             )
                         })
@@ -1961,7 +1966,9 @@ server_comparison_gene_panel <- function(id) {
                         color_info = used_matrix,
                         sort_cells = input$gene_pt_order,
                         cell_mask = metadata_mask,
-                        pt_size = input$gene_pt_size
+                        colour_values = color_values(50),
+                        pt_size = input$gene_pt_size,
+                        value_cap = c(0, input$gene_value_cap)
                     ) + ggplot2::ggtitle(paste(input$gene_expr, collapse = " ")) +
                         ggplot2::theme(
                             legend.position = "bottom",
@@ -1978,7 +1985,7 @@ server_comparison_gene_panel <- function(id) {
                         ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
                     } else {
                         ggplot_obj <- ggplot_obj +
-                            ggplot2::scale_colour_gradientn(colours = color_values(50)) +
+                            # ggplot2::scale_colour_gradientn(colours = color_values(50)) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
                     }
 
