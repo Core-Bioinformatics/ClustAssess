@@ -736,6 +736,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                     input$clustering_umap_labels
                     input$clustering_umap_text_size
                     input$clustering_umap_axis_size
+                    input$clustering_umap_axis_titles_only
                     input$clustering_umap_legend_size
                     input$clustering_umap_pt_size
                     input$clustering_umap_pt_type
@@ -807,6 +808,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                             pt_size = input$clustering_umap_pt_size,
                             text_size = input$clustering_umap_text_size,
                             axis_size = input$clustering_umap_axis_size,
+                            axis_titles_only = input$clustering_umap_axis_titles_only,
                             labels = input$clustering_umap_labels,
                             groups_highlight = input$select_clusters
                         )
@@ -830,7 +832,9 @@ server_graph_clustering_per_value_umap <- function(id) {
                         input$select_method
                         input$select_clusters
                         input$clustering_umap_legend_size
+                        input$clustering_umap_nvalues_cont
                         plt_height()
+                        nvalues_cont <- max(2, as.integer(input$clustering_umap_nvalues_cont))
 
                         shiny::isolate({
                             unique_values <- as.character(seq_len(as.integer(input$select_k)))
@@ -863,6 +867,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                     input$select_clusters
                     input$clustering_umap_labels
                     input$clustering_umap_axis_size
+                    input$clustering_umap_axis_titles_only
                     input$clustering_umap_legend_size
                     input$clustering_umap_pt_size
                     input$clustering_umap_pt_order
@@ -925,7 +930,8 @@ server_graph_clustering_per_value_umap <- function(id) {
                             pch = ifelse(input$clustering_umap_pt_type == "Pixel", ".", 19),
                             pt_size = input$clustering_umap_pt_size,
                             legend_text_size = input$clustering_umap_legend_size,
-                            axis_size = input$clustering_umap_axis_size
+                            axis_size = input$clustering_umap_axis_size,
+                            axis_titles_only = input$clustering_umap_axis_titles_only
                         )
                     })
                 }
@@ -947,6 +953,7 @@ server_graph_clustering_per_value_umap <- function(id) {
                         input$select_method
                         input$select_clusters
                         input$clustering_umap_legend_size
+                        nvalues_cont <- max(2, as.integer(input$clustering_umap_nvalues_cont))
                         plt_height()
 
                         shiny::isolate({
@@ -980,7 +987,8 @@ server_graph_clustering_per_value_umap <- function(id) {
                                     ))
                                 ],
                                 plt_width = plt_height(),
-                                text_size = input$clustering_umap_legend_size
+                                text_size = input$clustering_umap_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }

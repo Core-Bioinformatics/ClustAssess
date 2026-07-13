@@ -1535,6 +1535,7 @@ server_comparison_metadata_panel <- function(id) {
                     input$metadata_subset
                     input$metadata_pt_size
                     input$metadata_axis_size
+                    input$metadata_axis_titles_only
                     input$metadata_text_size
                     input$metadata_labels
                     input$metadata_pt_type
@@ -1571,7 +1572,7 @@ server_comparison_metadata_panel <- function(id) {
                             )
                         }
                         graphics::par(old_par)
-                        metadata_legend_height(text_height * ppi)
+                        metadata_legend_height(text_height * ppi * 1.5)
 
                         group_ordering <- order(match(plot_data()$color_info, input$metadata_groups_subset))
                         embedding <- pkg_env$stab_obj$umap[group_ordering, , drop = FALSE]
@@ -1591,6 +1592,7 @@ server_comparison_metadata_panel <- function(id) {
                             sort_cells = input$metadata_pt_order,
                             text_size = input$metadata_text_size,
                             axis_size = input$metadata_axis_size,
+                            axis_titles_only = input$metadata_axis_titles_only,
                             labels = input$metadata_labels,
                             cell_mask = cell_mask
                         )
@@ -1613,6 +1615,8 @@ server_comparison_metadata_panel <- function(id) {
                         plt_height()
                         input$select_groups
                         input$metadata_legend_size
+                        input$metadata_nvalues_cont
+                        nvalues_cont <- max(2, as.integer(input$metadata_nvalues_cont))
 
                         shiny::isolate({
                             if (!is.null(plot_data()$unique_values)) {
@@ -1629,7 +1633,8 @@ server_comparison_metadata_panel <- function(id) {
                                 color_values = color_values,
                                 color_info = plot_data()$color_info,
                                 plt_width = plt_height(),
-                                text_size = input$metadata_legend_size
+                                text_size = input$metadata_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -1642,17 +1647,20 @@ server_comparison_metadata_panel <- function(id) {
                 },
                 content = function(file) {
                     shiny::req(input$metadata, input$width_metadata, input$height_metadata)
+                    nvalues_cont <- max(2, as.integer(input$metadata_nvalues_cont))
 
                     ggplot_obj <- color_ggplot(
                         embedding = pkg_env$stab_obj$umap,
                         color_info = plot_data()$color_info,
                         sort_cells = input$metadata_pt_order,
                         cell_mask = metadata_mask(),
-                        legend_text_size = input$metadata_legend_size * 10,
-                        axis_text_size = input$metadata_axis_size * 10,
-                        text_size = input$metadata_text_size * 3,
+                        legend_text_size = input$metadata_legend_size * 20,
+                        axis_text_size = input$metadata_axis_size * 20,
+                        axis_titles_only = input$metadata_axis_titles_only,
+                        text_size = input$metadata_text_size * 6,
                         labels = input$metadata_labels,
-                        pt_size = input$metadata_pt_size
+                        pt_size = input$metadata_pt_size,
+                        nvalues_cont = nvalues_cont
                     ) + ggplot2::ggtitle(input$metadata)
 
                     if (!is.null(plot_data()$unique_values)) {
@@ -1662,14 +1670,18 @@ server_comparison_metadata_panel <- function(id) {
                             ggplot2::scale_colour_manual(values = color_vector) +
                             ggplot2::guides(color = ggplot2::guide_legend(
                                 override.aes = list(
-                                    size = input$metadata_pt_size * 10,
+                                    size = input$metadata_pt_size * 15,
                                     shape = 15
                                 )
                             ))
                     } else {
+                        breaks <- continuous_legend_breaks(
+                            values = plot_data()$color_info,
+                            nvalues_cont = nvalues_cont
+                        )
                         ggplot_obj <- ggplot_obj +
                             # ggplot2::scale_colour_gradientn(colours = viridis::viridis(50)) +
-                            ggplot2::scale_colour_gradientn(colours = paletteer::paletteer_c("viridis::viridis", 50)) +
+                            ggplot2::scale_colour_gradientn(colours = paletteer::paletteer_c("viridis::viridis", 50), breaks = breaks) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_metadata * 3 / 4, "inches")))
                     }
 
@@ -1784,6 +1796,7 @@ server_comparison_gene_panel <- function(id) {
                     input$gene_pt_type
                     input$gene_legend_size
                     input$gene_axis_size
+                    input$gene_axis_titles_only
                     input$gene_pt_size
                     input$gene_pt_order
                     input$metadata_groups_subset
@@ -1846,6 +1859,7 @@ server_comparison_gene_panel <- function(id) {
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
                             axis_size = input$gene_axis_size,
+                            axis_titles_only = input$gene_axis_titles_only,
                             sort_cells = input$gene_pt_order,
                             legend_text_size = input$gene_legend_size,
                             text_size = input$gene_legend_size
@@ -1871,8 +1885,10 @@ server_comparison_gene_panel <- function(id) {
                         relaxation <- input$relaxation
                         input$gene_expr
                         input$gene_legend_size
+                        input$gene_nvalues_cont
                         input$gene_value_cap
                         input$metadata_groups_subset
+                        nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
 
                         shiny::isolate({
                             all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
@@ -1918,7 +1934,8 @@ server_comparison_gene_panel <- function(id) {
                                 color_info = used_matrix[metadata_mask],
                                 plt_width = plt_height(),
                                 value_cap = c(0, value_cap),
-                                text_size = input$gene_legend_size
+                                text_size = input$gene_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -1961,6 +1978,8 @@ server_comparison_gene_panel <- function(id) {
                     }
 
 
+                    nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
+
                     ggplot_obj <- color_ggplot(
                         embedding = pkg_env$stab_obj$umap,
                         color_info = used_matrix,
@@ -1968,18 +1987,25 @@ server_comparison_gene_panel <- function(id) {
                         cell_mask = metadata_mask,
                         colour_values = color_values(50),
                         pt_size = input$gene_pt_size,
-                        value_cap = c(0, input$gene_value_cap)
+                        axis_titles_only = input$gene_axis_titles_only,
+                        value_cap = c(0, input$gene_value_cap),
+                        nvalues_cont = nvalues_cont
                     ) + ggplot2::ggtitle(paste(input$gene_expr, collapse = " ")) +
                         ggplot2::theme(
                             legend.position = "bottom",
                             legend.title = ggplot2::element_blank(),
-                            legend.text = ggplot2::element_text(size = input$gene_legend_size * 10),
-                            axis.text = ggplot2::element_text(size = input$gene_axis_size * 10),
-                            axis.title = ggplot2::element_text(size = input$gene_axis_size * 10),
-                            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 10 * 1.5),
+                            legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
+                            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
                             aspect.ratio = 1
                         )
-
+                    
+                    if (!input$gene_axis_titles_only) {
+                        ggplot_obj <- ggplot_obj +
+                            ggplot2::theme(
+                                axis.text = ggplot2::element_text(size = input$gene_axis_size * 20),
+                                axis.title = ggplot2::element_text(size = input$gene_axis_size * 20)
+                            )
+                    }
 
                     if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
                         ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)

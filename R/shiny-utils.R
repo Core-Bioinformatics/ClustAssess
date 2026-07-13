@@ -260,9 +260,59 @@ expression_ggplot <- function(embedding, expression, threshold = 0) {
     ) +
         ggplot2::geom_point() +
         ggplot2::theme_bw() +
-        ggplot2::scale_color_gradientn("", colors = cList[[1]]) +
+        ggplot2::scale_color_gradientn(
+            "",
+            colors = cList[[1]],
+            breaks = continuous_legend_breaks(expression)
+        ) +
         ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15)) +
         ggplot2::theme(legend.position = "bottom")
+}
+
+continuous_legend_breaks <- function(values,
+                                     nvalues_cont = 4,
+                                     value_cap = NULL,
+                                     digits = 4) {
+    nvalues_cont <- max(2, as.integer(nvalues_cont))
+
+    if (!is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(values, na.rm = TRUE)
+        observed_max <- max(values, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        scale_limits <- sort(value_cap)
+    } else {
+        scale_limits <- range(values, na.rm = TRUE)
+    }
+
+    if (scale_limits[2] == scale_limits[1]) {
+        scale_limits[2] <- scale_limits[1] * 1.05
+    }
+
+    breaks <- round(seq(
+        from = scale_limits[1],
+        to = scale_limits[2],
+        length.out = nvalues_cont
+    ), digits = digits)
+
+    if (breaks[1] < scale_limits[1]) {
+        breaks[1] <- scale_limits[1]
+    }
+
+    if (breaks[length(breaks)] > scale_limits[2]) {
+        breaks[length(breaks)] <- scale_limits[2]
+    }
+
+    breaks
 }
 
 color_ggplot <- function(embedding,
@@ -271,11 +321,13 @@ color_ggplot <- function(embedding,
                          value_cap = NULL,
                          colour_values = NULL,
                          sort_cells = c("original", "highest", "lowest"),
+                         axis_titles_only = FALSE,
                          labels = FALSE,
                          text_size = 20,
                          axis_text_size = 20,
                          legend_text_size = 20,
-                         pt_size = 1) {
+                         pt_size = 1,
+                         nvalues_cont = 4) {
     df <- data.frame(embedding)
     colnames(df) <- paste("UMAP", 1:2, sep = "_")
 
@@ -339,17 +391,72 @@ color_ggplot <- function(embedding,
             axis.title = ggplot2::element_text(size = axis_text_size),
             plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = axis_text_size * 1.5),
             aspect.ratio = 1
-        )
+        ) +
+        ggplot2::labs(x = "UMAP 1", y = "UMAP 2")
+
+    if (axis_titles_only) {
+        x_range <- range(df$UMAP_1, na.rm = TRUE)
+        y_range <- range(df$UMAP_2, na.rm = TRUE)
+        x_span <- x_range[2] - x_range[1]
+        y_span <- y_range[2] - y_range[1]
+
+        x_start <- x_range[1] * 1.05 # + x_span * 0.08
+        y_start <- y_range[1] * 1.05 # + y_span * 0.08
+        x_end <- x_start + x_span * 0.30
+        y_end <- y_start + y_span * 0.30
+
+        ggplot_obj <- ggplot_obj + ggplot2::theme(
+            axis.text = ggplot2::element_blank(),
+            axis.ticks = ggplot2::element_blank(),
+            axis.title = ggplot2::element_blank(),
+            axis.line = ggplot2::element_blank()
+        ) +
+            ggplot2::labs(x = NULL, y = NULL) +
+            ggplot2::annotate(
+                "segment",
+                x = x_start,
+                xend = x_end,
+                y = y_start,
+                yend = y_start,
+                arrow = grid::arrow(length = grid::unit(0.12, "inches"), type = "closed")
+            ) +
+            ggplot2::annotate(
+                "segment",
+                x = x_start,
+                xend = x_start,
+                y = y_start,
+                yend = y_end,
+                arrow = grid::arrow(length = grid::unit(0.12, "inches"), type = "closed")
+            ) +
+            ggplot2::annotate(
+                "text",
+                x = x_start + x_span * 0.25,
+                y = y_start - y_span * 0.05,
+                label = "UMAP 1",
+                hjust = 1,
+                vjust = 0,
+                size = axis_text_size / 3
+            ) +
+            ggplot2::annotate(
+                "text",
+                x = x_start - x_span * 0.05,
+                y = y_start + y_span * 0.25,
+                label = "UMAP 2",
+                angle = 90,
+                hjust = 1,
+                vjust = 1,
+                size = axis_text_size / 3
+            )
+    }
 
     if (is_continuous) {
         if (continuous_scale_limits[2] == continuous_scale_limits[1]) {
             continuous_scale_limits[2] <- continuous_scale_limits[1] * 1.05
         }
-
-        continuous_breaks <- seq(
-            continuous_scale_limits[1],
-            continuous_scale_limits[2],
-            length.out = 5
+        continuous_breaks <- continuous_legend_breaks(
+            values = color_info,
+            nvalues_cont = nvalues_cont,
+            value_cap = value_cap
         )
 
         if (is.null(colour_values)) {
@@ -412,6 +519,7 @@ metadata_plot <- function(embedding,
                           pch = ".",
                           text_size = 1,
                           axis_size = 1,
+                          axis_titles_only = FALSE,
                           sort_cells = c("original", "highest", "lowest"),
                           display_legend = FALSE,
                           predicted_height = NULL,
@@ -443,6 +551,7 @@ metadata_plot <- function(embedding,
         pch = pch,
         text_size = text_size,
         axis_size = axis_size,
+        axis_titles_only = axis_titles_only,
         sort_cells = sort_cells,
         display_legend = display_legend,
         predicted_height = predicted_height,
@@ -455,7 +564,8 @@ only_legend_plot <- function(unique_values,
                              color_info,
                              plt_width,
                              value_cap = NULL,
-                             text_size = 1) {
+                             text_size = 1,
+                             n_values_cont = 4) {
     is_continuous <- is.null(unique_values)
     plt_width <- plt_width / ppi
 
@@ -517,7 +627,7 @@ only_legend_plot <- function(unique_values,
     if (is_continuous) {
         legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
         plot(c(0, 1), c(-1, 1), type = "n", axes = FALSE, bty = "n", ylab = "", xlab = "")
-        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+        graphics::text(y = -0.5, x = seq(0, 1, l = n_values_cont), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = n_values_cont), digits = 3), cex = text_size)
         graphics::rasterImage(legend_image, 0, 0, 1, 1)
     } else {
         plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
@@ -576,6 +686,7 @@ color_plot2 <- function(embedding,
                         text_size = 1,
                         legend_text_size = 1,
                         axis_size = 1,
+                        axis_titles_only = FALSE,
                         sort_cells = c("original", "highest", "lowest"),
                         display_legend = FALSE,
                         predicted_height = NULL,
@@ -722,11 +833,62 @@ color_plot2 <- function(embedding,
         pch = pch,
         col = colrs[cell_ordering],
         cex = pt_size,
-        xlab = "UMAP_1",
-        ylab = "UMAP_2",
+        xlab = ifelse(axis_titles_only, "", "UMAP 1"),
+        ylab = ifelse(axis_titles_only, "", "UMAP 2"),
         cex.axis = axis_size,
-        cex.lab = axis_size
+        cex.lab = axis_size,
+        xaxt = ifelse(axis_titles_only, "n", "s"),
+        yaxt = ifelse(axis_titles_only, "n", "s"),
+        frame.plot = !axis_titles_only
     )
+
+    if (axis_titles_only) {
+        usr <- graphics::par("usr")
+        x_span <- usr[2] - usr[1]
+        y_span <- usr[4] - usr[3]
+
+        x_start <- usr[1]# - x_span * 0.08
+        y_start <- usr[3]# - y_span * 0.08
+        x_end <- x_start + x_span * 0.30
+        y_end <- y_start + y_span * 0.30
+        y_span <- y_end - y_start
+        x_span <- x_end - x_start
+
+        graphics::arrows(
+            x0 = x_start,
+            y0 = y_start,
+            x1 = x_end,
+            y1 = y_start,
+            length = 0.08,
+            xpd = TRUE
+        )
+        graphics::arrows(
+            x0 = x_start,
+            y0 = y_start,
+            x1 = x_start,
+            y1 = y_end,
+            length = 0.08,
+            xpd = TRUE
+        )
+
+        graphics::text(
+            x = x_end - x_span * 0.25,
+            y = y_start - strheight("UMAP 1", cex = axis_size) * 0.5,
+            labels = "UMAP 1",
+            cex = axis_size,
+            adj = c(1, 1),
+            xpd = TRUE
+        )
+        graphics::text(
+            x = x_start - strwidth("UMAP 2", cex = axis_size) * 0.5,
+            y = y_end - y_span * 0.25,
+            labels = "UMAP 2",
+            cex = axis_size,
+            srt = 90,
+            adj = c(1, 1),
+            xpd = TRUE
+        )
+    }
 
     if (!is_continuous && labels) {
         for (unique_val in unique_values) {
@@ -1502,10 +1664,23 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                 label = "Point size",
                 min = 0.05, max = 5.00, value = 0.30, step = 0.05
             ),
-            shinyWidgets::radioGroupButtons(
-                inputId = ns(paste0(id, "_pt_type")),
-                label = "Point type",
-                choices = c("Circle", "Pixel")
+            shiny::fluidRow(
+                shiny::column(
+                    width = 6,
+                    shiny::numericInput(
+                        inputId = ns(paste0(id, "_nvalues_cont")),
+                        label = "Continuous legend values",
+                        value = 4, min = 2, max = 20, step = 1, width = "100%"
+                    )
+                ),
+                shiny::column(
+                    width = 6,
+                    shinyWidgets::radioGroupButtons(
+                        inputId = ns(paste0(id, "_pt_type")),
+                        label = "Point type",
+                        choices = c("Circle", "Pixel")
+                    )
+                )
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_order")),
@@ -1513,20 +1688,35 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                 choices = c("original", "highest", "lowest"),
                 selected = default_order
             ),
-            if (discrete) {
-                shinyWidgets::prettySwitch(
-                    inputId = ns(paste0(id, "_labels")),
-                    label = "Show labels",
-                    status = "success",
-                    fill = TRUE
+            shiny::fluidRow(
+                shiny::column(
+                    width = 6,
+                    shinyWidgets::prettySwitch(
+                        inputId = ns(paste0(id, "_axis_titles_only")),
+                        label = "Axis titles only",
+                        value = FALSE,
+                        status = "success",
+                        fill = TRUE
+                    )
+                ),
+                shiny::column(
+                    width = 6,
+                    if (discrete) {
+                        shinyWidgets::prettySwitch(
+                            inputId = ns(paste0(id, "_labels")),
+                            label = "Show labels",
+                            status = "success",
+                            fill = TRUE
+                        )
+                    } else {
+                        shiny::numericInput(
+                            inputId = ns(paste0(id, "_value_cap")),
+                            label = "Cap values at",
+                            value = 3, min = 0, max = 100, step = 0.01
+                        )
+                    }
                 )
-            } else {
-                shiny::numericInput(
-                    inputId = ns(paste0(id, "_value_cap")),
-                    label = "Cap values at",
-                    value = 3, min = 0, max = 100, step = 0.01
-                )
-            }
+            )
         ),
         circle = TRUE,
         status = "success",

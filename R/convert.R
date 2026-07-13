@@ -644,8 +644,6 @@ create_seurat_object_default <- function(normalized_expression_matrix,
         count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
     }
 
-
-
     cell_names <- colnames(normalized_expression_matrix)
 
     if (is.null(metadata_df)) {

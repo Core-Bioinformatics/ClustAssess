@@ -675,6 +675,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
                         axis_size = input$metadata_axis_size,
+                        axis_titles_only = input$metadata_axis_titles_only,
                         labels = input$metadata_labels,
                         groups_highlight = input$select_groups
                     )
@@ -731,6 +732,7 @@ server_sandbox_metadata_panel_left <- function(id) {
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
                         axis_size = input$metadata_axis_size,
+                        axis_titles_only = input$metadata_axis_titles_only,
                         legend_text_size = input$metadata_legend_size,
                         labels = input$metadata_labels,
                         groups_highlight = input$select_groups,
@@ -869,6 +871,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
                         axis_size = input$metadata_axis_size,
+                        axis_titles_only = input$metadata_axis_titles_only,
                         labels = input$metadata_labels,
                         groups_highlight = input$select_groups
                     )
@@ -926,6 +929,7 @@ server_sandbox_metadata_panel_right <- function(id) {
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
                         axis_size = input$metadata_axis_size,
+                        axis_titles_only = input$metadata_axis_titles_only,
                         legend_text_size = input$metadata_legend_size,
                         labels = input$metadata_labels,
                         groups_highlight = input$select_groups,
@@ -1022,7 +1026,8 @@ server_sandbox_gene_panel_left <- function(id) {
                         color_values = color_values,
                         pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                         pt_size = input$gene_pt_size,
-                        text_size = input$gene_text_size
+                        text_size = input$gene_text_size,
+                        axis_titles_only = input$gene_axis_titles_only
                     )
                 }
             )
@@ -1062,6 +1067,7 @@ server_sandbox_gene_panel_left <- function(id) {
                         text_size = input$gene_text_size,
                         legend_text_size = input$gene_legend_size,
                         axis_size = input$gene_axis_size,
+                        axis_titles_only = input$gene_axis_titles_only,
                         display_legend = TRUE
                     )
                     grDevices::dev.off()
@@ -1154,7 +1160,8 @@ server_sandbox_gene_panel_right <- function(id) {
                         color_values = color_values,
                         pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                         pt_size = input$gene_pt_size,
-                        text_size = input$gene_text_size
+                        text_size = input$gene_text_size,
+                        axis_titles_only = input$gene_axis_titles_only
                     )
                 }
             )
@@ -1194,6 +1201,7 @@ server_sandbox_gene_panel_right <- function(id) {
                         text_size = input$gene_text_size,
                         legend_text_size = input$gene_legend_size,
                         axis_size = input$gene_axis_size,
+                        axis_titles_only = input$gene_axis_titles_only,
                         display_legend = TRUE
                     )
                     grDevices::dev.off()
