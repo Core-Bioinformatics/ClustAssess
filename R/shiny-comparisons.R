@@ -2158,7 +2158,23 @@ server_comparison_gene_panel <- function(id) {
                         output_file
                     })
 
-                    utils::zip(zipfile = file, files = pdf_files, flags = "-j")
+                    zip_cmd <- Sys.which("zip")
+                    if (requireNamespace("zip", quietly = TRUE)) {
+                        zip::zipr(
+                            zipfile = file,
+                            files = basename(pdf_files),
+                            root = tmp_dir,
+                            recurse = FALSE,
+                            include_directories = FALSE
+                        )
+                    } else if (nzchar(zip_cmd)) {
+                        utils::zip(zipfile = file, files = pdf_files, flags = "-j", zip = zip_cmd)
+                    } else {
+                        stop(
+                            "Cannot create ZIP archive: neither the 'zip' R package nor a system 'zip' executable is available.",
+                            call. = FALSE
+                        )
+                    }
                 }
             )
         }
