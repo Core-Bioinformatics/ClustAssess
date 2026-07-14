@@ -334,6 +334,12 @@ ui_comparison_gene_panel <- function(id, draw_line) {
             gear_umaps(ns, "gene", FALSE, "highest"),
             gear_download(ns, "gene", "gene"),
         ),
+        shinyjs::hidden(
+            shiny::div(
+                id = ns("download_gene_all_container"),
+                shiny::downloadButton(ns("download_gene_all"), label = "Download all (ZIP)")
+            )
+        ),
         shiny::plotOutput(ns("umap_gene"), height = "auto"),
         shiny::plotOutput(ns("umap_gene_legend"), height = "auto")
     )
@@ -1772,8 +1778,10 @@ server_comparison_gene_panel <- function(id) {
 
                 if (length(input$gene_expr) > 1) {
                     shinyjs::show("relaxation")
+                    shinyjs::show("download_gene_all_container")
                 } else {
                     shinyjs::hide("relaxation")
+                    shinyjs::hide("download_gene_all_container")
                 }
             }) %>% shiny::bindEvent(input$gene_expr)
 
@@ -1968,11 +1976,11 @@ server_comparison_gene_panel <- function(id) {
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
                         color_values <- c("other" = "lightgray", "cells above threshold" = "red")
-                        used_matrix <- factor(ifelse(matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation), "cells above threshold", "other"))
+                        used_matrix <- factor(ifelse(matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation), "cells above threshold", "other"), levels = unique_values)
                     } else if (input$expr_threshold > 0) {
                         unique_values <- c("other", "cells above threshold")
                         color_values <- c("other" = "lightgray", "cells above threshold" = "red")
-                        used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"))
+                        used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"), levels = unique_values)
                     } else {
                         used_matrix <- as.numeric(used_matrix)
                     }
@@ -2008,7 +2016,8 @@ server_comparison_gene_panel <- function(id) {
                     }
 
                     if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
-                        ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
+                        ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values) +
+                            ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size = input$gene_pt_size * 5, shape = 15)))
                     } else {
                         ggplot_obj <- ggplot_obj +
                             # ggplot2::scale_colour_gradientn(colours = color_values(50)) +
@@ -2025,6 +2034,131 @@ server_comparison_gene_panel <- function(id) {
                         height = input$height_gene,
                         width = input$width_gene
                     )
+                }
+            )
+
+            output$download_gene_all <- shiny::downloadHandler(
+                filename = function() {
+                    base_name <- trimws(input$filename_gene)
+                    if (is.null(base_name) || base_name == "") {
+                        base_name <- "gene"
+                    }
+                    paste0(base_name, "_all.zip")
+                },
+                content = function(file) {
+                    shiny::req(length(input$gene_expr) > 1, input$expr_threshold, input$width_gene, input$height_gene)
+
+                    all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+                    }
+
+                    metadata_mask <- (pkg_env$metadata_temp()[[input$metadata_subset]] %in% input$metadata_groups_subset)
+
+                    fetch_single_gene_matrix <- function(gene_name) {
+                        if ("genes" %in% names(pkg_env)) {
+                            index_gene <- pkg_env$genes[gene_name]
+                            index_gene <- index_gene[!is.na(index_gene)]
+                            shiny::req(length(index_gene) > 0)
+                            return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+                        }
+
+                        rows <- list()
+                        index_interest <- pkg_env$genes_of_interest[gene_name]
+                        index_interest <- index_interest[!is.na(index_interest)]
+                        if (length(index_interest) > 0) {
+                            rows[[length(rows) + 1]] <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL))
+                        }
+
+                        index_others <- pkg_env$genes_others[gene_name]
+                        index_others <- index_others[!is.na(index_others)]
+                        if (length(index_others) > 0) {
+                            rows[[length(rows) + 1]] <- rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+                        }
+
+                        shiny::req(length(rows) > 0)
+                        do.call(rbind, rows)
+                    }
+
+                    build_single_gene_plot <- function(gene_name) {
+                        used_matrix <- fetch_single_gene_matrix(gene_name)
+                        color_values <- function(n) {
+                            grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
+                        }
+
+                        if (input$expr_threshold > 0) {
+                            color_values <- c("other" = "lightgray", "cells above threshold" = "red")
+                            used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"))
+                        } else {
+                            used_matrix <- as.numeric(used_matrix)
+                        }
+
+                        nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
+                        colour_values_input <- if (is.function(color_values)) color_values(50) else color_values
+
+                        ggplot_obj <- color_ggplot(
+                            embedding = pkg_env$stab_obj$umap,
+                            color_info = used_matrix,
+                            sort_cells = input$gene_pt_order,
+                            cell_mask = metadata_mask,
+                            colour_values = colour_values_input,
+                            pt_size = input$gene_pt_size,
+                            axis_titles_only = input$gene_axis_titles_only,
+                            value_cap = c(0, input$gene_value_cap),
+                            nvalues_cont = nvalues_cont
+                        ) + ggplot2::ggtitle(gene_name) +
+                            ggplot2::theme(
+                                legend.position = "bottom",
+                                legend.title = ggplot2::element_blank(),
+                                legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
+                                plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
+                                aspect.ratio = 1
+                            )
+
+                        if (!input$gene_axis_titles_only) {
+                            ggplot_obj <- ggplot_obj +
+                                ggplot2::theme(
+                                    axis.text = ggplot2::element_text(size = input$gene_axis_size * 20),
+                                    axis.title = ggplot2::element_text(size = input$gene_axis_size * 20)
+                                )
+                        }
+
+                        if (input$expr_threshold > 0) {
+                            ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
+                        } else {
+                            ggplot_obj <- ggplot_obj +
+                                ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
+                        }
+
+                        if (input$raster_gene == "Yes") {
+                            ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 300)
+                        }
+
+                        ggplot_obj
+                    }
+
+                    tmp_dir <- tempfile(pattern = "gene_plots_")
+                    dir.create(tmp_dir, recursive = TRUE, showWarnings = FALSE)
+
+                    pdf_files <- vapply(input$gene_expr, FUN.VALUE = character(1), FUN = function(gene_name) {
+                        safe_gene <- gsub("[^A-Za-z0-9._-]", "_", gene_name)
+                        output_file <- file.path(tmp_dir, paste0(safe_gene, ".pdf"))
+
+                        ggplot2::ggsave(
+                            filename = output_file,
+                            plot = build_single_gene_plot(gene_name),
+                            height = input$height_gene,
+                            width = input$width_gene,
+                            device = "pdf"
+                        )
+
+                        output_file
+                    })
+
+                    utils::zip(zipfile = file, files = pdf_files, flags = "-j")
                 }
             )
         }

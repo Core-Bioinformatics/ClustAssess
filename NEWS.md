@@ -10,6 +10,7 @@
 - Add an ordering of the points in the metadata shiny plots based on the order of the input subgroups.
 - Scale the colour values of gene expression in ShinyApp based on provided cap value.
 - Control the number of values shown on the continuous UMAP legend.
+- Add option to download multiple genes in separate UMAP files.
 
 ### Fixes
 - Ensure the expression matrix or embedding has row names. If not, set them to "cell_1", "cell_2", etc.
