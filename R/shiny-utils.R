@@ -1697,7 +1697,16 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                         value = FALSE,
                         status = "success",
                         fill = TRUE
-                    )
+                    ),
+                    if (!discrete) {
+                        shinyWidgets::prettySwitch(
+                            inputId = ns(paste0(id, "_cap")),
+                            label = "Cap values?",
+                            value = FALSE,
+                            fill = TRUE,
+                            status = "success"
+                        )
+                    }
                 ),
                 shiny::column(
                     width = 6,

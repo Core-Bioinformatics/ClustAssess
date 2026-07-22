@@ -975,8 +975,6 @@ server_cell_annotation <- function(id) {
                 shiny::isolate({
                     shiny::req(!is.null(group_names), !is.null(group_clusters), !is.null(group_names[[1]]))
                     recode_args <- list(".x" = mtd_temp_df[[selected_clusters]])
-                    print(group_names)
-                    print(group_clusters)
 
                     for (i in seq_len(nclasses)) {
                         group_name <- group_names[[i]]
@@ -1808,7 +1806,7 @@ server_comparison_gene_panel <- function(id) {
                     input$gene_pt_size
                     input$gene_pt_order
                     input$metadata_groups_subset
-                    value_cap <- input$gene_value_cap
+                    value_cap <- if (input$gene_cap) c(0, input$gene_value_cap) else NULL
 
                     shiny::isolate({
                         all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
@@ -1862,7 +1860,7 @@ server_comparison_gene_panel <- function(id) {
                             display_legend = FALSE,
                             cell_mask = metadata_mask,
                             unique_values = unique_values,
-                            value_cap = c(0, value_cap),
+                            value_cap = value_cap,
                             color_values = color_values,
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
@@ -1894,7 +1892,11 @@ server_comparison_gene_panel <- function(id) {
                         input$gene_expr
                         input$gene_legend_size
                         input$gene_nvalues_cont
-                        input$gene_value_cap
+                        if (input$gene_cap) {
+                            value_cap <- c(0, input$gene_value_cap)
+                        } else {
+                            value_cap <- NULL
+                        }
                         input$metadata_groups_subset
                         nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
 
@@ -1919,7 +1921,6 @@ server_comparison_gene_panel <- function(id) {
                             }
 
                             unique_values <- NULL
-                            value_cap <- input$gene_value_cap
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
                                 # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
@@ -1941,7 +1942,7 @@ server_comparison_gene_panel <- function(id) {
                                 color_values = color_values,
                                 color_info = used_matrix[metadata_mask],
                                 plt_width = plt_height(),
-                                value_cap = c(0, value_cap),
+                                value_cap = value_cap,
                                 text_size = input$gene_legend_size,
                                 n_values_cont = nvalues_cont
                             )
@@ -1987,6 +1988,7 @@ server_comparison_gene_panel <- function(id) {
 
 
                     nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
+                    value_cap <- if(input$gene_cap) c(0, input$gene_value_cap) else NULL
 
                     ggplot_obj <- color_ggplot(
                         embedding = pkg_env$stab_obj$umap,
@@ -1996,7 +1998,7 @@ server_comparison_gene_panel <- function(id) {
                         colour_values = color_values(50),
                         pt_size = input$gene_pt_size,
                         axis_titles_only = input$gene_axis_titles_only,
-                        value_cap = c(0, input$gene_value_cap),
+                        value_cap = value_cap,
                         nvalues_cont = nvalues_cont
                     ) + ggplot2::ggtitle(paste(input$gene_expr, collapse = " ")) +
                         ggplot2::theme(
@@ -2058,6 +2060,7 @@ server_comparison_gene_panel <- function(id) {
                     }
 
                     metadata_mask <- (pkg_env$metadata_temp()[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                    value_cap <- if (input$gene_cap) c(0, input$gene_value_cap) else NULL
 
                     fetch_single_gene_matrix <- function(gene_name) {
                         if ("genes" %in% names(pkg_env)) {
@@ -2108,7 +2111,7 @@ server_comparison_gene_panel <- function(id) {
                             colour_values = colour_values_input,
                             pt_size = input$gene_pt_size,
                             axis_titles_only = input$gene_axis_titles_only,
-                            value_cap = c(0, input$gene_value_cap),
+                            value_cap = value_cap,
                             nvalues_cont = nvalues_cont
                         ) + ggplot2::ggtitle(gene_name) +
                             ggplot2::theme(
