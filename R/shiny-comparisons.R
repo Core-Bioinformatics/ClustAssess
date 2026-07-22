@@ -2045,6 +2045,7 @@ server_comparison_gene_panel <- function(id) {
                     }
                     paste0(base_name, "_all.zip")
                 },
+                contentType = "application/zip",
                 content = function(file) {
                     shiny::req(length(input$gene_expr) > 1, input$expr_threshold, input$width_gene, input$height_gene)
 
