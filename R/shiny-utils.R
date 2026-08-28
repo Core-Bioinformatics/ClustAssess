@@ -1,10 +1,3 @@
-# expression_matrix <- NA
-# metadata <- NA
-# genes <- NA
-# stab_obj <- NA
-# feature_types <- NA
-
-# pkg_env <- as.environment("namsespace:ClustAsssess")#new.env(parent = emptyenv())
 # TODO check https://stackoverflow.com/questions/41954302/where-to-create-package-environment-variables   and   https://github.com/tidyverse/dplyr/blob/bbcfe99e29fe737d456b0d7adc33d3c445a32d9d/R/zzz.r   and  https://adv-r.hadley.nz/environments.html   http://adv-r.had.co.nz/Environments.html
 pkg_env <- .GlobalEnv # new.env(parent = baseenv())
 filetypes <- list(
@@ -86,7 +79,6 @@ grouped_boxplot_dataframe <- function(dataframe,
                                       axis_size = 1) {
     unique_groups <- unique(dataframe[, x_column])
     n_groups <- length(unique_groups)
-    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
     groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
 
     if (is.null(xlabel)) {
@@ -131,7 +123,6 @@ grouped_boxplot_list <- function(groups_list,
     unique_groups_values <- unique(groups_values)
     unique_x_values <- unique(x_values)
 
-    # print(plt_width)
     # convert pixels to inches
     plt_height <- plt_height / ppi
 
@@ -140,7 +131,6 @@ grouped_boxplot_list <- function(groups_list,
     n_groups <- length(unique_groups_values)
     n_boxplots <- length(groups_values)
 
-    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
     groups_values <- match(groups_values, unique_groups_values)
     groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
     at_values <- rep(0, length(groups_values))
@@ -164,17 +154,12 @@ grouped_boxplot_list <- function(groups_list,
         at_values[i] <- count_diff * (n_groups * space_intra + space_inter) + groups_values[i] + (groups_values[i] - 1) * (space_intra - 1)
 
         if (updated_count) {
-            # abline_coords[count_diff] <- (at_values[i] + at_values[i-1]) / 2
             abline_coords[count_diff] <- (count_diff - 1) * (n_groups * space_intra + space_inter) + n_groups + (n_groups - 1) * (space_intra - 1) + (space_inter + space_intra) / 2
             updated_count <- FALSE
             text_coords[count_diff] <- mean(at_values[start_index:(i - 1)])
             start_index <- i
         }
     }
-
-    # print(at_values)
-    # print(abline_coords)
-    # print(groups_values)
 
     text_coords[count_diff + 1] <- mean(at_values[start_index:n_boxplots])
 
@@ -238,9 +223,7 @@ grouped_boxplot_list <- function(groups_list,
         cex = text_size,
         pt.cex = text_size * 2,
         bty = "n",
-        # horizontal = TRUE,
         horiz = TRUE,
-        # text.width = NA,
         xpd = TRUE
     )
 }
@@ -260,20 +243,74 @@ expression_ggplot <- function(embedding, expression, threshold = 0) {
     ) +
         ggplot2::geom_point() +
         ggplot2::theme_bw() +
-        ggplot2::scale_color_gradientn("", colors = cList[[1]]) +
+        ggplot2::scale_color_gradientn(
+            "",
+            colors = cList[[1]],
+            breaks = continuous_legend_breaks(expression)
+        ) +
         ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15)) +
         ggplot2::theme(legend.position = "bottom")
+}
+
+continuous_legend_breaks <- function(values,
+                                     nvalues_cont = 4,
+                                     value_cap = NULL,
+                                     digits = 4) {
+    nvalues_cont <- max(2, as.integer(nvalues_cont))
+
+    if (!is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(values, na.rm = TRUE)
+        observed_max <- max(values, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        scale_limits <- sort(value_cap)
+    } else {
+        scale_limits <- range(values, na.rm = TRUE)
+    }
+
+    if (scale_limits[2] == scale_limits[1]) {
+        scale_limits[2] <- scale_limits[1] * 1.05
+    }
+
+    breaks <- round(seq(
+        from = scale_limits[1],
+        to = scale_limits[2],
+        length.out = nvalues_cont
+    ), digits = digits)
+
+    if (breaks[1] < scale_limits[1]) {
+        breaks[1] <- scale_limits[1]
+    }
+
+    if (breaks[length(breaks)] > scale_limits[2]) {
+        breaks[length(breaks)] <- scale_limits[2]
+    }
+
+    breaks
 }
 
 color_ggplot <- function(embedding,
                          color_info,
                          cell_mask = NULL,
+                         value_cap = NULL,
+                         colour_values = NULL,
                          sort_cells = c("original", "highest", "lowest"),
+                         axis_titles_only = FALSE,
                          labels = FALSE,
                          text_size = 20,
                          axis_text_size = 20,
                          legend_text_size = 20,
-                         pt_size = 1) {
+                         pt_size = 1,
+                         nvalues_cont = 4) {
     df <- data.frame(embedding)
     colnames(df) <- paste("UMAP", 1:2, sep = "_")
 
@@ -281,6 +318,35 @@ color_ggplot <- function(embedding,
         color_info[!cell_mask] <- NA
     }
     is_continuous <- !(is.factor(color_info) || is.character(color_info))
+
+    if (is_continuous && !is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(color_info, na.rm = TRUE)
+        observed_max <- max(color_info, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        value_cap <- sort(value_cap)
+        color_info <- pmin(color_info, value_cap[2])
+        color_info <- pmax(color_info, value_cap[1])
+    }
+
+    continuous_scale_limits <- NULL
+    if (is_continuous) {
+        if (!is.null(value_cap) && !all(is.na(value_cap))) {
+            continuous_scale_limits <- c(value_cap[1], value_cap[2])
+        } else {
+            continuous_scale_limits <- range(color_info, na.rm = TRUE)
+        }
+    }
+
     df$cell_colour <- color_info
 
     cell_ordering <- switch(sort_cells[1],
@@ -306,9 +372,87 @@ color_ggplot <- function(embedding,
             legend.text = ggplot2::element_text(size = legend_text_size),
             axis.text = ggplot2::element_text(size = axis_text_size),
             axis.title = ggplot2::element_text(size = axis_text_size),
-            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = axis_text_size * 1.5),
+            plot.title = ggplot2::element_text(hjust = 0.5, size = axis_text_size * 1.5),
             aspect.ratio = 1
+        ) +
+        ggplot2::labs(x = "UMAP 1", y = "UMAP 2")
+
+    if (axis_titles_only) {
+        x_range <- range(df$UMAP_1, na.rm = TRUE)
+        y_range <- range(df$UMAP_2, na.rm = TRUE)
+        x_span <- x_range[2] - x_range[1]
+        y_span <- y_range[2] - y_range[1]
+
+        x_start <- x_range[1] * 1.05
+        y_start <- y_range[1] * 1.05
+        x_end <- x_start + x_span * 0.30
+        y_end <- y_start + y_span * 0.30
+
+        ggplot_obj <- ggplot_obj + ggplot2::theme(
+            axis.text = ggplot2::element_blank(),
+            axis.ticks = ggplot2::element_blank(),
+            axis.title = ggplot2::element_blank(),
+            axis.line = ggplot2::element_blank()
+        ) +
+            ggplot2::labs(x = NULL, y = NULL) +
+            ggplot2::annotate(
+                "segment",
+                x = x_start,
+                xend = x_end,
+                y = y_start,
+                yend = y_start,
+                arrow = grid::arrow(length = grid::unit(0.12, "inches"), type = "closed")
+            ) +
+            ggplot2::annotate(
+                "segment",
+                x = x_start,
+                xend = x_start,
+                y = y_start,
+                yend = y_end,
+                arrow = grid::arrow(length = grid::unit(0.12, "inches"), type = "closed")
+            ) +
+            ggplot2::annotate(
+                "text",
+                x = x_start + x_span * 0.25,
+                y = y_start - y_span * 0.05,
+                label = "UMAP 1",
+                hjust = 1,
+                vjust = 0,
+                size = axis_text_size / 3
+            ) +
+            ggplot2::annotate(
+                "text",
+                x = x_start - x_span * 0.05,
+                y = y_start + y_span * 0.25,
+                label = "UMAP 2",
+                angle = 90,
+                hjust = 1,
+                vjust = 1,
+                size = axis_text_size / 3
+            )
+    }
+
+    if (is_continuous) {
+        if (continuous_scale_limits[2] == continuous_scale_limits[1]) {
+            continuous_scale_limits[2] <- continuous_scale_limits[1] * 1.05
+        }
+        continuous_breaks <- continuous_legend_breaks(
+            values = color_info,
+            nvalues_cont = nvalues_cont,
+            value_cap = value_cap
         )
+
+        if (is.null(colour_values)) {
+            colour_values <- cList[[1]]
+        }
+       
+        ggplot_obj <- ggplot_obj + ggplot2::scale_color_gradientn(
+            colors = colour_values,
+            limits = continuous_scale_limits,
+            breaks = continuous_breaks,
+            oob = scales::squish
+        )
+    }
 
 
     if (!labels || is_continuous) {
@@ -358,22 +502,29 @@ metadata_plot <- function(embedding,
                           pch = ".",
                           text_size = 1,
                           axis_size = 1,
+                          axis_titles_only = FALSE,
                           sort_cells = c("original", "highest", "lowest"),
                           display_legend = FALSE,
                           predicted_height = NULL,
                           labels = FALSE) {
     if (is.null(groups_highlight)) {
         metadata_mask <- rep(TRUE, nrow(embedding))
+        color_info <- pkg_env$metadata[[metadata_name]]
     } else {
-        metadata_mask <- pkg_env$metadata[[metadata_name]] %in% groups_highlight
+        ordering <- match(pkg_env$metadata[[metadata_name]], groups_highlight)
+        embedding <- embedding[order(ordering), ]
+        color_info <- pkg_env$metadata[[metadata_name]][order(ordering)]
+
+        metadata_mask <- color_info %in% groups_highlight
     }
 
     mtd_unique <- pkg_env$metadata_unique[[metadata_name]]
 
+
+
     color_plot2(
         embedding = embedding,
-        color_info = pkg_env$metadata[[metadata_name]],
-        # color_values = pkg_env$metadata_colors[[metadata_name]],
+        color_info = color_info,
         color_values = pkg_env$discrete_colors[[as.character(length(mtd_unique))]],
         unique_values = mtd_unique,
         plt_height = plt_height,
@@ -383,6 +534,7 @@ metadata_plot <- function(embedding,
         pch = pch,
         text_size = text_size,
         axis_size = axis_size,
+        axis_titles_only = axis_titles_only,
         sort_cells = sort_cells,
         display_legend = display_legend,
         predicted_height = predicted_height,
@@ -394,13 +546,35 @@ only_legend_plot <- function(unique_values,
                              color_values,
                              color_info,
                              plt_width,
-                             text_size = 1) {
+                             value_cap = NULL,
+                             text_size = 1,
+                             n_values_cont = 4) {
     is_continuous <- is.null(unique_values)
     plt_width <- plt_width / ppi
 
     if (is_continuous) {
         graphics::par(mai = c(0.1, 0, 0.1, 0))
-        unique_values <- c(min(color_info), max(color_info))
+        if (!is.null(value_cap) && !all(is.na(value_cap))) {
+            observed_min <- min(color_info, na.rm = TRUE)
+            observed_max <- max(color_info, na.rm = TRUE)
+
+            if (length(value_cap) == 1) {
+                value_cap <- c(observed_min, value_cap)
+            } else {
+                value_cap <- value_cap[1:2]
+            }
+
+            if (any(is.na(value_cap))) {
+                value_cap <- c(observed_min, observed_max)
+            }
+
+            value_cap <- sort(value_cap)
+            color_info <- pmin(color_info, value_cap[2])
+            color_info <- pmax(color_info, value_cap[1])
+            unique_values <- value_cap
+        } else {
+            unique_values <- c(min(color_info), max(color_info))
+        }
     } else {
         graphics::par(mar = c(0, 0, 0, 0))
         # calculate space needed for the legend
@@ -415,13 +589,6 @@ only_legend_plot <- function(unique_values,
             length(unique_values)
         )
         number_rows <- ceiling(length(unique_values) / number_columns)
-
-        # print(strheight(paste(
-        #           rep("TEXT", number_rows + 1),
-        #           collapse = "\n"
-        #           ),
-        #           units = "inches",
-        #           cex = text_size) * ppi)
     }
 
     if (is.null(color_values)) {
@@ -436,7 +603,7 @@ only_legend_plot <- function(unique_values,
     if (is_continuous) {
         legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
         plot(c(0, 1), c(-1, 1), type = "n", axes = FALSE, bty = "n", ylab = "", xlab = "")
-        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+        graphics::text(y = -0.5, x = seq(0, 1, l = n_values_cont), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = n_values_cont), digits = 3), cex = text_size)
         graphics::rasterImage(legend_image, 0, 0, 1, 1)
     } else {
         plot(NULL, xaxt = "n", yaxt = "n", bty = "n", ylab = "", xlab = "", xlim = 0:1, ylim = 0:1)
@@ -449,13 +616,9 @@ only_legend_plot <- function(unique_values,
             pt.cex = text_size * 2,
             bty = "n",
             ncol = number_columns,
-            # text.width = NA,
             xpd = TRUE
         )
     }
-    # graphics::par(old_par)
-
-    # grDevices::dev.off()
 }
 
 
@@ -489,18 +652,17 @@ color_plot2 <- function(embedding,
                         cell_mask = NULL,
                         groups_highlight = NULL,
                         unique_values = NULL,
+                        value_cap = NULL,
                         pt_size = 1,
                         pch = ".",
                         text_size = 1,
                         legend_text_size = 1,
                         axis_size = 1,
+                        axis_titles_only = FALSE,
                         sort_cells = c("original", "highest", "lowest"),
                         display_legend = FALSE,
                         predicted_height = NULL,
                         labels = FALSE) {
-    # xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
-    # ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
-
     # convert pixels to inches
     plt_height <- plt_height / ppi
     plt_width <- plt_width / ppi
@@ -513,6 +675,37 @@ color_plot2 <- function(embedding,
 
         if (!is_continuous && !is_logical) {
             unique_values <- unique(color_info[cell_mask])
+        }
+    }
+
+    if (is_continuous && !is.null(value_cap) && !all(is.na(value_cap))) {
+        observed_min <- min(color_info, na.rm = TRUE)
+        observed_max <- max(color_info, na.rm = TRUE)
+
+        if (length(value_cap) == 1) {
+            value_cap <- c(observed_min, value_cap)
+        } else {
+            value_cap <- value_cap[1:2]
+        }
+
+        if (any(is.na(value_cap))) {
+            value_cap <- c(observed_min, observed_max)
+        }
+
+        value_cap <- sort(value_cap)
+        color_info <- pmin(color_info, value_cap[2])
+        color_info <- pmax(color_info, value_cap[1])
+    }
+
+    continuous_scale_min <- NULL
+    continuous_scale_max <- NULL
+    if (is_continuous) {
+        if (is.null(value_cap) || all(is.na(value_cap))) {
+            continuous_scale_max <- max(color_info, na.rm = TRUE)
+            continuous_scale_min <- min(color_info, na.rm = TRUE)
+        } else {
+            continuous_scale_max <- value_cap[2]
+            continuous_scale_min <- value_cap[1]
         }
     }
 
@@ -542,7 +735,7 @@ color_plot2 <- function(embedding,
 
     if (display_legend) {
         if (is_continuous) {
-            unique_values <- c(min(color_info), max(color_info))
+            unique_values <- c(continuous_scale_min, continuous_scale_max)
             number_rows <- 2
 
             if (is.null(predicted_height)) {
@@ -576,7 +769,17 @@ color_plot2 <- function(embedding,
     }
 
     if (is_continuous) {
-        color_info <- cut(color_info, breaks = 50)
+        if (continuous_scale_min == continuous_scale_max) {
+            binned_color_info <- rep(1L, length(color_info))
+            binned_color_info[is.na(color_info)] <- NA_integer_
+            color_info <- factor(binned_color_info, levels = seq_len(50))
+        } else {
+            color_info <- cut(
+                color_info,
+                breaks = seq(continuous_scale_min, continuous_scale_max, length.out = 51),
+                include.lowest = TRUE
+            )
+        }
     }
 
     colrs <- color_values[color_info]
@@ -599,11 +802,62 @@ color_plot2 <- function(embedding,
         pch = pch,
         col = colrs[cell_ordering],
         cex = pt_size,
-        xlab = "UMAP_1",
-        ylab = "UMAP_2",
+        xlab = ifelse(axis_titles_only, "", "UMAP 1"),
+        ylab = ifelse(axis_titles_only, "", "UMAP 2"),
         cex.axis = axis_size,
-        cex.lab = axis_size
+        cex.lab = axis_size,
+        xaxt = ifelse(axis_titles_only, "n", "s"),
+        yaxt = ifelse(axis_titles_only, "n", "s"),
+        frame.plot = !axis_titles_only
     )
+
+    if (axis_titles_only) {
+        usr <- graphics::par("usr")
+        x_span <- usr[2] - usr[1]
+        y_span <- usr[4] - usr[3]
+
+        x_start <- usr[1]
+        y_start <- usr[3]
+        x_end <- x_start + x_span * 0.30
+        y_end <- y_start + y_span * 0.30
+        y_span <- y_end - y_start
+        x_span <- x_end - x_start
+
+        graphics::arrows(
+            x0 = x_start,
+            y0 = y_start,
+            x1 = x_end,
+            y1 = y_start,
+            length = 0.08,
+            xpd = TRUE
+        )
+        graphics::arrows(
+            x0 = x_start,
+            y0 = y_start,
+            x1 = x_start,
+            y1 = y_end,
+            length = 0.08,
+            xpd = TRUE
+        )
+
+        graphics::text(
+            x = x_end - x_span * 0.25,
+            y = y_start - graphics::strheight("UMAP 1", cex = axis_size) * 0.5,
+            labels = "UMAP 1",
+            cex = axis_size,
+            adj = c(1, 1),
+            xpd = TRUE
+        )
+        graphics::text(
+            x = x_start - graphics::strwidth("UMAP 2", cex = axis_size) * 0.5,
+            y = y_end - y_span * 0.25,
+            labels = "UMAP 2",
+            cex = axis_size,
+            srt = 90,
+            adj = c(1, 1),
+            xpd = TRUE
+        )
+    }
 
     if (!is_continuous && labels) {
         for (unique_val in unique_values) {
@@ -651,12 +905,9 @@ color_plot2 <- function(embedding,
             pt.cex = legend_text_size * 2,
             bty = "n",
             ncol = number_columns,
-            # text.width = NA,
             xpd = TRUE
         )
     }
-
-    # grDevices::dev.off()
 }
 
 color_plot <- function(embedding,
@@ -791,11 +1042,6 @@ voting_scheme_ggplot <- function(embedding,
                                  n_genes_above_threshold) {
     umap_df <- data.frame(embedding)
     colnames(umap_df) <- paste("UMAP", 1:2, sep = "_")
-    # n_expressed_genes <- rep(0, ncol(pkg_env$expression_matrix))
-    # expression_threshold <- as.numeric(expression_threshold)
-    # for (gene in selected_genes) {
-    #   n_expressed_genes <- n_expressed_genes + (pkg_env$expression_matrix[gene, ] > expression_threshold)
-    # }
 
     mask <- (n_expressed_genes >= n_genes_above_threshold)
 
@@ -1024,7 +1270,6 @@ calculate_markers_shiny <- function(cells1,
     df_list <- lapply(
         seq_len(nchunks),
         function(i) {
-            # print(i)
             if (i == nchunks) {
                 index_list <- seq(from = chunk_size * (i - 1) + 1, by = 1, to = nfiltered_genes)
             } else {
@@ -1284,7 +1529,6 @@ calculate_markers <- function(expression_matrix,
     }
 
     if (length(mask) == 1) {
-        # expression_matrix <- matrix(expression_matrix, nrow = 1)
         rank_matrix <- matrix(rank_matrix, nrow = 1)
     }
 
@@ -1379,10 +1623,23 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                 label = "Point size",
                 min = 0.05, max = 5.00, value = 0.30, step = 0.05
             ),
-            shinyWidgets::radioGroupButtons(
-                inputId = ns(paste0(id, "_pt_type")),
-                label = "Point type",
-                choices = c("Circle", "Pixel")
+            shiny::fluidRow(
+                shiny::column(
+                    width = 6,
+                    shiny::numericInput(
+                        inputId = ns(paste0(id, "_nvalues_cont")),
+                        label = "Continuous legend values",
+                        value = 4, min = 2, max = 20, step = 1, width = "100%"
+                    )
+                ),
+                shiny::column(
+                    width = 6,
+                    shinyWidgets::radioGroupButtons(
+                        inputId = ns(paste0(id, "_pt_type")),
+                        label = "Point type",
+                        choices = c("Circle", "Pixel")
+                    )
+                )
             ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns(paste0(id, "_pt_order")),
@@ -1390,14 +1647,44 @@ gear_umaps <- function(ns, id, discrete = TRUE, default_order = "original") {
                 choices = c("original", "highest", "lowest"),
                 selected = default_order
             ),
-            if (discrete) {
-                shinyWidgets::prettySwitch(
-                    inputId = ns(paste0(id, "_labels")),
-                    label = "Show labels",
-                    status = "success",
-                    fill = TRUE
+            shiny::fluidRow(
+                shiny::column(
+                    width = 6,
+                    shinyWidgets::prettySwitch(
+                        inputId = ns(paste0(id, "_axis_titles_only")),
+                        label = "Axis titles only",
+                        value = FALSE,
+                        status = "success",
+                        fill = TRUE
+                    ),
+                    if (!discrete) {
+                        shinyWidgets::prettySwitch(
+                            inputId = ns(paste0(id, "_cap")),
+                            label = "Cap values?",
+                            value = FALSE,
+                            fill = TRUE,
+                            status = "success"
+                        )
+                    }
+                ),
+                shiny::column(
+                    width = 6,
+                    if (discrete) {
+                        shinyWidgets::prettySwitch(
+                            inputId = ns(paste0(id, "_labels")),
+                            label = "Show labels",
+                            status = "success",
+                            fill = TRUE
+                        )
+                    } else {
+                        shiny::numericInput(
+                            inputId = ns(paste0(id, "_value_cap")),
+                            label = "Cap values at",
+                            value = 3, min = 0, max = 100, step = 0.01
+                        )
+                    }
                 )
-            }
+            )
         ),
         circle = TRUE,
         status = "success",
@@ -1450,23 +1737,3 @@ gene_name_transformation <- function(gene_name) {
 
     return(gene_name)
 }
-
-# split_vector_by_metadata <- function(vec, metadata) {
-#     if (is.factor(metadata)) {
-#         unique_values <- levels(metadata)
-#     } else {
-#         unique_values <- unique(metadata)
-#     }
-
-#     split_list <- lapply(unique_values, function(i) { rep(0, length(vec))})
-#     iter_list <- rep(1, length(unique_values))
-#     names(split_list) <- unique_values
-#     names(iter_list) <- unique_values
-
-#     for (i in)
-
-
-
-
-
-# }

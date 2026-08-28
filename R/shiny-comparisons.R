@@ -227,17 +227,16 @@ ui_comparison_metadata_panel <- function(id, draw_line) {
             ),
             shiny::verticalLayout(
                 shiny::tags$b("Select groups"),
-                shinyWidgets::pickerInput(
+                shiny::selectizeInput(
                     inputId = ns("metadata_groups_subset"),
+                    label = "Select groups",
                     choices = NULL,
+                    multiple = TRUE,
                     options = list(
-                        `actions-box` = TRUE,
-                        title = "Select/deselect groups",
-                        size = 10,
-                        width = "90%",
-                        `selected-text-format` = "count > 3"
-                    ),
-                    multiple = TRUE
+                        plugins = list("remove_button", "drag_drop"),
+                        placeholder = "Select the groups",
+                        delimiter = ","
+                    )
                 )
             )
         ),
@@ -334,6 +333,12 @@ ui_comparison_gene_panel <- function(id, draw_line) {
             cellWidths = c("40px", "40px"),
             gear_umaps(ns, "gene", FALSE, "highest"),
             gear_download(ns, "gene", "gene"),
+        ),
+        shinyjs::hidden(
+            shiny::div(
+                id = ns("download_gene_all_container"),
+                shiny::downloadButton(ns("download_gene_all"), label = "Download all (ZIP)")
+            )
         ),
         shiny::plotOutput(ns("umap_gene"), height = "auto"),
         shiny::plotOutput(ns("umap_gene_legend"), height = "auto")
@@ -592,6 +597,26 @@ ui_comparison_gene_heatmap <- function(id) {
                 choices = NULL,
                 label = "Split by metadata"
             ),
+            shiny::selectInput(
+                inputId = ns("metadata_subset"),
+                label = "Subset by metadata",
+                choices = NULL
+            ),
+            shiny::verticalLayout(
+                shiny::tags$b("Select subset groups"),
+                shinyWidgets::pickerInput(
+                    inputId = ns("metadata_groups_subset"),
+                    choices = NULL,
+                    options = list(
+                        `actions-box` = TRUE,
+                        title = "Select/deselect groups",
+                        size = 10,
+                        width = "90%",
+                        `selected-text-format` = "count > 3"
+                    ),
+                    multiple = TRUE
+                )
+            ),
             shinyWidgets::radioGroupButtons(
                 inputId = ns("plot_type"),
                 label = "Plot type",
@@ -646,7 +671,7 @@ ui_comparison_violin_gene <- function(id) {
                     inputId = ns("graph_type"),
                     label = "Graph type (multiple)",
                     choices = c("Violin", "Boxplot"),
-                    selected = c("Violin", "Boxplot")
+                    selected = "Violin"
                 ),
                 circle = TRUE,
                 status = "success",
@@ -732,6 +757,7 @@ ui_comparison_enrichment <- function(id) {
             ),
             shiny::h2("Enrichment analysis"),
         ),
+        shiny::textOutput(ns("infoGenes")),
         shiny::splitLayout(
             shinyWidgets::pickerInput(
                 inputId = ns("gprofilerSources"),
@@ -949,8 +975,6 @@ server_cell_annotation <- function(id) {
                 shiny::isolate({
                     shiny::req(!is.null(group_names), !is.null(group_clusters), !is.null(group_names[[1]]))
                     recode_args <- list(".x" = mtd_temp_df[[selected_clusters]])
-                    print(group_names)
-                    print(group_clusters)
 
                     for (i in seq_len(nclasses)) {
                         group_name <- group_names[[i]]
@@ -964,7 +988,6 @@ server_cell_annotation <- function(id) {
                             recode_args[[grp_cluster]] <- group_name
                         }
                     }
-                    # print(recode_args)
 
                     new_mtd <- do.call(dplyr::recode, recode_args)
                     mtd_temp_df[[ann_name]] <- new_mtd
@@ -1118,8 +1141,6 @@ server_comparison_markers <- function(id, k_choices) {
                 )
             }
 
-            marker_genes <- shiny::reactiveVal(NULL)
-
             # it would be nice to have gene umaps
             shinyjs::html("marker_text", "Warning: Enabling DEG analysis will results into loading the memory. This process might take some time.")
             shinyjs::hide("group_left-select_k_markers")
@@ -1132,7 +1153,6 @@ server_comparison_markers <- function(id, k_choices) {
             shinyjs::show("enable_markers")
 
             server_comparison_markers_panels(session, k_choices)
-            # server_comparison_markers_panels("group_left", k_choices)
 
             first_group_cells <- shiny::reactive({
                 current_mtd_df <- pkg_env$metadata_temp()
@@ -1249,29 +1269,10 @@ server_comparison_markers <- function(id, k_choices) {
 
                 shinyjs::disable("markers_button")
                 shinyjs::html("marker_text", "Calculating the markers...")
-                # subgroup_left <- input$"group_left-select_k_markers"
-                # subgroup_right <- input$"group_right-select_k_markers"
-
-                # if (is.na(as.numeric(subgroup_left))) {
-                #     mb1 <- pkg_env$metadata_temp()[[subgroup_left]]
-                # } else {
-                #     mb1 <- factor(pkg_env$stab_obj$mbs[[subgroup_left]])
-                # }
-
-                # if (is.na(as.numeric(subgroup_right))) {
-                #     mb2 <- pkg_env$metadata_temp()[[subgroup_right]]
-                # } else {
-                #     mb2 <- factor(pkg_env$stab_obj$mbs[[subgroup_right]])
-                # }
-
-                # cells_index_left <- which(mb1 %in% input$"group_left-select_clusters_markers")
-                # cells_index_right <- which(mb2 %in% input$"group_right-select_clusters_markers")
 
                 if ("genes" %in% names(pkg_env)) {
                     markers_result <- calculate_markers_shiny(
-                        # cells1 = cells_index_left,
                         cells1 = first_grp,
-                        # cells2 = cells_index_right,
                         cells2 = second_grp,
                         norm_method = ifelse(input$norm_type, "LogNormalize", ""),
                         used_slot = "data",
@@ -1293,18 +1294,20 @@ server_comparison_markers <- function(id, k_choices) {
                     )
                 }
 
-                all_genes <- as.vector(markers_result$gene)
 
                 markers_result <- markers_result %>%
-                    dplyr::filter(.data$p_val_adj <= input$pval) %>%
-                    dplyr::arrange(dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
-                genes_group1 <- (markers_result %>% dplyr::filter(.data$avg_log2FC >= 0))$gene
+                    dplyr::filter(.data$p_val_adj <= input$pval)
 
-                marker_genes(list(
-                    all_genes = all_genes,
-                    group_1 = as.vector(genes_group1),
-                    group_2 = as.vector(markers_result$gene[seq(from = length(genes_group1) + 1, to = nrow(markers_result))])
-                ))
+                if (nrow(markers_result) == 0) {
+                    shinyjs::show("markers_dt")
+                    shinyjs::show("markers_download_button")
+                    shinyjs::enable("markers_button")
+                    shinyjs::html("marker_text", "")
+                    return(NULL)
+                }
+
+                    
+                markers_result <- dplyr::arrange(markers_result, dplyr::desc(.data$avg_log2FC), .data$p_val_adj)
 
                 shinyjs::show("markers_dt")
                 shinyjs::show("markers_download_button")
@@ -1317,19 +1320,55 @@ server_comparison_markers <- function(id, k_choices) {
             shiny::observe(
                 output$markers_dt <- DT::renderDataTable(
                     {
-                        shiny::req(markers_val())
-                        markers_val()
+                        current_df <- markers_val()
+                        shiny::req(current_df)
+
+                        current_df
                     },
-                    rownames = FALSE
+                    rownames = FALSE,
+                    filter = "top"
                 )
             ) %>% shiny::bindEvent(markers_val())
+
+            mk_genes <- shiny::reactive({
+                current_rows <- input$markers_dt_rows_all
+                shiny::req(current_rows)
+                mk_df <- markers_val()
+                shiny::req(mk_df)
+                current_rows <- sort(current_rows)
+                mk_df <- mk_df[current_rows, , drop = FALSE]
+                index_negative <- 1
+                while (index_negative <= nrow(mk_df) && mk_df$avg_log2FC[index_negative] >= 0) {
+                    index_negative <- index_negative + 1
+                }
+
+                all_genes <- mk_df$gene
+
+                genes_group1 <- NULL
+                if (index_negative > 1) {
+                    genes_group1 <- all_genes[seq_len(index_negative - 1)]
+                }
+
+                genes_group2 <- NULL
+                if (index_negative <= length(all_genes)) {
+                    genes_group2 <- all_genes[seq(from = index_negative, to = length(all_genes))]
+                }
+
+                return(list(
+                    all_genes = all_genes,
+                    group_1 = as.vector(genes_group1),
+                    group_2 = as.vector(genes_group2)
+                ))
+            })
 
             output$markers_download_button <- shiny::downloadHandler(
                 filename = function() {
                     "markers.csv"
                 },
                 content = function(file) {
-                    utils::write.csv(markers_val(), file)
+                    mk_df <- markers_val()
+                    shiny::req(mk_df, nrow(mk_df) > 0)
+                    utils::write.csv(mk_df, file)
                 }
             )
 
@@ -1340,7 +1379,7 @@ server_comparison_markers <- function(id, k_choices) {
 
             shiny::observe(compar_markers_info(session)) %>% shiny::bindEvent(input$info_markers, ignoreInit = TRUE)
 
-            return(shiny::reactive(marker_genes()))
+            return(mk_genes)
         }
     )
 }
@@ -1440,7 +1479,7 @@ server_comparison_metadata_panel <- function(id) {
                 shiny::req(input$metadata_subset)
                 mtd_names <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
 
-                shinyWidgets::updatePickerInput(
+                shiny::updateSelectizeInput(
                     session,
                     inputId = "metadata_groups_subset",
                     choices = mtd_names,
@@ -1497,6 +1536,7 @@ server_comparison_metadata_panel <- function(id) {
                     input$metadata_subset
                     input$metadata_pt_size
                     input$metadata_axis_size
+                    input$metadata_axis_titles_only
                     input$metadata_text_size
                     input$metadata_labels
                     input$metadata_pt_type
@@ -1533,10 +1573,16 @@ server_comparison_metadata_panel <- function(id) {
                             )
                         }
                         graphics::par(old_par)
-                        metadata_legend_height(text_height * ppi)
+                        metadata_legend_height(text_height * ppi * 1.5)
+
+                        group_ordering <- order(match(plot_data()$color_info, input$metadata_groups_subset))
+                        embedding <- pkg_env$stab_obj$umap[group_ordering, , drop = FALSE]
+                        color_info <- plot_data()$color_info[group_ordering]
+                        cell_mask <- metadata_mask()[group_ordering]
+
                         color_plot2(
-                            embedding = pkg_env$stab_obj$umap,
-                            color_info = plot_data()$color_info,
+                            embedding = embedding,
+                            color_info = color_info,
                             color_values = plot_data()$color_values,
                             unique_values = plot_data()$unique_values,
                             plt_height = plt_height(),
@@ -1547,8 +1593,9 @@ server_comparison_metadata_panel <- function(id) {
                             sort_cells = input$metadata_pt_order,
                             text_size = input$metadata_text_size,
                             axis_size = input$metadata_axis_size,
+                            axis_titles_only = input$metadata_axis_titles_only,
                             labels = input$metadata_labels,
-                            cell_mask = metadata_mask()
+                            cell_mask = cell_mask
                         )
                     })
                 }
@@ -1569,6 +1616,8 @@ server_comparison_metadata_panel <- function(id) {
                         plt_height()
                         input$select_groups
                         input$metadata_legend_size
+                        input$metadata_nvalues_cont
+                        nvalues_cont <- max(2, as.integer(input$metadata_nvalues_cont))
 
                         shiny::isolate({
                             if (!is.null(plot_data()$unique_values)) {
@@ -1585,7 +1634,8 @@ server_comparison_metadata_panel <- function(id) {
                                 color_values = color_values,
                                 color_info = plot_data()$color_info,
                                 plt_width = plt_height(),
-                                text_size = input$metadata_legend_size
+                                text_size = input$metadata_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -1598,17 +1648,20 @@ server_comparison_metadata_panel <- function(id) {
                 },
                 content = function(file) {
                     shiny::req(input$metadata, input$width_metadata, input$height_metadata)
+                    nvalues_cont <- max(2, as.integer(input$metadata_nvalues_cont))
 
                     ggplot_obj <- color_ggplot(
                         embedding = pkg_env$stab_obj$umap,
                         color_info = plot_data()$color_info,
                         sort_cells = input$metadata_pt_order,
                         cell_mask = metadata_mask(),
-                        legend_text_size = input$metadata_legend_size * 10,
-                        axis_text_size = input$metadata_axis_size * 10,
-                        text_size = input$metadata_text_size * 3,
+                        legend_text_size = input$metadata_legend_size * 20,
+                        axis_text_size = input$metadata_axis_size * 20,
+                        axis_titles_only = input$metadata_axis_titles_only,
+                        text_size = input$metadata_text_size * 6,
                         labels = input$metadata_labels,
-                        pt_size = input$metadata_pt_size
+                        pt_size = input$metadata_pt_size,
+                        nvalues_cont = nvalues_cont
                     ) + ggplot2::ggtitle(input$metadata)
 
                     if (!is.null(plot_data()$unique_values)) {
@@ -1618,14 +1671,18 @@ server_comparison_metadata_panel <- function(id) {
                             ggplot2::scale_colour_manual(values = color_vector) +
                             ggplot2::guides(color = ggplot2::guide_legend(
                                 override.aes = list(
-                                    size = input$metadata_pt_size * 10,
+                                    size = input$metadata_pt_size * 15,
                                     shape = 15
                                 )
                             ))
                     } else {
+                        breaks <- continuous_legend_breaks(
+                            values = plot_data()$color_info,
+                            nvalues_cont = nvalues_cont
+                        )
                         ggplot_obj <- ggplot_obj +
                             # ggplot2::scale_colour_gradientn(colours = viridis::viridis(50)) +
-                            ggplot2::scale_colour_gradientn(colours = paletteer::paletteer_c("viridis::viridis", 50)) +
+                            ggplot2::scale_colour_gradientn(colours = paletteer::paletteer_c("viridis::viridis", 50), breaks = breaks) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_metadata * 3 / 4, "inches")))
                     }
 
@@ -1716,8 +1773,10 @@ server_comparison_gene_panel <- function(id) {
 
                 if (length(input$gene_expr) > 1) {
                     shinyjs::show("relaxation")
+                    shinyjs::show("download_gene_all_container")
                 } else {
                     shinyjs::hide("relaxation")
+                    shinyjs::hide("download_gene_all_container")
                 }
             }) %>% shiny::bindEvent(input$gene_expr)
 
@@ -1740,9 +1799,11 @@ server_comparison_gene_panel <- function(id) {
                     input$gene_pt_type
                     input$gene_legend_size
                     input$gene_axis_size
+                    input$gene_axis_titles_only
                     input$gene_pt_size
                     input$gene_pt_order
                     input$metadata_groups_subset
+                    value_cap <- if (input$gene_cap) c(0, input$gene_value_cap) else NULL
 
                     shiny::isolate({
                         all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
@@ -1770,7 +1831,6 @@ server_comparison_gene_panel <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                             grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
@@ -1796,10 +1856,12 @@ server_comparison_gene_panel <- function(id) {
                             display_legend = FALSE,
                             cell_mask = metadata_mask,
                             unique_values = unique_values,
+                            value_cap = value_cap,
                             color_values = color_values,
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
                             axis_size = input$gene_axis_size,
+                            axis_titles_only = input$gene_axis_titles_only,
                             sort_cells = input$gene_pt_order,
                             legend_text_size = input$gene_legend_size,
                             text_size = input$gene_legend_size
@@ -1825,7 +1887,14 @@ server_comparison_gene_panel <- function(id) {
                         relaxation <- input$relaxation
                         input$gene_expr
                         input$gene_legend_size
+                        input$gene_nvalues_cont
+                        if (input$gene_cap) {
+                            value_cap <- c(0, input$gene_value_cap)
+                        } else {
+                            value_cap <- NULL
+                        }
                         input$metadata_groups_subset
+                        nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
 
                         shiny::isolate({
                             all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
@@ -1850,7 +1919,6 @@ server_comparison_gene_panel <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                                 grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
@@ -1869,7 +1937,9 @@ server_comparison_gene_panel <- function(id) {
                                 color_values = color_values,
                                 color_info = used_matrix[metadata_mask],
                                 plt_width = plt_height(),
-                                text_size = input$gene_legend_size
+                                value_cap = value_cap,
+                                text_size = input$gene_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -1896,45 +1966,56 @@ server_comparison_gene_panel <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                         grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
                         unique_values <- c("other", "cells above threshold")
                         color_values <- c("other" = "lightgray", "cells above threshold" = "red")
-                        used_matrix <- factor(ifelse(matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation), "cells above threshold", "other"))
+                        used_matrix <- factor(ifelse(matrixStats::colSums2(used_matrix > input$expr_threshold) >= (length(input$gene_expr) - input$relaxation), "cells above threshold", "other"), levels = unique_values)
                     } else if (input$expr_threshold > 0) {
                         unique_values <- c("other", "cells above threshold")
                         color_values <- c("other" = "lightgray", "cells above threshold" = "red")
-                        used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"))
+                        used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"), levels = unique_values)
                     } else {
                         used_matrix <- as.numeric(used_matrix)
                     }
 
+
+                    nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
+                    value_cap <- if(input$gene_cap) c(0, input$gene_value_cap) else NULL
 
                     ggplot_obj <- color_ggplot(
                         embedding = pkg_env$stab_obj$umap,
                         color_info = used_matrix,
                         sort_cells = input$gene_pt_order,
                         cell_mask = metadata_mask,
-                        pt_size = input$gene_pt_size
+                        colour_values = color_values(50),
+                        pt_size = input$gene_pt_size,
+                        axis_titles_only = input$gene_axis_titles_only,
+                        value_cap = value_cap,
+                        nvalues_cont = nvalues_cont
                     ) + ggplot2::ggtitle(paste(input$gene_expr, collapse = " ")) +
                         ggplot2::theme(
                             legend.position = "bottom",
                             legend.title = ggplot2::element_blank(),
-                            legend.text = ggplot2::element_text(size = input$gene_legend_size * 10),
-                            axis.text = ggplot2::element_text(size = input$gene_axis_size * 10),
-                            axis.title = ggplot2::element_text(size = input$gene_axis_size * 10),
-                            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 10 * 1.5),
+                            legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
+                            plot.title = ggplot2::element_text(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
                             aspect.ratio = 1
                         )
-
+                    
+                    if (!input$gene_axis_titles_only) {
+                        ggplot_obj <- ggplot_obj +
+                            ggplot2::theme(
+                                axis.text = ggplot2::element_text(size = input$gene_axis_size * 20),
+                                axis.title = ggplot2::element_text(size = input$gene_axis_size * 20)
+                            )
+                    }
 
                     if (length(input$gene_expr) > 1 || input$expr_threshold > 0) {
-                        ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
+                        ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values) +
+                            ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size = input$gene_pt_size * 5, shape = 15)))
                     } else {
                         ggplot_obj <- ggplot_obj +
-                            ggplot2::scale_colour_gradientn(colours = color_values(50)) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
                     }
 
@@ -1948,6 +2029,149 @@ server_comparison_gene_panel <- function(id) {
                         height = input$height_gene,
                         width = input$width_gene
                     )
+                }
+            )
+
+            output$download_gene_all <- shiny::downloadHandler(
+                filename = function() {
+                    base_name <- trimws(input$filename_gene)
+                    if (is.null(base_name) || base_name == "") {
+                        base_name <- "gene"
+                    }
+                    paste0(base_name, "_all.zip")
+                },
+                contentType = "application/zip",
+                content = function(file) {
+                    shiny::req(length(input$gene_expr) > 1, input$expr_threshold, input$width_gene, input$height_gene)
+
+                    all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+                    }
+
+                    metadata_mask <- (pkg_env$metadata_temp()[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                    value_cap <- if (input$gene_cap) c(0, input$gene_value_cap) else NULL
+
+                    fetch_single_gene_matrix <- function(gene_name) {
+                        if ("genes" %in% names(pkg_env)) {
+                            index_gene <- pkg_env$genes[gene_name]
+                            index_gene <- index_gene[!is.na(index_gene)]
+                            shiny::req(length(index_gene) > 0)
+                            return(rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene, NULL)))
+                        }
+
+                        rows <- list()
+                        index_interest <- pkg_env$genes_of_interest[gene_name]
+                        index_interest <- index_interest[!is.na(index_interest)]
+                        if (length(index_interest) > 0) {
+                            rows[[length(rows) + 1]] <- rhdf5::h5read("expression.h5", "matrix_of_interest", index = list(index_interest, NULL))
+                        }
+
+                        index_others <- pkg_env$genes_others[gene_name]
+                        index_others <- index_others[!is.na(index_others)]
+                        if (length(index_others) > 0) {
+                            rows[[length(rows) + 1]] <- rhdf5::h5read("expression.h5", "matrix_others", index = list(index_others, NULL))
+                        }
+
+                        shiny::req(length(rows) > 0)
+                        do.call(rbind, rows)
+                    }
+
+                    build_single_gene_plot <- function(gene_name) {
+                        used_matrix <- fetch_single_gene_matrix(gene_name)
+                        color_values <- function(n) {
+                            grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
+                        }
+
+                        if (input$expr_threshold > 0) {
+                            color_values <- c("other" = "lightgray", "cells above threshold" = "red")
+                            used_matrix <- factor(ifelse(used_matrix > input$expr_threshold, "cells above threshold", "other"))
+                        } else {
+                            used_matrix <- as.numeric(used_matrix)
+                        }
+
+                        nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
+                        colour_values_input <- if (is.function(color_values)) color_values(50) else color_values
+
+                        ggplot_obj <- color_ggplot(
+                            embedding = pkg_env$stab_obj$umap,
+                            color_info = used_matrix,
+                            sort_cells = input$gene_pt_order,
+                            cell_mask = metadata_mask,
+                            colour_values = colour_values_input,
+                            pt_size = input$gene_pt_size,
+                            axis_titles_only = input$gene_axis_titles_only,
+                            value_cap = value_cap,
+                            nvalues_cont = nvalues_cont
+                        ) + ggplot2::ggtitle(gene_name) +
+                            ggplot2::theme(
+                                legend.position = "bottom",
+                                legend.title = ggplot2::element_blank(),
+                                legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
+                                plot.title = ggplot2::element_text(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
+                                aspect.ratio = 1
+                            )
+
+                        if (!input$gene_axis_titles_only) {
+                            ggplot_obj <- ggplot_obj +
+                                ggplot2::theme(
+                                    axis.text = ggplot2::element_text(size = input$gene_axis_size * 20),
+                                    axis.title = ggplot2::element_text(size = input$gene_axis_size * 20)
+                                )
+                        }
+
+                        if (input$expr_threshold > 0) {
+                            ggplot_obj <- ggplot_obj + ggplot2::scale_colour_manual(values = color_values)
+                        } else {
+                            ggplot_obj <- ggplot_obj +
+                                ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
+                        }
+
+                        if (input$raster_gene == "Yes") {
+                            ggplot_obj <- ggrastr::rasterise(ggplot_obj, dpi = 300)
+                        }
+
+                        ggplot_obj
+                    }
+
+                    tmp_dir <- tempfile(pattern = "gene_plots_")
+                    dir.create(tmp_dir, recursive = TRUE, showWarnings = FALSE)
+
+                    pdf_files <- vapply(input$gene_expr, FUN.VALUE = character(1), FUN = function(gene_name) {
+                        safe_gene <- gsub("[^A-Za-z0-9._-]", "_", gene_name)
+                        output_file <- file.path(tmp_dir, paste0(safe_gene, ".pdf"))
+
+                        ggplot2::ggsave(
+                            filename = output_file,
+                            plot = build_single_gene_plot(gene_name),
+                            height = input$height_gene,
+                            width = input$width_gene,
+                            device = "pdf"
+                        )
+
+                        output_file
+                    })
+
+                    zip_cmd <- Sys.which("zip")
+                    if (requireNamespace("zip", quietly = TRUE)) {
+                        zip::zipr(
+                            zipfile = file,
+                            files = basename(pdf_files),
+                            root = tmp_dir,
+                            recurse = FALSE,
+                            include_directories = FALSE
+                        )
+                    } else if (nzchar(zip_cmd)) {
+                        utils::zip(zipfile = file, files = pdf_files, flags = "-j", zip = zip_cmd)
+                    } else {
+                        stop(
+                            "Cannot create ZIP archive: neither the 'zip' R package nor a system 'zip' executable is available.",
+                            call. = FALSE
+                        )
+                    }
                 }
             )
         }
@@ -2476,7 +2700,8 @@ server_comparison_violin_gene <- function(id) {
 
                     stats_df <- rbind(
                         data.frame(sapply(seq_along(split_vals), function(i) {
-                            stats::fivenum(split_vals[[i]])
+                            fvn <- stats::fivenum(split_vals[[i]])
+                            c(fvn[1], fvn[2], fvn[3], mean(split_vals[[i]]), fvn[4], fvn[5])
                         })),
                         sapply(split_vals, length)
                     )
@@ -2489,7 +2714,7 @@ server_comparison_violin_gene <- function(id) {
                     )
 
                     colnames(stats_df) <- names(split_vals)
-                    rownames(stats_df) <- c("Min", "Q1", "Median", "Q3", "Max", "# cells", "# cells above 0", "# cells above min", "# cells under max")
+                    rownames(stats_df) <- c("Min", "Q1", "Median", "Mean", "Q3", "Max", "# cells", "# cells above 0", "# cells above min", "# cells under max")
 
                     breaks_df <- sapply(split_vals, function(x) {
                         table(cut(x, breaks = break_points))
@@ -2523,6 +2748,23 @@ server_comparison_gene_heatmap <- function(id) {
     shiny::moduleServer(
         id,
         function(input, output, session) {
+            changed_metadata <- shiny::reactiveVal(FALSE)
+
+            shiny::observe({
+                shiny::req(input$metadata_subset)
+
+                mtd_names <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+
+                shinyWidgets::updatePickerInput(
+                    session,
+                    inputId = "metadata_groups_subset",
+                    choices = mtd_names,
+                    selected = mtd_names
+                )
+
+                changed_metadata(TRUE)
+            }) %>% shiny::bindEvent(input$metadata_subset)
+
             shiny::observe({
                 shiny::updateSliderInput(
                     session,
@@ -2536,16 +2778,35 @@ server_comparison_gene_heatmap <- function(id) {
                     value = 0.15 + 0.03 * length(input$gene_expr)
                 )
             }) %>% shiny::bindEvent(input$gene_expr)
+            
+            metadata_mask <- shiny::reactive({
+                shiny::req(input$metadata_groups_subset, input$metadata_subset, cancelOutput = TRUE)
+                shiny::isolate({
+                    all_unique_values <- pkg_env$metadata_unique_temp()[[input$metadata_subset]]
+
+                    if (changed_metadata()) {
+                        shiny::req(
+                            all(input$metadata_groups_subset %in% all_unique_values),
+                            cancelOutput = TRUE
+                        )
+
+                        changed_metadata(FALSE)
+                    }
+
+                    return(pkg_env$metadata_temp()[[input$metadata_subset]] %in% input$metadata_groups_subset)
+                })
+            })
 
             heatmap_plot <- shiny::reactive({
                 shiny::req(input$gene_expr, length(input$gene_expr) > 0, input$metadata, input$text_size, !is.na(input$scale), input$clipping_value, !is.na(input$show_numbers), input$plot_type, input$point_size, input$tile_position, input$tile_height, input$legend_spacing, input$lower_margin, cancelOutput = TRUE)
+                mtd_mask <- metadata_mask()
 
                 shiny::isolate({
                     if (!(input$metadata %in% colnames(pkg_env$metadata_temp()))) {
                         return(NULL)
                     }
-                    mtd_val <- pkg_env$metadata_temp()[[input$metadata]]
-                    unique_vals <- levels(mtd_val)
+                    mtd_val <- pkg_env$metadata_temp()[[input$metadata]][mtd_mask]
+                    unique_vals <- levels(droplevels(mtd_val))
 
                     htmp_matrix <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
                     perc_expressed <- matrix(0, nrow = length(input$gene_expr), ncol = length(unique_vals))
@@ -2558,7 +2819,7 @@ server_comparison_gene_heatmap <- function(id) {
                         index_gene <- pkg_env$genes[input$gene_expr]
 
                         for (i in seq_along(input$gene_expr)) {
-                            expr_profile <- rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene[i], NULL))
+                            expr_profile <- rhdf5::h5read("expression.h5", "expression_matrix", index = list(index_gene[i], NULL))[mtd_mask]
                             for (j in seq_along(unique_vals)) {
                                 filtered_expr <- expr_profile[mtd_val == unique_vals[j]]
                                 htmp_matrix[i, j] <- mean(filtered_expr, na.rm = TRUE)
@@ -2735,6 +2996,15 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 shinyjs::hide("download_gost")
             }) %>% shiny::bindEvent(marker_genes(), once = TRUE)
 
+            shiny::observe({
+                chosen_markers <- marker_genes()
+                shiny::req(chosen_markers)
+
+                output$infoGenes <- shiny::renderText({
+                    paste0("The filtered markers will be used in the analysis. Currently, there are ", length(chosen_markers$group_1), " markers for group_1 and ", length(chosen_markers$group_2), " for group_2")
+                })
+            })
+
             gprof_result <- shiny::reactive({
                 chosen_markers <- marker_genes()
                 n_top_markers <- input$top_n_markers
@@ -2743,6 +3013,8 @@ server_comparison_enrichment <- function(id, marker_genes) {
                 selected_group <- stringr::str_replace(input$group, " ", "_")
 
                 chosen_markers <- chosen_markers[[selected_group]]
+                shiny::req(chosen_markers, length(chosen_markers) > 0)
+
                 n_top_markers <- min(n_top_markers, length(chosen_markers))
                 if (n_top_markers == -1) {
                     n_top_markers <- length(chosen_markers)
@@ -2776,22 +3048,25 @@ server_comparison_enrichment <- function(id, marker_genes) {
             }) %>% shiny::bindEvent(input$enrichment_button)
 
             shiny::observe({
-                shiny::req(gprof_result())
+                gp_res <- gprof_result()
 
                 output$gost_table <- DT::renderDT({
-                    gprof_result()$result[, seq_len(ncol(gprof_result()$result) - 2)]
+                    shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                    gp_res$result[, seq_len(ncol(gprof_result()$result) - 2)]
                 })
 
-                output$gost_plot <- plotly::renderPlotly(
-                    gprofiler2::gostplot(gprof_result())
-                )
+                output$gost_plot <- plotly::renderPlotly({
+                    shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                    gprofiler2::gostplot(gp_res)
+                })
 
                 output$download_gost <- shiny::downloadHandler(
                     filename = function() {
                         "enrichment_results.csv"
                     },
                     content = function(file) {
-                        utils::write.csv(gprof_result()$result, file)
+                        shiny::req(!is.null(gp_res), cancelOutput = FALSE)
+                        utils::write.csv(gp_res$result, file)
                     }
                 )
             })
@@ -2944,6 +3219,14 @@ server_comparisons <- function(id, chosen_config, chosen_method) {
                         paste0("stable_", k_values[1], "_clusters"),
                         colnames(current_mtd)[1]
                     )
+                )
+
+                shiny::updateSelectizeInput(
+                    session,
+                    inputId = glue::glue("gene_heatmap-metadata_subset"),
+                    server = FALSE,
+                    choices = names(current_mtd_unique),
+                    selected = "one_level"
                 )
 
                 continuous_metadata <- setdiff(colnames(current_mtd), names(current_mtd_unique))

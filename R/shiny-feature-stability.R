@@ -5,7 +5,6 @@ proportion_widths <- 55
 ui_dimensionality_stability <- function(id) {
     ns <- shiny::NS(id)
 
-
     shiny::tagList(
         shiny::uiOutput(ns("stepchoosing")),
         shiny::splitLayout(
@@ -201,18 +200,15 @@ ui_dimensionality_distribution_plots <- function(id, draw_line) {
             ),
             shiny::verticalLayout(
                 shiny::tags$b("Select the highlighted groups"),
-                shinyWidgets::pickerInput(
+                shiny::selectizeInput(
                     inputId = ns("select_groups"),
-                    choices = "",
-                    inline = FALSE,
+                    label = "Select groups",
+                    choices = NULL,
+                    multiple = TRUE,
                     options = list(
-                        `actions-box` = TRUE,
-                        title = "Select/deselect groups",
-                        size = 10,
-                        width = "90%",
-                        `selected-text-format` = "count > 3"
-                    ),
-                    multiple = TRUE
+                        plugins = list("remove_button", "drag_drop"),
+                        delimiter = ","
+                    )
                 )
             )
         ),
@@ -375,6 +371,7 @@ server_dimensionality_stability <- function(id) {
                         plt_height = plt_height(),
                         plt_width = plt_height(),
                         axis_size = input$ecc_res_umap_axis_size,
+                        axis_titles_only = input$ecc_res_umap_axis_titles_only,
                         pt_size = input$ecc_res_umap_pt_size,
                         sort_cells = input$ecc_res_umap_pt_order,
                         pch = ifelse(input$ecc_res_umap_pt_type == "Pixel", ".", 19),
@@ -651,7 +648,7 @@ server_dimensionality_distribution <- function(id) {
                 mtd_names <- pkg_env$metadata_unique[[input$metadata]]
                 if (is.null(mtd_names)) {
                     shinyjs::hide(id = "select_groups")
-                    shinyWidgets::updatePickerInput(
+                    shiny::updateSelectizeInput(
                         session,
                         inputId = "select_groups",
                         choices = NULL,
@@ -659,7 +656,7 @@ server_dimensionality_distribution <- function(id) {
                     )
                 } else {
                     shinyjs::show(id = "select_groups")
-                    shinyWidgets::updatePickerInput(
+                    shiny::updateSelectizeInput(
                         session,
                         inputId = "select_groups",
                         choices = mtd_names,
@@ -689,6 +686,7 @@ server_dimensionality_distribution <- function(id) {
                     input$gene_pt_type
                     input$gene_legend_size
                     input$gene_axis_size
+                    input$gene_axis_titles_only
                     input$gene_pt_size
                     input$gene_pt_order
 
@@ -704,7 +702,6 @@ server_dimensionality_distribution <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                             grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
@@ -739,6 +736,7 @@ server_dimensionality_distribution <- function(id) {
                             pch = ifelse(input$gene_pt_type == "Pixel", ".", 19),
                             pt_size = input$gene_pt_size,
                             axis_size = input$gene_axis_size,
+                            axis_titles_only = input$gene_axis_titles_only,
                             sort_cells = input$gene_pt_order,
                             legend_text_size = input$gene_legend_size,
                             text_size = input$gene_legend_size
@@ -759,6 +757,7 @@ server_dimensionality_distribution <- function(id) {
                     groups <- input$select_groups
                     input$metadata_pt_size
                     input$metadata_axis_size
+                    input$metadata_axis_titles_only
                     input$metadata_text_size
                     input$metadata_labels
                     input$metadata_pt_type
@@ -823,6 +822,7 @@ server_dimensionality_distribution <- function(id) {
                             sort_cells = input$metadata_pt_order,
                             text_size = input$metadata_text_size,
                             axis_size = input$metadata_axis_size,
+                            axis_titles_only = input$metadata_axis_titles_only,
                             labels = input$metadata_labels,
                             groups_highlight = groups
                         )
@@ -844,6 +844,7 @@ server_dimensionality_distribution <- function(id) {
                         input$select_groups
                         input$metadata_legend_size
                         current_metadata <- input$metadata
+                        nvalues_cont <- max(2, as.integer(input$metadata_nvalues_cont))
 
                         shiny::isolate({
                             if (!is.null(pkg_env$metadata_unique[[current_metadata]])) {
@@ -857,9 +858,10 @@ server_dimensionality_distribution <- function(id) {
                                     )
                                 }
 
-                                # color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
                                 unique_values <- pkg_env$metadata_unique[[current_metadata]][matched_elems]
-                                color_values <- pkg_env$discrete_colors[[as.character(length(unique_values))]]
+                                color_values <- pkg_env$discrete_colors[[as.character(length(pkg_env$metadata_unique[[current_metadata]]))]]
+                                names(color_values) <- pkg_env$metadata_unique[[current_metadata]]
+                                color_values <- color_values[unique_values]
                             } else {
                                 color_values <- NULL
                                 unique_values <- NULL
@@ -871,7 +873,8 @@ server_dimensionality_distribution <- function(id) {
                                 color_values = color_values,
                                 color_info = pkg_env$metadata[[current_metadata]],
                                 plt_width = plt_height(),
-                                text_size = input$metadata_legend_size
+                                text_size = input$metadata_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -894,6 +897,8 @@ server_dimensionality_distribution <- function(id) {
                         relaxation <- input$relaxation
                         input$gene_expr
                         input$gene_legend_size
+                        input$gene_nvalues_cont
+                        nvalues_cont <- max(2, as.integer(input$gene_nvalues_cont))
 
                         shiny::isolate({
                             if (is.na(expr_threshold) || is.null(expr_threshold)) {
@@ -907,7 +912,6 @@ server_dimensionality_distribution <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                                 grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
@@ -926,7 +930,8 @@ server_dimensionality_distribution <- function(id) {
                                 color_values = color_values,
                                 color_info = used_matrix,
                                 plt_width = plt_height(),
-                                text_size = input$gene_legend_size
+                                text_size = input$gene_legend_size,
+                                n_values_cont = nvalues_cont
                             )
                         })
                     }
@@ -1111,7 +1116,6 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     }
     graphics::par(mai = current_margins)
 
-    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
     col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original, function(x) {
@@ -1211,7 +1215,6 @@ shiny_plot_feature_stability_incremental <- function(resval,
     }
     graphics::par(mai = current_margins)
 
-    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
     col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original_incremental, function(x) {

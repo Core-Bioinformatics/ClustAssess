@@ -29,34 +29,6 @@ implementation of the ClustAssess package.
 
 <img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/man/figures/ClustAssess_diagram_all.png width=80%/>
 
-## Proportion of Ambiguously Clustered Pairs (PAC)
-To assess clustering robustness, the proportion of ambiguously clustered pairs
-(PAC) [1] uses a consensus clustering. The rate of element co-clustering is
-recorded across various numbers of clusters, *k*. The lower the PAC, the stabler
-the clustering for that *k*.
-
-ClustAssess uses a heirarchical clustering as base for the consensus clustering,
-and an optimized Rcpp [2] implementation to compute the PAC values. To
-calculate PAC, we write:
-
-`cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)`
-
-It is important that the PAC has converged before using it to assess your data;
-the `pac_convergence` function can be used to visualize the PAC curves across
-iterations:
-
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
-
-As the curves have evened out, we surmize that PAC has converged in this case.
-If the PAC has not converged, increase the `n_reps` value.
-
-If the dataset contains >1000 elements, we recommend calculating a geometric
-sketch [3] of your data of size <1000, and running PAC on that sketch.
-
-A local minimum in the PAC landscape, as visualized below using the
-`pac_landscape` function, can be interpreted as an optimal *k* for the dataset:
-
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-2.png width=80%/>
 
 
 ## Element Centric Clustering Similarity (ECS)
@@ -148,8 +120,39 @@ such as panels for changing the colourscheme of the figures.
 The application can be generated using the output of the
 `automatic_stability_assessment` function and a normalised expression matrix.
 
+<details>
+<summary><h1>Other information</h1></summary>
 
-# Handling Large Datasets
+## Proportion of Ambiguously Clustered Pairs (PAC)
+To assess clustering robustness, the proportion of ambiguously clustered pairs
+(PAC) [1] uses a consensus clustering. The rate of element co-clustering is
+recorded across various numbers of clusters, *k*. The lower the PAC, the stabler
+the clustering for that *k*.
+
+ClustAssess uses a heirarchical clustering as base for the consensus clustering,
+and an optimized Rcpp [2] implementation to compute the PAC values. To
+calculate PAC, we write:
+
+`cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)`
+
+It is important that the PAC has converged before using it to assess your data;
+the `pac_convergence` function can be used to visualize the PAC curves across
+iterations:
+
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
+
+As the curves have evened out, we surmize that PAC has converged in this case.
+If the PAC has not converged, increase the `n_reps` value.
+
+If the dataset contains >1000 elements, we recommend calculating a geometric
+sketch [3] of your data of size <1000, and running PAC on that sketch.
+
+A local minimum in the PAC landscape, as visualized below using the
+`pac_landscape` function, can be interpreted as an optimal *k* for the dataset:
+
+<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-2.png width=80%/>
+
+## Handling Large Datasets
 If your dataset is large, the runtime for the tools described above may be
 prohibitive. In these cases, we recommend subsampling your data using geometric
 sketching [3]. In R, the subsampling can be done via reticulate:
@@ -165,6 +168,7 @@ and use the resulting indices for your subsample. For PAC, subsampling to <1000 
 should help, and for ECS and data assessment functions, <5000 cells may be
 appropriate (and parallelization can further help reduce the runtime).
 
+</details>
 
 # Installation
 ClustAssess can be installed from [CRAN](https://cran.r-project.org/index.html):

@@ -44,7 +44,6 @@ get_nn_conn_comps_umap <- function(embedding,
         "umap_arguments"
     )
     seed <- NA
-    # getNNmatrix <- getNNmatrix
 
     # send the name of the dim reduction arguments
     nn_conn_comps_list_temp <- foreach::foreach(
@@ -111,10 +110,7 @@ get_nn_conn_comps_pca <- function(embedding,
     nn_conn_comps_list <- list()
 
 
-    nn2_res <- RANN::nn2(
-        embedding,
-        k = max(n_neigh_sequence)
-    )$nn.idx
+    nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
@@ -496,6 +492,7 @@ get_highest_prune_param_embedding <- function(embedding,
 #' get_highest_prune_param(nn_matrix, 5)$prune_value
 get_highest_prune_param <- function(nn_matrix,
                                     n_neigh) {
+# TODO emphasize that nn_matrix should be a binary matrix, the NN matrix, not SNN
     nn_matrix <- computeSNN(nn_matrix, n_neigh, 0)
     g <- igraph::graph_from_adjacency_matrix(
         nn_matrix,
@@ -563,10 +560,7 @@ assess_nn_stability_pca <- function(embedding,
         partitions_list[[paste("PCA", "nn", sep = "_")]] <- list()
     }
 
-    nn2_res <- RANN::nn2(
-        embedding,
-        k = max(n_neigh_sequence)
-    )$nn.idx
+    nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
@@ -614,12 +608,9 @@ assess_nn_stability_pca <- function(embedding,
         shared_nn2_res <- SharedObject::unshare(nn2_res)
         rm(shared_nn2_res)
     }
-
-    rm(nn2_res)
-    gc()
-
+    
     package_needed <- c()
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
     for (n_neigh in as.character(n_neigh_sequence)) {
@@ -707,13 +698,6 @@ assess_nn_stability_pca <- function(embedding,
         }
     }
 
-    # TODO raise a github issue for SharedObject: is it necesarry to unshare objects??
-    # if (ncores > 1) {
-    #     shared_neigh_matrix <- SharedObject::unshare(neigh_matrices)
-    #     # rm(shared_neigh_matrix)
-    #     gc()
-    # }
-
     # create an object showing the number of clusters obtained for each number
     # of neighbours
     nn_object_n_clusters <- list()
@@ -731,14 +715,6 @@ assess_nn_stability_pca <- function(embedding,
     nn_ecs_object <- lapply(partitions_list, function(config) {
         lapply(config, function(n_neigh) {
             n_neigh$ecc
-            # weighted_element_consistency(
-            #     lapply(n_neigh, function(x) {
-            #         x$mb
-            #     }),
-            #     sapply(n_neigh, function(x) {
-            #         x$freq
-            #     })
-            # )
         })
     })
 
@@ -749,7 +725,8 @@ assess_nn_stability_pca <- function(embedding,
             sapply(config, function(n_neigh) {
                 length(n_neigh)
             })
-        })
+        }),
+        nn_idx = nn2_res
     )
 }
 
@@ -795,7 +772,7 @@ assess_nn_stability_umap <- function(embedding,
     all_vars <- ls()
 
     package_needed <- c("ClustAssess")
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
 
@@ -1041,12 +1018,17 @@ assess_nn_stability <- function(embedding,
         stop("the embedding parameter should be a matrix")
     }
 
-    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:4)) {
-        stop("algorithm should be a number between 1 and 4")
+    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:5)) {
+        stop("algorithm should be a number between 1 and 5")
     }
 
     if (!(graph_reduction_type %in% c("PCA", "UMAP"))) {
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
+    }
+
+    if (is.null(rownames(embedding))) {
+        warning("The provided embedding does not have row names. The cell names will be set to the row numbers of the embedding matrix.")
+        rownames(embedding) <- paste0("cell_", seq_len(nrow(embedding)))
     }
 
     ncells <- nrow(embedding)
@@ -1197,14 +1179,14 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
 #' @examples
 #' set.seed(2024)
 #' # create an artificial PCA embedding
-#' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
+#' pca_emb <- matrix(runif(100 * 10), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
-#' colnames(pca_emb) <- paste0("PC_", 1:30)
+#' colnames(pca_emb) <- paste0("PC_", 1:10)
 #'
 #' nn_stability_obj <- assess_nn_stability(
 #'     embedding = pca_emb,
 #'     n_neigh_sequence = c(10, 15, 20),
-#'     n_repetitions = 10,
+#'     n_repetitions = 5,
 #'     graph_reduction_type = "PCA",
 #'     clustering_algorithm = 1
 #' )

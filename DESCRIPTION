@@ -1,7 +1,7 @@
 Package: ClustAssess
 Type: Package
 Title: Tools for Assessing Clustering
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: c(person("Andi", "Munteanu",
                   email="am3019@cam.ac.uk", role=c("aut", "cre")), person("Arash", "Shahsavari", email="arash8579@hotmail.com",
                   role = c("aut")), person("Rafael", "Kollyfas", role=c("ctb"), email="rk720@cam.ac.uk"), person("Miguel", "Larraz Lopez de Novales", role=c("aut"), email ="ml2088@cam.ac.uk"), person("Liviu", "Ciortuz", role=c("ctb"), email="liviu_ciortuz@yahoo.co.uk"), person("Irina", "Mohorianu",
@@ -46,7 +46,6 @@ Imports:
     ggplot2,
     ggrastr,
     ggrepel,
-    ggtext,
     gprofiler2,
     igraph,
     jsonlite,
@@ -57,7 +56,7 @@ Imports:
     stringr,
     paletteer,
     plotly,
-    qualpalr,
+    qualpalr (>= 1.0.0),
     RANN,
     reshape2,
     rlang,
@@ -68,8 +67,8 @@ Imports:
     shinyWidgets,
     utils,
     uwot,
-    vioplot
-RoxygenNote: 7.3.2
+    vioplot,
+    zip
 Roxygen: list(markdown = TRUE)
 LinkingTo: 
     Rcpp,
@@ -98,3 +97,4 @@ Suggests:
 URL: https://github.com/Core-Bioinformatics/ClustAssess, https://core-bioinformatics.github.io/ClustAssess/
 BugReports: https://github.com/Core-Bioinformatics/ClustAssess/issues
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

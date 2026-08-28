@@ -4,36 +4,6 @@
 
 using namespace Rcpp;
 
-// List filterNNmatrix(Eigen::SparseMatrix<double> oldNN, Eigen::MatrixXd nnRanked, int oldK, int newK, double prune = 0) {
-// 	int nRows = nnRanked.rows();
-
-// 	for (int j = newK; j < oldK; j++) {
-// 		for (int i = 0; i < nRows; i++) {
-// 			oldNN.coeffRef(i, nnRanked(i, j) - 1) = 0;
-// 			// oldNN.insert(i, nnRanked(i, j) - 1) = 1;
-// 		}
-// 	}
-
-// 	oldNN.prune(0.0);
-
-// 	Eigen::SparseMatrix<double> SNN = oldNN * (oldNN.transpose());
-// 	for (int i = 0; i < SNN.outerSize(); i++) {
-// 		for (Eigen::SparseMatrix<double>::InnerIterator it(SNN, i); it; ++it) {
-// 			it.valueRef() = it.value()/(newK + (newK - it.value()));
-// 			if (it.value() < prune) {
-// 				it.valueRef() = 0;
-// 			}
-// 		}
-// 	}
-
-// 	if (prune > 0) {
-// 		SNN.prune(0.0); // actually remove pruned values
-// 	}
-
-// 	return List::create(Named("nn") = oldNN, Named("snn") = SNN);
-// }
-
-
 // [[Rcpp::export(rng = false)]]
 Eigen::SparseMatrix<double> pruneSNN(Eigen::SparseMatrix<double> snnMatrix, double prune = 0) {
 	if (prune <= 0) {
@@ -53,6 +23,7 @@ Eigen::SparseMatrix<double> pruneSNN(Eigen::SparseMatrix<double> snnMatrix, doub
 	return snnMatrix;
 }
 
+// TODO check if k is lower than the max possible value
 // [[Rcpp::export(rng = false)]]
 Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double> &nnMatrix, int k, double prune = 0) {
 	Eigen::SparseMatrix<double> SNN = nnMatrix * (nnMatrix.transpose());
@@ -100,7 +71,6 @@ List getNNmatrix(Eigen::MatrixXd nnRanked, int k = -1, int start = 0, double pru
 		k = nCols - start;
 	}
   
-	// std::cout << nRows << ' ' << nCols << ' ' << k << '\n';
   	std::vector<Eigen::Triplet<double>> tripletList;
   	tripletList.reserve(nRows * k);
 

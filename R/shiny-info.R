@@ -139,30 +139,6 @@ dr_choice_info <- function(session) {
     )
 }
 
-# dr_template_info <- function(session) {
-#     shiny::showModal(
-#         shiny::modalDialog(
-#             shiny::h1("\n"),
-#             shiny::h5("For more information please go to:"),
-#             shiny::tagList("", github),
-#             easyClose = TRUE
-#         ),
-#         session
-#     )
-# }
-
-# dr_template_info <- function(session) {
-#     shiny::showModal(
-#         shiny::modalDialog(
-#             shiny::h1("\n"),
-#             shiny::h5("For more information please go to:"),
-#             shiny::tagList("", github),
-#             easyClose = TRUE
-#         ),
-#         session
-#     )
-# }
-
 ##### GRAPH CONSTRUCTION #####
 ##### GRAPH CLUSTERING #####
 gclust_info <- function(session) {

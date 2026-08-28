@@ -13,7 +13,7 @@ write_objects(
   chunk_size = 100,
   gene_variance_threshold = 0,
   summary_function = stats::median,
-  qualpalr_colorspace = "pretty"
+  qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ write_objects(
 
 \item{summary_function}{The function used for summarizing the stability values; the default is \code{median}}
 
-\item{qualpalr_colorspace}{The colorspace used for generating the colors; the default is \code{pretty}}
+\item{qualpalr_colorspace}{The colorspace used for generating the colors; we use the default as defined in the \code{qualpalr} package}
 }
 \value{
 NULL (the files are written in the project_folder)

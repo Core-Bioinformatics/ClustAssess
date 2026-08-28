@@ -1,13 +1,15 @@
 # 3. The assessment of the stability for clustering paramters
 # (such as clustering method, number of clusters)
 
-algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
+algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leiden_matrix")
 algorithm_names_mapping <- list(
     Louvain = 1,
     Louvain.refined = 2,
     SLM = 3,
-    Leiden = 4
+    Leiden = 4,
+    Leiden_matrix = 5
 )
+seed <- NULL
 
 #' Merge Partitions from different Resolutions
 #'
@@ -42,12 +44,6 @@ merge_resolutions <- function(res_obj) {
 
     k_vals <- stringr::str_sort(names(clusters_obj), numeric = TRUE)
     clusters_obj <- clusters_obj[k_vals]
-
-    # if (ncores > 1) {
-    #     shared_clusters_obj <- SharedObject::share(clusters_obj)
-    # } else {
-    #     shared_clusters_obj <- clusters_obj
-    # }
 
     all_vars <- ls()
     needed_vars <- c("shared_clusters_obj")
@@ -157,8 +153,8 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     # convert n_repetitions to an integer
     n_repetitions <- as.integer(n_repetitions)
 
-    if (!is.numeric(clustering_algorithm) || !(all(clustering_algorithm %in% 1:4))) {
-        stop("algorithm should be a vector of numbers between 1 and 4")
+    if (!is.numeric(clustering_algorithm) || !(all(clustering_algorithm %in% 1:6))) {
+        stop("algorithm should be a vector of numbers between 1 and 6")
     }
 
     if (!is.logical(verbose)) {
@@ -202,11 +198,10 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         "current_clustering_arguments"
     )
     package_needed <- c()
-    if (4 %in% clustering_algorithm) {
+    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
     all_vars <- ls()
-    seed <- 0
 
 
 
@@ -249,11 +244,10 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 seed = seed_sequence,
                 .inorder = FALSE,
                 .noexport = all_vars[!(all_vars %in% needed_vars)],
-                .export = needed_vars,
                 .packages = package_needed
             ) %dopar% {
                 # apply the clustering, which should return a membership vector
-                do.call(
+                cl_result <- do.call(
                     clustering_functions,
                     c(
                         list(
@@ -264,7 +258,9 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                         current_clustering_arguments
                     )
                 )
+                return(cl_result)
             }
+
             different_partitions <- list()
 
             # group the partitions by the number of clusters
@@ -303,19 +299,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                     unique_partitions,
                     different_partitions[[k]]$partitions
                 )
-
-                # compute the EC-consistency of the partition list
-                # ec_consistency <- weighted_element_consistency(
-                #   clustering_list = lapply(different_partitions[[k]]$partitions, function(x) {
-                #     x$mb
-                #   }),
-                #   weights = sapply(different_partitions[[k]]$partitions, function(x) {
-                #     x$freq
-                #   }),
-                #   calculate_sim_matrix = TRUE
-                # )
-
-                # different_partitions[[k]][["ecc"]] <- ec_consistency
             }
 
             if (verbose) {
@@ -1001,17 +984,17 @@ plot_k_n_partitions <- function(clust_object,
 #' function determines the unique number of clusters. Based on the maximum
 #' number of clusters, the lower k values will be remapped on the y axis such
 #' that they are equally spaced.
+#' @noRd
 clust_hierplot_get_y_mapping <- function(df) {
     cl_names <- colnames(df)
     y_mapping <- list()
     n_max_cl <- 0
 
     for (i in cl_names) {
-        # unique_cl <- stringr::str_sort(unique(df[, i]), numeric = TRUE)
         if (is.factor(df[, i])) {
             unique_cl <- levels(df[, i])
         } else {
-            unique_cl <- unique(df[, i])
+            unique_cl <- stringr::str_sort(unique(df[, i]), numeric = TRUE)
         }
         y_mapping[[i]] <- lapply(unique_cl, I)
         names(y_mapping[[i]]) <- unique_cl
@@ -1034,6 +1017,7 @@ clust_hierplot_get_y_mapping <- function(df) {
 #' a cluster in a partition. The data frame will contain the information about
 #' the cluster name and the partition name it belongs to, as well the average
 #' ECC score of the cluster and its size.
+#' @noRd
 clust_hierplot_create_node_df <- function(df, consistency_list, y_mapping) {
     nodes_df <- NA
     for (i in seq(from = 1, to = length(y_mapping))) {
@@ -1067,6 +1051,7 @@ clust_hierplot_create_node_df <- function(df, consistency_list, y_mapping) {
 #' defines the relationship between two clusters from two different partitions.
 #' The data frame will contain information about the cluster names, the
 #' partition names, the number of shared points and the average ECS score.
+#' @noRd
 clust_hierplot_create_edge_df <- function(df, y_mapping) {
     edges_df <- NA
     for (i in seq(from = 1, to = length(y_mapping) - 1)) {
@@ -1108,10 +1093,11 @@ clust_hierplot_create_edge_df <- function(df, y_mapping) {
     return(edges_df %>% dplyr::arrange(.data$intersect_size))
 }
 
-#' @description GIve a data frame that has a partitioning on each column, this
+#' @description Give a data frame that has a partitioning on each column, this
 #' function generates the list with the node and edge data frames. The edge
 #' data frame is trimmed based on the `edge_threshold` parameter, which removes
 #' the edges with the intersection size below the quantile threshold.
+#' @noRd
 clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3) {
     y_mapping <- clust_hierplot_get_y_mapping(df)
     node_df <- clust_hierplot_create_node_df(df, consistency_list, y_mapping)
@@ -1124,6 +1110,7 @@ clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3
     ))
 }
 
+#' clusters - Default Case
 #' @description The default case for the `plot_clust_hierarchical` function. It
 #' creates the built based on a clustering data frame and a consistency list.
 #' The data frame should have a partition on each column and the number of
@@ -1131,6 +1118,7 @@ clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3
 #' distribution vector for each partition.
 #' 
 #' @note All partitions should have the same number of cells.
+#' @noRd
 plot_clust_hierarchical_default <- function(clustering_df,
                                             consistency_list,
                                             edge_threshold = 0.3,

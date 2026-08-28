@@ -2,9 +2,14 @@
 ppi <- 72
 single_color <- "#025147"
 generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color = "#017c6b") {
-    if (n_unique_values > 99) {
-        return(sample(grDevices::colors(distinct = TRUE), n_unique_values))
+    if (n_unique_values > 500) {
+        warning("Number of unique values is too high for visualisation. The metadata column will not be shown in the ShinyApp.")
+        return(NULL)
     }
+
+    # if (n_unique_values > 99) {
+        # return(sample(grDevices::colors(distinct = TRUE), n_unique_values))
+    # }
 
     if (n_unique_values > 1) {
         return(qualpalr::qualpal(n_unique_values, colorspace = qualpalr_colorspace)$hex)
@@ -30,7 +35,7 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
 #' @param chunk_size The chunk size for the rank matrix (See `rhdf5::h5createDataset` for more details)
 #' @param gene_variance_threshold The threshold for the gene variance; genes with variance below this threshold will be removed
 #' @param summary_function The function used for summarizing the stability values; the default is `median`
-#' @param qualpalr_colorspace The colorspace used for generating the colors; the default is `pretty`
+#' @param qualpalr_colorspace The colorspace used for generating the colors; we use the default as defined in the `qualpalr` package
 #'
 #' @return NULL (the files are written in the project_folder)
 #'
@@ -43,7 +48,7 @@ write_objects <- function(clustassess_object,
                           chunk_size = 100,
                           gene_variance_threshold = 0,
                           summary_function = stats::median,
-                          qualpalr_colorspace = "pretty") {
+                          qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))) {
     metadata_file_name <- file.path(project_folder, "metadata.rds")
     stability_file_name <- file.path(project_folder, "stability.h5")
     expr_file_name <- file.path(project_folder, "expression.h5")
@@ -82,12 +87,20 @@ write_objects <- function(clustassess_object,
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
+            if (is.null(metadata_colors[[mtd_col]])) {
+                metadata_unique[[mtd_col]] <- NULL
+                metadata[, mtd_col] <- NULL
+            }
         } else if (is.character(metadata[, mtd_col])) {
             metadata[, mtd_col][is.na(metadata[, mtd_col])] <- "N/A"
             metadata[, mtd_col] <- factor(metadata[, mtd_col])
             metadata_unique[[mtd_col]] <- levels(metadata[, mtd_col])
 
             metadata_colors[[mtd_col]] <- generate_colours(length(metadata_unique[[mtd_col]]), qualpalr_colorspace)
+            if (is.null(metadata_colors[[mtd_col]])) {
+                metadata_unique[[mtd_col]] <- NULL
+                metadata[, mtd_col] <- NULL
+            }
         } else if (is.logical(metadata[, mtd_col])) {
             metadata_unique[[mtd_col]] <- c(FALSE, TRUE)
             metadata_colors[[mtd_col]] <- qualpalr::qualpal(2, colorspace = qualpalr_colorspace)$hex
@@ -206,7 +219,7 @@ write_objects <- function(clustassess_object,
         feature_ordering$resolution <- stringr::str_sort(resolution_values, numeric = TRUE)
         # split the data tables by resolution
         clustassess_object$feature_stability$by_steps <- lapply(feature_ordering$resolution, function(resval) {
-            subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval) # %>% dplyr::arrange(order(.data$ecc))
+            subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval)
             subdt$fsize <- factor(subdt$fsize)
             subdt$resval <- NULL
 
@@ -501,7 +514,7 @@ write_shiny_app.Seurat <- function(object,
                                    shiny_app_title = "",
                                    organism_enrichment = "hsapiens",
                                    height_ratio = 0.6,
-                                   qualpalr_colorspace = "pretty",
+                                   qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
                                    prompt_feature_choice = TRUE) {
     mtd_df <- object@meta.data
     if ("umap" %in% names(object@reductions)) {
@@ -536,7 +549,7 @@ write_shiny_app.default <- function(object,
                                     shiny_app_title = "",
                                     organism_enrichment = "hsapiens",
                                     height_ratio = 0.6,
-                                    qualpalr_colorspace = "pretty",
+                                    qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85)),
                                     prompt_feature_choice = TRUE) {
     if (inherits(object, "dgCMatrix")) {
         nFeature <- Matrix::colSums(object > 0)
@@ -770,7 +783,7 @@ write_shiny_app.default <- function(object,
 #' @export
 add_metadata <- function(app_folder,
                          metadata,
-                         qualpalr_colorspace = "pretty") {
+                         qualpalr_colorspace = list(h = c(0, 360), s = c(0.1, 0.5), l = c(0.6, 0.85))) { 
     metadata_file_name <- file.path(app_folder, "metadata.rds")
 
     if (!file.exists(metadata_file_name)) {

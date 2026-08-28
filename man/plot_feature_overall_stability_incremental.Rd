@@ -57,7 +57,7 @@ feature_stability_result <- assess_feature_stability(
     feature_set = colnames(expr_matrix),
     steps = c(5, 10),
     feature_type = "feature_name",
-    resolution = c(0.1, 0.5),
+    resolution = c(0.5),
     n_repetitions = 3,
     umap_arguments = list(
         # the following parameters are used by the umap function

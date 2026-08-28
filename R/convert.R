@@ -264,6 +264,7 @@ create_monocle_default <- function(normalized_expression_matrix,
     # check if normalized expression matrix is sparse
     if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
         normalized_expression_matrix <- methods::as(normalized_expression_matrix, "dgCMatrix")
+        gc()
     }
 
     gene_names <- rownames(normalized_expression_matrix)
@@ -486,6 +487,10 @@ create_monocle_from_clustassess <- function(normalized_expression_matrix,
 #' @param use_all_genes A boolean value indicating if the expression matrix
 #' should be truncated to the genes used in the stability assessment. Defaults
 #' to `FALSE`.
+#' @param nrows_chunk The size of the chunk (in number of rows) to read from
+#' the expression.h5 file to form the sparse matrix. Defaults to 1000.
+#' @param refresh_interval The periodicity of chunks reading prior to running
+#' the garbage collector. Defaults to 1 iteration. 
 #'
 #' @return A Monocle object of the expression matrix, having the stable number
 #' of clusters identified by ClustAssess.
@@ -496,7 +501,9 @@ create_monocle_from_clustassess_app <- function(app_folder,
                                                 stable_feature_set_size,
                                                 stable_clustering_method,
                                                 stable_n_clusters = NULL,
-                                                use_all_genes = FALSE) {
+                                                use_all_genes = FALSE,
+                                                nrows_chunk = 1000,
+                                                refresh_interval = 1) {
     if (!dir.exists(app_folder)) {
         stop(paste0("The provided app_folder: ", app_folder, " does not exist."))
     }
@@ -506,14 +513,7 @@ create_monocle_from_clustassess_app <- function(app_folder,
     gene_names <- as.character(rhdf5::h5read(expr_path, "genes"))
     cell_names <- as.character(rhdf5::h5read(expr_path, "cells"))
 
-    # expr_matrix <- Matrix::Matrix(
-    #     rhdf5::h5read(expr_path, "expression_matrix"),
-    #     sparse = TRUE,
-    #     dimnames = list(gene_names, cell_names)
-    # )
-    expr_matrix <- rhdf5::h5read(expr_path, "expression_matrix")
-    rownames(expr_matrix) <- gene_names
-    colnames(expr_matrix) <- cell_names
+    expr_matrix <- read_sparse_matrix_from_app(app_folder, nrows_chunk, refresh_interval)
 
     available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")
     available_ftypes <- names(available_configs)
@@ -527,7 +527,7 @@ create_monocle_from_clustassess_app <- function(app_folder,
     if (!stable_feature_set_size %in% available_fsizes) {
         stop(paste0("The provided stable_feature_set_size: ", stable_feature_set_size, " is not available in the app.\nAvailable options: ", paste(available_fsizes, collapse = ", ")))
     }
-
+ 
     if (!use_all_genes) {
         used_genes <- rhdf5::h5read(stab_path, paste0(stable_feature_type, "/feature_list"))
         used_genes <- used_genes[seq_len(as.integer(stable_feature_set_size))]
@@ -615,6 +615,8 @@ update_seurat_object <- function(original_seurat_object,
 #' @param metadata_df The metadata dataframe having the cell names as rownames.
 #' If NULL, a dataframe with a single column named `identical_ident` will be
 #' created.
+#' @param verbose Set the level of verbosity of the Seurat functions. Defaults
+#' to `FALSE`.
 #'
 #' @return A Seurat object of the expression matrix, having the stable number
 #' of clusters identified by ClustAssess.
@@ -624,17 +626,16 @@ create_seurat_object_default <- function(normalized_expression_matrix,
                                          count_matrix = NULL,
                                          pca_embedding = NULL,
                                          umap_embedding = NULL,
-                                         metadata_df = NULL) {
-
-
-    if (is.null(count_matrix)) {
-        count_matrix <- normalized_expression_matrix
-    } else {
-        count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
-    }
-
+                                         metadata_df = NULL,
+                                         verbose = FALSE) {
     if (!inherits(normalized_expression_matrix, "dgCMatrix")) {
         normalized_expression_matrix <- Matrix::Matrix(normalized_expression_matrix, sparse = TRUE)
+    }
+
+    if (is.null(count_matrix)) {
+        count_matrix <- normalized_expression_matrix + min(normalized_expression_matrix@x)
+    } else {
+        count_matrix <- count_matrix[rownames(normalized_expression_matrix), colnames(normalized_expression_matrix)]
     }
 
     cell_names <- colnames(normalized_expression_matrix)
@@ -657,11 +658,10 @@ create_seurat_object_default <- function(normalized_expression_matrix,
         meta.data = metadata_df
     )
 
-    seurat_obj <- Seurat::NormalizeData(seurat_obj)
+    seurat_obj <- Seurat::NormalizeData(seurat_obj, verbose = verbose)
     seurat_obj@assays$RNA@layers$data <- normalized_expression_matrix
-    seurat_obj <- Seurat::ScaleData(seurat_obj)
-    seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000)
-    seurat_obj <- Seurat::RunPCA(seurat_obj)
+    seurat_obj <- Seurat::ScaleData(seurat_obj, verbose = verbose)
+    seurat_obj <- Seurat::FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 2000, verbose = verbose)
 
     if (!is.null(pca_embedding)) {
         rownames(pca_embedding) <- cell_names
@@ -670,9 +670,11 @@ create_seurat_object_default <- function(normalized_expression_matrix,
             embedding = pca_embedding,
             key = "PCA"
         )
+        npcs <- ncol(pca_embedding)
+    } else {
+        npcs <- min(30, ncol(normalized_expression_matrix) %/% 2)
+        seurat_obj <- Seurat::RunPCA(seurat_obj, npcs = npcs, verbose = verbose)
     }
-
-    seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = 1:30)
 
     if (!is.null(umap_embedding)) {
         rownames(umap_embedding) <- cell_names
@@ -681,6 +683,8 @@ create_seurat_object_default <- function(normalized_expression_matrix,
             embedding = umap_embedding,
             key = "UMAP"
         )
+    } else {
+        seurat_obj <- Seurat::RunUMAP(seurat_obj, reduction = "pca", dims = seq_len(npcs), verbose = verbose)
     }
 
     return(seurat_obj)
