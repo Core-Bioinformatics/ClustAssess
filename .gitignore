@@ -10,3 +10,4 @@ src/*.dll
 *tar.gz
 *Rcheck/
 test.R
+docs

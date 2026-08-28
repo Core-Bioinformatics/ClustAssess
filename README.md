@@ -181,7 +181,6 @@ or from github using remotes:
 
 The following packages are required for ClustAssess:
 
-* ComplexHeatmap
 * dplyr
 * DT
 * fastcluster
@@ -192,19 +191,17 @@ The following packages are required for ClustAssess:
 * ggplot2
 * ggrastr
 * ggrepel
-* ggtext
 * gprofiler2
 * igraph
 * jsonlite
 * leiden
 * Matrix (>= 1.5.0)
 * matrixStats
-* methods
 * progress
 * stringr
 * paletteer
 * plotly
-* qualpalr
+* qualpalr (>= 1.0.0)
 * RANN
 * reshape2
 * rlang
@@ -213,14 +210,16 @@ The following packages are required for ClustAssess:
 * shinyjs
 * shinyLP
 * shinyWidgets
-* stats
+* utils
 * uwot
 * vioplot
+* zip
 
 To use all stability-based assessment methods, and run all examples and
 vignettes, the following packages are also needed:
 
 * colourpicker
+* ComplexHeatmap
 * dbscan
 * DelayedMatrixStats
 * dendextend

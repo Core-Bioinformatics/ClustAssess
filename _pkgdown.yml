@@ -1,14 +1,22 @@
 template:
-  light-switch: true
+  light-switch: yes
   bootstrap: 5
 navbar:
   structure:
-    left: [intro, reference, articles, news, tutorials]
-    right: [search, github, lightswitch]
+    left:
+    - intro
+    - reference
+    - articles
+    - news
+    - tutorials
+    right:
+    - search
+    - github
+    - lightswitch
   components:
     tutorials:
-      text: "ClustAssess Shiny app Tutorial"
-      href: "tutorials/index.html"
+      text: Shiny App Documentation
+      href: shiny_documentation/index.html
 url: https://core-bioinformatics.github.io/ClustAssess/
 reference:
 - title: Element-Centric Scores
@@ -33,8 +41,7 @@ reference:
   - calculate_markers
   - calculate_markers_shiny
 - title: Convert to other packages
-- contents:
-  - starts_with("create_")
+- contents: starts_with("create_")
 - title: PAC
 - contents:
   - consensus_cluster
