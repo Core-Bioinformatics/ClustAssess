@@ -170,7 +170,6 @@ ui_sandbox_metadata_panel <- function(id, draw_line) {
             choices = NULL
         ),
         shiny::verticalLayout(
-            # shiny::column(6,
             shiny::splitLayout(
                 cellWidths = c("40px", "40px"),
                 gear_umaps(ns, "metadata"),
@@ -180,22 +179,16 @@ ui_sandbox_metadata_panel <- function(id, draw_line) {
                 inputId = ns("select_groups"),
                 choices = NULL,
                 inline = FALSE,
-                # width = "100%",
-                # width = "30%",
                 options = list(
                     `actions-box` = TRUE,
                     title = "Select/deselect groups",
-                    # actionsBox = TRUE,
                     size = 10,
                     width = "90%",
                     `selected-text-format` = "count > 3"
                 ),
                 multiple = TRUE
             )
-            # ),
         ),
-        # ),
-        # shiny::uiOutput(ns("umap_metadata_generator"))
         shiny::plotOutput(ns("umap_metadata"), height = "auto")
     )
 }
@@ -592,7 +585,6 @@ server_sandbox_metadata_panel_left <- function(id) {
 
             metadata_legend_height <- shiny::reactive({
                 unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
                 grDevices::pdf(file = NULL, width = plt_height(), height = plt_height())
                 if (is.null(unique_values)) {
                     graphics::par(mai = c(0.1, 0, 0.1, 0))
@@ -725,9 +717,8 @@ server_sandbox_metadata_panel_left <- function(id) {
                         color_info = plot_data()$color_info,
                         color_values = plot_data()$color_values,
                         unique_values = plot_data()$unique_values,
-                        plt_height = input$height_metadata * ppi, # - metadata_legend_height(),
+                        plt_height = input$height_metadata * ppi,
                         plt_width = input$width_metadata * ppi,
-                        # predicted_height = (metadata_legend_height() - 1) / ppi,
                         pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
@@ -788,7 +779,6 @@ server_sandbox_metadata_panel_right <- function(id) {
 
             metadata_legend_height <- shiny::reactive({
                 unique_values <- pkg_env$metadata_unique[[input$metadata]]
-                # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
                 grDevices::pdf(file = NULL, width = plt_height(), height = plt_height())
                 if (is.null(unique_values)) {
                     graphics::par(mai = c(0.1, 0, 0.1, 0))
@@ -922,9 +912,8 @@ server_sandbox_metadata_panel_right <- function(id) {
                         color_info = plot_data()$color_info,
                         color_values = plot_data()$color_values,
                         unique_values = plot_data()$unique_values,
-                        plt_height = input$height_metadata * ppi, # - metadata_legend_height(),
+                        plt_height = input$height_metadata * ppi,
                         plt_width = input$width_metadata * ppi,
-                        # predicted_height = (metadata_legend_height() - 1) / ppi,
                         pch = ifelse(input$metadata_pt_type == "Pixel", ".", 19),
                         pt_size = input$metadata_pt_size,
                         text_size = input$metadata_text_size,
@@ -982,7 +971,6 @@ server_sandbox_gene_panel_left <- function(id) {
             )
 
             gene_legend_height <- shiny::reactive({
-                # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
                 grDevices::pdf(NULL, width = plt_height(), height = plt_height())
                 graphics::par(mai = c(0.1, 0, 0.1, 0))
                 text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
@@ -1116,7 +1104,6 @@ server_sandbox_gene_panel_right <- function(id) {
             )
 
             gene_legend_height <- shiny::reactive({
-                # ragg::agg_png(res = ppi, width = plt_height(), height = plt_height())
                 grDevices::pdf(NULL, width = plt_height(), height = plt_height())
                 graphics::par(mai = c(0.1, 0, 0.1, 0))
                 text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = input$gene_text_size)
@@ -1378,7 +1365,6 @@ server_sandbox <- function(id) {
                     session,
                     inputId = glue::glue("sbx_gene_panel_left-gene_expr"),
                     choices = c(names(pkg_env$genes)),
-                    # selected = NULL,
                     selected = names(pkg_env$genes[1]),
                     server = TRUE,
                     options = list(
@@ -1404,7 +1390,6 @@ server_sandbox <- function(id) {
                     session,
                     inputId = glue::glue("sbx_gene_panel_right-gene_expr"),
                     choices = c(names(pkg_env$genes)),
-                    # selected = NULL,
                     selected = names(pkg_env$genes[1]),
                     server = TRUE,
                     options = list(

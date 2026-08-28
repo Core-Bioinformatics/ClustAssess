@@ -47,19 +47,6 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
     if (algorithm == 5) {
         object <- methods::as(object = object,  Class = "matrix")
     } else if (!(inherits(object, "igraph"))) {
-        # is_nn <- all(object@x == 1)
-        # if (is_nn) {
-        #     object <- igraph::graph_from_adjacency_matrix(
-        #         adjmatrix = object,
-        #         mode = "directed"
-        #     )
-        # } else {
-        #     object <- igraph::graph_from_adjacency_matrix(
-        #         adjmatrix = object,
-        #         mode = "undirected",
-        #         weighted = TRUE
-        #     )
-        # }
         object <- Seurat::as.sparse(object)
         object <- igraph::graph_from_adjacency_matrix(
             adjmatrix = object,
@@ -86,11 +73,6 @@ leiden_clustering <- function(g,
                               ...) {
     best_mb <- NULL
     best_quality <- NULL
-    # g <- igraph::graph_from_adjacency_matrix(
-    #     adjmatrix = object,
-    #     mode = graph_mode,
-    #     weighted = TRUE
-    # )
 
     if (num_starts > 1) {
         set.seed(seed)
@@ -420,9 +402,8 @@ automatic_stability_assessment <- function(expression_matrix,
             })
         })
         ecc_list_medians <- order(sapply(ecc_list, stats::median), decreasing = TRUE)
-        ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))] # which(ecc_list_medians >= stats::median(ecc_list_medians))
+        ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))]
 
-        # ecc_ranking <- rank_configs(ecc_list, rank_by = ranking_criterion, return_type = "rank")
         incremental_list <- c(
             list(sapply(
                 feature_stability_object$incremental[[set_name]][[1]],
@@ -441,14 +422,13 @@ automatic_stability_assessment <- function(expression_matrix,
         )
 
         incremental_medians <- order(sapply(incremental_list, stats::median), decreasing = TRUE)
-        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))] # which(incremental_medians >= stats::median(incremental_medians))
+        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))]
         eligible_steps <- intersect(ecc_above_median, incremental_above_median)
         n_top_configs <- min(n_top_configs, length(eligible_steps))
         total_nconfigs <- total_nconfigs + n_top_configs
         feature_stability_ranking <- rank_configs(lapply(eligible_steps, function(i) {
             incremental_list[[i]] + ecc_list[[i]]
         }), rank_by = ranking_criterion, return_type = "order")
-        # feature_stability_ranking <- order(
 
         feature_configs[[set_name]] <- list()
 
@@ -608,28 +588,13 @@ automatic_stability_assessment <- function(expression_matrix,
             split_configs <- strsplit(best_config, "_")[[1]]
             base_embedding <- tolower(split_configs[length(split_configs) - 1])
             graph_type <- split_configs[length(split_configs)] # NOTE update if you decide to remove ecs thresh
-            # feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- Seurat::FindNeighbors(
-            #     object = feature_configs[[set_name]][[n_steps]][[base_embedding]],
-            #     k.param = best_nn,
-            #     verbose = FALSE,
-            #     nn.method = "rann",
-            #     compute.SNN = FALSE
-            # )$nn
             feature_configs[[set_name]][[n_steps]]$adj_matrix <- getNNmatrix(
                 feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx,
                 best_nn,
                 0,
                 -1
             )$nn
-            # feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- getNNmatrix(
-            #     RANN::nn2(
-            #         feature_configs[[set_name]][[n_steps]][[base_embedding]],
-            #         k = best_nn,
-            #     )$nn.idx,
-            #     best_nn,
-            #     0,
-            #     -1
-            # )$nn
+
             highest_prune_param <- 0
 
             if (graph_type == "snn") {

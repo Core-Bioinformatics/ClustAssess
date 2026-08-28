@@ -219,7 +219,7 @@ write_objects <- function(clustassess_object,
         feature_ordering$resolution <- stringr::str_sort(resolution_values, numeric = TRUE)
         # split the data tables by resolution
         clustassess_object$feature_stability$by_steps <- lapply(feature_ordering$resolution, function(resval) {
-            subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval) # %>% dplyr::arrange(order(.data$ecc))
+            subdt <- overall_dtable_by_step %>% dplyr::filter(.data$res == resval)
             subdt$fsize <- factor(subdt$fsize)
             subdt$resval <- NULL
 

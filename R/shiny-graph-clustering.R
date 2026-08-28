@@ -78,13 +78,11 @@ ui_graph_clustering_per_value_boxplot <- function(id) {
 ui_graph_clustering_per_value_umap <- function(id) {
     ns <- shiny::NS(id)
     shiny::tagList(
-        # shiny::uiOutput(ns("select_cluster_method_generator")),
         shiny::selectInput(
             inputId = ns("select_method"),
             label = "Select the clustering method",
             choices = ""
         ),
-        # shiny::uiOutput(ns("select_n_clusters_generator")),
         shiny::selectInput(
             inputId = ns("select_k"),
             label = "Select the number of clusters (k)",
@@ -97,12 +95,9 @@ ui_graph_clustering_per_value_umap <- function(id) {
                 inputId = ns("select_clusters"),
                 choices = "",
                 inline = FALSE,
-                # width = "100%",
-                # width = "30%",
                 options = list(
                     `actions-box` = TRUE,
                     title = "Select/deselect clusters",
-                    # actionsBox = TRUE,
                     size = 10,
                     width = "90%",
                     `selected-text-format` = "count > 3"
@@ -111,7 +106,6 @@ ui_graph_clustering_per_value_umap <- function(id) {
             )
         ),
         shiny::fluidRow(
-            # shiny::uiOutput(ns("umap_k_generator")),
             shiny::column(
                 6,
                 shiny::plotOutput(ns("umap_k"), height = "auto"),
@@ -122,7 +116,6 @@ ui_graph_clustering_per_value_umap <- function(id) {
                 shiny::plotOutput(ns("umap_ecc"), height = "auto"),
                 shiny::plotOutput(ns("umap_ecc_legend"), height = "auto")
             )
-            # shiny::uiOutput(ns("umap_ecc_generator"))
         )
     )
 }
@@ -567,10 +560,6 @@ server_graph_clustering_overall_boxplot <- function(id) {
                     floor(min(pkg_env$height_ratio * pkg_env$dimension()[2], pkg_env$dimension()[1] / 2))
                 },
                 {
-                    # shiny::req(pkg_env$lock_k())
-                    # shiny_plot_clustering_overall_stability(pkg_env$stab_obj$clustering_stability,
-                    #   value_type = "resolution"
-                    # )
                     ftype <- pkg_env$lock_stable$feature_set
                     fsize <- pkg_env$lock_stable$n_features
 
@@ -579,7 +568,7 @@ server_graph_clustering_overall_boxplot <- function(id) {
                     boxplot_width <- input$boxplot_width
 
                     grouped_boxplot_dataframe(
-                        dataframe = pkg_env$stab_obj$summary_res, # rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_resolution", "summary", sep = "/")),
+                        dataframe = pkg_env$stab_obj$summary_res,
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = plt_height() - 1,
@@ -602,7 +591,7 @@ server_graph_clustering_overall_boxplot <- function(id) {
                     boxplot_width <- input$boxplot_width
 
                     grouped_boxplot_dataframe(
-                        dataframe = pkg_env$stab_obj$summary_k, # rhdf5::h5read("stability.h5", paste(ftype, fsize, "clustering_stability", "split_by_k", "summary", sep = "/")),
+                        dataframe = pkg_env$stab_obj$summary_k, 
                         y_column = "ecc",
                         x_column = "cl_method",
                         plt_height = plt_height() - 1,
@@ -799,7 +788,6 @@ server_graph_clustering_per_value_umap <- function(id) {
                                 input$select_k,
                                 sep = "/"
                             ))),
-                            # color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k)),
                             color_values = pkg_env$discrete_colors[[as.character(input$select_k)]],
                             unique_values = seq_len(as.integer(input$select_k)),
                             plt_height = plt_height(),
@@ -845,7 +833,6 @@ server_graph_clustering_per_value_umap <- function(id) {
 
                             only_legend_plot(
                                 unique_values = unique_values,
-                                # color_values = rhdf5::h5read("stability.h5", paste0("colors/", input$select_k))[unique_values],
                                 color_values = pkg_env$discrete_colors[[as.character(length(unique_values))]][unique_values],
                                 color_info = NULL,
                                 plt_width = plt_height(),
@@ -1058,7 +1045,6 @@ server_graph_clustering_k_stab <- function(id) {
 
             output$k_stability <- shiny::renderPlot(
                 {
-                    # shiny::req(pkg_env$lock_k())
                     shiny::req(input$k_nparts_thresh > 0, input$k_select_groups)
                     shiny_plot_k_n_partitions(
                         summary_df = pkg_env$stab_obj$summary_k,
@@ -1289,10 +1275,6 @@ shiny_ggplot_clustering_per_value_stability <- function(clust_object,
             outlier.shape = NA,
             outlier.size = 0.1
         ) +
-        # ggplot2::geom_violin(
-        #   position = ggplot2::position_dodge(width = dodge_width),
-        #   width = width
-        # ) +
         ggplot2::theme_bw() +
         ggplot2::ggtitle(paste0("Clustering stability per ", value_type)) +
         ggplot2::theme(
@@ -1375,7 +1357,6 @@ shiny_plot_clustering_per_value_stability <- function(ecc_list,
             }
             prev_value <- k_or_res_values[i]
             count_diff <- count_diff + 1
-            # abline_coords[count_diff+1] <- n_methods * space_intra + (n_methods * space_intra + space_inter) * count_diff + (space_inter) / 2
         }
 
         at_values[i] <- count_diff * (n_methods * space_intra_groups + space_inter_groups) + cl_method[i] + (cl_method[i] - 1) * (space_intra_groups - 1)
@@ -1395,7 +1376,6 @@ shiny_plot_clustering_per_value_stability <- function(ecc_list,
         ecc_list,
         outline = FALSE,
         at = at_values,
-        # col = rhdf5::h5read("stability.h5", paste0("colors/", n_methods))[cl_method],
         col = pkg_env$discrete_colors[[as.character(n_methods)]][cl_method],
         boxwex = width * (n_methods + (space_intra_groups - 1) * (n_methods - 1)) / n_methods,
         xaxt = "n",
@@ -1465,7 +1445,6 @@ shiny_plot_clustering_per_value_stability_old <- function(clust_object,
     }
     middle_values <- at_values[seq(from = offset, by = max_levels, to = length(name_values))]
 
-    # colorsi <- grDevices::rainbow(max_levels, s = 0.5)
     colorsi <- pkg_env$discrete_colors[[as.character(max_levels)]]
 
 
@@ -1516,7 +1495,6 @@ shiny_plot_clustering_overall_stability <- function(clust_object,
     melted_df$method <- factor(melted_df$method)
     melted_df[[value_type]] <- factor(melted_df[[value_type]])
 
-    # colorsi <- grDevices::rainbow(nlevels(melted_df$method), s = 0.5)
     colorsi <- pkg_env$discrete_colors[[as.character(nlevels(melted_df$method))]]
     return({
         graphics::boxplot(

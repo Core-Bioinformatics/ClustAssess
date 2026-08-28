@@ -45,12 +45,6 @@ merge_resolutions <- function(res_obj) {
     k_vals <- stringr::str_sort(names(clusters_obj), numeric = TRUE)
     clusters_obj <- clusters_obj[k_vals]
 
-    # if (ncores > 1) {
-    #     shared_clusters_obj <- SharedObject::share(clusters_obj)
-    # } else {
-    #     shared_clusters_obj <- clusters_obj
-    # }
-
     all_vars <- ls()
     needed_vars <- c("shared_clusters_obj")
 
@@ -305,19 +299,6 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                     unique_partitions,
                     different_partitions[[k]]$partitions
                 )
-
-                # compute the EC-consistency of the partition list
-                # ec_consistency <- weighted_element_consistency(
-                #   clustering_list = lapply(different_partitions[[k]]$partitions, function(x) {
-                #     x$mb
-                #   }),
-                #   weights = sapply(different_partitions[[k]]$partitions, function(x) {
-                #     x$freq
-                #   }),
-                #   calculate_sim_matrix = TRUE
-                # )
-
-                # different_partitions[[k]][["ecc"]] <- ec_consistency
             }
 
             if (verbose) {

@@ -44,7 +44,6 @@ get_nn_conn_comps_umap <- function(embedding,
         "umap_arguments"
     )
     seed <- NA
-    # getNNmatrix <- getNNmatrix
 
     # send the name of the dim reduction arguments
     nn_conn_comps_list_temp <- foreach::foreach(
@@ -112,10 +111,6 @@ get_nn_conn_comps_pca <- function(embedding,
 
 
     nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
-    # nn2_res <- RANN::nn2(
-        # embedding,
-        # k = max(n_neigh_sequence)
-    # )$nn.idx
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
@@ -567,11 +562,6 @@ assess_nn_stability_pca <- function(embedding,
 
     nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
 
-    # nn2_res <- RANN::nn2(
-        # embedding,
-        # k = max(n_neigh_sequence)
-    # )$nn.idx
-
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_nn2_res <- SharedObject::share(nn2_res)
     } else {
@@ -618,10 +608,7 @@ assess_nn_stability_pca <- function(embedding,
         shared_nn2_res <- SharedObject::unshare(nn2_res)
         rm(shared_nn2_res)
     }
-
-    # rm(nn2_res)
-    # gc()
-
+    
     package_needed <- c()
     if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
@@ -711,13 +698,6 @@ assess_nn_stability_pca <- function(embedding,
         }
     }
 
-    # TODO raise a github issue for SharedObject: is it necesarry to unshare objects??
-    # if (ncores > 1) {
-    #     shared_neigh_matrix <- SharedObject::unshare(neigh_matrices)
-    #     # rm(shared_neigh_matrix)
-    #     gc()
-    # }
-
     # create an object showing the number of clusters obtained for each number
     # of neighbours
     nn_object_n_clusters <- list()
@@ -735,14 +715,6 @@ assess_nn_stability_pca <- function(embedding,
     nn_ecs_object <- lapply(partitions_list, function(config) {
         lapply(config, function(n_neigh) {
             n_neigh$ecc
-            # weighted_element_consistency(
-            #     lapply(n_neigh, function(x) {
-            #         x$mb
-            #     }),
-            #     sapply(n_neigh, function(x) {
-            #         x$freq
-            #     })
-            # )
         })
     })
 

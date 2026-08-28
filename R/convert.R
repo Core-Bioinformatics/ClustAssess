@@ -513,12 +513,6 @@ create_monocle_from_clustassess_app <- function(app_folder,
     gene_names <- as.character(rhdf5::h5read(expr_path, "genes"))
     cell_names <- as.character(rhdf5::h5read(expr_path, "cells"))
 
-    # expr_matrix <- Matrix::Matrix(
-    #     rhdf5::h5read(expr_path, "expression_matrix"),
-    #     sparse = TRUE,
-    #     dimnames = list(gene_names, cell_names)
-    # )
-
     expr_matrix <- read_sparse_matrix_from_app(app_folder, nrows_chunk, refresh_interval)
 
     available_configs <- rhdf5::h5read(stab_path, "feature_ordering/stable")

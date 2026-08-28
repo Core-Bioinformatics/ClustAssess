@@ -1,10 +1,3 @@
-# expression_matrix <- NA
-# metadata <- NA
-# genes <- NA
-# stab_obj <- NA
-# feature_types <- NA
-
-# pkg_env <- as.environment("namsespace:ClustAsssess")#new.env(parent = emptyenv())
 # TODO check https://stackoverflow.com/questions/41954302/where-to-create-package-environment-variables   and   https://github.com/tidyverse/dplyr/blob/bbcfe99e29fe737d456b0d7adc33d3c445a32d9d/R/zzz.r   and  https://adv-r.hadley.nz/environments.html   http://adv-r.had.co.nz/Environments.html
 pkg_env <- .GlobalEnv # new.env(parent = baseenv())
 filetypes <- list(
@@ -86,7 +79,6 @@ grouped_boxplot_dataframe <- function(dataframe,
                                       axis_size = 1) {
     unique_groups <- unique(dataframe[, x_column])
     n_groups <- length(unique_groups)
-    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
     groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
 
     if (is.null(xlabel)) {
@@ -131,7 +123,6 @@ grouped_boxplot_list <- function(groups_list,
     unique_groups_values <- unique(groups_values)
     unique_x_values <- unique(x_values)
 
-    # print(plt_width)
     # convert pixels to inches
     plt_height <- plt_height / ppi
 
@@ -140,7 +131,6 @@ grouped_boxplot_list <- function(groups_list,
     n_groups <- length(unique_groups_values)
     n_boxplots <- length(groups_values)
 
-    # groups_colours <- rhdf5::h5read("stability.h5", paste0("colors/", n_groups))
     groups_values <- match(groups_values, unique_groups_values)
     groups_colours <- pkg_env$discrete_colors[[as.character(n_groups)]]
     at_values <- rep(0, length(groups_values))
@@ -164,17 +154,12 @@ grouped_boxplot_list <- function(groups_list,
         at_values[i] <- count_diff * (n_groups * space_intra + space_inter) + groups_values[i] + (groups_values[i] - 1) * (space_intra - 1)
 
         if (updated_count) {
-            # abline_coords[count_diff] <- (at_values[i] + at_values[i-1]) / 2
             abline_coords[count_diff] <- (count_diff - 1) * (n_groups * space_intra + space_inter) + n_groups + (n_groups - 1) * (space_intra - 1) + (space_inter + space_intra) / 2
             updated_count <- FALSE
             text_coords[count_diff] <- mean(at_values[start_index:(i - 1)])
             start_index <- i
         }
     }
-
-    # print(at_values)
-    # print(abline_coords)
-    # print(groups_values)
 
     text_coords[count_diff + 1] <- mean(at_values[start_index:n_boxplots])
 
@@ -238,9 +223,7 @@ grouped_boxplot_list <- function(groups_list,
         cex = text_size,
         pt.cex = text_size * 2,
         bty = "n",
-        # horizontal = TRUE,
         horiz = TRUE,
-        # text.width = NA,
         xpd = TRUE
     )
 }
@@ -400,8 +383,8 @@ color_ggplot <- function(embedding,
         x_span <- x_range[2] - x_range[1]
         y_span <- y_range[2] - y_range[1]
 
-        x_start <- x_range[1] * 1.05 # + x_span * 0.08
-        y_start <- y_range[1] * 1.05 # + y_span * 0.08
+        x_start <- x_range[1] * 1.05
+        y_start <- y_range[1] * 1.05
         x_end <- x_start + x_span * 0.30
         y_end <- y_start + y_span * 0.30
 
@@ -633,13 +616,9 @@ only_legend_plot <- function(unique_values,
             pt.cex = text_size * 2,
             bty = "n",
             ncol = number_columns,
-            # text.width = NA,
             xpd = TRUE
         )
     }
-    # graphics::par(old_par)
-
-    # grDevices::dev.off()
 }
 
 
@@ -684,9 +663,6 @@ color_plot2 <- function(embedding,
                         display_legend = FALSE,
                         predicted_height = NULL,
                         labels = FALSE) {
-    # xlim <- c(min(embedding[, 1]), max(embedding[, 1]))
-    # ylim <- c(min(embedding[, 2]), max(embedding[, 2]))
-
     # convert pixels to inches
     plt_height <- plt_height / ppi
     plt_width <- plt_width / ppi
@@ -840,8 +816,8 @@ color_plot2 <- function(embedding,
         x_span <- usr[2] - usr[1]
         y_span <- usr[4] - usr[3]
 
-        x_start <- usr[1]# - x_span * 0.08
-        y_start <- usr[3]# - y_span * 0.08
+        x_start <- usr[1]
+        y_start <- usr[3]
         x_end <- x_start + x_span * 0.30
         y_end <- y_start + y_span * 0.30
         y_span <- y_end - y_start
@@ -929,12 +905,9 @@ color_plot2 <- function(embedding,
             pt.cex = legend_text_size * 2,
             bty = "n",
             ncol = number_columns,
-            # text.width = NA,
             xpd = TRUE
         )
     }
-
-    # grDevices::dev.off()
 }
 
 color_plot <- function(embedding,
@@ -1069,11 +1042,6 @@ voting_scheme_ggplot <- function(embedding,
                                  n_genes_above_threshold) {
     umap_df <- data.frame(embedding)
     colnames(umap_df) <- paste("UMAP", 1:2, sep = "_")
-    # n_expressed_genes <- rep(0, ncol(pkg_env$expression_matrix))
-    # expression_threshold <- as.numeric(expression_threshold)
-    # for (gene in selected_genes) {
-    #   n_expressed_genes <- n_expressed_genes + (pkg_env$expression_matrix[gene, ] > expression_threshold)
-    # }
 
     mask <- (n_expressed_genes >= n_genes_above_threshold)
 
@@ -1302,7 +1270,6 @@ calculate_markers_shiny <- function(cells1,
     df_list <- lapply(
         seq_len(nchunks),
         function(i) {
-            # print(i)
             if (i == nchunks) {
                 index_list <- seq(from = chunk_size * (i - 1) + 1, by = 1, to = nfiltered_genes)
             } else {
@@ -1562,7 +1529,6 @@ calculate_markers <- function(expression_matrix,
     }
 
     if (length(mask) == 1) {
-        # expression_matrix <- matrix(expression_matrix, nrow = 1)
         rank_matrix <- matrix(rank_matrix, nrow = 1)
     }
 
@@ -1771,23 +1737,3 @@ gene_name_transformation <- function(gene_name) {
 
     return(gene_name)
 }
-
-# split_vector_by_metadata <- function(vec, metadata) {
-#     if (is.factor(metadata)) {
-#         unique_values <- levels(metadata)
-#     } else {
-#         unique_values <- unique(metadata)
-#     }
-
-#     split_list <- lapply(unique_values, function(i) { rep(0, length(vec))})
-#     iter_list <- rep(1, length(unique_values))
-#     names(split_list) <- unique_values
-#     names(iter_list) <- unique_values
-
-#     for (i in)
-
-
-
-
-
-# }
