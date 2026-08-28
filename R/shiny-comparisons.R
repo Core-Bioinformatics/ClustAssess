@@ -2005,7 +2005,7 @@ server_comparison_gene_panel <- function(id) {
                             legend.position = "bottom",
                             legend.title = ggplot2::element_blank(),
                             legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
-                            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
+                            plot.title = ggplot2::element_text(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
                             aspect.ratio = 1
                         )
                     
@@ -2118,7 +2118,7 @@ server_comparison_gene_panel <- function(id) {
                                 legend.position = "bottom",
                                 legend.title = ggplot2::element_blank(),
                                 legend.text = ggplot2::element_text(size = input$gene_legend_size * 20),
-                                plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
+                                plot.title = ggplot2::element_text(hjust = 0.5, size = input$gene_axis_size * 20 * 1.5),
                                 aspect.ratio = 1
                             )
 

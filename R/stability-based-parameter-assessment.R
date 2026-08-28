@@ -45,7 +45,7 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
     }
 
     if (algorithm == 5) {
-        object <- as(object = object,  Class = "matrix")
+        object <- methods::as(object = object,  Class = "matrix")
     } else if (!(inherits(object, "igraph"))) {
         # is_nn <- all(object@x == 1)
         # if (is_nn) {

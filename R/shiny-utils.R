@@ -389,7 +389,7 @@ color_ggplot <- function(embedding,
             legend.text = ggplot2::element_text(size = legend_text_size),
             axis.text = ggplot2::element_text(size = axis_text_size),
             axis.title = ggplot2::element_text(size = axis_text_size),
-            plot.title = ggtext::element_textbox_simple(hjust = 0.5, size = axis_text_size * 1.5),
+            plot.title = ggplot2::element_text(hjust = 0.5, size = axis_text_size * 1.5),
             aspect.ratio = 1
         ) +
         ggplot2::labs(x = "UMAP 1", y = "UMAP 2")
@@ -606,13 +606,6 @@ only_legend_plot <- function(unique_values,
             length(unique_values)
         )
         number_rows <- ceiling(length(unique_values) / number_columns)
-
-        # print(strheight(paste(
-        #           rep("TEXT", number_rows + 1),
-        #           collapse = "\n"
-        #           ),
-        #           units = "inches",
-        #           cex = text_size) * ppi)
     }
 
     if (is.null(color_values)) {
@@ -873,14 +866,14 @@ color_plot2 <- function(embedding,
 
         graphics::text(
             x = x_end - x_span * 0.25,
-            y = y_start - strheight("UMAP 1", cex = axis_size) * 0.5,
+            y = y_start - graphics::strheight("UMAP 1", cex = axis_size) * 0.5,
             labels = "UMAP 1",
             cex = axis_size,
             adj = c(1, 1),
             xpd = TRUE
         )
         graphics::text(
-            x = x_start - strwidth("UMAP 2", cex = axis_size) * 0.5,
+            x = x_start - graphics::strwidth("UMAP 2", cex = axis_size) * 0.5,
             y = y_end - y_span * 0.25,
             labels = "UMAP 2",
             cex = axis_size,
