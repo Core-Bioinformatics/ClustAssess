@@ -246,7 +246,6 @@ assess_feature_stability <- function(data_matrix,
 
             if (prune_value >= 0) {
                 neigh_matrix <- getNNmatrix(
-                    # RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
                     parallel_nn2_idx(embedding, used_n_neigh),
                     used_n_neigh,
                     0,
@@ -255,7 +254,6 @@ assess_feature_stability <- function(data_matrix,
             } else {
                 neigh_matrix <- get_highest_prune_param(
                     nn_matrix = getNNmatrix(
-                        # RANN::nn2(embedding, k = used_n_neigh)$nn.idx,
                         parallel_nn2_idx(embedding, used_n_neigh),
                         used_n_neigh,
                         0,
@@ -442,15 +440,6 @@ assess_feature_stability <- function(data_matrix,
         steps_ecc_list[[object_name]][[step]] <- lapply(as.character(resolution), function(r) {
             list(
                 ecc = partitions_list[[step]][[r]]$ecc,
-                # TODO check if these two do the same thing
-                # ecc = weighted_element_consistency(
-                #     lapply(partitions_list[[step]][[r]]$partitions, function(x) {
-                #         x$mb
-                #     }),
-                #     sapply(partitions_list[[step]][[r]]$partitions, function(x) {
-                #         x$freq
-                #     }) # NOTE ECS should be fast enough without parallelization
-                # ),
                 most_frequent_partition = partitions_list[[step]][[r]]$partitions[[1]],
                 n_different_partitions = length(partitions_list[[step]][[r]]$partitions)
             )
@@ -595,9 +584,6 @@ plot_feature_per_resolution_stability_boxplot <- function(feature_object_list,
 
     # given that the input object can have multiple configurations with different
     # number of steps, we will use only the first `min_index` steps
-    # final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
-    # final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
-
     final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
     final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
 
@@ -741,9 +727,6 @@ plot_feature_overall_stability_boxplot <- function(feature_object_list,
 
     # given that the input object can have multiple configurations with different
     # number of steps, we will use only the first `min_index` steps
-    # final_melt_df <- final_melt_df %>% dplyr::filter(as.numeric(.data$L1) <= min_index)
-    # final_steps_df <- final_steps_df %>% dplyr::filter(as.numeric(.data$index) <= min_index)
-
     final_melt_df$feature_set <- factor(final_melt_df$feature_set, levels = names(feature_object_list))
     final_steps_df$feature_set <- factor(final_steps_df$feature_set, levels = names(feature_object_list))
 
@@ -1204,7 +1187,7 @@ plot_feature_per_resolution_stability_incremental <- function(feature_object_lis
 #'     feature_set = colnames(expr_matrix),
 #'     steps = c(5, 10),
 #'     feature_type = "feature_name",
-#'     resolution = c(0.1, 0.5),
+#'     resolution = c(0.5),
 #'     n_repetitions = 3,
 #'     umap_arguments = list(
 #'         # the following parameters are used by the umap function

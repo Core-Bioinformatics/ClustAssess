@@ -1153,7 +1153,6 @@ server_comparison_markers <- function(id, k_choices) {
             shinyjs::show("enable_markers")
 
             server_comparison_markers_panels(session, k_choices)
-            # server_comparison_markers_panels("group_left", k_choices)
 
             first_group_cells <- shiny::reactive({
                 current_mtd_df <- pkg_env$metadata_temp()
@@ -1273,9 +1272,7 @@ server_comparison_markers <- function(id, k_choices) {
 
                 if ("genes" %in% names(pkg_env)) {
                     markers_result <- calculate_markers_shiny(
-                        # cells1 = cells_index_left,
                         cells1 = first_grp,
-                        # cells2 = cells_index_right,
                         cells2 = second_grp,
                         norm_method = ifelse(input$norm_type, "LogNormalize", ""),
                         used_slot = "data",
@@ -1834,7 +1831,6 @@ server_comparison_gene_panel <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                             grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
@@ -1923,7 +1919,6 @@ server_comparison_gene_panel <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                                 grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
@@ -1971,7 +1966,6 @@ server_comparison_gene_panel <- function(id) {
                     unique_values <- NULL
                     used_matrix <- expr_matrix()
                     color_values <- function(n) {
-                        # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                         grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                     }
                     if (length(input$gene_expr) > 1) {
@@ -2022,7 +2016,6 @@ server_comparison_gene_panel <- function(id) {
                             ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size = input$gene_pt_size * 5, shape = 15)))
                     } else {
                         ggplot_obj <- ggplot_obj +
-                            # ggplot2::scale_colour_gradientn(colours = color_values(50)) +
                             ggplot2::guides(colour = ggplot2::guide_colourbar(barwidth = grid::unit(input$width_gene * 3 / 4, "inches")))
                     }
 

@@ -702,7 +702,6 @@ server_dimensionality_distribution <- function(id) {
                         unique_values <- NULL
                         used_matrix <- expr_matrix()
                         color_values <- function(n) {
-                            # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                             grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                         }
                         if (length(input$gene_expr) > 1) {
@@ -859,7 +858,6 @@ server_dimensionality_distribution <- function(id) {
                                     )
                                 }
 
-                                # color_values <- pkg_env$metadata_colors[[current_metadata]][matched_elems]
                                 unique_values <- pkg_env$metadata_unique[[current_metadata]][matched_elems]
                                 color_values <- pkg_env$discrete_colors[[as.character(length(pkg_env$metadata_unique[[current_metadata]]))]]
                                 names(color_values) <- pkg_env$metadata_unique[[current_metadata]]
@@ -914,7 +912,6 @@ server_dimensionality_distribution <- function(id) {
                             unique_values <- NULL
                             used_matrix <- expr_matrix()
                             color_values <- function(n) {
-                                # grDevices::colorRampPalette(c("grey85", RColorBrewer::brewer.pal(9, "OrRd")))(n)
                                 grDevices::colorRampPalette(c("grey85", paletteer::paletteer_d("RColorBrewer::OrRd")))(n)
                             }
                             if (length(input$gene_expr) > 1) {
@@ -1119,7 +1116,6 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     }
     graphics::par(mai = current_margins)
 
-    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
     col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original, function(x) {
@@ -1219,7 +1215,6 @@ shiny_plot_feature_stability_incremental <- function(resval,
     }
     graphics::par(mai = current_margins)
 
-    # col <- rhdf5::h5read("stability.h5", "feature_stability/colours")
     n_groups <- length(fgroups)
     col <- pkg_env$discrete_colors[[as.character(n_groups)]]
     n_fsizes <- max(sapply(feature_ordering$original_incremental, function(x) {

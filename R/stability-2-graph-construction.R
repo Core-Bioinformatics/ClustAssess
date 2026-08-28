@@ -1179,14 +1179,14 @@ plot_n_neigh_k_correspondence <- function(nn_object_n_clusters) {
 #' @examples
 #' set.seed(2024)
 #' # create an artificial PCA embedding
-#' pca_emb <- matrix(runif(100 * 30), nrow = 100, byrow = TRUE)
+#' pca_emb <- matrix(runif(100 * 10), nrow = 100, byrow = TRUE)
 #' rownames(pca_emb) <- as.character(1:100)
-#' colnames(pca_emb) <- paste0("PC_", 1:30)
+#' colnames(pca_emb) <- paste0("PC_", 1:10)
 #'
 #' nn_stability_obj <- assess_nn_stability(
 #'     embedding = pca_emb,
 #'     n_neigh_sequence = c(10, 15, 20),
-#'     n_repetitions = 10,
+#'     n_repetitions = 5,
 #'     graph_reduction_type = "PCA",
 #'     clustering_algorithm = 1
 #' )
