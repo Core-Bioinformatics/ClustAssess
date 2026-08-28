@@ -53,6 +53,7 @@ Eigen::SparseMatrix<double> pruneSNN(Eigen::SparseMatrix<double> snnMatrix, doub
 	return snnMatrix;
 }
 
+// TODO check if k is lower than the max possible value
 // [[Rcpp::export(rng = false)]]
 Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double> &nnMatrix, int k, double prune = 0) {
 	Eigen::SparseMatrix<double> SNN = nnMatrix * (nnMatrix.transpose());

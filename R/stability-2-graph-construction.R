@@ -497,6 +497,7 @@ get_highest_prune_param_embedding <- function(embedding,
 #' get_highest_prune_param(nn_matrix, 5)$prune_value
 get_highest_prune_param <- function(nn_matrix,
                                     n_neigh) {
+# TODO emphasize that nn_matrix should be a binary matrix, the NN matrix, not SNN
     nn_matrix <- computeSNN(nn_matrix, n_neigh, 0)
     g <- igraph::graph_from_adjacency_matrix(
         nn_matrix,

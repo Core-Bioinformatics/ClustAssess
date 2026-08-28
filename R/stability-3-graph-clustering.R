@@ -1003,6 +1003,7 @@ plot_k_n_partitions <- function(clust_object,
 #' function determines the unique number of clusters. Based on the maximum
 #' number of clusters, the lower k values will be remapped on the y axis such
 #' that they are equally spaced.
+#' @noRd
 clust_hierplot_get_y_mapping <- function(df) {
     cl_names <- colnames(df)
     y_mapping <- list()
@@ -1035,6 +1036,7 @@ clust_hierplot_get_y_mapping <- function(df) {
 #' a cluster in a partition. The data frame will contain the information about
 #' the cluster name and the partition name it belongs to, as well the average
 #' ECC score of the cluster and its size.
+#' @noRd
 clust_hierplot_create_node_df <- function(df, consistency_list, y_mapping) {
     nodes_df <- NA
     for (i in seq(from = 1, to = length(y_mapping))) {
@@ -1068,6 +1070,7 @@ clust_hierplot_create_node_df <- function(df, consistency_list, y_mapping) {
 #' defines the relationship between two clusters from two different partitions.
 #' The data frame will contain information about the cluster names, the
 #' partition names, the number of shared points and the average ECS score.
+#' @noRd
 clust_hierplot_create_edge_df <- function(df, y_mapping) {
     edges_df <- NA
     for (i in seq(from = 1, to = length(y_mapping) - 1)) {
@@ -1113,6 +1116,7 @@ clust_hierplot_create_edge_df <- function(df, y_mapping) {
 #' function generates the list with the node and edge data frames. The edge
 #' data frame is trimmed based on the `edge_threshold` parameter, which removes
 #' the edges with the intersection size below the quantile threshold.
+#' @noRd
 clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3) {
     y_mapping <- clust_hierplot_get_y_mapping(df)
     node_df <- clust_hierplot_create_node_df(df, consistency_list, y_mapping)
@@ -1125,6 +1129,7 @@ clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3
     ))
 }
 
+#' clusters - Default Case
 #' @description The default case for the `plot_clust_hierarchical` function. It
 #' creates the built based on a clustering data frame and a consistency list.
 #' The data frame should have a partition on each column and the number of
@@ -1132,6 +1137,7 @@ clust_hierplot_create_dfs <- function(df, consistency_list, edge_threshold = 0.3
 #' distribution vector for each partition.
 #' 
 #' @note All partitions should have the same number of cells.
+#' @noRd
 plot_clust_hierarchical_default <- function(clustering_df,
                                             consistency_list,
                                             edge_threshold = 0.3,
