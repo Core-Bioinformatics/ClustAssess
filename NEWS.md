@@ -11,6 +11,7 @@
 - Scale the colour values of gene expression in ShinyApp based on provided cap value.
 - Control the number of values shown on the continuous UMAP legend.
 - Add option to download multiple genes in separate UMAP files.
+- Removes `ggtext` dependency from the package (used in the shiny gene UMAP plots).
 
 ### Fixes
 - Ensure the expression matrix or embedding has row names. If not, set them to "cell_1", "cell_2", etc.
