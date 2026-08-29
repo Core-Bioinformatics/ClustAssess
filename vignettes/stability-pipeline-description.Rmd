@@ -51,8 +51,7 @@ library(Matrix)
 library(Seurat)
 library(ggplot2)
 library(ClustAssess)
-reticulate::py_install("leidenalg")
-reticulate::py_install("six")
+reticulate::py_install(c("leidenalg", "six"), python = Sys.getenv("RETICULATE_PYTHON"))
 packageVersion("ClustAssess") # should be 1.0.0
 ```
 
