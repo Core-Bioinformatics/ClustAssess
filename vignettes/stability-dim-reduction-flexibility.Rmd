@@ -230,7 +230,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk umap_pca](vignettes/figures/stability-dim-reduction-flexibility-umap_pca-1.png)
+![](figures/stability-dim-reduction-flexibility-umap_pca-1.png)
 
 # ClustAssess using Harmony
 
@@ -272,8 +272,20 @@ pca_harmony_feature_stability <- assess_feature_stability(
     clustering_algorithm = 1,
     verbose = TRUE
 )
-#> MA - 500 [----------------------------------------] eta:  ?s  total elapsed:  0sMA - 500 [======>---------------------------------] eta:  1m  total elapsed: 17sMA - 1000 [=====>---------------------------------] eta:  1m  total elapsed: 17sMA - 1000 [============>--------------------------] eta:  1m  total elapsed: 33sMA - 1500 [============>--------------------------] eta:  1m  total elapsed: 33sMA - 1500 [===================>-------------------] eta: 50s  total elapsed: 50sMA - 2000 [===================>-------------------] eta: 50s  total elapsed: 50sMA - 2000 [=========================>-------------] eta: 33s  total elapsed:  1mMA - 2500 [=========================>-------------] eta: 33s  total elapsed:  1mMA - 2500 [===============================>-------] eta: 17s  total elapsed:  1mMA - 3000 [===============================>-------] eta: 17s  total elapsed:  1mMA - 3000 [=======================================] eta:  0s  total elapsed:  2m
-```
+#> 
+MA - 500 [----------------------------------------] eta:  ?s  total elapsed:  0s
+MA - 500 [======>---------------------------------] eta:  1m  total elapsed: 17s
+MA - 1000 [=====>---------------------------------] eta:  1m  total elapsed: 17s
+MA - 1000 [============>--------------------------] eta:  1m  total elapsed: 33s
+MA - 1500 [============>--------------------------] eta:  1m  total elapsed: 33s
+MA - 1500 [===================>-------------------] eta: 50s  total elapsed: 50s
+MA - 2000 [===================>-------------------] eta: 50s  total elapsed: 50s
+MA - 2000 [=========================>-------------] eta: 33s  total elapsed:  1m
+MA - 2500 [=========================>-------------] eta: 33s  total elapsed:  1m
+MA - 2500 [===============================>-------] eta: 17s  total elapsed:  1m
+MA - 3000 [===============================>-------] eta: 17s  total elapsed:  1m
+MA - 3000 [=======================================] eta:  0s  total elapsed:  2m
+```figures
 
 Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.
 
@@ -285,7 +297,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk umap_harmony](vignettes/figures/stability-dim-reduction-flexibility-umap_harmony-1.png)
+![](figures/stability-dim-reduction-flexibility-umap_harmony-1.png)
 
 
 # ClustAssess in the scATAC-seq data
@@ -368,19 +380,31 @@ lsi_atac_feature_stability <- assess_feature_stability(
     clustering_algorithm = 1,
     verbose = TRUE
 )
-#> HV_peaks - 500 [----------------------------------] eta: ?s total elapsed: 0s
+#> 
+HV_peaks - 500 [----------------------------------] eta: ?s total elapsed: 0s
 #> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 500 [=====>----------------------------] eta: 44m total elapsed: 9mHV_peaks - 1000 [=====>---------------------------] eta: 44m total elapsed: 9m
+#> 
+HV_peaks - 500 [=====>----------------------------] eta: 44m total elapsed: 9m
+HV_peaks - 1000 [=====>---------------------------] eta: 44m total elapsed: 9m
 #> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 1000 [==========>----------------------] eta: 36m total elapsed: 18mHV_peaks - 1500 [==========>----------------------] eta: 36m total elapsed: 18m
+#> 
+HV_peaks - 1000 [==========>----------------------] eta: 36m total elapsed: 18m
+HV_peaks - 1500 [==========>----------------------] eta: 36m total elapsed: 18m
 #> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 1500 [===============>-----------------] eta: 26m total elapsed: 26mHV_peaks - 2000 [===============>-----------------] eta: 26m total elapsed: 26m
+#> 
+HV_peaks - 1500 [===============>-----------------] eta: 26m total elapsed: 26m
+HV_peaks - 2000 [===============>-----------------] eta: 26m total elapsed: 26m
+#> Warning: No assay speciffiguresy as RNA by default.
+#> 
+HV_peaks - 2000 [=====================>-----------] eta: 16m total elapsed: 32m
+HV_peaks - 2500 [=====================>-----------] eta: 16m total elapsed: 32m
 #> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 2000 [=====================>-----------] eta: 16m total elapsed: 32mHV_peaks - 2500 [=====================>-----------] eta: 16m total elapsed: 32m
+#> 
+HV_peaks - 2500 [===========================>-----] eta: 8m total elapsed: 38m
+HV_peaks - 3000 [===========================>-----] eta: 8m total elapsed: 38m
 #> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 2500 [===========================>-----] eta: 8m total elapsed: 38mHV_peaks - 3000 [===========================>-----] eta: 8m total elapsed: 38m
-#> Warning: No assay specified, setting assay as RNA by default.
-#> HV_peaks - 3000 [=================================] eta:  0s  total elapsed: 43m
+#> 
+HV_peaks - 3000 [=================================] eta:  0s  total elapsed: 43m
 foreach::registerDoSEQ()
 ```
 
@@ -394,7 +418,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk umap_atac](vignettes/figures/stability-dim-reduction-flexibility-umap_atac-1.png)
+![](figures/stability-dim-reduction-flexibility-umap_atac-1.png)
 
 # Session info
 

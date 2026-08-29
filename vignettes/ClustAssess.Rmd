@@ -25,7 +25,7 @@ data("pbmc_small")
 DimPlot(pbmc_small, group.by = "letter.idents")
 ```
 
-![plot of chunk setup](vignettes/figures/ClustAssess-setup-1.png)
+![plot of chunk setup](figures/ClustAssess-setup-1.png)
 
 
 ## Proportion of ambiguously clustered pairs
@@ -48,7 +48,67 @@ cc.res <- consensus_cluster(t(pbmc.data),
     verbose = TRUE
 )
 #> Calculating consensus clustering
-#> [================>------------------------] 41/100 eta:  0s  total elapsed:   0s[================>------------------------] 42/100 eta:  0s  total elapsed:   0s[=================>-----------------------] 43/100 eta:  0s  total elapsed:   0s[=================>-----------------------] 44/100 eta:  0s  total elapsed:   0s[=================>-----------------------] 45/100 eta:  0s  total elapsed:   0s[==================>----------------------] 46/100 eta:  0s  total elapsed:   0s[==================>----------------------] 47/100 eta:  0s  total elapsed:   0s[===================>---------------------] 48/100 eta:  0s  total elapsed:   0s[===================>---------------------] 49/100 eta:  0s  total elapsed:   0s[===================>---------------------] 50/100 eta:  0s  total elapsed:   0s[====================>--------------------] 51/100 eta:  0s  total elapsed:   0s[====================>--------------------] 52/100 eta:  0s  total elapsed:   0s[=====================>-------------------] 53/100 eta:  0s  total elapsed:   0s[=====================>-------------------] 54/100 eta:  0s  total elapsed:   0s[======================>------------------] 55/100 eta:  0s  total elapsed:   0s[======================>------------------] 56/100 eta:  0s  total elapsed:   0s[======================>------------------] 57/100 eta:  0s  total elapsed:   0s[=======================>-----------------] 58/100 eta:  0s  total elapsed:   0s[=======================>-----------------] 59/100 eta:  0s  total elapsed:   0s[========================>----------------] 60/100 eta:  0s  total elapsed:   0s[========================>----------------] 61/100 eta:  0s  total elapsed:   0s[========================>----------------] 62/100 eta:  0s  total elapsed:   0s[=========================>---------------] 63/100 eta:  0s  total elapsed:   0s[=========================>---------------] 64/100 eta:  0s  total elapsed:   0s[==========================>--------------] 65/100 eta:  0s  total elapsed:   0s[==========================>--------------] 66/100 eta:  0s  total elapsed:   0s[==========================>--------------] 67/100 eta:  0s  total elapsed:   0s[===========================>-------------] 68/100 eta:  0s  total elapsed:   0s[===========================>-------------] 69/100 eta:  0s  total elapsed:   0s[============================>------------] 70/100 eta:  0s  total elapsed:   0s[============================>------------] 71/100 eta:  0s  total elapsed:   0s[=============================>-----------] 72/100 eta:  0s  total elapsed:   0s[=============================>-----------] 73/100 eta:  0s  total elapsed:   0s[=============================>-----------] 74/100 eta:  0s  total elapsed:   0s[==============================>----------] 75/100 eta:  0s  total elapsed:   0s[==============================>----------] 76/100 eta:  0s  total elapsed:   0s[===============================>---------] 77/100 eta:  0s  total elapsed:   0s[===============================>---------] 78/100 eta:  0s  total elapsed:   0s[===============================>---------] 79/100 eta:  0s  total elapsed:   0s[================================>--------] 80/100 eta:  0s  total elapsed:   0s[================================>--------] 81/100 eta:  0s  total elapsed:   0s[=================================>-------] 82/100 eta:  0s  total elapsed:   0s[=================================>-------] 83/100 eta:  0s  total elapsed:   0s[=================================>-------] 84/100 eta:  0s  total elapsed:   0s[==================================>------] 85/100 eta:  0s  total elapsed:   0s[==================================>------] 86/100 eta:  0s  total elapsed:   0s[===================================>-----] 87/100 eta:  0s  total elapsed:   0s[===================================>-----] 88/100 eta:  0s  total elapsed:   0s[===================================>-----] 89/100 eta:  0s  total elapsed:   0s[====================================>----] 90/100 eta:  0s  total elapsed:   0s[====================================>----] 91/100 eta:  0s  total elapsed:   0s[=====================================>---] 92/100 eta:  0s  total elapsed:   0s[=====================================>---] 93/100 eta:  0s  total elapsed:   0s[======================================>--] 94/100 eta:  0s  total elapsed:   0s[======================================>--] 95/100 eta:  0s  total elapsed:   0s[======================================>--] 96/100 eta:  0s  total elapsed:   1s[=======================================>-] 97/100 eta:  0s  total elapsed:   1s[=======================================>-] 98/100 eta:  0s  total elapsed:   1s[========================================>] 99/100 eta:  0s  total elapsed:   1s[========================================] 100/100 eta:  0s  total elapsed:   1s
+#> 
+[================>------------------------] 41/100 eta:  0s  total elapsed:   0s
+[================>------------------------] 42/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 43/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 44/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 45/100 eta:  0s  total elapsed:   0s
+[==================>----------------------] 46/100 eta:  0s  total elapsed:   0s
+[==================>----------------------] 47/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 48/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 49/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 50/100 eta:  0s  total elapsed:   0s
+[====================>--------------------] 51/100 eta:  0s  total elapsed:   0s
+[====================>--------------------] 52/100 eta:  0s  total elapsed:   0s
+[=====================>-------------------] 53/100 eta:  0s  total elapsed:   0s
+[=====================>-------------------] 54/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 55/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 56/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 57/100 eta:  0s  total elapsed:   0s
+[=======================>-----------------] 58/100 eta:  0s  total elapsed:   0s
+[=======================>-----------------] 59/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 60/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 61/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 62/100 eta:  0s  total elapsed:   0s
+[=========================>---------------] 63/100 eta:  0s  total elapsed:   0s
+[=========================>---------------] 64/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 65/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 66/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 67/100 eta:  0s  total elapsed:   0s
+[===========================>-------------] 68/100 eta:  0s  total elapsed:   0s
+[===========================>-------------] 69/100 eta:  0s  total elapsed:   0s
+[============================>------------] 70/100 eta:  0s  total elapsed:   0s
+[============================>------------] 71/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 72/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 73/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 74/100 eta:  0s  total elapsed:   0s
+[==============================>----------] 75/100 eta:  0s  total elapsed:   0s
+[==============================>----------] 76/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 77/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 78/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 79/100 eta:  0s  total elapsed:   0s
+[================================>--------] 80/100 eta:  0s  total elapsed:   0s
+[================================>--------] 81/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 82/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 83/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 84/100 eta:  0s  total elapsed:   0s
+[==================================>------] 85/100 eta:  0s  total elapsed:   0s
+[==================================>------] 86/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 87/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 88/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 89/100 eta:  0s  total elapsed:   0s
+[====================================>----] 90/100 eta:  0s  total elapsed:   0s
+[====================================>----] 91/100 eta:  0s  total elapsed:   0s
+[=====================================>---] 92/100 eta:  0s  total elapsed:   0s
+[=====================================>---] 93/100 eta:  0s  total elapsed:   0s
+[======================================>--] 94/100 eta:  0s  total elapsed:   0s
+[======================================>--] 95/100 eta:  0s  total elapsed:   0s
+[======================================>--] 96/100 eta:  0s  total elapsed:   1s
+[=======================================>-] 97/100 eta:  0s  total elapsed:   1s
+[=======================================>-] 98/100 eta:  0s  total elapsed:   1s
+[========================================>] 99/100 eta:  0s  total elapsed:   1s
+[========================================] 100/100 eta:  0s  total elapsed:   1s
 
 # assess the PAC convergence for a few values of k - each curve should
 # have converged to some value
@@ -56,7 +116,7 @@ k.plot <- c(4, 6, 8, 10)
 pac_convergence(cc.res, k.plot)
 ```
 
-![plot of chunk pac](vignettes/figures/ClustAssess-pac-1.png)
+![plot of chunk pac](figures/ClustAssess-pac-1.png)
 
 ``` r
 
@@ -66,7 +126,7 @@ pac_convergence(cc.res, k.plot)
 pac_landscape(cc.res)
 ```
 
-![plot of chunk pac](vignettes/figures/ClustAssess-pac-2.png)
+![plot of chunk pac](figures/ClustAssess-pac-2.png)
 
 ## Element-centric clustering comparison
 We compare the similarity of clustering results between methods (in this case,
@@ -81,7 +141,7 @@ pbmc_small <- FindClusters(pbmc_small, resolution = 0.8, verbose = FALSE)
 DimPlot(pbmc_small, group.by = "seurat_clusters")
 ```
 
-![plot of chunk ecs](vignettes/figures/ClustAssess-ecs-1.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-1.png)
 
 ``` r
 
@@ -95,7 +155,7 @@ pbmc_small@meta.data$kmeans_clusters <- kmeans(pbmc_pca,
 DimPlot(pbmc_small, group.by = "kmeans_clusters")
 ```
 
-![plot of chunk ecs](vignettes/figures/ClustAssess-ecs-2.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-2.png)
 
 ``` r
 
@@ -107,7 +167,7 @@ pbmc_small@meta.data$ecs <- element_sim_elscore(
 suppressMessages(FeaturePlot(pbmc_small, "ecs") + scale_colour_viridis_c())
 ```
 
-![plot of chunk ecs](vignettes/figures/ClustAssess-ecs-3.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-3.png)
 
 ``` r
 mean(pbmc_small@meta.data$ecs)
@@ -156,7 +216,7 @@ pbmc_small@meta.data$marker.gene.jsi <- marker_overlap(louvain.markers,
 suppressMessages(FeaturePlot(pbmc_small, "marker.gene.jsi") + scale_colour_viridis_c())
 ```
 
-![plot of chunk jsi](vignettes/figures/ClustAssess-jsi-1.png)
+![plot of chunk jsi](figures/ClustAssess-jsi-1.png)
 
 ``` r
 mean(pbmc_small@meta.data$marker.gene.jsi)
@@ -190,7 +250,7 @@ pbmc_small@meta.data$consistency <- element_consistency(clustering.list)
 suppressMessages(FeaturePlot(pbmc_small, "consistency") + scale_colour_viridis_c())
 ```
 
-![plot of chunk frust](vignettes/figures/ClustAssess-frust-1.png)
+![plot of chunk frust](figures/ClustAssess-frust-1.png)
 
 ``` r
 mean(pbmc_small@meta.data$consistency)
