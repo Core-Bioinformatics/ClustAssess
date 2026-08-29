@@ -7,44 +7,49 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>"
-)
-set.seed(1001)
-```
 
-```{r install, include = FALSE}
-is_devtools <- require("devtools", quietly = TRUE)
-if (!is_devtools) {
-    install.packages("devtools", repos = "https://cloud.r-project.org")
-    library(devtools)
-}
 
-is_seuratdata <- require("SeuratData", quietly = TRUE)
-if (!is_seuratdata) {
-    install_github('satijalab/seurat-data')
-}
-```
+
 
 `ClustAssess` provide the option to run the entire stability pipeline automatically, by choosing the parameters based on their highest stability.
 Another useful feature is the option to create, based on this object, a shiny app that user can interact with and perform the assessment of the PhenoGraph configuration and of the clusters.
 
-```{r load}
+
+``` r
 library(Seurat)
+#> Loading required package: SeuratObject
+#> Warning: package 'SeuratObject' was built under R version 4.4.1
+#> Loading required package: sp
+#> Warning: package 'sp' was built under R version 4.4.1
+#> 
+#> Attaching package: 'SeuratObject'
+#> The following objects are masked from 'package:base':
+#> 
+#>     intersect, t
 library(ClustAssess)
 library(SeuratData)
 library(ggplot2)
 packageVersion("ClustAssess") # should be 1.0.0
+#> [1] '1.2.0'
 ```
 
 Process the PBMC 3k Seurat object similarly to the `Stability-based parameter assessment` vignette.
 
-```{r}
+
+``` r
 InstallData("pbmc3k")
+#> Warning: The following packages are already installed and will not be reinstalled: pbmc3k
 data("pbmc3k")
 pbmc3k <- UpdateSeuratObject(pbmc3k)
+#> Validating object structure
+#> Updating object slots
+#> Ensuring keys are in the proper structure
+#> Warning: Assay RNA changing from Assay to Assay
+#> Ensuring keys are in the proper structure
+#> Ensuring feature names don't have underscores or pipes
+#> Updating slots in RNA
+#> Validating object structure for Assay 'RNA'
+#> Object representation is consistent with the most current Seurat version
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^MT-", col.name = "percent.mito")
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^RP[SL][[:digit:]]", col.name = "percent.rp")
 # remove MT and RP genes
@@ -79,11 +84,15 @@ pbmc3k <- RunUMAP(pbmc3k,
     metric = "cosine",
     verbose = FALSE
 )
+#> Warning: The default method for RunUMAP has changed from calling Python UMAP via reticulate to the R-native UWOT using the cosine metric
+#> To use Python UMAP via reticulate, set umap.method to 'umap-learn' and metric to 'correlation'
+#> This message will be shown once per session
 ```
 
 Initialise the parallel backend.
 
-```{r parallel_framwework}
+
+``` r
 RhpcBLASctl::blas_set_num_threads(1)
 ncores <- 1
 if (ncores > 1) {
@@ -98,7 +107,8 @@ if (ncores > 1) {
 
 Define the feature sets of interest.
 
-```{r feature_sets}
+
+``` r
 features <- dimnames(pbmc3k@assays$RNA)[[1]]
 var_features <- pbmc3k@assays[["RNA"]]@var.features
 n_abundant <- 3000
@@ -114,7 +124,8 @@ ma_hv_steps <- sapply(ma_hv_genes_intersection_sets, length)
 
 Apply the automatic assessment.
 
-```{r automatic_run, warning = FALSE, cache = FALSE}
+
+``` r
 automm_output <- automatic_stability_assessment(
     expression_matrix = pbmc3k@assays$RNA@scale.data,
     n_repetitions = 10,
@@ -137,10 +148,38 @@ automm_output <- automatic_stability_assessment(
     save_temp = FALSE,
     verbose = TRUE
 )
+#> [2026-08-29 18:48:17.697883] Assessing the stability of the dimensionality reduction
+#> [1] "HV"
+#> HV - 500 [----------------------------------------] eta:  ?s  total elapsed:  0sHV - 500 [======>---------------------------------] eta:  1m  total elapsed: 10sHV - 1000 [=====>---------------------------------] eta:  1m  total elapsed: 10sHV - 1000 [============>--------------------------] eta: 42s  total elapsed: 21sHV - 1500 [============>--------------------------] eta: 42s  total elapsed: 21sHV - 1500 [===================>-------------------] eta: 38s  total elapsed: 38sHV - 2000 [===================>-------------------] eta: 38s  total elapsed: 38sHV - 2000 [=========================>-------------] eta: 26s  total elapsed:  1mHV - 2500 [=========================>-------------] eta: 26s  total elapsed:  1mHV - 2500 [===============================>-------] eta: 14s  total elapsed:  1mHV - 3000 [===============================>-------] eta: 14s  total elapsed:  1mHV - 3000 [=======================================] eta:  0s  total elapsed:  1m
+#> [1] "MA"
+#> MA - 500 [----------------------------------------] eta:  ?s  total elapsed:  0sMA - 500 [======>---------------------------------] eta: 49s  total elapsed: 10sMA - 1000 [=====>---------------------------------] eta: 49s  total elapsed: 10sMA - 1000 [============>--------------------------] eta: 39s  total elapsed: 20sMA - 1500 [============>--------------------------] eta: 39s  total elapsed: 20sMA - 1500 [===================>-------------------] eta: 35s  total elapsed: 35sMA - 2000 [===================>-------------------] eta: 35s  total elapsed: 35sMA - 2000 [=========================>-------------] eta: 26s  total elapsed:  1mMA - 2500 [=========================>-------------] eta: 26s  total elapsed:  1mMA - 2500 [===============================>-------] eta: 14s  total elapsed:  1mMA - 3000 [===============================>-------] eta: 14s  total elapsed:  1mMA - 3000 [=======================================] eta:  0s  total elapsed:  1m
+#> [2026-08-29 18:51:14.501983] Choosing the top 2
+#> [2026-08-29 18:51:14.905645] Assessing the stability of the connected components
+#> HV - 500 [----------------------------------------] eta:  ?s  total elapsed:  0sHV - 500 [=========>------------------------------] eta:  2s  total elapsed:  1sHV - 1000 [=========>-----------------------------] eta:  2s  total elapsed:  1sHV - 1000 [===================>-------------------] eta:  1s  total elapsed:  1sMA - 2000 [===================>-------------------] eta:  1s  total elapsed:  1sMA - 2000 [============================>----------] eta:  1s  total elapsed:  2sMA - 3000 [============================>----------] eta:  1s  total elapsed:  2sMA - 3000 [=======================================] eta:  0s  total elapsed:  2s
+#> [2026-08-29 18:51:16.983809] Assessing the stability of the graph construction parameters
+#> HV - 500 [----------------------------------------] eta:  ?s  total elapsed:  0sHV - 500 [=========>------------------------------] eta:  2m  total elapsed: 37sHV - 1000 [=========>-----------------------------] eta:  2m  total elapsed: 37sHV - 1000 [===================>-------------------] eta:  1m  total elapsed:  1mMA - 2000 [===================>-------------------] eta:  1m  total elapsed:  1mMA - 2000 [============================>----------] eta: 37s  total elapsed:  2mMA - 3000 [============================>----------] eta: 37s  total elapsed:  2mMA - 3000 [=======================================] eta:  0s  total elapsed:  2m
+#> [2026-08-29 18:53:52.936861] Assessing the stability of the graph clustering method
+#> [1] "HV 500"
+#> Louvain - res 0.1 [==>----------------------------] eta:  4s  total elapsed:  0sLouvain - res 0.2 [==>----------------------------] eta:  4s  total elapsed:  0sLouvain - res 0.2 [=====>-------------------------] eta:  4s  total elapsed:  1sLouvain - res 0.3 [=====>-------------------------] eta:  4s  total elapsed:  1sLouvain - res 0.3 [========>----------------------] eta:  4s  total elapsed:  2sLouvain - res 0.4 [========>----------------------] eta:  4s  total elapsed:  2sLouvain - res 0.4 [===========>-------------------] eta:  3s  total elapsed:  2sLouvain - res 0.5 [===========>-------------------] eta:  3s  total elapsed:  2sLouvain - res 0.5 [===============>---------------] eta:  3s  total elapsed:  3sLouvain - res 0.6 [===============>---------------] eta:  3s  total elapsed:  3sLouvain - res 0.6 [==================>------------] eta:  2s  total elapsed:  3sLouvain - res 0.7 [==================>------------] eta:  2s  total elapsed:  3sLouvain - res 0.7 [=====================>---------] eta:  2s  total elapsed:  4sLouvain - res 0.8 [=====================>---------] eta:  2s  total elapsed:  4sLouvain - res 0.8 [========================>------] eta:  1s  total elapsed:  5sLouvain - res 0.9 [========================>------] eta:  1s  total elapsed:  5sLouvain - res 0.9 [===========================>---] eta:  1s  total elapsed:  5sLouvain - res 1 [=============================>---] eta:  1s  total elapsed:  5sLouvain - res 1 [=================================] eta:  0s  total elapsed:  6s
+#> Louvain.refined - res 0.1 [=>---------------------] eta:  4s  total elapsed:  0sLouvain.refined - res 0.2 [=>---------------------] eta:  4s  total elapsed:  0sLouvain.refined - res 0.2 [====>------------------] eta:  4s  total elapsed:  1sLouvain.refined - res 0.3 [====>------------------] eta:  4s  total elapsed:  1sLouvain.refined - res 0.3 [======>----------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.4 [======>----------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.4 [========>--------------] eta:  3s  total elapsed:  2sLouvain.refined - res 0.5 [========>--------------] eta:  3s  total elapsed:  2sLouvain.refined - res 0.5 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [=============>---------] eta:  2s  total elapsed:  3sLouvain.refined - res 0.7 [=============>---------] eta:  2s  total elapsed:  3sLouvain.refined - res 0.7 [===============>-------] eta:  2s  total elapsed:  4sLouvain.refined - res 0.8 [===============>-------] eta:  2s  total elapsed:  4sLouvain.refined - res 0.8 [=================>-----] eta:  1s  total elapsed:  4sLouvain.refined - res 0.9 [=================>-----] eta:  1s  total elapsed:  4sLouvain.refined - res 0.9 [====================>--] eta:  1s  total elapsed:  5sLouvain.refined - res 1 [=====================>---] eta:  1s  total elapsed:  5sLouvain.refined - res 1 [=========================] eta:  0s  total elapsed:  6s
+#> SLM - res 0.1 [===>-------------------------------] eta: 30s  total elapsed:  3sSLM - res 0.2 [===>-------------------------------] eta: 30s  total elapsed:  3sSLM - res 0.2 [======>----------------------------] eta: 24s  total elapsed:  6sSLM - res 0.3 [======>----------------------------] eta: 24s  total elapsed:  6sSLM - res 0.3 [=========>-------------------------] eta: 21s  total elapsed:  9sSLM - res 0.4 [=========>-------------------------] eta: 21s  total elapsed:  9sSLM - res 0.4 [=============>---------------------] eta: 17s  total elapsed: 11sSLM - res 0.5 [=============>---------------------] eta: 17s  total elapsed: 11sSLM - res 0.5 [=================>-----------------] eta: 14s  total elapsed: 14sSLM - res 0.6 [=================>-----------------] eta: 14s  total elapsed: 14sSLM - res 0.6 [====================>--------------] eta: 11s  total elapsed: 17sSLM - res 0.7 [====================>--------------] eta: 11s  total elapsed: 17sSLM - res 0.7 [=======================>-----------] eta:  9s  total elapsed: 20sSLM - res 0.8 [=======================>-----------] eta:  9s  total elapsed: 20sSLM - res 0.8 [===========================>-------] eta:  6s  total elapsed: 24sSLM - res 0.9 [===========================>-------] eta:  6s  total elapsed: 24sSLM - res 0.9 [===============================>---] eta:  3s  total elapsed: 27sSLM - res 1 [================================>----] eta:  3s  total elapsed: 27sSLM - res 1 [=====================================] eta:  0s  total elapsed: 31s
+#> [1] "HV 1000"
+#> Louvain - res 0.2 [=====>-------------------------] eta:  1s  total elapsed:  0sLouvain - res 0.3 [=====>-------------------------] eta:  1s  total elapsed:  0sLouvain - res 0.3 [========>----------------------] eta:  1s  total elapsed:  0sLouvain - res 0.4 [========>----------------------] eta:  1s  total elapsed:  0sLouvain - res 0.4 [===========>-------------------] eta:  1s  total elapsed:  0sLouvain - res 0.5 [===========>-------------------] eta:  1s  total elapsed:  0sLouvain - res 0.5 [===============>---------------] eta:  1s  total elapsed:  1sLouvain - res 0.6 [===============>---------------] eta:  1s  total elapsed:  1sLouvain - res 0.6 [==================>------------] eta:  1s  total elapsed:  1sLouvain - res 0.7 [==================>------------] eta:  1s  total elapsed:  1sLouvain - res 0.7 [=====================>---------] eta:  0s  total elapsed:  1sLouvain - res 0.8 [=====================>---------] eta:  0s  total elapsed:  1sLouvain - res 0.8 [========================>------] eta:  0s  total elapsed:  1sLouvain - res 0.9 [========================>------] eta:  0s  total elapsed:  1sLouvain - res 0.9 [===========================>---] eta:  0s  total elapsed:  1sLouvain - res 1 [=============================>---] eta:  0s  total elapsed:  1sLouvain - res 1 [=================================] eta:  0s  total elapsed:  1s
+#> Louvain.refined - res 0.2 [====>------------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.3 [====>------------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.3 [======>----------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.4 [======>----------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.4 [========>--------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.5 [========>--------------] eta:  1s  total elapsed:  0sLouvain.refined - res 0.5 [===========>-----------] eta:  1s  total elapsed:  1sLouvain.refined - res 0.6 [===========>-----------] eta:  1s  total elapsed:  1sLouvain.refined - res 0.6 [=============>---------] eta:  0s  total elapsed:  1sLouvain.refined - res 0.7 [=============>---------] eta:  0s  total elapsed:  1sLouvain.refined - res 0.7 [===============>-------] eta:  0s  total elapsed:  1sLouvain.refined - res 0.8 [===============>-------] eta:  0s  total elapsed:  1sLouvain.refined - res 0.8 [=================>-----] eta:  0s  total elapsed:  1sLouvain.refined - res 0.9 [=================>-----] eta:  0s  total elapsed:  1sLouvain.refined - res 0.9 [====================>--] eta:  0s  total elapsed:  1sLouvain.refined - res 1 [=====================>---] eta:  0s  total elapsed:  1sLouvain.refined - res 1 [=========================] eta:  0s  total elapsed:  1s
+#> SLM - res 0.1 [===>-------------------------------] eta:  6s  total elapsed:  1sSLM - res 0.2 [===>-------------------------------] eta:  6s  total elapsed:  1sSLM - res 0.2 [======>----------------------------] eta:  5s  total elapsed:  1sSLM - res 0.3 [======>----------------------------] eta:  5s  total elapsed:  1sSLM - res 0.3 [=========>-------------------------] eta:  5s  total elapsed:  2sSLM - res 0.4 [=========>-------------------------] eta:  5s  total elapsed:  2sSLM - res 0.4 [=============>---------------------] eta:  4s  total elapsed:  3sSLM - res 0.5 [=============>---------------------] eta:  4s  total elapsed:  3sSLM - res 0.5 [=================>-----------------] eta:  3s  total elapsed:  3sSLM - res 0.6 [=================>-----------------] eta:  3s  total elapsed:  3sSLM - res 0.6 [====================>--------------] eta:  3s  total elapsed:  4sSLM - res 0.7 [====================>--------------] eta:  3s  total elapsed:  4sSLM - res 0.7 [=======================>-----------] eta:  2s  total elapsed:  5sSLM - res 0.8 [=======================>-----------] eta:  2s  total elapsed:  5sSLM - res 0.8 [===========================>-------] eta:  1s  total elapsed:  6sSLM - res 0.9 [===========================>-------] eta:  1s  total elapsed:  6sSLM - res 0.9 [===============================>---] eta:  1s  total elapsed:  6sSLM - res 1 [================================>----] eta:  1s  total elapsed:  6sSLM - res 1 [=====================================] eta:  0s  total elapsed:  7s
+#> [1] "MA 2000"
+#> Louvain - res 0.1 [==>----------------------------] eta:  5s  total elapsed:  1sLouvain - res 0.2 [==>----------------------------] eta:  5s  total elapsed:  1sLouvain - res 0.2 [=====>-------------------------] eta:  5s  total elapsed:  1sLouvain - res 0.3 [=====>-------------------------] eta:  5s  total elapsed:  1sLouvain - res 0.3 [========>----------------------] eta:  4s  total elapsed:  2sLouvain - res 0.4 [========>----------------------] eta:  4s  total elapsed:  2sLouvain - res 0.4 [===========>-------------------] eta:  4s  total elapsed:  3sLouvain - res 0.5 [===========>-------------------] eta:  4s  total elapsed:  3sLouvain - res 0.5 [===============>---------------] eta:  3s  total elapsed:  3sLouvain - res 0.6 [===============>---------------] eta:  3s  total elapsed:  3sLouvain - res 0.6 [==================>------------] eta:  3s  total elapsed:  4sLouvain - res 0.7 [==================>------------] eta:  3s  total elapsed:  4sLouvain - res 0.7 [=====================>---------] eta:  2s  total elapsed:  4sLouvain - res 0.8 [=====================>---------] eta:  2s  total elapsed:  4sLouvain - res 0.8 [========================>------] eta:  1s  total elapsed:  5sLouvain - res 0.9 [========================>------] eta:  1s  total elapsed:  5sLouvain - res 0.9 [===========================>---] eta:  1s  total elapsed:  6sLouvain - res 1 [=============================>---] eta:  1s  total elapsed:  6sLouvain - res 1 [=================================] eta:  0s  total elapsed:  7s
+#> Louvain.refined - res 0.1 [=>---------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.2 [=>---------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.2 [====>------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.3 [====>------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.3 [======>----------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.4 [======>----------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.4 [========>--------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.5 [========>--------------] eta:  4s  total elapsed:  2sLouvain.refined - res 0.5 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [=============>---------] eta:  3s  total elapsed:  4sLouvain.refined - res 0.7 [=============>---------] eta:  3s  total elapsed:  4sLouvain.refined - res 0.7 [===============>-------] eta:  2s  total elapsed:  4sLouvain.refined - res 0.8 [===============>-------] eta:  2s  total elapsed:  4sLouvain.refined - res 0.8 [=================>-----] eta:  1s  total elapsed:  5sLouvain.refined - res 0.9 [=================>-----] eta:  1s  total elapsed:  5sLouvain.refined - res 0.9 [====================>--] eta:  1s  total elapsed:  6sLouvain.refined - res 1 [=====================>---] eta:  1s  total elapsed:  6sLouvain.refined - res 1 [=========================] eta:  0s  total elapsed:  6s
+#> SLM - res 0.1 [===>-------------------------------] eta: 37s  total elapsed:  4sSLM - res 0.2 [===>-------------------------------] eta: 37s  total elapsed:  4sSLM - res 0.2 [======>----------------------------] eta: 32s  total elapsed:  8sSLM - res 0.3 [======>----------------------------] eta: 32s  total elapsed:  8sSLM - res 0.3 [=========>-------------------------] eta: 29s  total elapsed: 12sSLM - res 0.4 [=========>-------------------------] eta: 29s  total elapsed: 12sSLM - res 0.4 [=============>---------------------] eta: 24s  total elapsed: 16sSLM - res 0.5 [=============>---------------------] eta: 24s  total elapsed: 16sSLM - res 0.5 [=================>-----------------] eta: 19s  total elapsed: 19sSLM - res 0.6 [=================>-----------------] eta: 19s  total elapsed: 19sSLM - res 0.6 [====================>--------------] eta: 15s  total elapsed: 22sSLM - res 0.7 [====================>--------------] eta: 15s  total elapsed: 22sSLM - res 0.7 [=======================>-----------] eta: 11s  total elapsed: 26sSLM - res 0.8 [=======================>-----------] eta: 11s  total elapsed: 26sSLM - res 0.8 [===========================>-------] eta:  7s  total elapsed: 29sSLM - res 0.9 [===========================>-------] eta:  7s  total elapsed: 29sSLM - res 0.9 [===============================>---] eta:  4s  total elapsed: 32sSLM - res 1 [================================>----] eta:  4s  total elapsed: 32sSLM - res 1 [=====================================] eta:  0s  total elapsed: 35s
+#> [1] "MA 3000"
+#> Louvain - res 0.1 [==>----------------------------] eta:  6s  total elapsed:  1sLouvain - res 0.2 [==>----------------------------] eta:  6s  total elapsed:  1sLouvain - res 0.2 [=====>-------------------------] eta:  6s  total elapsed:  1sLouvain - res 0.3 [=====>-------------------------] eta:  6s  total elapsed:  1sLouvain - res 0.3 [========>----------------------] eta:  5s  total elapsed:  2sLouvain - res 0.4 [========>----------------------] eta:  5s  total elapsed:  2sLouvain - res 0.4 [===========>-------------------] eta:  5s  total elapsed:  3sLouvain - res 0.5 [===========>-------------------] eta:  5s  total elapsed:  3sLouvain - res 0.5 [===============>---------------] eta:  4s  total elapsed:  4sLouvain - res 0.6 [===============>---------------] eta:  4s  total elapsed:  4sLouvain - res 0.6 [==================>------------] eta:  3s  total elapsed:  5sLouvain - res 0.7 [==================>------------] eta:  3s  total elapsed:  5sLouvain - res 0.7 [=====================>---------] eta:  2s  total elapsed:  5sLouvain - res 0.8 [=====================>---------] eta:  2s  total elapsed:  5sLouvain - res 0.8 [========================>------] eta:  2s  total elapsed:  6sLouvain - res 0.9 [========================>------] eta:  2s  total elapsed:  6sLouvain - res 0.9 [===========================>---] eta:  1s  total elapsed:  7sLouvain - res 1 [=============================>---] eta:  1s  total elapsed:  7sLouvain - res 1 [=================================] eta:  0s  total elapsed:  8s
+#> Louvain.refined - res 0.1 [=>---------------------] eta:  6s  total elapsed:  1sLouvain.refined - res 0.2 [=>---------------------] eta:  6s  total elapsed:  1sLouvain.refined - res 0.2 [====>------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.3 [====>------------------] eta:  5s  total elapsed:  1sLouvain.refined - res 0.3 [======>----------------] eta:  5s  total elapsed:  2sLouvain.refined - res 0.4 [======>----------------] eta:  5s  total elapsed:  2sLouvain.refined - res 0.4 [========>--------------] eta:  4s  total elapsed:  3sLouvain.refined - res 0.5 [========>--------------] eta:  4s  total elapsed:  3sLouvain.refined - res 0.5 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [===========>-----------] eta:  3s  total elapsed:  3sLouvain.refined - res 0.6 [=============>---------] eta:  3s  total elapsed:  4sLouvain.refined - res 0.7 [=============>---------] eta:  3s  total elapsed:  4sLouvain.refined - res 0.7 [===============>-------] eta:  2s  total elapsed:  5sLouvain.refined - res 0.8 [===============>-------] eta:  2s  total elapsed:  5sLouvain.refined - res 0.8 [=================>-----] eta:  1s  total elapsed:  6sLouvain.refined - res 0.9 [=================>-----] eta:  1s  total elapsed:  6sLouvain.refined - res 0.9 [====================>--] eta:  1s  total elapsed:  6sLouvain.refined - res 1 [=====================>---] eta:  1s  total elapsed:  6sLouvain.refined - res 1 [=========================] eta:  0s  total elapsed:  7s
+#> SLM - res 0.1 [===>-------------------------------] eta: 37s  total elapsed:  4sSLM - res 0.2 [===>-------------------------------] eta: 37s  total elapsed:  4sSLM - res 0.2 [======>----------------------------] eta: 32s  total elapsed:  8sSLM - res 0.3 [======>----------------------------] eta: 32s  total elapsed:  8sSLM - res 0.3 [=========>-------------------------] eta: 28s  total elapsed: 12sSLM - res 0.4 [=========>-------------------------] eta: 28s  total elapsed: 12sSLM - res 0.4 [=============>---------------------] eta: 23s  total elapsed: 16sSLM - res 0.5 [=============>---------------------] eta: 24s  total elapsed: 16sSLM - res 0.5 [=================>-----------------] eta: 19s  total elapsed: 19sSLM - res 0.6 [=================>-----------------] eta: 19s  total elapsed: 19sSLM - res 0.6 [====================>--------------] eta: 15s  total elapsed: 23sSLM - res 0.7 [====================>--------------] eta: 15s  total elapsed: 23sSLM - res 0.7 [=======================>-----------] eta: 12s  total elapsed: 27sSLM - res 0.8 [=======================>-----------] eta: 12s  total elapsed: 27sSLM - res 0.8 [===========================>-------] eta:  8s  total elapsed: 31sSLM - res 0.9 [===========================>-------] eta:  8s  total elapsed: 31sSLM - res 0.9 [===============================>---] eta:  4s  total elapsed: 34sSLM - res 1 [================================>----] eta:  4s  total elapsed: 34sSLM - res 1 [=====================================] eta:  0s  total elapsed: 38s
 ```
 
 Close the connections opened when using multiple cores.
-```{r remove_parallel}
+
+``` r
 if (ncores > 1) {
     parallel::stopCluster(cl = my_cluster)
 }
@@ -148,7 +187,8 @@ if (ncores > 1) {
 
 Create the shiny app based on the ClustAssess output. You should also specify either a seurat object or a normalized expression matrix.
 *Note*: Please make sure that the directory mentioned in the parameter `project_folder` is empty / doesn't exist.
-```{r generate_app, eval = FALSE}
+
+``` r
 # generate using a seurat object
 write_shiny_app(
     object = pbmc3k,
@@ -170,11 +210,44 @@ write_shiny_app(
 
 The app can be run using the following command.
 
-```{r run_app, eval = FALSE}
+
+``` r
 shiny::runApp("clustassess_app_dir_seurat")
 ```
 
 Session info
-```{r ses_info}
+
+``` r
 sessionInfo()
+#> R version 4.4.0 (2024-04-24)
+#> Platform: x86_64-pc-linux-gnu
+#> Running under: Ubuntu 22.04.5 LTS
+#> 
+#> Matrix products: default
+#> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
+#> 
+#> locale:
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#> 
+#> time zone: Europe/Bucharest
+#> tzcode source: system (glibc)
+#> 
+#> attached base packages:
+#> [1] stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] Seurat_5.1.0            SeuratObject_5.0.2      sp_2.1-4                pbmc3k.SeuratData_3.1.4 SeuratData_0.2.2.9002   devtools_2.5.2          usethis_3.2.1           ggplot2_4.0.3           ClustAssess_1.2.0       dendextend_1.19.1       dbscan_1.2.6            e1071_1.7-14           
+#> 
+#> loaded via a namespace (and not attached):
+#>   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.3         spatstat.utils_3.1-2   farver_2.1.2           fs_2.1.0               vctrs_0.6.5            ROCR_1.0-11            memoise_2.0.1          spatstat.explore_3.2-7 progress_1.2.3         htmltools_0.5.8.1      sctransform_0.4.1     
+#>  [14] parallelly_1.37.1      KernSmooth_2.23-22     htmlwidgets_1.6.4      ica_1.0-3              plyr_1.8.9             plotly_4.10.4          zoo_1.8-12             cachem_1.1.0           igraph_2.2.1           mime_0.12              lifecycle_1.0.5        iterators_1.0.14       pkgconfig_2.0.3       
+#>  [27] Matrix_1.7-0           R6_2.6.1               fastmap_1.2.0          fitdistrplus_1.1-11    future_1.33.2          shiny_1.8.1.1          digest_0.6.35          colorspace_2.1-1       patchwork_1.2.0        tensor_1.5             RSpectra_0.16-2        irlba_2.3.5.1          pkgload_1.5.3         
+#>  [40] labeling_0.4.3         progressr_0.14.0       fansi_1.0.6            spatstat.sparse_3.0-3  httr_1.4.7             polyclip_1.10-6        abind_1.4-5            compiler_4.4.0         proxy_0.4-27           withr_3.0.3            S7_0.2.1               viridis_0.6.5          fastDummies_1.7.3     
+#>  [53] pkgbuild_1.4.8         MASS_7.3-60            rappdirs_0.3.3         sessioninfo_1.2.4      tools_4.4.0            lmtest_0.9-40          otel_0.2.0             httpuv_1.6.15          future.apply_1.11.2    goftest_1.2-3          glue_1.7.0             nlme_3.1-163           promises_1.3.0        
+#>  [66] grid_4.4.0             Rtsne_0.17             cluster_2.1.6          reshape2_1.4.4         generics_0.1.3         gtable_0.3.6           spatstat.data_3.0-4    class_7.3-22           tidyr_1.3.1            hms_1.1.3              data.table_1.15.4      utf8_1.2.4             BiocGenerics_0.50.0   
+#>  [79] spatstat.geom_3.2-9    RcppAnnoy_0.0.22       ggrepel_0.9.5          RANN_2.6.1             foreach_1.5.2          pillar_1.9.0           stringr_1.5.1          spam_2.10-0            RcppHNSW_0.6.0         later_1.3.2            splines_4.4.0          dplyr_1.1.4            lattice_0.22-5        
+#>  [92] survival_3.5-8         deldir_2.0-4           tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-2          knitr_1.51             gridExtra_2.3          scattermore_1.2        RhpcBLASctl_0.23-42    xfun_0.56              SharedObject_1.19.1    matrixStats_1.3.0      stringi_1.8.4         
+#> [105] lazyeval_0.2.2         evaluate_1.0.5         codetools_0.2-19       tibble_3.2.1           cli_3.6.6              uwot_0.2.2             xtable_1.8-4           reticulate_1.37.0      Rcpp_1.0.13            globals_0.16.3         spatstat.random_3.2-3  png_0.1-8              parallel_4.4.0        
+#> [118] ellipsis_0.3.3         prettyunits_1.2.0      dotCall64_1.1-1        listenv_0.9.1          viridisLite_0.4.2      scales_1.4.0           ggridges_0.5.6         crayon_1.5.3           leiden_0.4.3.1         purrr_1.0.2            rlang_1.3.0            cowplot_1.1.3
 ```
