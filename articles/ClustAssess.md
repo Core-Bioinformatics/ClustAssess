@@ -16,7 +16,7 @@ data("pbmc_small")
 DimPlot(pbmc_small, group.by = "letter.idents")
 ```
 
-![plot of chunk setup](articles/figures/ClustAssess-setup-1.png)
+![plot of chunk setup](figures/ClustAssess-setup-1.png)
 
 plot of chunk setup
 
@@ -109,7 +109,7 @@ k.plot <- c(4, 6, 8, 10)
 pac_convergence(cc.res, k.plot)
 ```
 
-![plot of chunk pac](articles/figures/ClustAssess-pac-1.png)
+![plot of chunk pac](figures/ClustAssess-pac-1.png)
 
 plot of chunk pac
 
@@ -122,7 +122,7 @@ plot of chunk pac
 pac_landscape(cc.res)
 ```
 
-![plot of chunk pac](articles/figures/ClustAssess-pac-2.png)
+![plot of chunk pac](figures/ClustAssess-pac-2.png)
 
 plot of chunk pac
 
@@ -142,7 +142,7 @@ pbmc_small <- FindClusters(pbmc_small, resolution = 0.8, verbose = FALSE)
 DimPlot(pbmc_small, group.by = "seurat_clusters")
 ```
 
-![plot of chunk ecs](articles/figures/ClustAssess-ecs-1.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-1.png)
 
 plot of chunk ecs
 
@@ -159,7 +159,7 @@ pbmc_small@meta.data$kmeans_clusters <- kmeans(pbmc_pca,
 DimPlot(pbmc_small, group.by = "kmeans_clusters")
 ```
 
-![plot of chunk ecs](articles/figures/ClustAssess-ecs-2.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-2.png)
 
 plot of chunk ecs
 
@@ -174,7 +174,7 @@ pbmc_small@meta.data$ecs <- element_sim_elscore(
 suppressMessages(FeaturePlot(pbmc_small, "ecs") + scale_colour_viridis_c())
 ```
 
-![plot of chunk ecs](articles/figures/ClustAssess-ecs-3.png)
+![plot of chunk ecs](figures/ClustAssess-ecs-3.png)
 
 plot of chunk ecs
 
@@ -229,7 +229,7 @@ pbmc_small@meta.data$marker.gene.jsi <- marker_overlap(louvain.markers,
 suppressMessages(FeaturePlot(pbmc_small, "marker.gene.jsi") + scale_colour_viridis_c())
 ```
 
-![plot of chunk jsi](articles/figures/ClustAssess-jsi-1.png)
+![plot of chunk jsi](figures/ClustAssess-jsi-1.png)
 
 plot of chunk jsi
 
@@ -267,7 +267,7 @@ pbmc_small@meta.data$consistency <- element_consistency(clustering.list)
 suppressMessages(FeaturePlot(pbmc_small, "consistency") + scale_colour_viridis_c())
 ```
 
-![plot of chunk frust](articles/figures/ClustAssess-frust-1.png)
+![plot of chunk frust](figures/ClustAssess-frust-1.png)
 
 plot of chunk frust
 

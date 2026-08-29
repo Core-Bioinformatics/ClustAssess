@@ -91,7 +91,7 @@ ClustAssess on a small single-cell RNA-seq dataset.</p>
 <span><span class="co"># we will use the pbmc_small single-cell RNA-seq dataset available via Seurat</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"letter.idents"</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-setup-1.png" alt="plot of chunk setup"><div class="figcaption">plot of chunk setup</div>
+<img src="figures/ClustAssess-setup-1.png" alt="plot of chunk setup"><div class="figcaption">plot of chunk setup</div>
 </div>
 <div class="section level2">
 <h2 id="proportion-of-ambiguously-clustered-pairs">Proportion of ambiguously clustered pairs<a class="anchor" aria-label="anchor" href="#proportion-of-ambiguously-clustered-pairs"></a>
@@ -179,7 +179,7 @@ PAC, the more stable the clustering. PAC was originally presented in <a href="ht
 <span id="cb2-77"><a href="#cb2-77" tabindex="-1"></a>k.plot <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">10</span>)</span>
 <span id="cb2-78"><a href="#cb2-78" tabindex="-1"></a><span class="fu">pac_convergence</span>(cc.res, k.plot)</span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-pac-1.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
+<img src="figures/ClustAssess-pac-1.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
 </div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -188,7 +188,7 @@ PAC, the more stable the clustering. PAC was originally presented in <a href="ht
 <span><span class="co"># nearby values of k</span></span>
 <span><span class="fu"><a href="../reference/pac_landscape.html">pac_landscape</a></span><span class="op">(</span><span class="va">cc.res</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-pac-2.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
+<img src="figures/ClustAssess-pac-2.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
 </div>
 </div>
 <div class="section level2">
@@ -204,7 +204,7 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <span><span class="va">pbmc_small</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span><span class="va">pbmc_small</span>, resolution <span class="op">=</span> <span class="fl">0.8</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"seurat_clusters"</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-ecs-1.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+<img src="figures/ClustAssess-ecs-1.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
 </div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -217,7 +217,7 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"kmeans_clusters"</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-ecs-2.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+<img src="figures/ClustAssess-ecs-2.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
 </div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
@@ -228,7 +228,7 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"ecs"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-ecs-3.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+<img src="figures/ClustAssess-ecs-3.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
 </div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">ecs</span><span class="op">)</span></span>
@@ -277,7 +277,7 @@ genes for that cell.</p>
 <span><span class="co"># which cells have the same markers, regardless of clustering?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"marker.gene.jsi"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-jsi-1.png" alt="plot of chunk jsi"><div class="figcaption">plot of chunk jsi</div>
+<img src="figures/ClustAssess-jsi-1.png" alt="plot of chunk jsi"><div class="figcaption">plot of chunk jsi</div>
 </div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">marker.gene.jsi</span><span class="op">)</span></span>
@@ -309,7 +309,7 @@ k-means clustering 20 times to investigate.</p>
 <span><span class="co"># which cells are clustered more consistently?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"consistency"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
-<img src="articles/figures/ClustAssess-frust-1.png" alt="plot of chunk frust"><div class="figcaption">plot of chunk frust</div>
+<img src="figures/ClustAssess-frust-1.png" alt="plot of chunk frust"><div class="figcaption">plot of chunk frust</div>
 </div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">consistency</span><span class="op">)</span></span>

@@ -288,9 +288,7 @@ on the top 1000 Most Abundant genes.</p>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="articles/figures/stability-dim-reduction-flexibility-umap_pca-1.png" alt="plot of chunk umap_pca"><div class="figcaption">plot of chunk umap_pca</div>
-</div>
+<p><img src="figures/stability-dim-reduction-flexibility-umap_pca-1.png"></p>
 </div>
 <div class="section level2">
 <h2 id="clustassess-using-harmony">ClustAssess using Harmony<a class="anchor" aria-label="anchor" href="#clustassess-using-harmony"></a>
@@ -346,18 +344,18 @@ PBMC 3k dataset.</p>
 <span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>MA <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">=======================&gt;</span><span class="sc">-------------</span>] eta<span class="sc">:</span> <span class="dv">33</span>s  total elapsed<span class="sc">:</span>  <span class="dv">1</span>m</span>
 <span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a>MA <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">=============================&gt;</span><span class="sc">-------</span>] eta<span class="sc">:</span> <span class="dv">17</span>s  total elapsed<span class="sc">:</span>  <span class="dv">1</span>m</span>
 <span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a>MA <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">=============================&gt;</span><span class="sc">-------</span>] eta<span class="sc">:</span> <span class="dv">17</span>s  total elapsed<span class="sc">:</span>  <span class="dv">1</span>m</span>
-<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>MA <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">=====================================</span>] eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>  <span class="dv">2</span>m</span></code></pre></div>
-<p>Plot the distribution of the celltypes on the UMAP embedding obtained
-on the top 1000 Most Abundant genes.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">umap_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">pca_harmony_feature_stability</span><span class="op">$</span><span class="va">embedding_list</span><span class="op">$</span><span class="va">MA</span><span class="op">$</span><span class="st">"1000"</span><span class="op">)</span></span>
-<span><span class="va">umap_df</span><span class="op">$</span><span class="va">celltypes</span> <span class="op">&lt;-</span> <span class="va">pbmc3k</span><span class="op">$</span><span class="va">seurat_annotations</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="articles/figures/stability-dim-reduction-flexibility-umap_harmony-1.png" alt="plot of chunk umap_harmony"><div class="figcaption">plot of chunk umap_harmony</div>
-</div>
+<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>MA <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">=====================================</span>] eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>  <span class="dv">2</span>m</span>
+<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a><span class="st">```</span><span class="at">figures</span></span>
+<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a></span>
+<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a><span class="at">Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.</span></span>
+<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a></span>
+<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a><span class="st">```</span> r</span>
+<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a>umap_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(pca_harmony_feature_stability<span class="sc">$</span>embedding_list<span class="sc">$</span>MA<span class="sc">$</span><span class="st">"1000"</span>)</span>
+<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a>umap_df<span class="sc">$</span>celltypes <span class="ot">&lt;-</span> pbmc3k<span class="sc">$</span>seurat_annotations</span>
+<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a><span class="fu">ggplot</span>(umap_df, <span class="fu">aes</span>(<span class="at">x =</span> UMAP_1, <span class="at">y =</span> UMAP_2, <span class="at">color =</span> celltypes)) <span class="sc">+</span></span>
+<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a>    <span class="fu">theme_classic</span>()</span></code></pre></div>
+<p><img src="figures/stability-dim-reduction-flexibility-umap_harmony-1.png"></p>
 </div>
 <div class="section level2">
 <h2 id="clustassess-in-the-scatac-seq-data">ClustAssess in the scATAC-seq data<a class="anchor" aria-label="anchor" href="#clustassess-in-the-scatac-seq-data"></a>
@@ -366,7 +364,7 @@ on the top 1000 Most Abundant genes.</p>
 <code>assess_feature_stability</code> function by using the ATAC-seq
 data. For this example, we will use the multiome PBMC dataset from the
 <code>SeuratData</code> package.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stuart-lab/signac" class="external-link">Signac</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: package 'Signac' was built under R version 4.4.1</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmcMultiome"</span><span class="op">)</span></span>
@@ -377,16 +375,16 @@ data. For this example, we will use the multiome PBMC dataset from the
 package, the ATAC-seq data is usually processed using the TF-IDF
 normalization followed by the the calculation of the singular values.
 These two steps are also known as LSI (Latent Semantic Indexing).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc.atac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://stuartlab.org/signac/reference/RunTFIDF.html" class="external-link">RunTFIDF</a></span><span class="op">(</span><span class="va">pbmc.atac</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Performing TF-IDF normalization</span></span>
 <span><span class="co">#&gt; Warning in RunTFIDF.default(object = GetAssayData(object = object, layer = "counts"), : Some features contain 0 total counts</span></span></code></pre></div>
 <p>Identify the highly variable peaks.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc.atac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://stuartlab.org/signac/reference/FindTopFeatures.html" class="external-link">FindTopFeatures</a></span><span class="op">(</span><span class="va">pbmc.atac</span>, min.cutoff <span class="op">=</span> <span class="st">"q5"</span><span class="op">)</span></span>
 <span><span class="va">var_peaks</span> <span class="op">&lt;-</span> <span class="va">pbmc.atac</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">ATAC</span><span class="op">@</span><span class="va">var.features</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">3000</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>To speedup the assessment, set a parallel backend with 6 cores.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">ncores</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">ncores</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
@@ -399,81 +397,79 @@ These two steps are also known as LSI (Latent Semantic Indexing).</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Assess the stability of the dimensionality reduction by varying the
 number of highly variable peaks.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>matrix_processing_function <span class="ot">&lt;-</span> <span class="cf">function</span>(dt_mtx, <span class="at">actual_n_singular_values =</span> <span class="dv">50</span>) {</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>    actual_n_singular_values <span class="ot">&lt;-</span> <span class="fu">min</span>(actual_n_singular_values, <span class="fu">ncol</span>(dt_mtx) <span class="sc">%/%</span> <span class="dv">2</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>    RhpcBLASctl<span class="sc">::</span><span class="fu">blas_set_num_threads</span>(foreach<span class="sc">::</span><span class="fu">getDoParWorkers</span>())</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>    embedding <span class="ot">&lt;-</span> <span class="fu">RunSVD</span>(Matrix<span class="sc">::</span><span class="fu">t</span>(dt_mtx), <span class="at">n =</span> actual_n_singular_values, <span class="at">verbose =</span> <span class="cn">FALSE</span>)<span class="sc">@</span>cell.embeddings</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>    <span class="co"># remove the first component, as it does contain noise - see the Signac vignette</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>    embedding <span class="ot">&lt;-</span> embedding[, <span class="dv">2</span><span class="sc">:</span>actual_n_singular_values]</span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>    RhpcBLASctl<span class="sc">::</span><span class="fu">blas_set_num_threads</span>(<span class="dv">1</span>)</span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>    <span class="fu">rownames</span>(embedding) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dt_mtx)</span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>    <span class="fu">colnames</span>(embedding) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"LSI_"</span>, <span class="fu">seq_len</span>(actual_n_singular_values <span class="sc">-</span> <span class="dv">1</span>))</span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a></span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>    <span class="fu">return</span>(embedding)</span>
-<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>}</span>
-<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a></span>
-<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>lsi_atac_feature_stability <span class="ot">&lt;-</span> <span class="fu">assess_feature_stability</span>(</span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>    <span class="at">data_matrix =</span> pbmc.atac<span class="sc">@</span>assays[[<span class="st">"ATAC"</span>]]<span class="sc">@</span>data,</span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>    <span class="at">feature_set =</span> var_peaks,</span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>    <span class="at">resolution =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fl">0.1</span>, <span class="at">to =</span> <span class="dv">1</span>, <span class="at">by =</span> <span class="fl">0.1</span>),</span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>    <span class="at">steps =</span> steps,</span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>    <span class="at">n_repetitions =</span> n_repetitions,</span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a>    <span class="at">feature_type =</span> <span class="st">"HV_peaks"</span>,</span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a>    <span class="at">graph_reduction_type =</span> <span class="st">"PCA"</span>,</span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>    <span class="at">matrix_processing =</span> matrix_processing_function,</span>
-<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>    <span class="at">umap_arguments =</span> <span class="fu">list</span>(</span>
-<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>        <span class="at">min_dist =</span> <span class="fl">0.3</span>,</span>
-<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>        <span class="at">n_neighbors =</span> <span class="dv">30</span>,</span>
-<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>        <span class="at">metric =</span> <span class="st">"cosine"</span></span>
-<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>    ),</span>
-<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a>    <span class="at">ecs_thresh =</span> <span class="dv">1</span>,</span>
-<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>    <span class="at">clustering_algorithm =</span> <span class="dv">1</span>,</span>
-<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
-<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a>)</span>
-<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-35"><a href="#cb14-35" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">500</span> [<span class="sc">----------------------------------</span>] eta<span class="sc">:</span> ?s total elapsed<span class="sc">:</span> <span class="dv">0</span>s</span>
-<span id="cb14-36"><a href="#cb14-36" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-37"><a href="#cb14-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">500</span> [<span class="sc">==</span><span class="er">===&gt;</span><span class="sc">----------------------------</span>] eta<span class="sc">:</span> <span class="dv">44</span>m total elapsed<span class="sc">:</span> <span class="dv">9</span>m</span>
-<span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1000</span> [<span class="sc">==</span><span class="er">===&gt;</span><span class="sc">---------------------------</span>] eta<span class="sc">:</span> <span class="dv">44</span>m total elapsed<span class="sc">:</span> <span class="dv">9</span>m</span>
-<span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1000</span> [<span class="sc">==</span><span class="er">========&gt;</span><span class="sc">----------------------</span>] eta<span class="sc">:</span> <span class="dv">36</span>m total elapsed<span class="sc">:</span> <span class="dv">18</span>m</span>
-<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1500</span> [<span class="sc">==</span><span class="er">========&gt;</span><span class="sc">----------------------</span>] eta<span class="sc">:</span> <span class="dv">36</span>m total elapsed<span class="sc">:</span> <span class="dv">18</span>m</span>
-<span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1500</span> [<span class="sc">==</span><span class="er">=============&gt;</span><span class="sc">-----------------</span>] eta<span class="sc">:</span> <span class="dv">26</span>m total elapsed<span class="sc">:</span> <span class="dv">26</span>m</span>
-<span id="cb14-47"><a href="#cb14-47" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2000</span> [<span class="sc">==</span><span class="er">=============&gt;</span><span class="sc">-----------------</span>] eta<span class="sc">:</span> <span class="dv">26</span>m total elapsed<span class="sc">:</span> <span class="dv">26</span>m</span>
-<span id="cb14-48"><a href="#cb14-48" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-49"><a href="#cb14-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-50"><a href="#cb14-50" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2000</span> [<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-----------</span>] eta<span class="sc">:</span> <span class="dv">16</span>m total elapsed<span class="sc">:</span> <span class="dv">32</span>m</span>
-<span id="cb14-51"><a href="#cb14-51" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-----------</span>] eta<span class="sc">:</span> <span class="dv">16</span>m total elapsed<span class="sc">:</span> <span class="dv">32</span>m</span>
-<span id="cb14-52"><a href="#cb14-52" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-53"><a href="#cb14-53" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-54"><a href="#cb14-54" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-----</span>] eta<span class="sc">:</span> <span class="dv">8</span>m total elapsed<span class="sc">:</span> <span class="dv">38</span>m</span>
-<span id="cb14-55"><a href="#cb14-55" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-----</span>] eta<span class="sc">:</span> <span class="dv">8</span>m total elapsed<span class="sc">:</span> <span class="dv">38</span>m</span>
-<span id="cb14-56"><a href="#cb14-56" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
-<span id="cb14-57"><a href="#cb14-57" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-58"><a href="#cb14-58" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">===============================</span>] eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span> <span class="dv">43</span>m</span>
-<span id="cb14-59"><a href="#cb14-59" tabindex="-1"></a>foreach<span class="sc">::</span><span class="fu">registerDoSEQ</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>matrix_processing_function <span class="ot">&lt;-</span> <span class="cf">function</span>(dt_mtx, <span class="at">actual_n_singular_values =</span> <span class="dv">50</span>) {</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>    actual_n_singular_values <span class="ot">&lt;-</span> <span class="fu">min</span>(actual_n_singular_values, <span class="fu">ncol</span>(dt_mtx) <span class="sc">%/%</span> <span class="dv">2</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>    RhpcBLASctl<span class="sc">::</span><span class="fu">blas_set_num_threads</span>(foreach<span class="sc">::</span><span class="fu">getDoParWorkers</span>())</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>    embedding <span class="ot">&lt;-</span> <span class="fu">RunSVD</span>(Matrix<span class="sc">::</span><span class="fu">t</span>(dt_mtx), <span class="at">n =</span> actual_n_singular_values, <span class="at">verbose =</span> <span class="cn">FALSE</span>)<span class="sc">@</span>cell.embeddings</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>    <span class="co"># remove the first component, as it does contain noise - see the Signac vignette</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>    embedding <span class="ot">&lt;-</span> embedding[, <span class="dv">2</span><span class="sc">:</span>actual_n_singular_values]</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>    RhpcBLASctl<span class="sc">::</span><span class="fu">blas_set_num_threads</span>(<span class="dv">1</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>    <span class="fu">rownames</span>(embedding) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(dt_mtx)</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>    <span class="fu">colnames</span>(embedding) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"LSI_"</span>, <span class="fu">seq_len</span>(actual_n_singular_values <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>    <span class="fu">return</span>(embedding)</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>}</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>lsi_atac_feature_stability <span class="ot">&lt;-</span> <span class="fu">assess_feature_stability</span>(</span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>    <span class="at">data_matrix =</span> pbmc.atac<span class="sc">@</span>assays[[<span class="st">"ATAC"</span>]]<span class="sc">@</span>data,</span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>    <span class="at">feature_set =</span> var_peaks,</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>    <span class="at">resolution =</span> <span class="fu">seq</span>(<span class="at">from =</span> <span class="fl">0.1</span>, <span class="at">to =</span> <span class="dv">1</span>, <span class="at">by =</span> <span class="fl">0.1</span>),</span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>    <span class="at">steps =</span> steps,</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>    <span class="at">n_repetitions =</span> n_repetitions,</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>    <span class="at">feature_type =</span> <span class="st">"HV_peaks"</span>,</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>    <span class="at">graph_reduction_type =</span> <span class="st">"PCA"</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>    <span class="at">matrix_processing =</span> matrix_processing_function,</span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>    <span class="at">umap_arguments =</span> <span class="fu">list</span>(</span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>        <span class="at">min_dist =</span> <span class="fl">0.3</span>,</span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>        <span class="at">n_neighbors =</span> <span class="dv">30</span>,</span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>        <span class="at">metric =</span> <span class="st">"cosine"</span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>    ),</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>    <span class="at">ecs_thresh =</span> <span class="dv">1</span>,</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>    <span class="at">clustering_algorithm =</span> <span class="dv">1</span>,</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>)</span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">500</span> [<span class="sc">----------------------------------</span>] eta<span class="sc">:</span> ?s total elapsed<span class="sc">:</span> <span class="dv">0</span>s</span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">500</span> [<span class="sc">==</span><span class="er">===&gt;</span><span class="sc">----------------------------</span>] eta<span class="sc">:</span> <span class="dv">44</span>m total elapsed<span class="sc">:</span> <span class="dv">9</span>m</span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1000</span> [<span class="sc">==</span><span class="er">===&gt;</span><span class="sc">---------------------------</span>] eta<span class="sc">:</span> <span class="dv">44</span>m total elapsed<span class="sc">:</span> <span class="dv">9</span>m</span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
+<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1000</span> [<span class="sc">==</span><span class="er">========&gt;</span><span class="sc">----------------------</span>] eta<span class="sc">:</span> <span class="dv">36</span>m total elapsed<span class="sc">:</span> <span class="dv">18</span>m</span>
+<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1500</span> [<span class="sc">==</span><span class="er">========&gt;</span><span class="sc">----------------------</span>] eta<span class="sc">:</span> <span class="dv">36</span>m total elapsed<span class="sc">:</span> <span class="dv">18</span>m</span>
+<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
+<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">1500</span> [<span class="sc">==</span><span class="er">=============&gt;</span><span class="sc">-----------------</span>] eta<span class="sc">:</span> <span class="dv">26</span>m total elapsed<span class="sc">:</span> <span class="dv">26</span>m</span>
+<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2000</span> [<span class="sc">==</span><span class="er">=============&gt;</span><span class="sc">-----------------</span>] eta<span class="sc">:</span> <span class="dv">26</span>m total elapsed<span class="sc">:</span> <span class="dv">26</span>m</span>
+<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a><span class="co">#&gt; Warning: No assay speciffiguresy as RNA by default.</span></span>
+<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2000</span> [<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-----------</span>] eta<span class="sc">:</span> <span class="dv">16</span>m total elapsed<span class="sc">:</span> <span class="dv">32</span>m</span>
+<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-----------</span>] eta<span class="sc">:</span> <span class="dv">16</span>m total elapsed<span class="sc">:</span> <span class="dv">32</span>m</span>
+<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
+<span id="cb13-53"><a href="#cb13-53" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-54"><a href="#cb13-54" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">2500</span> [<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-----</span>] eta<span class="sc">:</span> <span class="dv">8</span>m total elapsed<span class="sc">:</span> <span class="dv">38</span>m</span>
+<span id="cb13-55"><a href="#cb13-55" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-----</span>] eta<span class="sc">:</span> <span class="dv">8</span>m total elapsed<span class="sc">:</span> <span class="dv">38</span>m</span>
+<span id="cb13-56"><a href="#cb13-56" tabindex="-1"></a><span class="co">#&gt; Warning: No assay specified, setting assay as RNA by default.</span></span>
+<span id="cb13-57"><a href="#cb13-57" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-58"><a href="#cb13-58" tabindex="-1"></a>HV_peaks <span class="sc">-</span> <span class="dv">3000</span> [<span class="sc">==</span><span class="er">===============================</span>] eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span> <span class="dv">43</span>m</span>
+<span id="cb13-59"><a href="#cb13-59" tabindex="-1"></a>foreach<span class="sc">::</span><span class="fu">registerDoSEQ</span>()</span></code></pre></div>
 <p>Plot the distribution of the celltypes on the UMAP embedding obtained
 on the top 1000 Highly Variable peaks.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">umap_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">lsi_atac_feature_stability</span><span class="op">$</span><span class="va">embedding_list</span><span class="op">$</span><span class="va">HV_peaks</span><span class="op">$</span><span class="st">"1000"</span><span class="op">)</span></span>
 <span><span class="va">umap_df</span><span class="op">$</span><span class="va">celltypes</span> <span class="op">&lt;-</span> <span class="va">pbmc.atac</span><span class="op">$</span><span class="va">seurat_annotations</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">umap_df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">UMAP_1</span>, y <span class="op">=</span> <span class="va">UMAP_2</span>, color <span class="op">=</span> <span class="va">celltypes</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="articles/figures/stability-dim-reduction-flexibility-umap_atac-1.png" alt="plot of chunk umap_atac"><div class="figcaption">plot of chunk umap_atac</div>
-</div>
+<p><img src="figures/stability-dim-reduction-flexibility-umap_atac-1.png"></p>
 </div>
 <div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>

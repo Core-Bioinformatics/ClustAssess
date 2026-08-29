@@ -235,10 +235,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk
-umap_pca](articles/figures/stability-dim-reduction-flexibility-umap_pca-1.png)
-
-plot of chunk umap_pca
+![](figures/stability-dim-reduction-flexibility-umap_pca-1.png)
 
 ## ClustAssess using Harmony
 
@@ -296,13 +293,11 @@ MA - 2500 [=========================>-------------] eta: 33s  total elapsed:  1m
 MA - 2500 [===============================>-------] eta: 17s  total elapsed:  1m
 MA - 3000 [===============================>-------] eta: 17s  total elapsed:  1m
 MA - 3000 [=======================================] eta:  0s  total elapsed:  2m
-```
+```figures
 
-Plot the distribution of the celltypes on the UMAP embedding obtained on
-the top 1000 Most Abundant genes.
+Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Most Abundant genes.
 
 ``` r
-
 umap_df <- data.frame(pca_harmony_feature_stability$embedding_list$MA$"1000")
 umap_df$celltypes <- pbmc3k$seurat_annotations
 ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
@@ -310,10 +305,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk
-umap_harmony](articles/figures/stability-dim-reduction-flexibility-umap_harmony-1.png)
-
-plot of chunk umap_harmony
+![](figures/stability-dim-reduction-flexibility-umap_harmony-1.png)
 
 ## ClustAssess in the scATAC-seq data
 
@@ -420,7 +412,7 @@ HV_peaks - 1500 [==========>----------------------] eta: 36m total elapsed: 18m
 #> 
 HV_peaks - 1500 [===============>-----------------] eta: 26m total elapsed: 26m
 HV_peaks - 2000 [===============>-----------------] eta: 26m total elapsed: 26m
-#> Warning: No assay specified, setting assay as RNA by default.
+#> Warning: No assay speciffiguresy as RNA by default.
 #> 
 HV_peaks - 2000 [=====================>-----------] eta: 16m total elapsed: 32m
 HV_peaks - 2500 [=====================>-----------] eta: 16m total elapsed: 32m
@@ -446,10 +438,7 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![plot of chunk
-umap_atac](articles/figures/stability-dim-reduction-flexibility-umap_atac-1.png)
-
-plot of chunk umap_atac
+![](figures/stability-dim-reduction-flexibility-umap_atac-1.png)
 
 ## Session info
 

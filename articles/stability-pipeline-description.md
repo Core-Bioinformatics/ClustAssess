@@ -29,7 +29,7 @@ library(ClustAssess)
 reticulate::py_install(c("leidenalg", "six"), python = Sys.getenv("RETICULATE_PYTHON"))
 #> Using virtual environment '~/.virtualenvs/r-reticulate' ...
 #> + /home/andi/.virtualenvs/r-reticulate/bin/python -m pip install --upgrade --no-user leidenalg six
-packageVersion("ClustAssess") # should be 1.0.0
+packageVersion("ClustAssess") # should be 1.2.0
 #> [1] '1.2.0'
 ```
 
@@ -169,7 +169,7 @@ percentage of ribosomal genes.
 
 ``` r
 
-VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), ncol = 2)
+patchwork::wrap_plots(VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), combine = FALSE), ncol = 2)
 #> Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
 #> ℹ Please use tidy evaluation idioms with `aes()`.
 #> ℹ See also `vignette("ggplot2-in-packages")` for more information.
@@ -177,11 +177,9 @@ VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "perc
 #>   Please report the issue at <https://github.com/satijalab/seurat/issues>.
 #> This warning is displayed once per session.
 #> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
-#> Error:
-#> ! Can't find method for generic `&(e1, e2)`:
-#> - e1: <patchwork>
-#> - e2: <theme>
 ```
+
+![](figures/stability-pipeline-description-qc_violin-1.png)
 
 After the quality control step, we filter the dataset using the
 following criteria: - the number of features is less than 2000 - the
@@ -199,12 +197,10 @@ after the filtering step.
 
 ``` r
 
-VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), ncol = 2)
-#> Error:
-#> ! Can't find method for generic `&(e1, e2)`:
-#> - e1: <patchwork>
-#> - e2: <theme>
+patchwork::wrap_plots(VlnPlot(pbmc3k, features = c("nFeature_RNA", "nCount_RNA", "percent.mito", "percent.rp"), combine = FALSE), ncol = 2)
 ```
+
+![](figures/stability-pipeline-description-qc_violin_post-1.png)
 
 ### Normalization and scaling
 
@@ -249,12 +245,7 @@ Seurat celltype annotations; B – E distributions of sequencing depths
 mitochondrial genes (D) and ribosomal genes (E) illustrated using the
 colour gradient.
 
-    #> Warning: `label` cannot be a <ggplot2::element_blank> object.
-
-![plot of chunk
-qc](articles/figures/stability-pipeline-description-qc-1.png)
-
-plot of chunk qc
+![](figures/stability-pipeline-description-qc-1.png)
 
 ### Effect of the random seed
 
@@ -317,10 +308,7 @@ gplots[[3]] <- ggplot(raw_umap, aes(x = umap_1, y = umap_2, colour = clustering)
 wrap_plots(gplots)
 ```
 
-![plot of chunk
-phenograph_different_plots](articles/figures/stability-pipeline-description-phenograph_different_plots-1.png)
-
-plot of chunk phenograph_different_plots
+![](figures/stability-pipeline-description-phenograph_different_plots-1.png)
 
 ### Applying ClustAssess
 
@@ -493,10 +481,7 @@ wrap_plots(
 )
 ```
 
-![plot of chunk
-stab_boxplot](articles/figures/stability-pipeline-description-stab_boxplot-1.png)
-
-plot of chunk stab_boxplot
+![](figures/stability-pipeline-description-stab_boxplot-1.png)
 
 Another angle for assessing the stability is centered on the comparison
 between consecutive steps, for each feature set, performed using the
@@ -524,10 +509,7 @@ plot_feature_overall_stability_incremental(pca_feature_stability_object, dodge_w
 )
 ```
 
-![plot of chunk
-stab_ecs_inc](articles/figures/stability-pipeline-description-stab_ecs_inc-1.png)
-
-plot of chunk stab_ecs_inc
+![](figures/stability-pipeline-description-stab_ecs_inc-1.png)
 
 To enhance the summarized information presented as boxplots, we use
 `plot_feature_stability_mb_facet` to visualize the corresponding facet
@@ -547,10 +529,7 @@ plot_feature_stability_mb_facet(
 )
 ```
 
-![plot of chunk
-stab_mb](articles/figures/stability-pipeline-description-stab_mb-1.png)
-
-plot of chunk stab_mb
+![](figures/stability-pipeline-description-stab_mb-1.png)
 
 To further understand the areas of instability, we provide an additional
 plot where we display, on the same UMAPs as before, the Element-Centric
@@ -564,10 +543,7 @@ the relationship between stability and the topology of the data.
 plot_feature_stability_ecs_facet(pca_feature_stability_object, resolution = 0.8, n_facet_cols = 6)
 ```
 
-![plot of chunk
-stab_ecs](articles/figures/stability-pipeline-description-stab_ecs-1.png)
-
-plot of chunk stab_ecs
+![](figures/stability-pipeline-description-stab_ecs-1.png)
 
 For the PBMC case study, based on the plots presented above, we conclude
 that the feature set does not highly impact the topology of the data.
@@ -660,14 +636,10 @@ least 5 nearest neighbours.
 ``` r
 
 plot_connected_comps_evolution(nn_conn_comps_object)
-#> Warning in ggplot2::scale_y_continuous(breaks = chosen_breaks, trans = "log10"): log-10
-#> transformation introduced infinite values.
+#> Warning in ggplot2::scale_y_continuous(breaks = chosen_breaks, trans = "log10"): log-10 transformation introduced infinite values.
 ```
 
-![plot of chunk
-comps_evo](articles/figures/stability-pipeline-description-comps_evo-1.png)
-
-plot of chunk comps_evo
+![](figures/stability-pipeline-description-comps_evo-1.png)
 
 `get_nn_importance` is a method used for assessing the impact of number
 of nearest neighbours, of the graph type (NN or SNN) and of the base
@@ -706,8 +678,7 @@ nn_importance_object <- mapply(c,
     ),
     SIMPLIFY = FALSE
 )
-#> Warning in mapply(c, assess_nn_stability(embedding = pbmc3k@reductions$pca@cell.embeddings, :
-#> longer argument not a multiple of length of shorter
+#> Warning in mapply(c, assess_nn_stability(embedding = pbmc3k@reductions$pca@cell.embeddings, : longer argument not a multiple of length of shorter
 ```
 
 We input the resulting object into `plot_n_neigh_k_correspondence`, to
@@ -726,14 +697,10 @@ compared to the PCA case.
 ``` r
 
 plot_n_neigh_k_correspondence(nn_importance_object)
-#> Warning in ggplot2::scale_y_continuous(breaks = chosen_breaks, trans = "log10"): log-10
-#> transformation introduced infinite values.
+#> Warning in ggplot2::scale_y_continuous(breaks = chosen_breaks, trans = "log10"): log-10 transformation introduced infinite values.
 ```
 
-![plot of chunk
-n_k_corr](articles/figures/stability-pipeline-description-n_k_corr-1.png)
-
-plot of chunk n_k_corr
+![](figures/stability-pipeline-description-n_k_corr-1.png)
 
 The stability of these parameters can be also evaluated using the
 Element-Centric Consistency applied on the partition list obtained over
@@ -749,10 +716,7 @@ more stable than NN.
 plot_n_neigh_ecs(nn_importance_object)
 ```
 
-![plot of chunk
-n_neigh_ecs](articles/figures/stability-pipeline-description-n_neigh_ecs-1.png)
-
-plot of chunk n_neigh_ecs
+![](figures/stability-pipeline-description-n_neigh_ecs-1.png)
 
 #### Graph clustering
 
@@ -796,18 +760,18 @@ clustering_stability <- assess_clustering_stability(
 #> conda install -n r-reticulate -c conda-forge leidenalg python-igraph pandas umap-learn
 #> python modules igraph and leidenalg installed
 #> 
-Louvain - res 0.1 [=>-----------------------------] eta: 25s  total elapsed:  1s
-Louvain - res 0.2 [=>-----------------------------] eta: 25s  total elapsed:  1s
-Louvain - res 0.2 [==>----------------------------] eta: 14s  total elapsed:  2s
-Louvain - res 0.3 [==>----------------------------] eta: 14s  total elapsed:  2s
+Louvain - res 0.1 [=>-----------------------------] eta: 28s  total elapsed:  1s
+Louvain - res 0.2 [=>-----------------------------] eta: 28s  total elapsed:  1s
+Louvain - res 0.2 [==>----------------------------] eta: 15s  total elapsed:  2s
+Louvain - res 0.3 [==>----------------------------] eta: 15s  total elapsed:  2s
 Louvain - res 0.3 [====>--------------------------] eta: 10s  total elapsed:  2s
 Louvain - res 0.4 [====>--------------------------] eta: 10s  total elapsed:  2s
 Louvain - res 0.4 [=====>-------------------------] eta:  8s  total elapsed:  2s
 Louvain - res 0.5 [=====>-------------------------] eta:  8s  total elapsed:  2s
-Louvain - res 0.5 [=======>-----------------------] eta:  6s  total elapsed:  2s
-Louvain - res 0.6 [=======>-----------------------] eta:  6s  total elapsed:  2s
-Louvain - res 0.6 [========>----------------------] eta:  5s  total elapsed:  2s
-Louvain - res 0.7 [========>----------------------] eta:  5s  total elapsed:  2s
+Louvain - res 0.5 [=======>-----------------------] eta:  7s  total elapsed:  2s
+Louvain - res 0.6 [=======>-----------------------] eta:  7s  total elapsed:  2s
+Louvain - res 0.6 [========>----------------------] eta:  6s  total elapsed:  2s
+Louvain - res 0.7 [========>----------------------] eta:  6s  total elapsed:  2s
 Louvain - res 0.7 [==========>--------------------] eta:  5s  total elapsed:  3s
 Louvain - res 0.8 [==========>--------------------] eta:  5s  total elapsed:  3s
 Louvain - res 0.8 [===========>-------------------] eta:  4s  total elapsed:  3s
@@ -816,8 +780,8 @@ Louvain - res 0.9 [=============>-----------------] eta:  4s  total elapsed:  3s
 Louvain - res 1 [==============>------------------] eta:  4s  total elapsed:  3s
 Louvain - res 1 [===============>-----------------] eta:  3s  total elapsed:  3s
 Louvain - res 1.1 [===============>---------------] eta:  3s  total elapsed:  3s
-Louvain - res 1.1 [================>--------------] eta:  3s  total elapsed:  3s
-Louvain - res 1.2 [================>--------------] eta:  3s  total elapsed:  3s
+Louvain - res 1.1 [================>--------------] eta:  3s  total elapsed:  4s
+Louvain - res 1.2 [================>--------------] eta:  3s  total elapsed:  4s
 Louvain - res 1.2 [==================>------------] eta:  3s  total elapsed:  4s
 Louvain - res 1.3 [==================>------------] eta:  3s  total elapsed:  4s
 Louvain - res 1.3 [===================>-----------] eta:  2s  total elapsed:  4s
@@ -834,7 +798,7 @@ Louvain - res 1.8 [===========================>---] eta:  1s  total elapsed:  6s
 Louvain - res 1.9 [===========================>---] eta:  1s  total elapsed:  6s
 Louvain - res 1.9 [============================>--] eta:  0s  total elapsed:  6s
 Louvain - res 2 [==============================>--] eta:  0s  total elapsed:  6s
-Louvain - res 2 [=================================] eta:  0s  total elapsed:  6s
+Louvain - res 2 [=================================] eta:  0s  total elapsed:  7s
 #> 
 Louvain.refined - res 0.2 [=>---------------------] eta:  3s  total elapsed:  0s
 Louvain.refined - res 0.3 [=>---------------------] eta:  3s  total elapsed:  0s
@@ -874,85 +838,85 @@ Louvain.refined - res 1.9 [=====================>-] eta:  0s  total elapsed:  5s
 Louvain.refined - res 2 [=======================>-] eta:  0s  total elapsed:  5s
 Louvain.refined - res 2 [=========================] eta:  0s  total elapsed:  5s
 #> 
-SLM - res 0.1 [=>---------------------------------] eta: 21s  total elapsed:  1s
-SLM - res 0.2 [=>---------------------------------] eta: 21s  total elapsed:  1s
-SLM - res 0.2 [===>-------------------------------] eta: 19s  total elapsed:  2s
-SLM - res 0.3 [===>-------------------------------] eta: 19s  total elapsed:  2s
-SLM - res 0.3 [====>------------------------------] eta: 18s  total elapsed:  3s
-SLM - res 0.4 [====>------------------------------] eta: 18s  total elapsed:  3s
-SLM - res 0.4 [======>----------------------------] eta: 18s  total elapsed:  4s
-SLM - res 0.5 [======>----------------------------] eta: 18s  total elapsed:  4s
-SLM - res 0.5 [========>--------------------------] eta: 17s  total elapsed:  6s
-SLM - res 0.6 [========>--------------------------] eta: 17s  total elapsed:  6s
-SLM - res 0.6 [=========>-------------------------] eta: 16s  total elapsed:  7s
-SLM - res 0.7 [=========>-------------------------] eta: 16s  total elapsed:  7s
-SLM - res 0.7 [===========>-----------------------] eta: 15s  total elapsed:  8s
-SLM - res 0.8 [===========>-----------------------] eta: 15s  total elapsed:  8s
-SLM - res 0.8 [=============>---------------------] eta: 14s  total elapsed: 10s
-SLM - res 0.9 [=============>---------------------] eta: 14s  total elapsed: 10s
-SLM - res 0.9 [===============>-------------------] eta: 13s  total elapsed: 11s
-SLM - res 1 [================>--------------------] eta: 13s  total elapsed: 11s
-SLM - res 1 [=================>-------------------] eta: 12s  total elapsed: 12s
-SLM - res 1.1 [=================>-----------------] eta: 12s  total elapsed: 12s
-SLM - res 1.1 [==================>----------------] eta: 11s  total elapsed: 13s
-SLM - res 1.2 [==================>----------------] eta: 11s  total elapsed: 13s
-SLM - res 1.2 [====================>--------------] eta: 10s  total elapsed: 15s
-SLM - res 1.3 [====================>--------------] eta: 10s  total elapsed: 15s
-SLM - res 1.3 [======================>------------] eta:  8s  total elapsed: 16s
-SLM - res 1.4 [======================>------------] eta:  8s  total elapsed: 16s
-SLM - res 1.4 [=======================>-----------] eta:  7s  total elapsed: 17s
-SLM - res 1.5 [=======================>-----------] eta:  7s  total elapsed: 17s
-SLM - res 1.5 [=========================>---------] eta:  6s  total elapsed: 18s
-SLM - res 1.6 [=========================>---------] eta:  6s  total elapsed: 18s
+SLM - res 0.1 [=>---------------------------------] eta: 20s  total elapsed:  1s
+SLM - res 0.2 [=>---------------------------------] eta: 20s  total elapsed:  1s
+SLM - res 0.2 [===>-------------------------------] eta: 18s  total elapsed:  2s
+SLM - res 0.3 [===>-------------------------------] eta: 18s  total elapsed:  2s
+SLM - res 0.3 [====>------------------------------] eta: 17s  total elapsed:  3s
+SLM - res 0.4 [====>------------------------------] eta: 17s  total elapsed:  3s
+SLM - res 0.4 [======>----------------------------] eta: 16s  total elapsed:  4s
+SLM - res 0.5 [======>----------------------------] eta: 16s  total elapsed:  4s
+SLM - res 0.5 [========>--------------------------] eta: 16s  total elapsed:  5s
+SLM - res 0.6 [========>--------------------------] eta: 16s  total elapsed:  5s
+SLM - res 0.6 [=========>-------------------------] eta: 15s  total elapsed:  6s
+SLM - res 0.7 [=========>-------------------------] eta: 15s  total elapsed:  6s
+SLM - res 0.7 [===========>-----------------------] eta: 14s  total elapsed:  8s
+SLM - res 0.8 [===========>-----------------------] eta: 14s  total elapsed:  8s
+SLM - res 0.8 [=============>---------------------] eta: 13s  total elapsed:  9s
+SLM - res 0.9 [=============>---------------------] eta: 13s  total elapsed:  9s
+SLM - res 0.9 [===============>-------------------] eta: 12s  total elapsed: 10s
+SLM - res 1 [================>--------------------] eta: 12s  total elapsed: 10s
+SLM - res 1 [=================>-------------------] eta: 11s  total elapsed: 11s
+SLM - res 1.1 [=================>-----------------] eta: 11s  total elapsed: 11s
+SLM - res 1.1 [==================>----------------] eta: 10s  total elapsed: 13s
+SLM - res 1.2 [==================>----------------] eta: 10s  total elapsed: 13s
+SLM - res 1.2 [====================>--------------] eta:  9s  total elapsed: 14s
+SLM - res 1.3 [====================>--------------] eta:  9s  total elapsed: 14s
+SLM - res 1.3 [======================>------------] eta:  8s  total elapsed: 15s
+SLM - res 1.4 [======================>------------] eta:  8s  total elapsed: 15s
+SLM - res 1.4 [=======================>-----------] eta:  7s  total elapsed: 16s
+SLM - res 1.5 [=======================>-----------] eta:  7s  total elapsed: 16s
+SLM - res 1.5 [=========================>---------] eta:  6s  total elapsed: 17s
+SLM - res 1.6 [=========================>---------] eta:  6s  total elapsed: 17s
 SLM - res 1.6 [===========================>-------] eta:  5s  total elapsed: 19s
 SLM - res 1.7 [===========================>-------] eta:  5s  total elapsed: 19s
 SLM - res 1.7 [=============================>-----] eta:  4s  total elapsed: 20s
 SLM - res 1.8 [=============================>-----] eta:  4s  total elapsed: 20s
-SLM - res 1.8 [===============================>---] eta:  2s  total elapsed: 22s
-SLM - res 1.9 [===============================>---] eta:  2s  total elapsed: 22s
+SLM - res 1.8 [===============================>---] eta:  2s  total elapsed: 21s
+SLM - res 1.9 [===============================>---] eta:  2s  total elapsed: 21s
 SLM - res 1.9 [================================>--] eta:  1s  total elapsed: 23s
 SLM - res 2 [==================================>--] eta:  1s  total elapsed: 23s
 SLM - res 2 [=====================================] eta:  0s  total elapsed: 24s
 #> 
-Leiden - res 0.1 [=>------------------------------] eta: 10m  total elapsed: 32s
-Leiden - res 0.2 [=>------------------------------] eta: 10m  total elapsed: 32s
-Leiden - res 0.2 [==>-----------------------------] eta:  9m  total elapsed:  1m
-Leiden - res 0.3 [==>-----------------------------] eta:  9m  total elapsed:  1m
-Leiden - res 0.3 [====>---------------------------] eta:  9m  total elapsed:  2m
-Leiden - res 0.4 [====>---------------------------] eta:  9m  total elapsed:  2m
-Leiden - res 0.4 [=====>--------------------------] eta:  8m  total elapsed:  2m
-Leiden - res 0.5 [=====>--------------------------] eta:  8m  total elapsed:  2m
-Leiden - res 0.5 [=======>------------------------] eta:  8m  total elapsed:  3m
-Leiden - res 0.6 [=======>------------------------] eta:  8m  total elapsed:  3m
-Leiden - res 0.6 [=========>----------------------] eta:  7m  total elapsed:  3m
-Leiden - res 0.7 [=========>----------------------] eta:  7m  total elapsed:  3m
-Leiden - res 0.7 [==========>---------------------] eta:  7m  total elapsed:  4m
-Leiden - res 0.8 [==========>---------------------] eta:  7m  total elapsed:  4m
-Leiden - res 0.8 [============>-------------------] eta:  6m  total elapsed:  4m
-Leiden - res 0.9 [============>-------------------] eta:  6m  total elapsed:  4m
-Leiden - res 0.9 [=============>------------------] eta:  6m  total elapsed:  5m
-Leiden - res 1 [==============>-------------------] eta:  6m  total elapsed:  5m
-Leiden - res 1 [================>-----------------] eta:  5m  total elapsed:  5m
-Leiden - res 1.1 [===============>----------------] eta:  5m  total elapsed:  5m
+Leiden - res 0.1 [=>------------------------------] eta: 12m  total elapsed: 38s
+Leiden - res 0.2 [=>------------------------------] eta: 12m  total elapsed: 38s
+Leiden - res 0.2 [==>-----------------------------] eta: 11m  total elapsed:  1m
+Leiden - res 0.3 [==>-----------------------------] eta: 11m  total elapsed:  1m
+Leiden - res 0.3 [====>---------------------------] eta: 10m  total elapsed:  2m
+Leiden - res 0.4 [====>---------------------------] eta: 10m  total elapsed:  2m
+Leiden - res 0.4 [=====>--------------------------] eta: 10m  total elapsed:  2m
+Leiden - res 0.5 [=====>--------------------------] eta: 10m  total elapsed:  2m
+Leiden - res 0.5 [=======>------------------------] eta:  9m  total elapsed:  3m
+Leiden - res 0.6 [=======>------------------------] eta:  9m  total elapsed:  3m
+Leiden - res 0.6 [=========>----------------------] eta:  8m  total elapsed:  4m
+Leiden - res 0.7 [=========>----------------------] eta:  8m  total elapsed:  4m
+Leiden - res 0.7 [==========>---------------------] eta:  8m  total elapsed:  4m
+Leiden - res 0.8 [==========>---------------------] eta:  8m  total elapsed:  4m
+Leiden - res 0.8 [============>-------------------] eta:  7m  total elapsed:  5m
+Leiden - res 0.9 [============>-------------------] eta:  7m  total elapsed:  5m
+Leiden - res 0.9 [=============>------------------] eta:  7m  total elapsed:  5m
+Leiden - res 1 [==============>-------------------] eta:  7m  total elapsed:  5m
+Leiden - res 1 [================>-----------------] eta:  6m  total elapsed:  6m
+Leiden - res 1.1 [===============>----------------] eta:  6m  total elapsed:  6m
 Leiden - res 1.1 [=================>--------------] eta:  5m  total elapsed:  6m
 Leiden - res 1.2 [=================>--------------] eta:  5m  total elapsed:  6m
-Leiden - res 1.2 [==================>-------------] eta:  4m  total elapsed:  6m
-Leiden - res 1.3 [==================>-------------] eta:  4m  total elapsed:  6m
-Leiden - res 1.3 [====================>-----------] eta:  4m  total elapsed:  7m
-Leiden - res 1.4 [====================>-----------] eta:  4m  total elapsed:  7m
-Leiden - res 1.4 [=====================>----------] eta:  3m  total elapsed:  7m
-Leiden - res 1.5 [=====================>----------] eta:  3m  total elapsed:  7m
-Leiden - res 1.5 [=======================>--------] eta:  3m  total elapsed:  8m
-Leiden - res 1.6 [=======================>--------] eta:  3m  total elapsed:  8m
-Leiden - res 1.6 [=========================>------] eta:  2m  total elapsed:  8m
-Leiden - res 1.7 [=========================>------] eta:  2m  total elapsed:  8m
-Leiden - res 1.7 [==========================>-----] eta:  2m  total elapsed:  9m
-Leiden - res 1.8 [==========================>-----] eta:  2m  total elapsed:  9m
-Leiden - res 1.8 [============================>---] eta:  1m  total elapsed:  9m
-Leiden - res 1.9 [============================>---] eta:  1m  total elapsed:  9m
-Leiden - res 1.9 [=============================>--] eta: 31s  total elapsed: 10m
-Leiden - res 2 [===============================>--] eta: 31s  total elapsed: 10m
-Leiden - res 2 [==================================] eta:  0s  total elapsed: 11m
+Leiden - res 1.2 [==================>-------------] eta:  5m  total elapsed:  7m
+Leiden - res 1.3 [==================>-------------] eta:  5m  total elapsed:  7m
+Leiden - res 1.3 [====================>-----------] eta:  4m  total elapsed:  8m
+Leiden - res 1.4 [====================>-----------] eta:  4m  total elapsed:  8m
+Leiden - res 1.4 [=====================>----------] eta:  3m  total elapsed:  8m
+Leiden - res 1.5 [=====================>----------] eta:  3m  total elapsed:  8m
+Leiden - res 1.5 [=======================>--------] eta:  3m  total elapsed:  9m
+Leiden - res 1.6 [=======================>--------] eta:  3m  total elapsed:  9m
+Leiden - res 1.6 [=========================>------] eta:  2m  total elapsed:  9m
+Leiden - res 1.7 [=========================>------] eta:  2m  total elapsed:  9m
+Leiden - res 1.7 [==========================>-----] eta:  2m  total elapsed: 10m
+Leiden - res 1.8 [==========================>-----] eta:  2m  total elapsed: 10m
+Leiden - res 1.8 [============================>---] eta:  1m  total elapsed: 10m
+Leiden - res 1.9 [============================>---] eta:  1m  total elapsed: 10m
+Leiden - res 1.9 [=============================>--] eta: 35s  total elapsed: 11m
+Leiden - res 2 [===============================>--] eta: 35s  total elapsed: 11m
+Leiden - res 2 [==================================] eta:  0s  total elapsed: 12m
 ```
 
 The stability of the methods is evaluated using the Element-Centric
@@ -983,10 +947,7 @@ wrap_plots(
   ), nrow = 1)
 ```
 
-![plot of chunk
-unnamed-chunk-9](articles/figures/stability-pipeline-description-unnamed-chunk-9-1.png)
-
-plot of chunk unnamed-chunk-9
+![](figures/stability-pipeline-description-unnamed-chunk-9-1.png)
 
 The stats can be further summarised using functions such as the mean or
 the median and the overall displayed can be visualised in the following
@@ -1010,10 +971,7 @@ wrap_plots(list(
 ), nrow = 1)
 ```
 
-![plot of chunk
-unnamed-chunk-10](articles/figures/stability-pipeline-description-unnamed-chunk-10-1.png)
-
-plot of chunk unnamed-chunk-10
+![](figures/stability-pipeline-description-unnamed-chunk-10-1.png)
 
 The resulting object can be visualized with `plot_k_resolution_corresp`
 as shown in the code below; we showcase the relationship between the
@@ -1033,10 +991,7 @@ plot_k_resolution_corresp(clustering_stability, dodge_width = 0.7, summary_funct
     plot_annotation(title = "resolution - k correspondence with ecs threshold = 1")
 ```
 
-![plot of chunk
-k_res_corr_1](articles/figures/stability-pipeline-description-k_res_corr_1-1.png)
-
-plot of chunk k_res_corr_1
+![](figures/stability-pipeline-description-k_res_corr_1-1.png)
 
 ``` r
 
@@ -1044,10 +999,7 @@ plot_k_resolution_corresp(clustering_stability, dodge_width = 0.7, colour_inform
     plot_annotation(title = "resolution - k correspondence with ecs threshold = 1")
 ```
 
-![plot of chunk
-k_res_corr_1](articles/figures/stability-pipeline-description-k_res_corr_1-2.png)
-
-plot of chunk k_res_corr_1
+![](figures/stability-pipeline-description-k_res_corr_1-2.png)
 
 The following plot showcases the co-variation between the stability of
 the number of clusters and the number of different partitions resulting
@@ -1071,20 +1023,14 @@ be used on the downstream analysis.
 plot_k_n_partitions(clustering_stability, dodge_width = 0.5) + plot_annotation(title = "k - # partitions correspondence with ecs threshold = 1")
 ```
 
-![plot of chunk
-k_n_part_1](articles/figures/stability-pipeline-description-k_n_part_1-1.png)
-
-plot of chunk k_n_part_1
+![](figures/stability-pipeline-description-k_n_part_1-1.png)
 
 ``` r
 
 plot_k_n_partitions(clustering_stability, dodge_width = 0.5, colour_information = "freq_part") + plot_annotation(title = "k - # partitions correspondence with ecs threshold = 1")
 ```
 
-![plot of chunk
-k_n_part_1](articles/figures/stability-pipeline-description-k_n_part_1-2.png)
-
-plot of chunk k_n_part_1
+![](figures/stability-pipeline-description-k_n_part_1-2.png)
 
 Close the connections opened when using multiple cores.
 
@@ -1107,28 +1053,28 @@ paste(
         units = "mins"
     )), "minutes"
 )
-#> [1] "Feature stability methods runtime: 3.348405 minutes"
+#> [1] "Feature stability methods runtime: 3.406566 minutes"
 paste(
     "NN - # connected components methods runtime:",
     format(as.numeric(stop_time_nn_conn - start_time_nn_conn,
         units = "mins"
     )), "minutes"
 )
-#> [1] "NN - # connected components methods runtime: 0.5376887 minutes"
+#> [1] "NN - # connected components methods runtime: 0.5474385 minutes"
 paste(
     "NN stability methods runtime:",
     format(as.numeric(stop_time_nn_importance - start_time_nn_importance,
         units = "mins"
     )), "minutes"
 )
-#> [1] "NN stability methods runtime: 2.285886 minutes"
+#> [1] "NN stability methods runtime: 2.379103 minutes"
 paste(
     "Clustering stability methods runtime:",
     format(as.numeric(stop_time_clustering - start_time_clustering,
         units = "mins"
     )), "minutes"
 )
-#> [1] "Clustering stability methods runtime: 11.17457 minutes"
+#> [1] "Clustering stability methods runtime: 12.32168 minutes"
 ```
 
 ## Session info
@@ -1145,9 +1091,8 @@ sessionInfo()
 #> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8    
-#>  [5] LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C             
-#>  [9] LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C        
+#> [11] LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
 #> time zone: Europe/Bucharest
 #> tzcode source: system (glibc)
@@ -1156,43 +1101,21 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#>  [1] leiden_0.4.3.1                ClustAssess_1.2.0             ggplot2_4.0.3                
-#>  [4] Seurat_5.1.0                  SeuratObject_5.0.2            sp_2.1-4                     
-#>  [7] Matrix_1.7-0                  patchwork_1.2.0               pbmcMultiome.SeuratData_0.1.4
-#> [10] pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9002         RhpcBLASctl_0.23-42          
-#> [13] devtools_2.5.2                usethis_3.2.1                
+#>  [1] leiden_0.4.3.1                ClustAssess_1.2.0             ggplot2_4.0.3                 Seurat_5.1.0                  SeuratObject_5.0.2            sp_2.1-4                      Matrix_1.7-0                  patchwork_1.2.0              
+#>  [9] pbmcMultiome.SeuratData_0.1.4 pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9002         RhpcBLASctl_0.23-42           devtools_2.5.2                usethis_3.2.1                
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.3         ggbeeswarm_0.7.2      
-#>   [5] spatstat.utils_3.1-2   farver_2.1.2           fs_2.1.0               vctrs_0.6.5           
-#>   [9] ROCR_1.0-11            memoise_2.0.1          spatstat.explore_3.2-7 progress_1.2.3        
-#>  [13] htmltools_0.5.8.1      sctransform_0.4.1      parallelly_1.37.1      KernSmooth_2.23-22    
-#>  [17] htmlwidgets_1.6.4      ica_1.0-3              plyr_1.8.9             plotly_4.10.4         
-#>  [21] zoo_1.8-12             cachem_1.1.0           igraph_2.2.1           iterators_1.0.14      
-#>  [25] mime_0.12              lifecycle_1.0.5        pkgconfig_2.0.3        R6_2.6.1              
-#>  [29] fastmap_1.2.0          fitdistrplus_1.1-11    future_1.33.2          shiny_1.8.1.1         
-#>  [33] digest_0.6.35          colorspace_2.1-1       tensor_1.5             RSpectra_0.16-2       
-#>  [37] irlba_2.3.5.1          pkgload_1.5.3          labeling_0.4.3         progressr_0.14.0      
-#>  [41] fansi_1.0.6            spatstat.sparse_3.0-3  httr_1.4.7             polyclip_1.10-6       
-#>  [45] abind_1.4-5            compiler_4.4.0         withr_3.0.3            S7_0.2.1              
-#>  [49] fastDummies_1.7.3      pkgbuild_1.4.8         MASS_7.3-60            rappdirs_0.3.3        
-#>  [53] sessioninfo_1.2.4      tools_4.4.0            vipor_0.4.7            lmtest_0.9-40         
-#>  [57] otel_0.2.0             beeswarm_0.4.0         httpuv_1.6.15          future.apply_1.11.2   
-#>  [61] goftest_1.2-3          glue_1.7.0             nlme_3.1-163           promises_1.3.0        
-#>  [65] grid_4.4.0             Rtsne_0.17             cluster_2.1.6          reshape2_1.4.4        
-#>  [69] generics_0.1.3         gtable_0.3.6           spatstat.data_3.0-4    tidyr_1.3.1           
-#>  [73] hms_1.1.3              data.table_1.15.4      utf8_1.2.4             BiocGenerics_0.50.0   
-#>  [77] spatstat.geom_3.2-9    RcppAnnoy_0.0.22       ggrepel_0.9.5          RANN_2.6.1            
-#>  [81] foreach_1.5.2          pillar_1.9.0           stringr_1.5.1          spam_2.10-0           
-#>  [85] RcppHNSW_0.6.0         later_1.3.2            splines_4.4.0          dplyr_1.1.4           
-#>  [89] lattice_0.22-5         survival_3.5-8         deldir_2.0-4           tidyselect_1.2.1      
-#>  [93] miniUI_0.1.2           pbapply_1.7-2          knitr_1.51             gridExtra_2.3         
-#>  [97] scattermore_1.2        xfun_0.56              SharedObject_1.19.1    matrixStats_1.3.0     
-#> [101] stringi_1.8.4          lazyeval_0.2.2         evaluate_1.0.5         codetools_0.2-19      
-#> [105] tibble_3.2.1           cli_3.6.6              uwot_0.2.2             xtable_1.8-4          
-#> [109] reticulate_1.37.0      Rcpp_1.0.13            globals_0.16.3         spatstat.random_3.2-3 
-#> [113] png_0.1-8              ggrastr_1.0.2          parallel_4.4.0         ellipsis_0.3.3        
-#> [117] prettyunits_1.2.0      dotCall64_1.1-1        listenv_0.9.1          viridisLite_0.4.2     
-#> [121] scales_1.4.0           ggridges_0.5.6         purrr_1.0.2            crayon_1.5.3          
-#> [125] rlang_1.3.0            cowplot_1.1.3
+#>   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.3         ggbeeswarm_0.7.2       spatstat.utils_3.1-2   farver_2.1.2           fs_2.1.0               vctrs_0.6.5            ROCR_1.0-11            memoise_2.0.1         
+#>  [11] spatstat.explore_3.2-7 progress_1.2.3         htmltools_0.5.8.1      sctransform_0.4.1      parallelly_1.37.1      KernSmooth_2.23-22     htmlwidgets_1.6.4      ica_1.0-3              plyr_1.8.9             plotly_4.10.4         
+#>  [21] zoo_1.8-12             cachem_1.1.0           igraph_2.2.1           iterators_1.0.14       mime_0.12              lifecycle_1.0.5        pkgconfig_2.0.3        R6_2.6.1               fastmap_1.2.0          fitdistrplus_1.1-11   
+#>  [31] future_1.33.2          shiny_1.8.1.1          digest_0.6.35          colorspace_2.1-1       tensor_1.5             RSpectra_0.16-2        irlba_2.3.5.1          pkgload_1.5.3          labeling_0.4.3         progressr_0.14.0      
+#>  [41] fansi_1.0.6            spatstat.sparse_3.0-3  httr_1.4.7             polyclip_1.10-6        abind_1.4-5            compiler_4.4.0         withr_3.0.3            S7_0.2.1               fastDummies_1.7.3      pkgbuild_1.4.8        
+#>  [51] MASS_7.3-60            rappdirs_0.3.3         sessioninfo_1.2.4      tools_4.4.0            vipor_0.4.7            lmtest_0.9-40          otel_0.2.0             beeswarm_0.4.0         httpuv_1.6.15          future.apply_1.11.2   
+#>  [61] goftest_1.2-3          glue_1.7.0             nlme_3.1-163           promises_1.3.0         grid_4.4.0             Rtsne_0.17             cluster_2.1.6          reshape2_1.4.4         generics_0.1.3         gtable_0.3.6          
+#>  [71] spatstat.data_3.0-4    tidyr_1.3.1            hms_1.1.3              data.table_1.15.4      utf8_1.2.4             BiocGenerics_0.50.0    spatstat.geom_3.2-9    RcppAnnoy_0.0.22       ggrepel_0.9.5          RANN_2.6.1            
+#>  [81] foreach_1.5.2          pillar_1.9.0           stringr_1.5.1          spam_2.10-0            RcppHNSW_0.6.0         later_1.3.2            splines_4.4.0          dplyr_1.1.4            lattice_0.22-5         survival_3.5-8        
+#>  [91] deldir_2.0-4           tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-2          knitr_1.51             gridExtra_2.3          scattermore_1.2        xfun_0.56              SharedObject_1.19.1    matrixStats_1.3.0     
+#> [101] stringi_1.8.4          lazyeval_0.2.2         evaluate_1.0.5         codetools_0.2-19       tibble_3.2.1           cli_3.6.6              uwot_0.2.2             xtable_1.8-4           reticulate_1.37.0      Rcpp_1.0.13           
+#> [111] globals_0.16.3         spatstat.random_3.2-3  png_0.1-8              ggrastr_1.0.2          parallel_4.4.0         ellipsis_0.3.3         prettyunits_1.2.0      dotCall64_1.1-1        listenv_0.9.1          viridisLite_0.4.2     
+#> [121] scales_1.4.0           ggridges_0.5.6         purrr_1.0.2            crayon_1.5.3           rlang_1.3.0            cowplot_1.1.3
 ```

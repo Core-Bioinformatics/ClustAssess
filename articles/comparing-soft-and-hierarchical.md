@@ -79,10 +79,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = species)) +
     labs(title = "Iris PCA")
 ```
 
-![plot of chunk
-setup](articles/figures/comparing-soft-and-hierarchical-setup-1.png)
-
-plot of chunk setup
+![](figures/comparing-soft-and-hierarchical-setup-1.png)
 
 Next, we cluster the data using three different approaches.
 
@@ -96,10 +93,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = db.cluster)) +
     labs(title = "DBScan clustering")
 ```
 
-![plot of chunk
-clustering](articles/figures/comparing-soft-and-hierarchical-clustering-1.png)
-
-plot of chunk clustering
+![](figures/comparing-soft-and-hierarchical-clustering-1.png)
 
 ``` r
 
@@ -114,10 +108,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = cmeans.cluster)) +
     labs(title = "c-means clustering")
 ```
 
-![plot of chunk
-clustering](articles/figures/comparing-soft-and-hierarchical-clustering-2.png)
-
-plot of chunk clustering
+![](figures/comparing-soft-and-hierarchical-clustering-2.png)
 
 ``` r
 
@@ -135,10 +126,7 @@ hc.res %>%
     plot(main = "Complete linkage hierarchical clustering", leaflab = "none")
 ```
 
-![plot of chunk
-clustering](articles/figures/comparing-soft-and-hierarchical-clustering-3.png)
-
-plot of chunk clustering
+![](figures/comparing-soft-and-hierarchical-clustering-3.png)
 
 Now, we will compare the clustering results using element-centric
 similarity. ECS allows us to compare different kinds of clustering
@@ -161,10 +149,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.cmeans.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![plot of chunk
-ecs](articles/figures/comparing-soft-and-hierarchical-ecs-1.png)
-
-plot of chunk ecs
+![](figures/comparing-soft-and-hierarchical-ecs-1.png)
 
 ``` r
 
@@ -182,10 +167,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.hc.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![plot of chunk
-ecs](articles/figures/comparing-soft-and-hierarchical-ecs-2.png)
-
-plot of chunk ecs
+![](figures/comparing-soft-and-hierarchical-ecs-2.png)
 
 ``` r
 
@@ -203,10 +185,7 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = cmeans.hc.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![plot of chunk
-ecs](articles/figures/comparing-soft-and-hierarchical-ecs-3.png)
-
-plot of chunk ecs
+![](figures/comparing-soft-and-hierarchical-ecs-3.png)
 
 ``` r
 
