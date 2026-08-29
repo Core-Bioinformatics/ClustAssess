@@ -86,12 +86,14 @@ Initialise the parallel backend.
 ```{r parallel_framwework}
 RhpcBLASctl::blas_set_num_threads(1)
 ncores <- 1
-my_cluster <- parallel::makeCluster(
-    ncores,
-    type = "PSOCK"
-)
+if (ncores > 1) {
+    my_cluster <- parallel::makeCluster(
+        ncores,
+        type = "PSOCK"
+    )
 
-doParallel::registerDoParallel(cl = my_cluster)
+    doParallel::registerDoParallel(cl = my_cluster)
+}
 ```
 
 Define the feature sets of interest.
@@ -139,7 +141,9 @@ automm_output <- automatic_stability_assessment(
 
 Close the connections opened when using multiple cores.
 ```{r remove_parallel}
-foreach::registerDoSEQ()
+if (ncores > 1) {
+    parallel::stopCluster(cl = my_cluster)
+}
 ```
 
 Create the shiny app based on the ClustAssess output. You should also specify either a seurat object or a normalized expression matrix.
