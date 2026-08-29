@@ -3,20 +3,18 @@
 ``` r
 
 is_e1071 <- require("e1071", quietly = TRUE)
+#> Warning: package 'e1071' was built under R version 4.4.1
 if (!is_e1071) {
     install.packages("e1071", repos = "https://cloud.r-project.org")
     library(e1071)
 }
-#> Installing package into '/home/runner/work/_temp/Library'
-#> (as 'lib' is unspecified)
-#> also installing the dependency 'proxy'
 
 is_dbscan <- require("dbscan", quietly = TRUE)
 if (!is_dbscan) {
     install.packages("dbscan", repos = "https://cloud.r-project.org")
     library(dbscan)
 }
-#> Installing package into '/home/runner/work/_temp/Library'
+#> Installing package into '/home/andi/R/x86_64-pc-linux-gnu-library/4.4'
 #> (as 'lib' is unspecified)
 #> 
 #> Attaching package: 'dbscan'
@@ -29,9 +27,8 @@ if (!is_dendextend) {
     install.packages("dendextend", repos = "https://cloud.r-project.org")
     library(dendextend)
 }
-#> Installing package into '/home/runner/work/_temp/Library'
+#> Installing package into '/home/andi/R/x86_64-pc-linux-gnu-library/4.4'
 #> (as 'lib' is unspecified)
-#> also installing the dependency 'viridis'
 #> 
 #> ---------------------
 #> Welcome to dendextend version 1.19.1
@@ -53,9 +50,8 @@ if (!is_dendextend) {
 #>     cutree
 
 install.packages("harmony", repos = "https://cloud.r-project.org")
-#> Installing package into '/home/runner/work/_temp/Library'
+#> Installing package into '/home/andi/R/x86_64-pc-linux-gnu-library/4.4'
 #> (as 'lib' is unspecified)
-#> also installing the dependencies 'RcppArmadillo', 'RcppProgress'
 ```
 
 In this vignette we will illustrate how element-centric similarity can
@@ -83,7 +79,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = species)) +
     labs(title = "Iris PCA")
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/setup-1.png)
+![plot of chunk
+setup](articles/figures/comparing-soft-and-hierarchical-setup-1.png)
+
+plot of chunk setup
 
 Next, we cluster the data using three different approaches.
 
@@ -97,7 +96,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = db.cluster)) +
     labs(title = "DBScan clustering")
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/clustering-1.png)
+![plot of chunk
+clustering](articles/figures/comparing-soft-and-hierarchical-clustering-1.png)
+
+plot of chunk clustering
 
 ``` r
 
@@ -112,7 +114,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = cmeans.cluster)) +
     labs(title = "c-means clustering")
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/clustering-2.png)
+![plot of chunk
+clustering](articles/figures/comparing-soft-and-hierarchical-clustering-2.png)
+
+plot of chunk clustering
 
 ``` r
 
@@ -130,7 +135,10 @@ hc.res %>%
     plot(main = "Complete linkage hierarchical clustering", leaflab = "none")
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/clustering-3.png)
+![plot of chunk
+clustering](articles/figures/comparing-soft-and-hierarchical-clustering-3.png)
+
+plot of chunk clustering
 
 Now, we will compare the clustering results using element-centric
 similarity. ECS allows us to compare different kinds of clustering
@@ -153,7 +161,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.cmeans.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/ecs-1.png)
+![plot of chunk
+ecs](articles/figures/comparing-soft-and-hierarchical-ecs-1.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -171,7 +182,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = dbscan.hc.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/ecs-2.png)
+![plot of chunk
+ecs](articles/figures/comparing-soft-and-hierarchical-ecs-2.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -189,7 +203,10 @@ ggplot(df.iris, aes(x = PC1, y = PC2, color = cmeans.hc.ecs)) +
     scale_colour_viridis_c()
 ```
 
-![](comparing-soft-and-hierarchical_files/figure-html/ecs-3.png)
+![plot of chunk
+ecs](articles/figures/comparing-soft-and-hierarchical-ecs-3.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -202,43 +219,28 @@ mean(df.iris$cmeans.hc.ecs)
 ``` r
 
 sessionInfo()
-#> R version 4.4.3 (2025-02-28)
+#> R version 4.4.0 (2024-04-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 22.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
-#> time zone: UTC
+#> time zone: Europe/Bucharest
 #> tzcode source: system (glibc)
 #> 
 #> attached base packages:
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3     ClustAssess_1.2.0 dendextend_1.19.1 dbscan_1.2.6     
-#> [5] e1071_1.7-17     
+#> [1] ggplot2_4.0.3     ClustAssess_1.2.0 dendextend_1.19.1 dbscan_1.2.6      e1071_1.7-14     
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] viridis_0.6.5      sass_0.4.10        generics_0.1.4     class_7.3-23      
-#>  [5] lattice_0.22-6     digest_0.6.39      magrittr_2.0.5     evaluate_1.0.5    
-#>  [9] grid_4.4.3         RColorBrewer_1.1-3 iterators_1.0.14   fastmap_1.2.0     
-#> [13] foreach_1.5.2      jsonlite_2.0.0     Matrix_1.7-2       gridExtra_2.3.1   
-#> [17] viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20   textshaping_1.0.5 
-#> [21] jquerylib_0.1.4    cli_3.6.6          rlang_1.3.0        withr_3.0.3       
-#> [25] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.4.3       
-#> [29] dplyr_1.2.1        vctrs_0.7.3        R6_2.6.1           proxy_0.4-29      
-#> [33] lifecycle_1.0.5    fs_2.1.0           htmlwidgets_1.6.4  ragg_1.5.2        
-#> [37] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1      pillar_1.11.1     
-#> [41] bslib_0.12.0       gtable_0.3.6       glue_1.8.1         Rcpp_1.1.2        
-#> [45] systemfonts_1.3.2  xfun_0.60          tibble_3.3.1       tidyselect_1.2.1  
-#> [49] knitr_1.51         farver_2.1.2       igraph_2.3.3       htmltools_0.5.9   
-#> [53] labeling_0.4.3     rmarkdown_2.31     compiler_4.4.3     S7_0.2.2
+#>  [1] Matrix_1.7-0       gtable_0.3.6       jsonlite_2.0.0     dplyr_1.1.4        compiler_4.4.0     tidyselect_1.2.1   Rcpp_1.0.13        gridExtra_2.3      scales_1.4.0       lattice_0.22-5     R6_2.6.1           labeling_0.4.3     generics_0.1.3     igraph_2.2.1       knitr_1.51         iterators_1.0.14  
+#> [17] viridis_0.6.5      tibble_3.2.1       pillar_1.9.0       RColorBrewer_1.1-3 rlang_1.3.0        utf8_1.2.4         xfun_0.56          S7_0.2.1           otel_0.2.0         viridisLite_0.4.2  cli_3.6.6          withr_3.0.3        magrittr_2.0.3     class_7.3-22       foreach_1.5.2      grid_4.4.0        
+#> [33] lifecycle_1.0.5    vctrs_0.6.5        proxy_0.4-27       evaluate_1.0.5     glue_1.7.0         farver_2.1.2       codetools_0.2-19   fansi_1.0.6        tools_4.4.0        pkgconfig_2.0.3
 ```

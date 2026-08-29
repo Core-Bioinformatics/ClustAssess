@@ -8,58 +8,62 @@ if (!is_seuratdata) {
 }
 
 is_harmony <- require("harmony", quietly = TRUE)
-```
-
-    ## • This is Harmony2 version 2.0.5
-    ## • Read the guide: run vignette("quickstart", package="harmony")
-    ## • Get help: Visit the website at <https://korsunskylab.github.io/harmony2/> and
-    ## report issues on <https://github.com/immunogenomics/harmony/issues>
-
-``` r
-
+#> • This is Harmony2 version 2.0.5
+#> • Read the guide: run vignette("quickstart", package="harmony")
+#> • Get help: Visit the website at <https://korsunskylab.github.io/harmony2/> and report issues on <https://github.com/immunogenomics/harmony/issues>
 if (!is_harmony) {
     install.packages("harmony", repos = "https://cloud.r-project.org")
 }
 
 is_rsamtool <- require("Rsamtools", quietly = TRUE)
-```
-
-    ## 
-    ## Attaching package: 'BiocGenerics'
-    ## 
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     IQR, mad, sd, var, xtabs
-    ## 
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
-    ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    ##     Position, rank, rbind, Reduce, rownames, sapply, saveRDS, setdiff,
-    ##     table, tapply, union, unique, unsplit, which.max, which.min
-    ## 
-    ## 
-    ## Attaching package: 'S4Vectors'
-    ## 
-    ## The following object is masked from 'package:utils':
-    ## 
-    ##     findMatches
-    ## 
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     expand.grid, I, unname
-    ## 
-    ## 
-    ## Attaching package: 'Biostrings'
-    ## 
-    ## The following object is masked from 'package:base':
-    ## 
-    ##     strsplit
-
-``` r
-
+#> Warning: package 'Rsamtools' was built under R version 4.4.1
+#> Warning: package 'GenomeInfoDb' was built under R version 4.4.1
+#> Warning: package 'BiocGenerics' was built under R version 4.4.1
+#> 
+#> Attaching package: 'BiocGenerics'
+#> 
+#> The following object is masked from 'package:SeuratObject':
+#> 
+#>     intersect
+#> 
+#> The following objects are masked from 'package:stats':
+#> 
+#>     IQR, mad, sd, var, xtabs
+#> 
+#> The following objects are masked from 'package:base':
+#> 
+#>     anyDuplicated, aperm, append, as.data.frame, basename, cbind, colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget, order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+#>     rbind, Reduce, rownames, sapply, setdiff, table, tapply, union, unique, unsplit, which.max, which.min
+#> 
+#> 
+#> Attaching package: 'S4Vectors'
+#> 
+#> The following object is masked from 'package:utils':
+#> 
+#>     findMatches
+#> 
+#> The following objects are masked from 'package:base':
+#> 
+#>     expand.grid, I, unname
+#> 
+#> 
+#> Attaching package: 'IRanges'
+#> 
+#> The following object is masked from 'package:sp':
+#> 
+#>     %over%
+#> Warning: package 'Biostrings' was built under R version 4.4.1
+#> Warning: package 'XVector' was built under R version 4.4.1
+#> 
+#> Attaching package: 'Biostrings'
+#> 
+#> The following object is masked from 'package:dendextend':
+#> 
+#>     nnodes
+#> 
+#> The following object is masked from 'package:base':
+#> 
+#>     strsplit
 if (!is_rsamtool) {
     is_biocmanager <- require("BiocManager", quietly = TRUE)
     if (!is_biocmanager) {
@@ -74,80 +78,31 @@ if (!is_rsamtool) {
 ``` r
 
 library(Seurat)
-```
-
-    ## Loading required package: SeuratObject
-
-    ## Loading required package: sp
-
-    ## 
-    ## Attaching package: 'sp'
-
-    ## The following object is masked from 'package:IRanges':
-    ## 
-    ##     %over%
-
-    ## 'SeuratObject' was built under R 4.4.0 but the current version is
-    ## 4.4.3; it is recomended that you reinstall 'SeuratObject' as the ABI
-    ## for R may have changed
-
-    ## 
-    ## Attaching package: 'SeuratObject'
-
-    ## The following object is masked from 'package:Biostrings':
-    ## 
-    ##     intersect
-
-    ## The following object is masked from 'package:GenomicRanges':
-    ## 
-    ##     intersect
-
-    ## The following object is masked from 'package:GenomeInfoDb':
-    ## 
-    ##     intersect
-
-    ## The following object is masked from 'package:IRanges':
-    ## 
-    ##     intersect
-
-    ## The following object is masked from 'package:S4Vectors':
-    ## 
-    ##     intersect
-
-    ## The following object is masked from 'package:BiocGenerics':
-    ## 
-    ##     intersect
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, t
-
-``` r
-
 library(SeuratData)
 library(ClustAssess)
 library(ggplot2)
 library(harmony)
 library(data.table)
-```
-
-    ## 
-    ## Attaching package: 'data.table'
-
-    ## The following object is masked from 'package:GenomicRanges':
-    ## 
-    ##     shift
-
-    ## The following object is masked from 'package:IRanges':
-    ## 
-    ##     shift
-
-    ## The following objects are masked from 'package:S4Vectors':
-    ## 
-    ##     first, second
-
-``` r
-
+#> Warning: package 'data.table' was built under R version 4.4.1
+#> data.table 1.15.4 using 8 threads (see ?getDTthreads).  Latest news: r-datatable.com
+#> 
+#> Attaching package: 'data.table'
+#> 
+#> The following object is masked from 'package:GenomicRanges':
+#> 
+#>     shift
+#> 
+#> The following object is masked from 'package:IRanges':
+#> 
+#>     shift
+#> 
+#> The following objects are masked from 'package:S4Vectors':
+#> 
+#>     first, second
+#> 
+#> The following object is masked from 'package:dendextend':
+#> 
+#>     set
 library(Rsamtools)
 
 n_repetitions <- 30
@@ -171,37 +126,18 @@ the one performed in the stability pipeline vignette.
 
 options(timeout=3600)
 InstallData("pbmc3k")
-```
-
-    ## Installing package into '/home/runner/work/_temp/Library'
-    ## (as 'lib' is unspecified)
-
-``` r
-
+#> Warning: The following packages are already installed and will not be reinstalled: pbmc3k
 data("pbmc3k")
 pbmc3k <- UpdateSeuratObject(pbmc3k)
-```
-
-    ## Validating object structure
-
-    ## Updating object slots
-
-    ## Ensuring keys are in the proper structure
-
-    ## Warning: Assay RNA changing from Assay to Assay
-
-    ## Ensuring keys are in the proper structure
-
-    ## Ensuring feature names don't have underscores or pipes
-
-    ## Updating slots in RNA
-
-    ## Validating object structure for Assay 'RNA'
-
-    ## Object representation is consistent with the most current Seurat version
-
-``` r
-
+#> Validating object structure
+#> Updating object slots
+#> Ensuring keys are in the proper structure
+#> Warning: Assay RNA changing from Assay to Assay
+#> Ensuring keys are in the proper structure
+#> Ensuring feature names don't have underscores or pipes
+#> Updating slots in RNA
+#> Validating object structure for Assay 'RNA'
+#> Object representation is consistent with the most current Seurat version
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^MT-", col.name = "percent.mito")
 pbmc3k <- PercentageFeatureSet(pbmc3k, pattern = "^RP[SL][[:digit:]]", col.name = "percent.rp")
 # remove MT and RP genes
@@ -287,8 +223,6 @@ pca_feature_stability <- assess_feature_stability(
 )
 ```
 
-    ## Warning: executing %dopar% sequentially: no parallel backend registered
-
 Plot the distribution of the celltypes on the UMAP embedding obtained on
 the top 1000 Most Abundant genes.
 
@@ -301,7 +235,10 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![](stability-dim-reduction-flexibility_files/figure-html/umap_pca-1.png)
+![plot of chunk
+umap_pca](articles/figures/stability-dim-reduction-flexibility-umap_pca-1.png)
+
+plot of chunk umap_pca
 
 ## ClustAssess using Harmony
 
@@ -313,7 +250,6 @@ ClusAssess pipeline. The batch correction is actually not needed in the
 PBMC 3k dataset.
 
 ``` r
-
 matrix_processing_function <- function(dt_mtx, actual_npcs = 30) {
     actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
 
@@ -347,6 +283,19 @@ pca_harmony_feature_stability <- assess_feature_stability(
     clustering_algorithm = 1,
     verbose = TRUE
 )
+#> 
+MA - 500 [----------------------------------------] eta:  ?s  total elapsed:  0s
+MA - 500 [======>---------------------------------] eta:  1m  total elapsed: 17s
+MA - 1000 [=====>---------------------------------] eta:  1m  total elapsed: 17s
+MA - 1000 [============>--------------------------] eta:  1m  total elapsed: 33s
+MA - 1500 [============>--------------------------] eta:  1m  total elapsed: 33s
+MA - 1500 [===================>-------------------] eta: 50s  total elapsed: 50s
+MA - 2000 [===================>-------------------] eta: 50s  total elapsed: 50s
+MA - 2000 [=========================>-------------] eta: 33s  total elapsed:  1m
+MA - 2500 [=========================>-------------] eta: 33s  total elapsed:  1m
+MA - 2500 [===============================>-------] eta: 17s  total elapsed:  1m
+MA - 3000 [===============================>-------] eta: 17s  total elapsed:  1m
+MA - 3000 [=======================================] eta:  0s  total elapsed:  2m
 ```
 
 Plot the distribution of the celltypes on the UMAP embedding obtained on
@@ -361,7 +310,10 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![](stability-dim-reduction-flexibility_files/figure-html/umap_harmony-1.png)
+![plot of chunk
+umap_harmony](articles/figures/stability-dim-reduction-flexibility-umap_harmony-1.png)
+
+plot of chunk umap_harmony
 
 ## ClustAssess in the scATAC-seq data
 
@@ -373,14 +325,10 @@ package.
 ``` r
 
 library(Signac)
+#> Warning: package 'Signac' was built under R version 4.4.1
 InstallData("pbmcMultiome")
-```
-
-    ## Installing package into '/home/runner/work/_temp/Library'
-    ## (as 'lib' is unspecified)
-
-``` r
-
+#> Installing package into '/home/andi/R/x86_64-pc-linux-gnu-library/4.4'
+#> (as 'lib' is unspecified)
 data("pbmc.atac")
 ```
 
@@ -393,12 +341,9 @@ are also known as LSI (Latent Semantic Indexing).
 ``` r
 
 pbmc.atac <- RunTFIDF(pbmc.atac)
+#> Performing TF-IDF normalization
+#> Warning in RunTFIDF.default(object = GetAssayData(object = object, layer = "counts"), : Some features contain 0 total counts
 ```
-
-    ## Performing TF-IDF normalization
-
-    ## Warning in RunTFIDF.default(object = GetAssayData(object = object, layer =
-    ## "counts"), : Some features contain 0 total counts
 
 Identify the highly variable peaks.
 
@@ -428,7 +373,6 @@ Assess the stability of the dimensionality reduction by varying the
 number of highly variable peaks.
 
 ``` r
-
 matrix_processing_function <- function(dt_mtx, actual_n_singular_values = 50) {
     actual_n_singular_values <- min(actual_n_singular_values, ncol(dt_mtx) %/% 2)
 
@@ -462,17 +406,31 @@ lsi_atac_feature_stability <- assess_feature_stability(
     clustering_algorithm = 1,
     verbose = TRUE
 )
-```
-
-    ## Warning: No assay specified, setting assay as RNA by default.
-    ## No assay specified, setting assay as RNA by default.
-    ## No assay specified, setting assay as RNA by default.
-    ## No assay specified, setting assay as RNA by default.
-    ## No assay specified, setting assay as RNA by default.
-    ## No assay specified, setting assay as RNA by default.
-
-``` r
-
+#> 
+HV_peaks - 500 [----------------------------------] eta: ?s total elapsed: 0s
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 500 [=====>----------------------------] eta: 44m total elapsed: 9m
+HV_peaks - 1000 [=====>---------------------------] eta: 44m total elapsed: 9m
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 1000 [==========>----------------------] eta: 36m total elapsed: 18m
+HV_peaks - 1500 [==========>----------------------] eta: 36m total elapsed: 18m
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 1500 [===============>-----------------] eta: 26m total elapsed: 26m
+HV_peaks - 2000 [===============>-----------------] eta: 26m total elapsed: 26m
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 2000 [=====================>-----------] eta: 16m total elapsed: 32m
+HV_peaks - 2500 [=====================>-----------] eta: 16m total elapsed: 32m
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 2500 [===========================>-----] eta: 8m total elapsed: 38m
+HV_peaks - 3000 [===========================>-----] eta: 8m total elapsed: 38m
+#> Warning: No assay specified, setting assay as RNA by default.
+#> 
+HV_peaks - 3000 [=================================] eta:  0s  total elapsed: 43m
 foreach::registerDoSEQ()
 ```
 
@@ -488,90 +446,49 @@ ggplot(umap_df, aes(x = UMAP_1, y = UMAP_2, color = celltypes)) +
     theme_classic()
 ```
 
-![](stability-dim-reduction-flexibility_files/figure-html/umap_atac-1.png)
+![plot of chunk
+umap_atac](articles/figures/stability-dim-reduction-flexibility-umap_atac-1.png)
+
+plot of chunk umap_atac
 
 ## Session info
 
 ``` r
 
 sessionInfo()
+#> R version 4.4.0 (2024-04-24)
+#> Platform: x86_64-pc-linux-gnu
+#> Running under: Ubuntu 22.04.5 LTS
+#> 
+#> Matrix products: default
+#> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
+#> 
+#> locale:
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#> 
+#> time zone: Europe/Bucharest
+#> tzcode source: system (glibc)
+#> 
+#> attached base packages:
+#> [1] stats4    stats     graphics  grDevices utils     datasets  methods   base     
+#> 
+#> other attached packages:
+#>  [1] pbmcMultiome.SeuratData_0.1.4 Signac_1.14.0                 data.table_1.15.4             Rsamtools_2.20.0              Biostrings_2.72.1             XVector_0.44.0                GenomicRanges_1.56.0          GenomeInfoDb_1.40.1           IRanges_2.38.0                S4Vectors_0.42.0             
+#> [11] BiocGenerics_0.50.0           harmony_2.0.5                 Rcpp_1.0.13                   Seurat_5.1.0                  SeuratObject_5.0.2            sp_2.1-4                      pbmc3k.SeuratData_3.1.4       SeuratData_0.2.2.9002         devtools_2.5.2                usethis_3.2.1                
+#> [21] ggplot2_4.0.3                 ClustAssess_1.2.0             dendextend_1.19.1             dbscan_1.2.6                  e1071_1.7-14                 
+#> 
+#> loaded via a namespace (and not attached):
+#>   [1] RcppAnnoy_0.0.22        splines_4.4.0           later_1.3.2             bitops_1.0-7            tibble_3.2.1            polyclip_1.10-6         fastDummies_1.7.3       lifecycle_1.0.5         globals_0.16.3          lattice_0.22-5          MASS_7.3-60             magrittr_2.0.3         
+#>  [13] plotly_4.10.4           httpuv_1.6.15           otel_0.2.0              sctransform_0.4.1       spam_2.10-0             sessioninfo_1.2.4       pkgbuild_1.4.8          spatstat.sparse_3.0-3   reticulate_1.37.0       cowplot_1.1.3           pbapply_1.7-2           RColorBrewer_1.1-3     
+#>  [25] abind_1.4-5             pkgload_1.5.3           zlibbioc_1.50.0         Rtsne_0.17              purrr_1.0.2             rappdirs_0.3.3          GenomeInfoDbData_1.2.12 ggrepel_0.9.5           irlba_2.3.5.1           listenv_0.9.1           spatstat.utils_3.1-2    goftest_1.2-3          
+#>  [37] RSpectra_0.16-2         spatstat.random_3.2-3   fitdistrplus_1.1-11     parallelly_1.37.1       RcppRoll_0.3.1          leiden_0.4.3.1          codetools_0.2-19        tidyselect_1.2.1        UCSC.utils_1.0.0        farver_2.1.2            viridis_0.6.5           matrixStats_1.3.0      
+#>  [49] spatstat.explore_3.2-7  jsonlite_2.0.0          ellipsis_0.3.3          progressr_0.14.0        ggridges_0.5.6          survival_3.5-8          iterators_1.0.14        foreach_1.5.2           tools_4.4.0             progress_1.2.3          ica_1.0-3               glue_1.7.0             
+#>  [61] gridExtra_2.3           xfun_0.56               dplyr_1.1.4             withr_3.0.3             fastmap_1.2.0           fansi_1.0.6             digest_0.6.35           R6_2.6.1                mime_0.12               colorspace_2.1-1        scattermore_1.2         tensor_1.5             
+#>  [73] spatstat.data_3.0-4     RhpcBLASctl_0.23-42     utf8_1.2.4              tidyr_1.3.1             generics_0.1.3          class_7.3-22            prettyunits_1.2.0       httr_1.4.7              htmlwidgets_1.6.4       uwot_0.2.2              pkgconfig_2.0.3         gtable_0.3.6           
+#>  [85] lmtest_0.9-40           S7_0.2.1                htmltools_0.5.8.1       dotCall64_1.1-1         scales_1.4.0            png_0.1-8               knitr_1.51              reshape2_1.4.4          nlme_3.1-163            proxy_0.4-27            cachem_1.1.0            zoo_1.8-12             
+#>  [97] stringr_1.5.1           KernSmooth_2.23-22      parallel_4.4.0          miniUI_0.1.2            pillar_1.9.0            grid_4.4.0              vctrs_0.6.5             RANN_2.6.1              promises_1.3.0          xtable_1.8-4            cluster_2.1.6           evaluate_1.0.5         
+#> [109] cli_3.6.6               compiler_4.4.0          rlang_1.3.0             crayon_1.5.3            future.apply_1.11.2     labeling_0.4.3          plyr_1.8.9              fs_2.1.0                stringi_1.8.4           viridisLite_0.4.2       deldir_2.0-4            BiocParallel_1.38.0    
+#> [121] lazyeval_0.2.2          spatstat.geom_3.2-9     SharedObject_1.19.1     Matrix_1.7-0            RcppHNSW_0.6.0          hms_1.1.3               patchwork_1.2.0         future_1.33.2           shiny_1.8.1.1           ROCR_1.0-11             igraph_2.2.1            memoise_2.0.1          
+#> [133] fastmatch_1.1-6
 ```
-
-    ## R version 4.4.3 (2025-02-28)
-    ## Platform: x86_64-pc-linux-gnu
-    ## Running under: Ubuntu 24.04.4 LTS
-    ## 
-    ## Matrix products: default
-    ## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-    ## LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
-    ## 
-    ## locale:
-    ##  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-    ##  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-    ##  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-    ## [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-    ## 
-    ## time zone: UTC
-    ## tzcode source: system (glibc)
-    ## 
-    ## attached base packages:
-    ## [1] stats4    stats     graphics  grDevices utils     datasets  methods  
-    ## [8] base     
-    ## 
-    ## other attached packages:
-    ##  [1] pbmcMultiome.SeuratData_0.1.4 Signac_1.17.1                
-    ##  [3] pbmc3k.SeuratData_3.1.4       data.table_1.18.6.1          
-    ##  [5] ggplot2_4.0.3                 ClustAssess_1.2.0            
-    ##  [7] Seurat_5.5.1                  SeuratObject_5.4.0           
-    ##  [9] sp_2.2-3                      Rsamtools_2.22.0             
-    ## [11] Biostrings_2.74.1             XVector_0.46.0               
-    ## [13] GenomicRanges_1.58.0          GenomeInfoDb_1.42.3          
-    ## [15] IRanges_2.40.1                S4Vectors_0.44.0             
-    ## [17] BiocGenerics_0.52.0           harmony_2.0.5                
-    ## [19] Rcpp_1.1.2                    SeuratData_0.2.2.9002        
-    ## 
-    ## loaded via a namespace (and not attached):
-    ##   [1] RColorBrewer_1.1-3       jsonlite_2.0.0           magrittr_2.0.5          
-    ##   [4] spatstat.utils_3.2-4     farver_2.1.2             rmarkdown_2.31          
-    ##   [7] zlibbioc_1.52.0          fs_2.1.0                 ragg_1.5.2              
-    ##  [10] vctrs_0.7.3              ROCR_1.0-12              spatstat.explore_3.8-2  
-    ##  [13] RcppRoll_0.3.2           progress_1.2.3           htmltools_0.5.9         
-    ##  [16] sass_0.4.10              sctransform_0.4.3        parallelly_1.48.0       
-    ##  [19] KernSmooth_2.23-26       bslib_0.12.0             htmlwidgets_1.6.4       
-    ##  [22] desc_1.4.3               ica_1.0-3                plyr_1.8.9              
-    ##  [25] plotly_4.12.1            zoo_1.9-0                cachem_1.1.0            
-    ##  [28] igraph_2.3.3             iterators_1.0.14         mime_0.13               
-    ##  [31] lifecycle_1.0.5          pkgconfig_2.0.3          Matrix_1.7-2            
-    ##  [34] R6_2.6.1                 fastmap_1.2.0            MatrixGenerics_1.18.1   
-    ##  [37] GenomeInfoDbData_1.2.13  fitdistrplus_1.2-6       future_1.75.0           
-    ##  [40] shiny_1.14.0             digest_0.6.39            patchwork_1.3.2         
-    ##  [43] tensor_1.5.1             RSpectra_0.16-2          irlba_2.3.7             
-    ##  [46] textshaping_1.0.5        labeling_0.4.3           progressr_1.0.0         
-    ##  [49] spatstat.sparse_3.2-0    httr_1.4.8               polyclip_1.10-7         
-    ##  [52] abind_1.4-8              compiler_4.4.3           withr_3.0.3             
-    ##  [55] S7_0.2.2                 BiocParallel_1.40.2      fastDummies_1.7.6       
-    ##  [58] MASS_7.3-64              rappdirs_0.3.4           tools_4.4.3             
-    ##  [61] lmtest_0.9-40            otel_0.2.0               httpuv_1.6.17           
-    ##  [64] future.apply_1.20.2      goftest_1.2-3            glue_1.8.1              
-    ##  [67] nlme_3.1-167             promises_1.5.0           grid_4.4.3              
-    ##  [70] Rtsne_0.17               cluster_2.1.8            reshape2_1.4.5          
-    ##  [73] generics_0.1.4           gtable_0.3.6             spatstat.data_3.1-9     
-    ##  [76] tidyr_1.3.2              hms_1.1.4                spatstat.geom_3.8-2     
-    ##  [79] RcppAnnoy_0.0.23         foreach_1.5.2            ggrepel_0.9.8           
-    ##  [82] RANN_2.6.3               pillar_1.11.1            stringr_1.6.0           
-    ##  [85] spam_2.11-4              RcppHNSW_0.7.0           later_1.4.8             
-    ##  [88] splines_4.4.3            dplyr_1.2.1              lattice_0.22-6          
-    ##  [91] survival_3.8-3           deldir_2.0-4             tidyselect_1.2.1        
-    ##  [94] miniUI_0.1.2             pbapply_1.7-4            knitr_1.51              
-    ##  [97] gridExtra_2.3.1          scattermore_1.2          RhpcBLASctl_0.23-42     
-    ## [100] xfun_0.60                matrixStats_1.5.0        stringi_1.8.9           
-    ## [103] UCSC.utils_1.2.0         yaml_2.3.12              evaluate_1.0.5          
-    ## [106] codetools_0.2-20         tibble_3.3.1             cli_3.6.6               
-    ## [109] uwot_0.2.4               xtable_1.8-8             reticulate_1.46.0       
-    ## [112] systemfonts_1.3.2        jquerylib_0.1.4          globals_0.19.1          
-    ## [115] spatstat.random_3.5-1    png_0.1-9                spatstat.univar_3.2-0   
-    ## [118] parallel_4.4.3           pkgdown_2.2.1            prettyunits_1.2.0       
-    ## [121] dotCall64_1.2            sparseMatrixStats_1.18.0 bitops_1.1-0            
-    ## [124] listenv_1.0.0            viridisLite_0.4.3        scales_1.4.0            
-    ## [127] ggridges_0.5.7           purrr_1.2.2              crayon_1.5.3            
-    ## [130] rlang_1.3.0              fastmatch_1.1-8          cowplot_1.2.0

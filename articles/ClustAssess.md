@@ -6,16 +6,6 @@ ClustAssess on a small single-cell RNA-seq dataset.
 ``` r
 
 library(Seurat)
-#> Loading required package: SeuratObject
-#> Loading required package: sp
-#> 'SeuratObject' was built under R 4.4.0 but the current version is
-#> 4.4.3; it is recomended that you reinstall 'SeuratObject' as the ABI
-#> for R may have changed
-#> 
-#> Attaching package: 'SeuratObject'
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, t
 library(ClustAssess)
 library(ggplot2)
 theme_set(theme_classic())
@@ -26,7 +16,9 @@ data("pbmc_small")
 DimPlot(pbmc_small, group.by = "letter.idents")
 ```
 
-![](ClustAssess_files/figure-html/setup-1.png)
+![plot of chunk setup](articles/figures/ClustAssess-setup-1.png)
+
+plot of chunk setup
 
 ## Proportion of ambiguously clustered pairs
 
@@ -37,7 +29,6 @@ PAC, the more stable the clustering. PAC was originally presented in
 <https://doi.org/10.1038/srep06207>.
 
 ``` r
-
 # retrieve scaled data for PAC calculation
 pbmc.data <- GetAssayData(pbmc_small, assay = "RNA", layer = "scale.data")
 
@@ -50,6 +41,67 @@ cc.res <- consensus_cluster(t(pbmc.data),
     verbose = TRUE
 )
 #> Calculating consensus clustering
+#> 
+[================>------------------------] 41/100 eta:  0s  total elapsed:   0s
+[================>------------------------] 42/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 43/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 44/100 eta:  0s  total elapsed:   0s
+[=================>-----------------------] 45/100 eta:  0s  total elapsed:   0s
+[==================>----------------------] 46/100 eta:  0s  total elapsed:   0s
+[==================>----------------------] 47/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 48/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 49/100 eta:  0s  total elapsed:   0s
+[===================>---------------------] 50/100 eta:  0s  total elapsed:   0s
+[====================>--------------------] 51/100 eta:  0s  total elapsed:   0s
+[====================>--------------------] 52/100 eta:  0s  total elapsed:   0s
+[=====================>-------------------] 53/100 eta:  0s  total elapsed:   0s
+[=====================>-------------------] 54/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 55/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 56/100 eta:  0s  total elapsed:   0s
+[======================>------------------] 57/100 eta:  0s  total elapsed:   0s
+[=======================>-----------------] 58/100 eta:  0s  total elapsed:   0s
+[=======================>-----------------] 59/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 60/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 61/100 eta:  0s  total elapsed:   0s
+[========================>----------------] 62/100 eta:  0s  total elapsed:   0s
+[=========================>---------------] 63/100 eta:  0s  total elapsed:   0s
+[=========================>---------------] 64/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 65/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 66/100 eta:  0s  total elapsed:   0s
+[==========================>--------------] 67/100 eta:  0s  total elapsed:   0s
+[===========================>-------------] 68/100 eta:  0s  total elapsed:   0s
+[===========================>-------------] 69/100 eta:  0s  total elapsed:   0s
+[============================>------------] 70/100 eta:  0s  total elapsed:   0s
+[============================>------------] 71/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 72/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 73/100 eta:  0s  total elapsed:   0s
+[=============================>-----------] 74/100 eta:  0s  total elapsed:   0s
+[==============================>----------] 75/100 eta:  0s  total elapsed:   0s
+[==============================>----------] 76/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 77/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 78/100 eta:  0s  total elapsed:   0s
+[===============================>---------] 79/100 eta:  0s  total elapsed:   0s
+[================================>--------] 80/100 eta:  0s  total elapsed:   0s
+[================================>--------] 81/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 82/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 83/100 eta:  0s  total elapsed:   0s
+[=================================>-------] 84/100 eta:  0s  total elapsed:   0s
+[==================================>------] 85/100 eta:  0s  total elapsed:   0s
+[==================================>------] 86/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 87/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 88/100 eta:  0s  total elapsed:   0s
+[===================================>-----] 89/100 eta:  0s  total elapsed:   0s
+[====================================>----] 90/100 eta:  0s  total elapsed:   0s
+[====================================>----] 91/100 eta:  0s  total elapsed:   0s
+[=====================================>---] 92/100 eta:  0s  total elapsed:   0s
+[=====================================>---] 93/100 eta:  0s  total elapsed:   0s
+[======================================>--] 94/100 eta:  0s  total elapsed:   0s
+[======================================>--] 95/100 eta:  0s  total elapsed:   0s
+[======================================>--] 96/100 eta:  0s  total elapsed:   1s
+[=======================================>-] 97/100 eta:  0s  total elapsed:   1s
+[=======================================>-] 98/100 eta:  0s  total elapsed:   1s
+[========================================>] 99/100 eta:  0s  total elapsed:   1s
+[========================================] 100/100 eta:  0s  total elapsed:   1s
 
 # assess the PAC convergence for a few values of k - each curve should
 # have converged to some value
@@ -57,7 +109,9 @@ k.plot <- c(4, 6, 8, 10)
 pac_convergence(cc.res, k.plot)
 ```
 
-![](ClustAssess_files/figure-html/pac-1.png)
+![plot of chunk pac](articles/figures/ClustAssess-pac-1.png)
+
+plot of chunk pac
 
 ``` r
 
@@ -68,7 +122,9 @@ pac_convergence(cc.res, k.plot)
 pac_landscape(cc.res)
 ```
 
-![](ClustAssess_files/figure-html/pac-2.png)
+![plot of chunk pac](articles/figures/ClustAssess-pac-2.png)
+
+plot of chunk pac
 
 ## Element-centric clustering comparison
 
@@ -86,7 +142,9 @@ pbmc_small <- FindClusters(pbmc_small, resolution = 0.8, verbose = FALSE)
 DimPlot(pbmc_small, group.by = "seurat_clusters")
 ```
 
-![](ClustAssess_files/figure-html/ecs-1.png)
+![plot of chunk ecs](articles/figures/ClustAssess-ecs-1.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -101,7 +159,9 @@ pbmc_small@meta.data$kmeans_clusters <- kmeans(pbmc_pca,
 DimPlot(pbmc_small, group.by = "kmeans_clusters")
 ```
 
-![](ClustAssess_files/figure-html/ecs-2.png)
+![plot of chunk ecs](articles/figures/ClustAssess-ecs-2.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -114,7 +174,9 @@ pbmc_small@meta.data$ecs <- element_sim_elscore(
 suppressMessages(FeaturePlot(pbmc_small, "ecs") + scale_colour_viridis_c())
 ```
 
-![](ClustAssess_files/figure-html/ecs-3.png)
+![plot of chunk ecs](articles/figures/ClustAssess-ecs-3.png)
+
+plot of chunk ecs
 
 ``` r
 
@@ -167,7 +229,9 @@ pbmc_small@meta.data$marker.gene.jsi <- marker_overlap(louvain.markers,
 suppressMessages(FeaturePlot(pbmc_small, "marker.gene.jsi") + scale_colour_viridis_c())
 ```
 
-![](ClustAssess_files/figure-html/jsi-1.png)
+![plot of chunk jsi](articles/figures/ClustAssess-jsi-1.png)
+
+plot of chunk jsi
 
 ``` r
 
@@ -203,7 +267,9 @@ pbmc_small@meta.data$consistency <- element_consistency(clustering.list)
 suppressMessages(FeaturePlot(pbmc_small, "consistency") + scale_colour_viridis_c())
 ```
 
-![](ClustAssess_files/figure-html/frust-1.png)
+![plot of chunk frust](articles/figures/ClustAssess-frust-1.png)
+
+plot of chunk frust
 
 ``` r
 
@@ -216,71 +282,34 @@ mean(pbmc_small@meta.data$consistency)
 ``` r
 
 sessionInfo()
-#> R version 4.4.3 (2025-02-28)
+#> R version 4.4.0 (2024-04-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 22.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0
 #> 
 #> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 #> 
-#> time zone: UTC
+#> time zone: Europe/Bucharest
 #> tzcode source: system (glibc)
 #> 
 #> attached base packages:
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3      ClustAssess_1.2.0  Seurat_5.5.1       SeuratObject_5.4.0
-#> [5] sp_2.2-3          
+#> [1] ggplot2_4.0.3      ClustAssess_1.2.0  Seurat_5.1.0       SeuratObject_5.0.2 sp_2.1-4          
 #> 
 #> loaded via a namespace (and not attached):
-#>   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.5        
-#>   [4] spatstat.utils_3.2-4   farver_2.1.2           rmarkdown_2.31        
-#>   [7] fs_2.1.0               ragg_1.5.2             vctrs_0.7.3           
-#>  [10] ROCR_1.0-12            spatstat.explore_3.8-2 htmltools_0.5.9       
-#>  [13] progress_1.2.3         sass_0.4.10            sctransform_0.4.3     
-#>  [16] parallelly_1.48.0      KernSmooth_2.23-26     bslib_0.12.0          
-#>  [19] htmlwidgets_1.6.4      desc_1.4.3             ica_1.0-3             
-#>  [22] plyr_1.8.9             plotly_4.12.1          zoo_1.9-0             
-#>  [25] cachem_1.1.0           igraph_2.3.3           mime_0.13             
-#>  [28] lifecycle_1.0.5        iterators_1.0.14       pkgconfig_2.0.3       
-#>  [31] Matrix_1.7-2           R6_2.6.1               fastmap_1.2.0         
-#>  [34] fitdistrplus_1.2-6     future_1.75.0          shiny_1.14.0          
-#>  [37] digest_0.6.39          patchwork_1.3.2        tensor_1.5.1          
-#>  [40] RSpectra_0.16-2        irlba_2.3.7            textshaping_1.0.5     
-#>  [43] labeling_0.4.3         progressr_1.0.0        spatstat.sparse_3.2-0 
-#>  [46] httr_1.4.8             polyclip_1.10-7        abind_1.4-8           
-#>  [49] compiler_4.4.3         withr_3.0.3            S7_0.2.2              
-#>  [52] fastDummies_1.7.6      MASS_7.3-64            tools_4.4.3           
-#>  [55] lmtest_0.9-40          otel_0.2.0             httpuv_1.6.17         
-#>  [58] future.apply_1.20.2    goftest_1.2-3          glue_1.8.1            
-#>  [61] nlme_3.1-167           promises_1.5.0         grid_4.4.3            
-#>  [64] Rtsne_0.17             cluster_2.1.8          reshape2_1.4.5        
-#>  [67] generics_0.1.4         gtable_0.3.6           spatstat.data_3.1-9   
-#>  [70] tidyr_1.3.2            data.table_1.18.6.1    hms_1.1.4             
-#>  [73] spatstat.geom_3.8-2    RcppAnnoy_0.0.23       ggrepel_0.9.8         
-#>  [76] RANN_2.6.3             foreach_1.5.2          pillar_1.11.1         
-#>  [79] stringr_1.6.0          spam_2.11-4            RcppHNSW_0.7.0        
-#>  [82] later_1.4.8            splines_4.4.3          dplyr_1.2.1           
-#>  [85] lattice_0.22-6         survival_3.8-3         deldir_2.0-4          
-#>  [88] tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-4         
-#>  [91] knitr_1.51             gridExtra_2.3.1        scattermore_1.2       
-#>  [94] xfun_0.60              matrixStats_1.5.0      stringi_1.8.9         
-#>  [97] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      
-#> [100] tibble_3.3.1           cli_3.6.6              uwot_0.2.4            
-#> [103] xtable_1.8-8           reticulate_1.46.0      systemfonts_1.3.2     
-#> [106] jquerylib_0.1.4        Rcpp_1.1.2             globals_0.19.1        
-#> [109] spatstat.random_3.5-1  png_0.1-9              fastcluster_1.3.0     
-#> [112] spatstat.univar_3.2-0  parallel_4.4.3         pkgdown_2.2.1         
-#> [115] prettyunits_1.2.0      dotCall64_1.2          listenv_1.0.0         
-#> [118] viridisLite_0.4.3      scales_1.4.0           ggridges_0.5.7        
-#> [121] purrr_1.2.2            crayon_1.5.3           rlang_1.3.0           
-#> [124] cowplot_1.2.0
+#>   [1] deldir_2.0-4           pbapply_1.7-2          gridExtra_2.3          rlang_1.3.0            magrittr_2.0.3         RcppAnnoy_0.0.22       otel_0.2.0             matrixStats_1.3.0      ggridges_0.5.6         compiler_4.4.0         spatstat.geom_3.2-9    png_0.1-8              vctrs_0.6.5           
+#>  [14] reshape2_1.4.4         stringr_1.5.1          crayon_1.5.3           pkgconfig_2.0.3        fastmap_1.2.0          labeling_0.4.3         utf8_1.2.4             promises_1.3.0         purrr_1.0.2            xfun_0.56              jsonlite_2.0.0         progress_1.2.3         goftest_1.2-3         
+#>  [27] later_1.3.2            spatstat.utils_3.1-2   prettyunits_1.2.0      irlba_2.3.5.1          parallel_4.4.0         cluster_2.1.6          R6_2.6.1               ica_1.0-3              stringi_1.8.4          RColorBrewer_1.1-3     spatstat.data_3.0-4    reticulate_1.37.0      parallelly_1.37.1     
+#>  [40] lmtest_0.9-40          scattermore_1.2        iterators_1.0.14       Rcpp_1.0.13            knitr_1.51             tensor_1.5             future.apply_1.11.2    zoo_1.8-12             sctransform_0.4.1      httpuv_1.6.15          Matrix_1.7-0           splines_4.4.0          igraph_2.2.1          
+#>  [53] tidyselect_1.2.1       abind_1.4-5            spatstat.random_3.2-3  codetools_0.2-19       miniUI_0.1.2           spatstat.explore_3.2-7 listenv_0.9.1          lattice_0.22-5         tibble_3.2.1           plyr_1.8.9             withr_3.0.3            shiny_1.8.1.1          S7_0.2.1              
+#>  [66] ROCR_1.0-11            evaluate_1.0.5         Rtsne_0.17             future_1.33.2          fastDummies_1.7.3      survival_3.5-8         polyclip_1.10-6        fitdistrplus_1.1-11    pillar_1.9.0           KernSmooth_2.23-22     foreach_1.5.2          plotly_4.10.4          generics_0.1.3        
+#>  [79] RcppHNSW_0.6.0         hms_1.1.3              scales_1.4.0           globals_0.16.3         xtable_1.8-4           glue_1.7.0             lazyeval_0.2.2         tools_4.4.0            data.table_1.15.4      RSpectra_0.16-2        RANN_2.6.1             fastcluster_1.2.6      leiden_0.4.3.1        
+#>  [92] dotCall64_1.1-1        cowplot_1.1.3          grid_4.4.0             tidyr_1.3.1            colorspace_2.1-1       nlme_3.1-163           patchwork_1.2.0        cli_3.6.6              spatstat.sparse_3.0-3  spam_2.10-0            fansi_1.0.6            viridisLite_0.4.2      dplyr_1.1.4           
+#> [105] uwot_0.2.2             gtable_0.3.6           digest_0.6.35          progressr_0.14.0       ggrepel_0.9.5          htmlwidgets_1.6.4      farver_2.1.2           htmltools_0.5.8.1      lifecycle_1.0.5        httr_1.4.7             mime_0.12              MASS_7.3-60
 ```

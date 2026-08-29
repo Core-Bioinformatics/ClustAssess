@@ -82,16 +82,6 @@
 ClustAssess on a small single-cell RNA-seq dataset.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: SeuratObject</span></span>
-<span><span class="co">#&gt; Loading required package: sp</span></span>
-<span><span class="co">#&gt; 'SeuratObject' was built under R 4.4.0 but the current version is</span></span>
-<span><span class="co">#&gt; 4.4.3; it is recomended that you reinstall 'SeuratObject' as the ABI</span></span>
-<span><span class="co">#&gt; for R may have changed</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'SeuratObject'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, t</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/get_theme.html" class="external-link">theme_set</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -100,7 +90,9 @@ ClustAssess on a small single-cell RNA-seq dataset.</p>
 <span></span>
 <span><span class="co"># we will use the pbmc_small single-cell RNA-seq dataset available via Seurat</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"letter.idents"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/setup-1.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-setup-1.png" alt="plot of chunk setup"><div class="figcaption">plot of chunk setup</div>
+</div>
 <div class="section level2">
 <h2 id="proportion-of-ambiguously-clustered-pairs">Proportion of ambiguously clustered pairs<a class="anchor" aria-label="anchor" href="#proportion-of-ambiguously-clustered-pairs"></a>
 </h2>
@@ -108,32 +100,96 @@ ClustAssess on a small single-cell RNA-seq dataset.</p>
 clustering to infer the optimal number of clusters for the data, by
 observing how variably pairs of elements cluster together. The lower the
 PAC, the more stable the clustering. PAC was originally presented in <a href="https://doi.org/10.1038/srep06207" class="external-link uri">https://doi.org/10.1038/srep06207</a>.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># retrieve scaled data for PAC calculation</span></span>
-<span><span class="va">pbmc.data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/AssayData.html" class="external-link">GetAssayData</a></span><span class="op">(</span><span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, layer <span class="op">=</span> <span class="st">"scale.data"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># perform consensus clustering</span></span>
-<span><span class="va">cc.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/consensus_cluster.html">consensus_cluster</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">pbmc.data</span><span class="op">)</span>,</span>
-<span>    k_max <span class="op">=</span> <span class="fl">30</span>,</span>
-<span>    n_reps <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>    p_sample <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>    p_feature <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Calculating consensus clustering</span></span>
-<span></span>
-<span><span class="co"># assess the PAC convergence for a few values of k - each curve should</span></span>
-<span><span class="co"># have converged to some value</span></span>
-<span><span class="va">k.plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span>, <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/pac_convergence.html">pac_convergence</a></span><span class="op">(</span><span class="va">cc.res</span>, <span class="va">k.plot</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/pac-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># retrieve scaled data for PAC calculation</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>pbmc.data <span class="ot">&lt;-</span> <span class="fu">GetAssayData</span>(pbmc_small, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">layer =</span> <span class="st">"scale.data"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># perform consensus clustering</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>cc.res <span class="ot">&lt;-</span> <span class="fu">consensus_cluster</span>(<span class="fu">t</span>(pbmc.data),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    <span class="at">k_max =</span> <span class="dv">30</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>    <span class="at">n_reps =</span> <span class="dv">100</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>    <span class="at">p_sample =</span> <span class="fl">0.8</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    <span class="at">p_feature =</span> <span class="fl">0.8</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Calculating consensus clustering</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==============&gt;</span><span class="sc">------------------------</span>] <span class="dv">41</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==============&gt;</span><span class="sc">------------------------</span>] <span class="dv">42</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============&gt;</span><span class="sc">-----------------------</span>] <span class="dv">43</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============&gt;</span><span class="sc">-----------------------</span>] <span class="dv">44</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============&gt;</span><span class="sc">-----------------------</span>] <span class="dv">45</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>[<span class="sc">==</span><span class="er">================&gt;</span><span class="sc">----------------------</span>] <span class="dv">46</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>[<span class="sc">==</span><span class="er">================&gt;</span><span class="sc">----------------------</span>] <span class="dv">47</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================&gt;</span><span class="sc">---------------------</span>] <span class="dv">48</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================&gt;</span><span class="sc">---------------------</span>] <span class="dv">49</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================&gt;</span><span class="sc">---------------------</span>] <span class="dv">50</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==================&gt;</span><span class="sc">--------------------</span>] <span class="dv">51</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==================&gt;</span><span class="sc">--------------------</span>] <span class="dv">52</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-------------------</span>] <span class="dv">53</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===================&gt;</span><span class="sc">-------------------</span>] <span class="dv">54</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================&gt;</span><span class="sc">------------------</span>] <span class="dv">55</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================&gt;</span><span class="sc">------------------</span>] <span class="dv">56</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================&gt;</span><span class="sc">------------------</span>] <span class="dv">57</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=====================&gt;</span><span class="sc">-----------------</span>] <span class="dv">58</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=====================&gt;</span><span class="sc">-----------------</span>] <span class="dv">59</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>[<span class="sc">==</span><span class="er">======================&gt;</span><span class="sc">----------------</span>] <span class="dv">60</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a>[<span class="sc">==</span><span class="er">======================&gt;</span><span class="sc">----------------</span>] <span class="dv">61</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>[<span class="sc">==</span><span class="er">======================&gt;</span><span class="sc">----------------</span>] <span class="dv">62</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=======================&gt;</span><span class="sc">---------------</span>] <span class="dv">63</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=======================&gt;</span><span class="sc">---------------</span>] <span class="dv">64</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>[<span class="sc">==</span><span class="er">========================&gt;</span><span class="sc">--------------</span>] <span class="dv">65</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>[<span class="sc">==</span><span class="er">========================&gt;</span><span class="sc">--------------</span>] <span class="dv">66</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a>[<span class="sc">==</span><span class="er">========================&gt;</span><span class="sc">--------------</span>] <span class="dv">67</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-------------</span>] <span class="dv">68</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=========================&gt;</span><span class="sc">-------------</span>] <span class="dv">69</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==========================&gt;</span><span class="sc">------------</span>] <span class="dv">70</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==========================&gt;</span><span class="sc">------------</span>] <span class="dv">71</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===========================&gt;</span><span class="sc">-----------</span>] <span class="dv">72</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===========================&gt;</span><span class="sc">-----------</span>] <span class="dv">73</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===========================&gt;</span><span class="sc">-----------</span>] <span class="dv">74</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a>[<span class="sc">==</span><span class="er">============================&gt;</span><span class="sc">----------</span>] <span class="dv">75</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a>[<span class="sc">==</span><span class="er">============================&gt;</span><span class="sc">----------</span>] <span class="dv">76</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=============================&gt;</span><span class="sc">---------</span>] <span class="dv">77</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=============================&gt;</span><span class="sc">---------</span>] <span class="dv">78</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=============================&gt;</span><span class="sc">---------</span>] <span class="dv">79</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==============================&gt;</span><span class="sc">--------</span>] <span class="dv">80</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==============================&gt;</span><span class="sc">--------</span>] <span class="dv">81</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============================&gt;</span><span class="sc">-------</span>] <span class="dv">82</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============================&gt;</span><span class="sc">-------</span>] <span class="dv">83</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===============================&gt;</span><span class="sc">-------</span>] <span class="dv">84</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-58"><a href="#cb2-58" tabindex="-1"></a>[<span class="sc">==</span><span class="er">================================&gt;</span><span class="sc">------</span>] <span class="dv">85</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-59"><a href="#cb2-59" tabindex="-1"></a>[<span class="sc">==</span><span class="er">================================&gt;</span><span class="sc">------</span>] <span class="dv">86</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-60"><a href="#cb2-60" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================================&gt;</span><span class="sc">-----</span>] <span class="dv">87</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-61"><a href="#cb2-61" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================================&gt;</span><span class="sc">-----</span>] <span class="dv">88</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-62"><a href="#cb2-62" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=================================&gt;</span><span class="sc">-----</span>] <span class="dv">89</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-63"><a href="#cb2-63" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==================================&gt;</span><span class="sc">----</span>] <span class="dv">90</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-64"><a href="#cb2-64" tabindex="-1"></a>[<span class="sc">==</span><span class="er">==================================&gt;</span><span class="sc">----</span>] <span class="dv">91</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-65"><a href="#cb2-65" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===================================&gt;</span><span class="sc">---</span>] <span class="dv">92</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-66"><a href="#cb2-66" tabindex="-1"></a>[<span class="sc">==</span><span class="er">===================================&gt;</span><span class="sc">---</span>] <span class="dv">93</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-67"><a href="#cb2-67" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================================&gt;</span><span class="sc">--</span>] <span class="dv">94</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-68"><a href="#cb2-68" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================================&gt;</span><span class="sc">--</span>] <span class="dv">95</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">0</span>s</span>
+<span id="cb2-69"><a href="#cb2-69" tabindex="-1"></a>[<span class="sc">==</span><span class="er">====================================&gt;</span><span class="sc">--</span>] <span class="dv">96</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">1</span>s</span>
+<span id="cb2-70"><a href="#cb2-70" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=====================================&gt;</span><span class="sc">-</span>] <span class="dv">97</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">1</span>s</span>
+<span id="cb2-71"><a href="#cb2-71" tabindex="-1"></a>[<span class="sc">==</span><span class="er">=====================================&gt;</span><span class="sc">-</span>] <span class="dv">98</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">1</span>s</span>
+<span id="cb2-72"><a href="#cb2-72" tabindex="-1"></a>[<span class="sc">==</span><span class="er">======================================&gt;</span>] <span class="dv">99</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">1</span>s</span>
+<span id="cb2-73"><a href="#cb2-73" tabindex="-1"></a>[<span class="sc">==</span><span class="er">======================================</span>] <span class="dv">100</span><span class="sc">/</span><span class="dv">100</span> eta<span class="sc">:</span>  <span class="dv">0</span>s  total elapsed<span class="sc">:</span>   <span class="dv">1</span>s</span>
+<span id="cb2-74"><a href="#cb2-74" tabindex="-1"></a></span>
+<span id="cb2-75"><a href="#cb2-75" tabindex="-1"></a><span class="co"># assess the PAC convergence for a few values of k - each curve should</span></span>
+<span id="cb2-76"><a href="#cb2-76" tabindex="-1"></a><span class="co"># have converged to some value</span></span>
+<span id="cb2-77"><a href="#cb2-77" tabindex="-1"></a>k.plot <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">10</span>)</span>
+<span id="cb2-78"><a href="#cb2-78" tabindex="-1"></a><span class="fu">pac_convergence</span>(cc.res, k.plot)</span></code></pre></div>
+<div class="float">
+<img src="articles/figures/ClustAssess-pac-1.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
+</div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># visualize the final PAC across k - there seems to be a local maximum at k=7,</span></span>
 <span><span class="co"># indicating that 7 clusters leads to a less stable clustering of the data than</span></span>
 <span><span class="co"># nearby values of k</span></span>
 <span><span class="fu"><a href="../reference/pac_landscape.html">pac_landscape</a></span><span class="op">(</span><span class="va">cc.res</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/pac-2.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-pac-2.png" alt="plot of chunk pac"><div class="figcaption">plot of chunk pac</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="element-centric-clustering-comparison">Element-centric clustering comparison<a class="anchor" aria-label="anchor" href="#element-centric-clustering-comparison"></a>
@@ -147,7 +203,9 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <code class="sourceCode R"><span><span class="co"># first, cluster with Louvain algorithm</span></span>
 <span><span class="va">pbmc_small</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span><span class="va">pbmc_small</span>, resolution <span class="op">=</span> <span class="fl">0.8</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"seurat_clusters"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/ecs-1.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-ecs-1.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+</div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># also cluster with PCA+k-means</span></span>
@@ -158,7 +216,9 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <span>    iter.max <span class="op">=</span> <span class="fl">1e3</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, group.by <span class="op">=</span> <span class="st">"kmeans_clusters"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/ecs-2.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-ecs-2.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+</div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co"># where are the clustering results more similar?</span></span>
@@ -167,7 +227,9 @@ clustered similarly across methods. ECS was introduced in <a href="https://doi.o
 <span>    <span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">kmeans_clusters</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"ecs"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/ecs-3.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-ecs-3.png" alt="plot of chunk ecs"><div class="figcaption">plot of chunk ecs</div>
+</div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">ecs</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.6632927</span></span></code></pre></div>
@@ -214,7 +276,9 @@ genes for that cell.</p>
 <span></span>
 <span><span class="co"># which cells have the same markers, regardless of clustering?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"marker.gene.jsi"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/jsi-1.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-jsi-1.png" alt="plot of chunk jsi"><div class="figcaption">plot of chunk jsi</div>
+</div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">marker.gene.jsi</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.5738636</span></span></code></pre></div>
@@ -244,7 +308,9 @@ k-means clustering 20 times to investigate.</p>
 <span></span>
 <span><span class="co"># which cells are clustered more consistently?</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="https://satijalab.org/seurat/reference/FeaturePlot.html" class="external-link">FeaturePlot</a></span><span class="op">(</span><span class="va">pbmc_small</span>, <span class="st">"consistency"</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ClustAssess_files/figure-html/frust-1.png" class="r-plt" alt="" width="672"></p>
+<div class="float">
+<img src="articles/figures/ClustAssess-frust-1.png" alt="plot of chunk frust"><div class="figcaption">plot of chunk frust</div>
+</div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">$</span><span class="va">consistency</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.6712922</span></span></code></pre></div>
@@ -254,73 +320,36 @@ k-means clustering 20 times to investigate.</p>
 </h2>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R version 4.4.3 (2025-02-28)</span></span>
+<span><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 22.04.5 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
-<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0</span></span>
+<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so;  LAPACK version 3.10.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; locale:</span></span>
-<span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
-<span><span class="co">#&gt;  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   </span></span>
-<span><span class="co">#&gt;  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          </span></span>
-<span><span class="co">#&gt; [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   </span></span>
+<span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8        LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8    LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C           LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   </span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; time zone: UTC</span></span>
+<span><span class="co">#&gt; time zone: Europe/Bucharest</span></span>
 <span><span class="co">#&gt; tzcode source: system (glibc)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; attached base packages:</span></span>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] ggplot2_4.0.3      ClustAssess_1.2.0  Seurat_5.5.1       SeuratObject_5.4.0</span></span>
-<span><span class="co">#&gt; [5] sp_2.2-3          </span></span>
+<span><span class="co">#&gt; [1] ggplot2_4.0.3      ClustAssess_1.2.0  Seurat_5.1.0       SeuratObject_5.0.2 sp_2.1-4          </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;   [1] RColorBrewer_1.1-3     jsonlite_2.0.0         magrittr_2.0.5        </span></span>
-<span><span class="co">#&gt;   [4] spatstat.utils_3.2-4   farver_2.1.2           rmarkdown_2.31        </span></span>
-<span><span class="co">#&gt;   [7] fs_2.1.0               ragg_1.5.2             vctrs_0.7.3           </span></span>
-<span><span class="co">#&gt;  [10] ROCR_1.0-12            spatstat.explore_3.8-2 htmltools_0.5.9       </span></span>
-<span><span class="co">#&gt;  [13] progress_1.2.3         sass_0.4.10            sctransform_0.4.3     </span></span>
-<span><span class="co">#&gt;  [16] parallelly_1.48.0      KernSmooth_2.23-26     bslib_0.12.0          </span></span>
-<span><span class="co">#&gt;  [19] htmlwidgets_1.6.4      desc_1.4.3             ica_1.0-3             </span></span>
-<span><span class="co">#&gt;  [22] plyr_1.8.9             plotly_4.12.1          zoo_1.9-0             </span></span>
-<span><span class="co">#&gt;  [25] cachem_1.1.0           igraph_2.3.3           mime_0.13             </span></span>
-<span><span class="co">#&gt;  [28] lifecycle_1.0.5        iterators_1.0.14       pkgconfig_2.0.3       </span></span>
-<span><span class="co">#&gt;  [31] Matrix_1.7-2           R6_2.6.1               fastmap_1.2.0         </span></span>
-<span><span class="co">#&gt;  [34] fitdistrplus_1.2-6     future_1.75.0          shiny_1.14.0          </span></span>
-<span><span class="co">#&gt;  [37] digest_0.6.39          patchwork_1.3.2        tensor_1.5.1          </span></span>
-<span><span class="co">#&gt;  [40] RSpectra_0.16-2        irlba_2.3.7            textshaping_1.0.5     </span></span>
-<span><span class="co">#&gt;  [43] labeling_0.4.3         progressr_1.0.0        spatstat.sparse_3.2-0 </span></span>
-<span><span class="co">#&gt;  [46] httr_1.4.8             polyclip_1.10-7        abind_1.4-8           </span></span>
-<span><span class="co">#&gt;  [49] compiler_4.4.3         withr_3.0.3            S7_0.2.2              </span></span>
-<span><span class="co">#&gt;  [52] fastDummies_1.7.6      MASS_7.3-64            tools_4.4.3           </span></span>
-<span><span class="co">#&gt;  [55] lmtest_0.9-40          otel_0.2.0             httpuv_1.6.17         </span></span>
-<span><span class="co">#&gt;  [58] future.apply_1.20.2    goftest_1.2-3          glue_1.8.1            </span></span>
-<span><span class="co">#&gt;  [61] nlme_3.1-167           promises_1.5.0         grid_4.4.3            </span></span>
-<span><span class="co">#&gt;  [64] Rtsne_0.17             cluster_2.1.8          reshape2_1.4.5        </span></span>
-<span><span class="co">#&gt;  [67] generics_0.1.4         gtable_0.3.6           spatstat.data_3.1-9   </span></span>
-<span><span class="co">#&gt;  [70] tidyr_1.3.2            data.table_1.18.6.1    hms_1.1.4             </span></span>
-<span><span class="co">#&gt;  [73] spatstat.geom_3.8-2    RcppAnnoy_0.0.23       ggrepel_0.9.8         </span></span>
-<span><span class="co">#&gt;  [76] RANN_2.6.3             foreach_1.5.2          pillar_1.11.1         </span></span>
-<span><span class="co">#&gt;  [79] stringr_1.6.0          spam_2.11-4            RcppHNSW_0.7.0        </span></span>
-<span><span class="co">#&gt;  [82] later_1.4.8            splines_4.4.3          dplyr_1.2.1           </span></span>
-<span><span class="co">#&gt;  [85] lattice_0.22-6         survival_3.8-3         deldir_2.0-4          </span></span>
-<span><span class="co">#&gt;  [88] tidyselect_1.2.1       miniUI_0.1.2           pbapply_1.7-4         </span></span>
-<span><span class="co">#&gt;  [91] knitr_1.51             gridExtra_2.3.1        scattermore_1.2       </span></span>
-<span><span class="co">#&gt;  [94] xfun_0.60              matrixStats_1.5.0      stringi_1.8.9         </span></span>
-<span><span class="co">#&gt;  [97] yaml_2.3.12            evaluate_1.0.5         codetools_0.2-20      </span></span>
-<span><span class="co">#&gt; [100] tibble_3.3.1           cli_3.6.6              uwot_0.2.4            </span></span>
-<span><span class="co">#&gt; [103] xtable_1.8-8           reticulate_1.46.0      systemfonts_1.3.2     </span></span>
-<span><span class="co">#&gt; [106] jquerylib_0.1.4        Rcpp_1.1.2             globals_0.19.1        </span></span>
-<span><span class="co">#&gt; [109] spatstat.random_3.5-1  png_0.1-9              fastcluster_1.3.0     </span></span>
-<span><span class="co">#&gt; [112] spatstat.univar_3.2-0  parallel_4.4.3         pkgdown_2.2.1         </span></span>
-<span><span class="co">#&gt; [115] prettyunits_1.2.0      dotCall64_1.2          listenv_1.0.0         </span></span>
-<span><span class="co">#&gt; [118] viridisLite_0.4.3      scales_1.4.0           ggridges_0.5.7        </span></span>
-<span><span class="co">#&gt; [121] purrr_1.2.2            crayon_1.5.3           rlang_1.3.0           </span></span>
-<span><span class="co">#&gt; [124] cowplot_1.2.0</span></span></code></pre></div>
+<span><span class="co">#&gt;   [1] deldir_2.0-4           pbapply_1.7-2          gridExtra_2.3          rlang_1.3.0            magrittr_2.0.3         RcppAnnoy_0.0.22       otel_0.2.0             matrixStats_1.3.0      ggridges_0.5.6         compiler_4.4.0         spatstat.geom_3.2-9    png_0.1-8              vctrs_0.6.5           </span></span>
+<span><span class="co">#&gt;  [14] reshape2_1.4.4         stringr_1.5.1          crayon_1.5.3           pkgconfig_2.0.3        fastmap_1.2.0          labeling_0.4.3         utf8_1.2.4             promises_1.3.0         purrr_1.0.2            xfun_0.56              jsonlite_2.0.0         progress_1.2.3         goftest_1.2-3         </span></span>
+<span><span class="co">#&gt;  [27] later_1.3.2            spatstat.utils_3.1-2   prettyunits_1.2.0      irlba_2.3.5.1          parallel_4.4.0         cluster_2.1.6          R6_2.6.1               ica_1.0-3              stringi_1.8.4          RColorBrewer_1.1-3     spatstat.data_3.0-4    reticulate_1.37.0      parallelly_1.37.1     </span></span>
+<span><span class="co">#&gt;  [40] lmtest_0.9-40          scattermore_1.2        iterators_1.0.14       Rcpp_1.0.13            knitr_1.51             tensor_1.5             future.apply_1.11.2    zoo_1.8-12             sctransform_0.4.1      httpuv_1.6.15          Matrix_1.7-0           splines_4.4.0          igraph_2.2.1          </span></span>
+<span><span class="co">#&gt;  [53] tidyselect_1.2.1       abind_1.4-5            spatstat.random_3.2-3  codetools_0.2-19       miniUI_0.1.2           spatstat.explore_3.2-7 listenv_0.9.1          lattice_0.22-5         tibble_3.2.1           plyr_1.8.9             withr_3.0.3            shiny_1.8.1.1          S7_0.2.1              </span></span>
+<span><span class="co">#&gt;  [66] ROCR_1.0-11            evaluate_1.0.5         Rtsne_0.17             future_1.33.2          fastDummies_1.7.3      survival_3.5-8         polyclip_1.10-6        fitdistrplus_1.1-11    pillar_1.9.0           KernSmooth_2.23-22     foreach_1.5.2          plotly_4.10.4          generics_0.1.3        </span></span>
+<span><span class="co">#&gt;  [79] RcppHNSW_0.6.0         hms_1.1.3              scales_1.4.0           globals_0.16.3         xtable_1.8-4           glue_1.7.0             lazyeval_0.2.2         tools_4.4.0            data.table_1.15.4      RSpectra_0.16-2        RANN_2.6.1             fastcluster_1.2.6      leiden_0.4.3.1        </span></span>
+<span><span class="co">#&gt;  [92] dotCall64_1.1-1        cowplot_1.1.3          grid_4.4.0             tidyr_1.3.1            colorspace_2.1-1       nlme_3.1-163           patchwork_1.2.0        cli_3.6.6              spatstat.sparse_3.0-3  spam_2.10-0            fansi_1.0.6            viridisLite_0.4.2      dplyr_1.1.4           </span></span>
+<span><span class="co">#&gt; [105] uwot_0.2.2             gtable_0.3.6           digest_0.6.35          progressr_0.14.0       ggrepel_0.9.5          htmlwidgets_1.6.4      farver_2.1.2           htmltools_0.5.8.1      lifecycle_1.0.5        httr_1.4.7             mime_0.12              MASS_7.3-60</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
