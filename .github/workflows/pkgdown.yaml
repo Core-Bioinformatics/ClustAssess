@@ -28,16 +28,31 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4"
+          extra-repositories: 'https://blaserlab.r-universe.dev'
+
+      - id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: python -m pip install numpy pandas igraph leidenalg six
 
       - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          RETICULATE_PYTHON: ${{ steps.python.outputs.python-path }}
         with:
-          dependencies: "hard"
-          extra-packages: any::pkgdown, local::.
+          dependencies: '"hard"'
+          extra-packages: any::pkgdown, any::devtools, any::remotes, any::SeuratData, any::Rsamtools, any::harmony, any::Signac, any::data.table, any::doParallel, local::.
           needs: website
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
+        env:
+          RETICULATE_PYTHON: ${{ steps.python.outputs.python-path }}
 
       - name: Deploy to GitHub pages 🚀
         if: github.event_name != 'pull_request'
