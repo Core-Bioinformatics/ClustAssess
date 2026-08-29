@@ -17,7 +17,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/Core-Bioinformatics/ClustAssess/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/Core-Bioinformatics/ClustAssess/blob/v1.2.0/inst/CITATION)
 
 Shahsavari, A., Munteanu, A., & Mohorianu, I (2022). ClustAssess: Tools
 for Assessing Clustering. bioRxiv.
