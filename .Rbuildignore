@@ -11,3 +11,9 @@
 _pkgdown\.yml
 vignettes
 cran-comments\.md
+^AGENTS\.md$
+^ai_optimize$
+^ai_todo$
+^analysis/clustassess_algorithm_performance_analysis\.md$
+^analysis/bench/(fixtures|libraries|results|profiles)(/|$)
+^analysis/bench/[^/]*\.(csv|rds|Rprof|Rprofmem|log|h5|h5ad)$

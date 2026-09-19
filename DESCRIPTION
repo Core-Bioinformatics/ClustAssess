@@ -81,6 +81,7 @@ Suggests:
     DelayedMatrixStats,
     devtools,
     doParallel,
+    irlba,
     leidenbase,
     monocle3,
     patchwork,

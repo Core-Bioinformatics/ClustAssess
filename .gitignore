@@ -10,3 +10,22 @@ src/*.dll
 *tar.gz
 *Rcheck/
 test.R
+
+# Local agent instructions and investigation records (not publication material).
+/AGENTS.md
+/ai_optimize/
+/ai_todo/
+/analysis/clustassess_algorithm_performance_analysis.md
+
+# Benchmark inputs, installed libraries, and raw outputs may contain local paths.
+/analysis/bench/fixtures/
+/analysis/bench/libraries/
+/analysis/bench/results/
+/analysis/bench/profiles/
+/analysis/bench/*.csv
+/analysis/bench/*.rds
+/analysis/bench/*.Rprof
+/analysis/bench/*.Rprofmem
+/analysis/bench/*.log
+/analysis/bench/*.h5
+/analysis/bench/*.h5ad

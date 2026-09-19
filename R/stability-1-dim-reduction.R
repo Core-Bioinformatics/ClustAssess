@@ -47,6 +47,9 @@
 #' for more details.
 #' @param verbose A boolean indicating if the intermediate progress will
 #' be printed or not.
+#' @param compute_umap_embeddings A boolean indicating whether to compute and
+#' return the UMAP embeddings used by feature plotting helpers. Setting this to
+#' FALSE leaves stability scores unchanged but omits those embeddings.
 #'
 #' @return A list having one field associated with a step value. Each step
 #' contains a list with three fields:
@@ -119,7 +122,8 @@ assess_feature_stability <- function(data_matrix,
                                      prune_value = -1,
                                      clustering_algorithm = 1,
                                      clustering_arguments = list(),
-                                     verbose = FALSE) {
+                                     verbose = FALSE,
+                                     compute_umap_embeddings = TRUE) {
     # TODO create a function that does checks of the parameters
     # NOTE irbla using all cores; fix with RhpcBLASctl::blas_set_num_threads(1)? seems to be fixed, keep under observation
     # check parameters
@@ -161,6 +165,12 @@ assess_feature_stability <- function(data_matrix,
 
     if (!(graph_reduction_type %in% c("PCA", "UMAP"))) {
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
+    }
+
+    if (!is.logical(compute_umap_embeddings) ||
+        length(compute_umap_embeddings) != 1 ||
+        is.na(compute_umap_embeddings)) {
+        stop("compute_umap_embeddings parameter should be a single boolean value")
     }
 
     if (!is.numeric(ecs_thresh)) {
@@ -267,9 +277,11 @@ assess_feature_stability <- function(data_matrix,
         }
 
         # the variables needed in each PSOCK process
+        clustering_functions <- prepare_clustering_functions_for_workers()
         needed_vars <- c(
             "graph_reduction_type",
             "umap_arguments",
+            "clustering_functions",
             "clustering_arguments",
             "resolution",
             "prune_value",
@@ -305,6 +317,7 @@ assess_feature_stability <- function(data_matrix,
             seed = seed_sequence,
             .inorder = FALSE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
+            .export = "run_optional_gc",
             .packages = package_needed
         ) %dopar% {
             if (graph_reduction_type == "UMAP") {
@@ -323,7 +336,7 @@ assess_feature_stability <- function(data_matrix,
                 )
                 colnames(ump_embedding) <- paste0("UMAP_", seq_len(ncol(ump_embedding)))
                 rownames(ump_embedding) <- row_names
-                gc()
+                run_optional_gc()
 
                 # build the nn and snn graphs and apply graph clustering
                 used_n_neigh <- min(20, ncells - 1)
@@ -408,19 +421,21 @@ assess_feature_stability <- function(data_matrix,
             }
         }
 
-        set.seed(42) # to match Seurat's default
-        embedding <- base::do.call(
-            uwot::umap,
-            c(
-                list(X = embedding),
-                umap_arguments
+        if (compute_umap_embeddings) {
+            set.seed(42) # to match Seurat's default
+            umap_embedding <- base::do.call(
+                uwot::umap,
+                c(
+                    list(X = embedding),
+                    umap_arguments
+                )
             )
-        )
 
-        colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
-        rownames(embedding) <- rownames(data_matrix)
-        gc()
-        embedding_list[[object_name]][[step]] <- embedding
+            colnames(umap_embedding) <- paste0("UMAP_", seq_len(ncol(umap_embedding)))
+            rownames(umap_embedding) <- rownames(data_matrix)
+            run_optional_gc()
+            embedding_list[[object_name]][[step]] <- umap_embedding
+        }
 
         # merge the identical partitions into the same object
         partitions_list[[step]] <- lapply(as.character(resolution), function(r) {

@@ -28,12 +28,13 @@ assess_feature_stability(
      colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     
     return(embedding)
- },
+  },
   umap_arguments = list(),
   prune_value = -1,
   clustering_algorithm = 1,
   clustering_arguments = list(),
-  verbose = FALSE
+  verbose = FALSE,
+  compute_umap_embeddings = TRUE
 )
 }
 \arguments{
@@ -92,6 +93,10 @@ for more details.}
 
 \item{verbose}{A boolean indicating if the intermediate progress will
 be printed or not.}
+
+\item{compute_umap_embeddings}{A boolean indicating whether to compute and
+return the UMAP embeddings used by feature plotting helpers. Setting this to
+FALSE leaves stability scores unchanged but omits those embeddings.}
 }
 \value{
 A list having one field associated with a step value. Each step

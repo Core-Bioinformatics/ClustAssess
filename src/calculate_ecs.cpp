@@ -1,4 +1,6 @@
 #include <Rcpp.h>
+#include <algorithm>
+#include <vector>
 //[[Rcpp::depends(RcppEigen)]]
 
 using namespace Rcpp;
@@ -62,9 +64,101 @@ double disjointECSaverage(IntegerVector mb1, IntegerVector mb2) {
 	for (int i = 0; i < nClusters1; i++) {
 		for (int j = nClusters2 - 1; j >= 0; j--) {
 			intersectSize = contTable(i, j);
-			avgECS += intersectSize * intersectSize / (n * std::max(clustersSizes1(i), clustersSizes2(j)));
+			int maxClusterSize = std::max(clustersSizes1(i), clustersSizes2(j));
+			if (maxClusterSize > 0) {
+				avgECS += intersectSize * intersectSize / (n * maxClusterSize);
+			}
 		}
 	}
 
 	return(avgECS);
+}
+
+// [[Rcpp::export]]
+SEXP weightedDisjointECS(IntegerMatrix memberships, NumericVector weights, bool calculate_sim_matrix = false) {
+    int n = memberships.nrow(), nClusterings = memberships.ncol();
+
+    if (weights.size() != nClusterings) {
+        stop("weights must have the same length as clustering_list.");
+    }
+
+    double totalWeight = 0.0;
+    for (int i = 0; i < nClusterings; i++) {
+        totalWeight += weights[i];
+    }
+    double normFactor = totalWeight * (totalWeight - 1.0) / 2.0;
+
+    NumericVector consistency(n);
+    NumericMatrix ecsMatrix;
+    if (calculate_sim_matrix) {
+        ecsMatrix = NumericMatrix(nClusterings, nClusterings);
+    }
+
+    std::vector<int> maxLabels(nClusterings, 0);
+    for (int j = 0; j < nClusterings; j++) {
+        for (int element = 0; element < n; element++) {
+            int label = memberships(element, j);
+            if (label < 1) {
+                stop("memberships must contain positive cluster ids.");
+            }
+            if (label > maxLabels[j]) {
+                maxLabels[j] = label;
+            }
+        }
+    }
+
+    for (int i = 0; i < nClusterings; i++) {
+        double selfWeight = weights[i] * (weights[i] - 1.0) / 2.0 / normFactor;
+        for (int element = 0; element < n; element++) {
+            consistency[element] += selfWeight;
+        }
+        if (calculate_sim_matrix) {
+            ecsMatrix(i, i) = 1.0;
+        }
+    }
+
+    for (int i = 0; i < nClusterings - 1; i++) {
+        for (int j = i + 1; j < nClusterings; j++) {
+            int nClusters1 = maxLabels[i], nClusters2 = maxLabels[j];
+            std::vector<int> contTable(nClusters1 * nClusters2, 0);
+            std::vector<int> clusterSizes1(nClusters1, 0);
+            std::vector<int> clusterSizes2(nClusters2, 0);
+
+            for (int element = 0; element < n; element++) {
+                int cluster1 = memberships(element, i) - 1;
+                int cluster2 = memberships(element, j) - 1;
+                contTable[cluster1 * nClusters2 + cluster2]++;
+                clusterSizes1[cluster1]++;
+                clusterSizes2[cluster2]++;
+            }
+
+            double pairWeight = weights[i] * weights[j] / normFactor;
+            double avgECS = 0.0;
+
+            for (int element = 0; element < n; element++) {
+                int cluster1 = memberships(element, i) - 1;
+                int cluster2 = memberships(element, j) - 1;
+                double intersectSize = contTable[cluster1 * nClusters2 + cluster2];
+                double maxClusterSize = std::max(clusterSizes1[cluster1], clusterSizes2[cluster2]);
+                double ecsScore = intersectSize / maxClusterSize;
+
+                consistency[element] += ecsScore * pairWeight;
+                avgECS += ecsScore;
+            }
+
+            if (calculate_sim_matrix) {
+                ecsMatrix(i, j) = avgECS / n;
+                ecsMatrix(j, i) = ecsMatrix(i, j);
+            }
+        }
+    }
+
+    if (calculate_sim_matrix) {
+        return List::create(
+            Named("ecc") = consistency,
+            Named("ecs_matrix") = ecsMatrix
+        );
+    }
+
+    return consistency;
 }

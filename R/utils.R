@@ -201,6 +201,16 @@ is_package_installed <- function(package_name) {
     return(package_name %in% rownames(utils::installed.packages()))
 }
 
+worker_packages_if_installed <- function(package_name) {
+    package_path <- system.file(package = package_name)
+    if (nzchar(package_path) &&
+        file.exists(file.path(package_path, "Meta", "package.rds"))) {
+        return(package_name)
+    }
+
+    character(0)
+}
+
 #' @title Get the vector of colours from a palette
 #'
 #' @description Using the `paletteer` package, this function retrieves a vector
@@ -331,4 +341,12 @@ parallel_nn2_idx <- function(embedding, k) {
     shared_emb <- SharedObject::unshare(shared_emb)
 
     nn_result
+}
+
+run_optional_gc <- function() {
+    if (isTRUE(getOption("ClustAssess.force_gc", FALSE))) {
+        invisible(gc())
+    } else {
+        invisible(NULL)
+    }
 }

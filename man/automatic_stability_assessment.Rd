@@ -32,7 +32,7 @@ automatic_stability_assessment(
      colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     
     return(embedding)
- },
+  },
   umap_arguments = list(),
   prune_value = -1,
   algorithm_dim_reduction = 1,
@@ -41,7 +41,9 @@ automatic_stability_assessment(
   clustering_arguments = list(),
   verbose = TRUE,
   temp_file = NULL,
-  save_temp = TRUE
+  save_temp = TRUE,
+  compute_umap_embeddings = TRUE,
+  return_nn_idx = TRUE
 )
 }
 \arguments{
@@ -124,6 +126,14 @@ of the assessment.}
 
 \item{save_temp}{A boolean value indicating if the object
 will be saved to a file.}
+
+\item{compute_umap_embeddings}{A boolean indicating whether to compute and
+return the UMAP embeddings used by feature plotting helpers. Setting this to
+FALSE leaves stability scores unchanged but omits those embeddings.}
+
+\item{return_nn_idx}{A boolean indicating whether to keep the precomputed
+nearest-neighbor index inside returned PCA graph-stability objects. Defaults
+to \code{TRUE} to preserve existing returned objects.}
 }
 \value{
 A list having two fields:

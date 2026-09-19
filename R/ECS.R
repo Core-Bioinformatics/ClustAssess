@@ -842,7 +842,10 @@ element_sim_matrix <- function(clustering_list,
 }
 
 # calculate the similarity matrix when all the objects are flat disjoint memberships
-element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type = "matrix") {
+element_sim_matrix_flat_disjoint <- function(mb_list,
+                                             alpha = 0.9,
+                                             output_type = "matrix",
+                                             use_parallel = foreach::getDoParWorkers() > 1) {
     if (!(output_type %in% c("data.frame", "matrix"))) {
         stop("output_type must be data.frame or matrix.")
     }
@@ -861,15 +864,34 @@ element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type =
     }))
     n_combinations <- n_clusterings * (n_clusterings - 1) / 2
 
-    i <- NA
+    pair_ecs <- function(pair_index) {
+        element_sim(
+            mb_list[[first_index[pair_index]]],
+            mb_list[[second_index[pair_index]]],
+            alpha = alpha
+        )
+    }
 
-    # calculate the ecs between every pair of partitions
-    ecs_values <- foreach::foreach(i = 1:n_combinations, .export = c("corrected_l1_mb", "create_clu2elm_dict"), .noexport = c("my_cluster"), .combine = "c") %dopar% {
-        mean(element_sim_elscore(
-            mb_list[[first_index[i]]],
-            mb_list[[second_index[i]]],
-            alpha
-        ))
+    # Calculate the ecs between every pair of partitions. Use the registered
+    # parallel backend when present; otherwise avoid foreach's sequential
+    # overhead and call the scalar ECS path directly.
+    if (isTRUE(use_parallel)) {
+        i <- NA
+        ecs_values <- foreach::foreach(
+            i = seq_len(n_combinations),
+            .packages = "ClustAssess",
+            .export = c("element_sim", "element_sim_elscore", "corrected_l1_mb"),
+            .noexport = c("my_cluster"),
+            .combine = "c"
+        ) %dopar% {
+            element_sim(
+                mb_list[[first_index[i]]],
+                mb_list[[second_index[i]]],
+                alpha = alpha
+            )
+        }
+    } else {
+        ecs_values <- vapply(seq_len(n_combinations), pair_ecs, numeric(1))
     }
 
     sim_matrix <- matrix(NA, nrow = n_clusterings, ncol = n_clusterings)
@@ -896,37 +918,30 @@ element_sim_matrix_flat_disjoint <- function(mb_list, alpha = 0.9, output_type =
 
 # determine whether two flat disjoint membership vectors are identical
 are_identical_memberships <- function(mb1, mb2) {
-    # calculate the contingency table between the two partitions
-    if (inherits(mb1, c("character", "factor")) || inherits(mb2, c("character", "factor"))) {
-        contingency_table <- table(mb1, mb2)
+    if (length(mb1) != length(mb2)) {
+        return(FALSE)
+    }
+
+    # Canonical first-seen ids compare the partition pattern rather than the
+    # numeric label range. This handles relabelled memberships with unused
+    # numeric values without allocating a range-sized contingency table.
+    ids1 <- match(mb1, unique(mb1))
+    ids2 <- match(mb2, unique(mb2))
+    identical(ids1, ids2)
+}
+
+canonical_membership_key <- function(mb) {
+    if (inherits(mb, "factor")) {
+        mb <- as.character(mb)
+    }
+    labels <- as.character(mb)
+    ids <- match(labels, unique(labels))
+    n_clusters <- if (length(ids) == 0) {
+        0L
     } else {
-        contingency_table <- myContTable(mb1, mb2, min(mb1), min(mb2))
+        max(ids)
     }
-
-    contingency_table <- (contingency_table != 0)
-
-    if (nrow(contingency_table) != ncol(contingency_table)) {
-        return(FALSE)
-    }
-
-    # there are only singleton clusters
-    if (nrow(contingency_table) == length(mb1)) {
-        return(TRUE)
-    }
-
-    no_different_elements <- colSums(contingency_table)
-
-    # if a column has two or more nonzero entries, it means the cluster is split
-    # thus the two partitions are not identical
-    if (any(no_different_elements != 1)) {
-        return(FALSE)
-    }
-
-    no_different_elements <- rowSums(contingency_table)
-
-    # if a row has two or more nonzero entries, it means the cluster is split
-    # thus the two partitions are not identical
-    return(all(no_different_elements == 1))
+    paste(length(ids), n_clusters, rlang::hash(ids), sep = ":")
 }
 
 # merge partitions that are identical (meaning the ecs threshold is 1)
@@ -934,33 +949,35 @@ are_identical_memberships <- function(mb1, mb2) {
 # based on their frequency
 merge_identical_partitions <- function(clustering_list) {
     # merge the same memberships into the same object
-    merged_partitions <- list(clustering_list[[1]])
     n_partitions <- length(clustering_list)
 
     if (n_partitions == 1) {
         return(clustering_list)
     }
 
-    for (i in 2:n_partitions) {
-        n_merged_partitions <- length(merged_partitions)
+    merged_partitions <- list()
+    key_to_indices <- new.env(parent = emptyenv())
 
-        assigned_partition <- -1
+    for (i in seq_len(n_partitions)) {
+        key <- canonical_membership_key(clustering_list[[i]]$mb)
+        candidate_indices <- key_to_indices[[key]]
+        assigned_partition <- NA_integer_
 
-        # for each partition, look into the merged list and see if there is a perfect match
-        for (j in seq_len(n_merged_partitions)) {
-            are_identical <- are_identical_memberships(merged_partitions[[j]]$mb, clustering_list[[i]]$mb)
-            if (are_identical) {
-                assigned_partition <- j
-                break
+        if (!is.null(candidate_indices)) {
+            for (j in candidate_indices) {
+                if (are_identical_memberships(merged_partitions[[j]]$mb, clustering_list[[i]]$mb)) {
+                    assigned_partition <- j
+                    break
+                }
             }
         }
 
-        if (assigned_partition != -1) {
-            # if a match was found, update the frequency of the partition
-            merged_partitions[[assigned_partition]]$freq <- merged_partitions[[assigned_partition]]$freq + clustering_list[[i]]$freq
+        if (!is.na(assigned_partition)) {
+            merged_partitions[[assigned_partition]]$freq <-
+                merged_partitions[[assigned_partition]]$freq + clustering_list[[i]]$freq
         } else {
-            # if not, add the partition to the list of merged partitions
-            merged_partitions[[n_merged_partitions + 1]] <- clustering_list[[i]]
+            merged_partitions[[length(merged_partitions) + 1]] <- clustering_list[[i]]
+            key_to_indices[[key]] <- c(candidate_indices, length(merged_partitions))
         }
     }
 
@@ -980,7 +997,8 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
     sim_matrix <- element_sim_matrix_flat_disjoint(
         lapply(partition_list, function(x) {
             x$mb
-        })
+        }),
+        use_parallel = FALSE
     )
 
     for (i in 1:nparts) {
@@ -1103,12 +1121,24 @@ merge_partitions <- function(partition_list,
     } else {
         # the list contains the partition field, created by `get_resolution_importance` method
         if ("partitions" %in% names(partition_list)) {
-            return(merge_partitions(partition_list$partitions, ecs_thresh, order_logic))
+            return(merge_partitions(
+                partition_list$partitions,
+                ecs_thresh,
+                order_logic,
+                return_ecs_matrix,
+                check_ties
+            ))
         }
         # the case with list of lists of partitions
         if (!all(c("mb", "freq") %in% names(partition_list[[1]]))) {
             return(lapply(partition_list, function(sublist) {
-                merge_partitions(sublist, ecs_thresh, order_logic)
+                merge_partitions(
+                    sublist,
+                    ecs_thresh,
+                    order_logic,
+                    return_ecs_matrix,
+                    check_ties
+                )
             }))
         }
     }
@@ -1125,103 +1155,88 @@ merge_partitions <- function(partition_list,
         return(list(partitions = part_list, ecc = rep(1, length(part_list[[1]]$mb))))
     }
 
+    weights <- vapply(part_list, function(x) {
+        x$freq
+    }, numeric(1))
+    top_freq_tie <- order_logic == "freq" &&
+        check_ties &&
+        sum(weights == max(weights)) > 1
+    needs_average_agreement <- order_logic == "avg_agreement" ||
+        top_freq_tie ||
+        (order_logic == "freq" && return_ecs_matrix)
+    needs_ecs_matrix <- return_ecs_matrix || needs_average_agreement
+
     consistency <- weighted_element_consistency(
         clustering_list = lapply(part_list, function(x) {
             x$mb
         }),
-        weights = sapply(part_list, function(x) {
-            x$freq
-        }),
-        calculate_sim_matrix = TRUE
+        weights = weights,
+        calculate_sim_matrix = needs_ecs_matrix
     )
 
-    if (!(order_logic %in% c("freq", "avg_agreement")) && !return_ecs_matrix) {
-        return(list(partitions = part_list, ecc = consistency$ecc))
+    ecc <- if (needs_ecs_matrix) {
+        consistency$ecc
+    } else {
+        consistency
     }
 
-    if (!(order_logic %in% c("freq", "avg_agreement")) && return_ecs_matrix) {
-        return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
-    }
-
-    # add average aggreement index for each membership - how similar it is
-    # with the other clusterings
-    n_unique_parts <- nrow(consistency$ecs_matrix)
-    n_total_parts <- sum(sapply(part_list, function(x) x$freq))
-    average_agreement <- sapply(
-        seq_len(n_unique_parts),
-        function(i) {
-
-            total_sim <- (partition_list[[i]]$freq - 1) / (n_total_parts - 1)
-            for (j in seq_len(ncol(consistency$ecs_matrix))) {
-                if (i == j) {
-                    next
-                }
-
-                total_sim <- total_sim + consistency$ecs_matrix[i, j] * partition_list[[j]]$freq / (n_total_parts - 1)
-            }
-
-            return(total_sim)
+    if (order_logic == "none") {
+        if (return_ecs_matrix) {
+            return(list(partitions = part_list, ecc = ecc, ecs_matrix = consistency$ecs_matrix))
         }
-    )
-
-    for (i in seq_len(nrow(consistency$ecs_matrix))) {
-        part_list[[i]]$avg_agreement <- average_agreement[i]
+        return(list(partitions = part_list, ecc = ecc))
     }
 
-    # order the newly merged partitions based on their frequencies / agreement
-    ordered_indices <- order(sapply(part_list, function(x) {
+    if (needs_average_agreement) {
+        # Average agreement is partition-level; use frequencies after merging.
+        n_unique_parts <- nrow(consistency$ecs_matrix)
+        n_total_parts <- sum(weights)
+        average_agreement <- vapply(seq_len(n_unique_parts), function(i) {
+            total_sim <- (part_list[[i]]$freq - 1) / (n_total_parts - 1)
+            for (j in seq_len(ncol(consistency$ecs_matrix))) {
+                if (i != j) {
+                    total_sim <- total_sim +
+                        consistency$ecs_matrix[i, j] * part_list[[j]]$freq / (n_total_parts - 1)
+                }
+            }
+            total_sim
+        }, numeric(1))
+
+        for (i in seq_len(nrow(consistency$ecs_matrix))) {
+            part_list[[i]]$avg_agreement <- average_agreement[i]
+        }
+    }
+
+    ordered_indices <- order(vapply(part_list, function(x) {
         x[[order_logic]]
-    }), decreasing = TRUE)
-    part_list <- part_list[ordered_indices]
-
-    if (return_ecs_matrix) {
-        consistency$ecs_matrix <- consistency$ecs_matrix[ordered_indices, ordered_indices, drop = FALSE]
-    }
+    }, numeric(1)), decreasing = TRUE)
 
     check_ties <- check_ties && length(part_list) > 1
 
-    if (!check_ties && !return_ecs_matrix) {
-        return(list(partitions = part_list, ecc = consistency$ecc))
-    }
+    if (check_ties) {
+        second_key <- setdiff(c("freq", "avg_agreement"), order_logic)
+        reference_value <- part_list[[ordered_indices[[1]]]][[order_logic]]
+        tied_positions <- ordered_indices[vapply(ordered_indices, function(i) {
+            part_list[[i]][[order_logic]] == reference_value
+        }, logical(1))]
 
-    if (!check_ties && return_ecs_matrix) {
-        return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
-    }
-
-    second_key <- setdiff(c("freq", "avg_agreement"), order_logic)
-    reference_value <- part_list[[1]][[order_logic]]
-
-    for (i in seq(from = 2, to = length(part_list), by = 1)) {
-        if (part_list[[i]][[order_logic]] != reference_value) {
-            i <- i - 1
-            break
+        if (length(tied_positions) > 1) {
+            tied_positions <- tied_positions[order(vapply(tied_positions, function(i) {
+                part_list[[i]][[second_key]]
+            }, numeric(1)), decreasing = TRUE)]
+            ordered_indices[seq_along(tied_positions)] <- tied_positions
         }
     }
 
-    if (i > 1) {
-        ties_ordered_indices <- order(sapply(part_list[seq_len(i)], function(x) {
-            x[[second_key]]
-        }), decreasing = TRUE)
-
-        part_list[seq_len(i)] <- part_list[ties_ordered_indices]
-        # ordered_indices[seq_len(i)] <- ordered_indices[ties_ordered_indices]
-    }
+    part_list <- part_list[ordered_indices]
 
     if (!return_ecs_matrix) {
-        return(list(partitions = part_list, ecc = consistency$ecc))
+        return(list(partitions = part_list, ecc = ecc))
     }
 
-    if (i > 1) {
-        reordered_matrix <- consistency$ecs_matrix[ties_ordered_indices, ties_ordered_indices, drop = FALSE]
+    consistency$ecs_matrix <- consistency$ecs_matrix[ordered_indices, ordered_indices, drop = FALSE]
 
-        for (j in seq_len(i)) {
-            for (l in seq_len(i)) {
-                consistency$ecs_matrix[j, l] <- reordered_matrix[j, l]
-            }
-        }
-    }
-
-    return(list(partitions = part_list, ecc = consistency$ecc, ecs_matrix = consistency$ecs_matrix))
+    return(list(partitions = part_list, ecc = ecc, ecs_matrix = consistency$ecs_matrix))
 }
 
 #' Element-Wise Consistency Between a Set of Clusterings
@@ -1295,7 +1310,7 @@ element_consistency <- function(clustering_list,
             order_logic = "none",
             return_ecs_matrix = FALSE
         )
-        
+
         return(final_clustering_list$ecc)
     }
 
@@ -1372,13 +1387,36 @@ weighted_element_consistency <- function(clustering_list,
 
         return(rep(0, length(clustering_list[[1]])))
     }
-    
+
     if (calculate_sim_matrix) {
         ecs_sim_matrix <- matrix(0, nrow = n_clusterings, ncol = n_clusterings)
     }
 
     if (is.null(weights)) {
         weights <- rep(1, n_clusterings)
+    }
+
+    # Encoding dominates the pairwise work for very small lists. The native
+    # batch path becomes consistently faster from five clusterings onward.
+    encoded_memberships <- if (n_clusterings >= 5) {
+        encode_flat_disjoint_memberships(clustering_list)
+    } else {
+        NULL
+    }
+    if (!is.null(encoded_memberships) && length(weights) == n_clusterings) {
+        consistency <- weightedDisjointECS(
+            memberships = encoded_memberships,
+            weights = weights,
+            calculate_sim_matrix = calculate_sim_matrix
+        )
+
+        if (calculate_sim_matrix) {
+            names(consistency$ecc) <- names(clustering_list[[1]])
+            return(consistency)
+        }
+
+        names(consistency) <- names(clustering_list[[1]])
+        return(consistency)
     }
 
     consistency <- 0
@@ -1397,7 +1435,7 @@ weighted_element_consistency <- function(clustering_list,
 
             consistency <- consistency + current_ecs * weights[i] / norm_factor * weights[j]
         }
-        
+
         if (calculate_sim_matrix) {
             ecs_sim_matrix[i, i] <- 1
         }
@@ -1411,6 +1449,58 @@ weighted_element_consistency <- function(clustering_list,
     ecs_sim_matrix[n_clusterings, n_clusterings] <- 1
 
     return(list(ecc = consistency, ecs_matrix = ecs_sim_matrix))
+}
+
+encode_flat_disjoint_memberships <- function(clustering_list) {
+    is_flat_disjoint <- vapply(clustering_list, function(x) {
+        inherits(x, c("numeric", "integer", "factor", "character"))
+    }, logical(1))
+
+    if (!all(is_flat_disjoint)) {
+        return(NULL)
+    }
+
+    n_clusterings <- length(clustering_list)
+    n_elements <- length(clustering_list[[1]])
+
+    for (i in seq_len(n_clusterings)) {
+        if (length(clustering_list[[i]]) != n_elements) {
+            stop("clustering1 and clustering2 do not have the same length.")
+        }
+    }
+
+    has_names <- vapply(clustering_list, function(x) {
+        !is.null(names(x))
+    }, logical(1))
+    # Pairwise arithmetic has legacy, position-dependent name propagation when
+    # named and unnamed memberships are mixed. Keep those permissive inputs on
+    # the pairwise path so the optimized branch cannot change output names.
+    if (any(has_names) && !all(has_names)) {
+        return(NULL)
+    }
+    if (all(has_names)) {
+        reference_names <- names(clustering_list[[1]])
+        for (i in seq.int(2, n_clusterings)) {
+            if (any(reference_names != names(clustering_list[[i]]))) {
+                stop("Not all elements of clustering1 and clustering2 are the same.")
+            }
+        }
+    }
+
+    encoded_memberships <- matrix(NA_integer_, nrow = n_elements, ncol = n_clusterings)
+    for (i in seq_len(n_clusterings)) {
+        mb <- clustering_list[[i]]
+        if (anyNA(mb)) {
+            return(NULL)
+        }
+        if (is.numeric(mb) && !is.integer(mb) && !all(is.finite(mb) & mb == floor(mb))) {
+            return(NULL)
+        }
+
+        encoded_memberships[, i] <- match(mb, unique(mb))
+    }
+
+    encoded_memberships
 }
 
 #' Element-Wise Average Agreement Between a Set of Clusterings

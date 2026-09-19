@@ -45,7 +45,7 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
     }
 
     if (algorithm == 5) {
-        object <- methods::as(object = object,  Class = "matrix")
+        object <- methods::as(object = object, Class = "matrix")
     } else if (!(inherits(object, "igraph"))) {
         object <- Seurat::as.sparse(object)
         object <- igraph::graph_from_adjacency_matrix(
@@ -150,6 +150,15 @@ clustering_functions <- function(object,
     )
 }
 
+prepare_clustering_functions_for_workers <- function() {
+    worker_clustering_functions <- clustering_functions
+    worker_env <- new.env(parent = environment(clustering_functions))
+    worker_env$seurat_clustering <- seurat_clustering
+    worker_env$leiden_clustering <- leiden_clustering
+    environment(worker_clustering_functions) <- worker_env
+    worker_clustering_functions
+}
+
 #### Automatic ####
 rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order") {
     if (!(rank_by %in% names(ranking_functions))) {
@@ -229,6 +238,12 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' @param temp_file The path to the file where the object will be saved.
 #' @param save_temp A boolean value indicating if the object
 #' will be saved to a file.
+#' @param compute_umap_embeddings A boolean indicating whether to compute and
+#' return the UMAP embeddings used by feature plotting helpers. Setting this to
+#' FALSE leaves stability scores unchanged but omits those embeddings.
+#' @param return_nn_idx A boolean indicating whether to keep the precomputed
+#' nearest-neighbor index inside returned PCA graph-stability objects. Defaults
+#' to `TRUE` to preserve existing returned objects.
 #'
 #' @return A list having two fields:
 #'
@@ -307,16 +322,30 @@ automatic_stability_assessment <- function(expression_matrix,
                                                colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
 
                                                return(embedding)
-                                           },
-                                           umap_arguments = list(),
-                                           prune_value = -1,
-                                           algorithm_dim_reduction = 1,
+                                            },
+                                            umap_arguments = list(),
+                                            prune_value = -1,
+                                            algorithm_dim_reduction = 1,
                                            algorithm_graph_construct = 1,
                                            algorithms_clustering_assessment = 1:3,
                                            clustering_arguments = list(),
                                            verbose = TRUE,
-                                           temp_file = NULL,
-                                           save_temp = TRUE) {
+                                            temp_file = NULL,
+                                            save_temp = TRUE,
+                                            compute_umap_embeddings = TRUE,
+                                            return_nn_idx = TRUE) {
+    if (!is.logical(compute_umap_embeddings) ||
+        length(compute_umap_embeddings) != 1 ||
+        is.na(compute_umap_embeddings)) {
+        stop("compute_umap_embeddings parameter should be a single boolean value")
+    }
+
+    if (!is.logical(return_nn_idx) ||
+        length(return_nn_idx) != 1 ||
+        is.na(return_nn_idx)) {
+        stop("return_nn_idx parameter should be a single boolean value")
+    }
+
     file_already_exists <- ifelse(is.null(temp_file), TRUE, file.exists(temp_file))
     cell_names <- colnames(expression_matrix)
     if (is.null(cell_names)) {
@@ -364,6 +393,7 @@ automatic_stability_assessment <- function(expression_matrix,
             ecs_thresh = ecs_threshold,
             matrix_processing = matrix_processing,
             umap_arguments = umap_arguments,
+            compute_umap_embeddings = compute_umap_embeddings,
             prune_value = prune_value,
             clustering_algorithm = algorithm_dim_reduction,
             clustering_arguments = clustering_arguments,
@@ -461,7 +491,7 @@ automatic_stability_assessment <- function(expression_matrix,
 
     feature_configs$feature_stability$pca_list <- NULL
     rm(feature_stability_object)
-    gc()
+    run_optional_gc()
 
     # GRAPH CONSTRUCTION: CONNECTED COMPS
     if (verbose) {
@@ -612,11 +642,15 @@ automatic_stability_assessment <- function(expression_matrix,
                     )
                     feature_configs[[set_name]][[n_steps]][["adj_matrix"]] <- highest_prune_param$adj_matrix
                     highest_prune_param <- highest_prune_param$prune_value
-                    gc()
+                    run_optional_gc()
                 }
             }
             rownames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
             colnames(feature_configs[[set_name]][[n_steps]][["adj_matrix"]]) <- cell_names
+
+            if (!return_nn_idx) {
+                feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx <- NULL
+            }
 
             feature_configs[[set_name]][[n_steps]]$stable_config[["base_embedding"]] <- base_embedding
             feature_configs[[set_name]][[n_steps]]$stable_config[["graph_type"]] <- graph_type

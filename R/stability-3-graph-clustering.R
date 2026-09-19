@@ -10,6 +10,7 @@ algorithm_names_mapping <- list(
     Leiden_matrix = 5
 )
 seed <- NULL
+job_index <- NULL
 
 #' Merge Partitions from different Resolutions
 #'
@@ -45,23 +46,91 @@ merge_resolutions <- function(res_obj) {
     k_vals <- stringr::str_sort(names(clusters_obj), numeric = TRUE)
     clusters_obj <- clusters_obj[k_vals]
 
-    all_vars <- ls()
-    needed_vars <- c("shared_clusters_obj")
-
     i <- 1
 
     # merge identical partitions from each list for a fixed k
     clusters_obj <- foreach::foreach(
         i = seq_along(clusters_obj),
-        .inorder = TRUE,
-        .noexport = all_vars[!(all_vars %in% needed_vars)]
+        .inorder = TRUE
     ) %do% {
-        ClustAssess::merge_partitions(clusters_obj[[i]])
+        merge_partitions(clusters_obj[[i]])
     }
 
     names(clusters_obj) <- k_vals
 
     clusters_obj
+}
+
+summarize_clustering_memberships <- function(clustering_memberships,
+                                             seed_sequence,
+                                             ecs_thresh) {
+    different_partitions <- list()
+
+    # group the partitions by the number of clusters
+    for (i in seq_along(seed_sequence)) {
+        k <- as.character(length(unique(clustering_memberships[[i]])))
+
+        if (!(k %in% names(different_partitions))) {
+            different_partitions[[k]] <- list()
+            different_partitions[[k]][[1]] <- list(
+                mb = clustering_memberships[[i]],
+                freq = 1,
+                seed = seed_sequence[i]
+            )
+        } else {
+            index <- length(different_partitions[[k]])
+            different_partitions[[k]][[index + 1]] <- list(
+                mb = clustering_memberships[[i]],
+                freq = 1,
+                seed = seed_sequence[i]
+            )
+        }
+    }
+
+    different_partitions <- different_partitions[
+        stringr::str_sort(names(different_partitions), numeric = TRUE)
+    ]
+
+    # merge the partitions using the ecs threshold
+    unique_partitions <- list()
+    for (k in names(different_partitions)) {
+        different_partitions[[k]] <- merge_partitions(
+            partition_list = different_partitions[[k]],
+            ecs_thresh = ecs_thresh,
+            order_logic = "freq" # TODO change to avg agreement
+        )
+
+        unique_partitions <- c(
+            unique_partitions,
+            different_partitions[[k]]$partitions
+        )
+    }
+
+    if (length(different_partitions) == 1) {
+        return(list(
+            clusters = different_partitions,
+            ecc = different_partitions[[1]]$ecc
+        ))
+    }
+
+    if (length(unique_partitions) == 1) {
+        return(list(
+            clusters = different_partitions,
+            ecc = rep(1, length(unique_partitions[[1]]$mb))
+        ))
+    }
+
+    list(
+        clusters = different_partitions,
+        ecc = weighted_element_consistency(
+            lapply(unique_partitions, function(x) {
+                x$mb
+            }),
+            sapply(unique_partitions, function(x) {
+                x$freq
+            })
+        )
+    )
 }
 
 #' Assessment of Stability for Graph Clustering
@@ -189,21 +258,11 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     # }
 
     # the variables needed in the PSOCK processes
-    seurat_clustering <- seurat_clustering
-    needed_vars <- c(
-        "res",
-        "seurat_clustering",
-        "graph_adjacency_matrix_shared",
-        "alg_index",
-        "current_clustering_arguments"
-    )
+    clustering_functions <- prepare_clustering_functions_for_workers()
     package_needed <- c()
-    if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
+    if (length(intersect(clustering_algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
-    all_vars <- ls()
-
-
 
     for (alg_index in clustering_algorithm) {
         # FIXME edit this once you will be able to share an igraph
@@ -223,6 +282,19 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
 
         alg_name <- algorithm_names[alg_index]
         current_clustering_arguments <- process_clustering_arguments(clustering_arguments, alg_index)
+        clustering_jobs <- data.frame(
+            res_index = rep(seq_along(resolution), each = length(seed_sequence)),
+            seed_index = rep(seq_along(seed_sequence), times = length(resolution)),
+            resolution = rep(resolution, each = length(seed_sequence)),
+            seed = rep(seed_sequence, times = length(resolution))
+        )
+        needed_vars <- c(
+            "clustering_jobs",
+            "clustering_functions",
+            "graph_adjacency_matrix_shared",
+            "current_clustering_arguments"
+        )
+        all_vars <- ls()
 
         if (verbose) {
             pb <- progress::progress_bar$new(
@@ -235,96 +307,58 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         }
 
         result_object[[alg_name]] <- list()
-        for (res in resolution) {
+        clustering_job_results <- foreach::foreach(
+            job_index = seq_len(nrow(clustering_jobs)),
+            .inorder = FALSE,
+            .noexport = all_vars[!(all_vars %in% needed_vars)],
+            .packages = package_needed
+        ) %dopar% {
+            job <- clustering_jobs[job_index, , drop = FALSE]
+            cl_result <- do.call(
+                clustering_functions,
+                c(
+                    list(
+                        object = graph_adjacency_matrix_shared,
+                        resolution = job$resolution[[1]],
+                        seed = job$seed[[1]]
+                    ),
+                    current_clustering_arguments
+                )
+            )
+
+            list(
+                res_index = job$res_index[[1]],
+                seed_index = job$seed_index[[1]],
+                mb = cl_result
+            )
+        }
+
+        partitions_by_resolution <- vector("list", length(resolution))
+        for (i in seq_along(partitions_by_resolution)) {
+            partitions_by_resolution[[i]] <- vector("list", length(seed_sequence))
+        }
+
+        for (job_result in clustering_job_results) {
+            partitions_by_resolution[[job_result$res_index]][[job_result$seed_index]] <-
+                job_result$mb
+        }
+
+        for (res_index in seq_along(resolution)) {
+            res <- resolution[res_index]
             if (verbose) {
                 pb$tick(0, tokens = list(res = res))
             }
 
-            different_partitions_temp <- foreach::foreach(
-                seed = seed_sequence,
-                .inorder = FALSE,
-                .noexport = all_vars[!(all_vars %in% needed_vars)],
-                .packages = package_needed
-            ) %dopar% {
-                # apply the clustering, which should return a membership vector
-                cl_result <- do.call(
-                    clustering_functions,
-                    c(
-                        list(
-                            object = graph_adjacency_matrix_shared,
-                            resolution = res,
-                            seed = seed
-                        ),
-                        current_clustering_arguments
-                    )
+            result_object[[alg_name]][[as.character(res)]] <-
+                summarize_clustering_memberships(
+                    clustering_memberships = partitions_by_resolution[[res_index]],
+                    seed_sequence = seed_sequence,
+                    ecs_thresh = ecs_thresh
                 )
-                return(cl_result)
-            }
-
-            different_partitions <- list()
-
-            # group the partitions by the number of clusters
-            for (i in seq_along(seed_sequence)) {
-                k <- as.character(length(unique(different_partitions_temp[[i]])))
-
-                if (!(k %in% names(different_partitions))) {
-                    different_partitions[[k]] <- list()
-                    different_partitions[[k]][[1]] <- list(
-                        mb = different_partitions_temp[[i]],
-                        freq = 1,
-                        seed = seed_sequence[i]
-                    )
-                } else {
-                    index <- length(different_partitions[[k]])
-                    different_partitions[[k]][[index + 1]] <- list(
-                        mb = different_partitions_temp[[i]],
-                        freq = 1,
-                        seed = seed_sequence[i]
-                    )
-                }
-            }
-
-            different_partitions <- different_partitions[stringr::str_sort(names(different_partitions), numeric = TRUE)]
-
-            # merge the partitions using the ecs threshold
-            unique_partitions <- list()
-            for (k in names(different_partitions)) {
-                different_partitions[[k]] <- merge_partitions(
-                    partition_list = different_partitions[[k]],
-                    ecs_thresh = ecs_thresh,
-                    order_logic = "freq" # TODO change to avg agreement
-                )
-
-                unique_partitions <- c(
-                    unique_partitions,
-                    different_partitions[[k]]$partitions
-                )
-            }
 
             if (verbose) {
                 pb$tick(tokens = list(res = res))
             }
-
-            if (length(unique_partitions) == 1) {
-                result_object[[alg_name]][[as.character(res)]] <- list(
-                    clusters = different_partitions,
-                    ecc = rep(1, length(unique_partitions[[1]]$mb))
-                )
-                next
-            }
-
-            result_object[[alg_name]][[as.character(res)]] <- list(
-                clusters = different_partitions,
-                ecc = weighted_element_consistency(
-                    lapply(unique_partitions, function(x) {
-                        x$mb
-                    }),
-                    sapply(unique_partitions, function(x) {
-                        x$freq
-                    })
-                )
-            )
-
         }
     }
 
@@ -335,7 +369,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
                 rm(graph_adjacency_matrix_shared)
             }
             rm(graph_adjacency_matrix)
-            gc()
+            run_optional_gc()
         },
         add = TRUE
     )

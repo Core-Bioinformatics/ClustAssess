@@ -50,8 +50,8 @@ get_nn_conn_comps_umap <- function(embedding,
         seed = seed_sequence,
         .inorder = FALSE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("getNNmatrix"),
-        .packages = c("ClustAssess")
+        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
+        .packages = worker_packages_if_installed("ClustAssess")
     ) %dopar% {
         # perform the UMAP dimensionality reduction
         set.seed(seed)
@@ -80,7 +80,7 @@ get_nn_conn_comps_umap <- function(embedding,
                 g <- igraph::union(g, current_g)
             }
 
-            n_comps[neigh_index] <- igraph::clusters(g)$no
+            n_comps[neigh_index] <- igraph::components(g)$no
         }
 
         n_comps
@@ -137,8 +137,8 @@ get_nn_conn_comps_pca <- function(embedding,
         i = seq_along(n_neigh_sequence),
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("getNNmatrix"),
-        .packages = c("ClustAssess")
+        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
+        .packages = worker_packages_if_installed("ClustAssess")
     ) %dopar% {
         # for each neighbour, return the number of connected components
         # of the generated graph
@@ -160,7 +160,7 @@ get_nn_conn_comps_pca <- function(embedding,
         } else {
             g <- igraph::union(g, g_list[[i]])
         }
-        nn_conn_comps_list[[as.character(n_neigh)]] <- igraph::clusters(g)$no
+        nn_conn_comps_list[[as.character(n_neigh)]] <- igraph::components(g)$no
     }
 
     nn_conn_comps_list <- list(nn_conn_comps_list)
@@ -377,7 +377,7 @@ get_n_strong_components <- function(nn_matrix,
         weighted = TRUE
     )
 
-    igraph::clusters(g)$no
+    igraph::components(g)$no
 }
 
 #' Calculate the highest pruning parameter for the SNN graph given Embedding
@@ -419,7 +419,7 @@ get_highest_prune_param_embedding <- function(embedding,
         mode = "directed"
     )
 
-    target_n_conn_comps <- igraph::clusters(g)$no
+    target_n_conn_comps <- igraph::components(g)$no
 
     possible_values <- sapply(0:n_neigh, function(i) {
         i / (2 * n_neigh - i)
@@ -500,7 +500,7 @@ get_highest_prune_param <- function(nn_matrix,
         weighted = TRUE
     )
 
-    target_n_conn_comps <- igraph::clusters(g)$no
+    target_n_conn_comps <- igraph::components(g)$no
 
     possible_values <- sapply(0:n_neigh, function(i) {
         i / (2 * n_neigh - i)
@@ -513,9 +513,9 @@ get_highest_prune_param <- function(nn_matrix,
     while (start_n <= stop_n) {
         middle <- as.integer((stop_n + start_n) / 2)
         current_g <- igraph::delete_edges(prev_g, which(igraph::E(prev_g)$weight <= possible_values[middle]))
-        gc()
+        run_optional_gc()
 
-        current_n_conn_comps <- igraph::clusters(current_g)$no
+        current_n_conn_comps <- igraph::components(current_g)$no
 
         if (current_n_conn_comps > target_n_conn_comps) {
             stop_n <- middle
@@ -539,6 +539,46 @@ get_highest_prune_param <- function(nn_matrix,
     ))
 }
 
+build_neigh_matrix <- function(nn_idx,
+                               n_neigh,
+                               cell_names,
+                               graph_type,
+                               prune_value,
+                               keep_nn = TRUE) {
+    if (!is.logical(keep_nn) || length(keep_nn) != 1 || is.na(keep_nn)) {
+        stop("keep_nn parameter should be a single boolean value")
+    }
+
+    neigh_matrix <- getNNmatrix(
+        nn_idx,
+        n_neigh,
+        0,
+        if (graph_type > 0 && prune_value >= 0) prune_value else -1
+    )
+    rownames(neigh_matrix$nn) <- cell_names
+    colnames(neigh_matrix$nn) <- cell_names
+
+    if (graph_type <= 0) {
+        return(neigh_matrix)
+    }
+
+    if (is.null(neigh_matrix$snn)) {
+        neigh_matrix$snn <- get_highest_prune_param(
+            nn_matrix = neigh_matrix$nn,
+            n_neigh = n_neigh
+        )$adj_matrix
+    }
+
+    rownames(neigh_matrix$snn) <- cell_names
+    colnames(neigh_matrix$snn) <- cell_names
+
+    if (!keep_nn && graph_type == 1) {
+        neigh_matrix$nn <- NULL
+    }
+
+    neigh_matrix
+}
+
 assess_nn_stability_pca <- function(embedding,
                                     n_neigh_sequence,
                                     n_repetitions = 100,
@@ -547,7 +587,8 @@ assess_nn_stability_pca <- function(embedding,
                                     graph_type = 2,
                                     prune_value = -1,
                                     clustering_algorithm = 1,
-                                    clustering_arguments = list()) {
+                                    clustering_arguments = list(),
+                                    return_nn_idx = TRUE) {
     ncores <- foreach::getDoParWorkers()
     cell_names <- rownames(embedding)
     partitions_list <- list()
@@ -562,73 +603,34 @@ assess_nn_stability_pca <- function(embedding,
 
     nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
 
-    if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_nn2_res <- SharedObject::share(nn2_res)
-    } else {
-        shared_nn2_res <- nn2_res
-    }
-
-    all_vars <- ls()
-    needed_vars <- c(
-        "cell_names",
-        "shared_nn2_res",
-        "graph_type",
-        "prune_value"
-    )
-    neigh_matrices <- foreach::foreach(
-        n_neigh = n_neigh_sequence,
-        .inorder = TRUE,
-        .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("getNNmatrix"),
-        .packages = c("ClustAssess")
-    ) %dopar% {
-        neigh_matrix <- getNNmatrix(shared_nn2_res, n_neigh, 0, -1)
-        rownames(neigh_matrix$nn) <- cell_names
-        colnames(neigh_matrix$nn) <- cell_names
-
-        if (graph_type > 0) {
-            if (prune_value >= 0) {
-                neigh_matrix$snn <- computeSNN(neigh_matrix$nn, n_neigh, prune_value)
-            } else {
-                neigh_matrix$snn <- get_highest_prune_param(
-                    nn_matrix = neigh_matrix$nn,
-                    n_neigh = n_neigh
-                )$adj_matrix
-            }
-            rownames(neigh_matrix$snn) <- cell_names
-            colnames(neigh_matrix$snn) <- cell_names
-        }
-
-        neigh_matrix
-    }
-
-    names(neigh_matrices) <- as.character(n_neigh_sequence)
-
-    if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_nn2_res <- SharedObject::unshare(nn2_res)
-        rm(shared_nn2_res)
-    }
-    
-    package_needed <- c()
+    package_needed <- worker_packages_if_installed("ClustAssess")
     if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
     for (n_neigh in as.character(n_neigh_sequence)) {
-        partitions_list[[paste("PCA", "snn", sep = "_")]][[n_neigh]] <- list()
+        current_neigh_matrix <- build_neigh_matrix(
+            nn_idx = nn2_res,
+            n_neigh = as.integer(n_neigh),
+            cell_names = cell_names,
+            graph_type = graph_type,
+            prune_value = prune_value,
+            keep_nn = graph_type != 1
+        )
 
         if (ncores > 1 && is_package_installed("SharedObject")) {
-            shared_neigh_matrix <- SharedObject::share(neigh_matrices[[n_neigh]])
+            shared_neigh_matrix <- SharedObject::share(current_neigh_matrix)
         } else {
-            shared_neigh_matrix <- neigh_matrices[[n_neigh]]
+            shared_neigh_matrix <- current_neigh_matrix
         }
-
-        gc()
+        run_optional_gc()
         # the variables needed in the PSOCK processes
         seed <- NA
+        clustering_functions <- prepare_clustering_functions_for_workers()
         needed_vars <- c(
             "graph_type",
             "algorithm",
             "shared_neigh_matrix",
+            "clustering_functions",
             "clustering_arguments"
         )
         all_vars <- ls()
@@ -685,8 +687,6 @@ assess_nn_stability_pca <- function(embedding,
             return(list(cluster_results_snn, cluster_results_nn))
         }
 
-        neigh_matrices[[n_neigh]] <- NULL
-
         # merge the partitions that are considered similar by a given ecs threshold
         for (i in seq_along(partitions_list)) {
             partitions_list[[i]][[n_neigh]] <- merge_partitions(
@@ -696,6 +696,12 @@ assess_nn_stability_pca <- function(embedding,
                 ecs_thresh = ecs_thresh
             )
         }
+
+        if (ncores > 1 && is_package_installed("SharedObject")) {
+            shared_neigh_matrix <- SharedObject::unshare(shared_neigh_matrix)
+        }
+        rm(current_neigh_matrix, shared_neigh_matrix)
+        run_optional_gc()
     }
 
     # create an object showing the number of clusters obtained for each number
@@ -718,16 +724,19 @@ assess_nn_stability_pca <- function(embedding,
         })
     })
 
-    list(
+    result <- list(
         n_neigh_k_corresp = nn_object_n_clusters,
         n_neigh_ec_consistency = nn_ecs_object,
         n_different_partitions = lapply(partitions_list, function(config) {
             sapply(config, function(n_neigh) {
                 length(n_neigh)
             })
-        }),
-        nn_idx = nn2_res
+        })
     )
+    if (return_nn_idx) {
+        result$nn_idx <- nn2_res
+    }
+    result
 }
 
 assess_nn_stability_umap <- function(embedding,
@@ -743,8 +752,10 @@ assess_nn_stability_umap <- function(embedding,
     ncores <- foreach::getDoParWorkers()
 
     object_names <- c("snn", "nn")
-    if (graph_type < 2) {
-        object_names <- object_names[graph_type + 1]
+    if (graph_type == 0) {
+        object_names <- "nn"
+    } else if (graph_type == 1) {
+        object_names <- "snn"
     }
 
     ncells <- nrow(embedding)
@@ -757,11 +768,13 @@ assess_nn_stability_umap <- function(embedding,
     }
 
     # the variables needed in the PSOCK processes
+    clustering_functions <- prepare_clustering_functions_for_workers()
     needed_vars <- c(
         "shared_embedding",
         "n_neigh_sequence",
         "graph_reduction_type",
         "graph_type",
+        "clustering_functions",
         "umap_arguments",
         "clustering_arguments",
         "prune_SNN",
@@ -771,7 +784,7 @@ assess_nn_stability_umap <- function(embedding,
     seed <- NA
     all_vars <- ls()
 
-    package_needed <- c("ClustAssess")
+    package_needed <- worker_packages_if_installed("ClustAssess")
     if (length(intersect(clustering_arguments$algorithm, 4:5)) > 0) {
         package_needed <- c(package_needed, "leiden")
     }
@@ -780,7 +793,7 @@ assess_nn_stability_umap <- function(embedding,
         seed = seed_sequence,
         .inorder = FALSE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("getNNmatrix"),
+        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
         .packages = package_needed
     ) %dopar% {
         # perform the dimensionality reduction
@@ -798,22 +811,14 @@ assess_nn_stability_umap <- function(embedding,
         seed_result <- list()
 
         for (n_neigh in n_neigh_sequence) {
-            neigh_matrix <- getNNmatrix(nn2_res, n_neigh, 0, -1)
-            rownames(neigh_matrix$nn) <- row_names
-            colnames(neigh_matrix$nn) <- row_names
-
-            if (graph_type > 0) {
-                if (prune_value >= 0) {
-                    neigh_matrix$snn <- computeSNN(neigh_matrix$nn, n_neigh, prune_value)
-                } else {
-                    neigh_matrix$snn <- get_highest_prune_param(
-                        nn_matrix = neigh_matrix$nn,
-                        n_neigh = n_neigh
-                    )$adj_matrix
-                }
-                rownames(neigh_matrix$snn) <- row_names
-                colnames(neigh_matrix$snn) <- row_names
-            }
+            neigh_matrix <- build_neigh_matrix(
+                nn_idx = nn2_res,
+                n_neigh = n_neigh,
+                cell_names = row_names,
+                graph_type = graph_type,
+                prune_value = prune_value,
+                keep_nn = graph_type != 1
+            )
 
             # apply the clustering method on the graph specified by the variable `graph_type`
             if (graph_type > 0) {
@@ -861,12 +866,12 @@ assess_nn_stability_umap <- function(embedding,
     }
 
     rm(shared_embedding)
-    gc()
+    run_optional_gc()
 
     partitions_list <- lapply(object_names, function(gtype) {
-        l <- lapply(seq_along(n_neigh_sequence), function(k) {
-            lapply(seq_len(n_repetitions), function(seed) {
-                seed_list[[seed]][[gtype]][[k]]
+        l <- lapply(as.character(n_neigh_sequence), function(n_neigh) {
+            lapply(seq_along(seed_list), function(seed_index) {
+                seed_list[[seed_index]][[gtype]][[n_neigh]]
             })
         })
         names(l) <- as.character(n_neigh_sequence)
@@ -953,6 +958,9 @@ assess_nn_stability_umap <- function(embedding,
 #' @param clustering_arguments A list of arguments that will be passed to the
 #' clustering algorithm. See the `FindClusters` function in Seurat for more details.
 #' @param umap_arguments Additional arguments passed to the the `uwot::umap` method.
+#' @param return_nn_idx A boolean indicating whether to return the precomputed
+#' nearest-neighbor index for PCA graph stability. Defaults to `TRUE` to preserve
+#' existing returned objects.
 #'
 #' @return A list having three fields:
 #'
@@ -987,10 +995,11 @@ assess_nn_stability <- function(embedding,
                                 graph_reduction_type = "PCA",
                                 ecs_thresh = 1,
                                 graph_type = 2,
-                                prune_value = -1,
-                                clustering_algorithm = 1,
-                                clustering_arguments = list(),
-                                umap_arguments = list()) {
+                                 prune_value = -1,
+                                 clustering_algorithm = 1,
+                                 clustering_arguments = list(),
+                                 umap_arguments = list(),
+                                 return_nn_idx = TRUE) {
     # TODO vary by resolution
     # BUG check the performance
     # check parameters
@@ -1026,6 +1035,12 @@ assess_nn_stability <- function(embedding,
         stop("graph_reduction_type parameter should take one of these values: 'PCA' or 'UMAP'")
     }
 
+    if (!is.logical(return_nn_idx) ||
+        length(return_nn_idx) != 1 ||
+        is.na(return_nn_idx)) {
+        stop("return_nn_idx parameter should be a single boolean value")
+    }
+
     if (is.null(rownames(embedding))) {
         warning("The provided embedding does not have row names. The cell names will be set to the row numbers of the embedding matrix.")
         rownames(embedding) <- paste0("cell_", seq_len(nrow(embedding)))
@@ -1054,6 +1069,7 @@ assess_nn_stability <- function(embedding,
         }
 
         seed_sequence <- as.integer(seed_sequence)
+        n_repetitions <- length(seed_sequence)
     }
 
     if (graph_reduction_type == "PCA") {
@@ -1066,7 +1082,8 @@ assess_nn_stability <- function(embedding,
             graph_type = graph_type,
             prune_value = prune_value,
             clustering_algorithm = clustering_algorithm,
-            clustering_arguments = clustering_arguments
+            clustering_arguments = clustering_arguments,
+            return_nn_idx = return_nn_idx
         ))
     }
 

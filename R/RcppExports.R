@@ -13,6 +13,10 @@ disjointECSaverage <- function(mb1, mb2) {
     .Call('_ClustAssess_disjointECSaverage', PACKAGE = 'ClustAssess', mb1, mb2)
 }
 
+weightedDisjointECS <- function(memberships, weights, calculate_sim_matrix = FALSE) {
+    .Call('_ClustAssess_weightedDisjointECS', PACKAGE = 'ClustAssess', memberships, weights, calculate_sim_matrix)
+}
+
 calculate_pac_cpp <- function(indicator, connectivity, lower_lim, upper_lim) {
     .Call('_ClustAssess_calculate_pac_cpp', PACKAGE = 'ClustAssess', indicator, connectivity, lower_lim, upper_lim)
 }

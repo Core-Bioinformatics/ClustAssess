@@ -49,6 +49,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// weightedDisjointECS
+SEXP weightedDisjointECS(IntegerMatrix memberships, NumericVector weights, bool calculate_sim_matrix);
+RcppExport SEXP _ClustAssess_weightedDisjointECS(SEXP membershipsSEXP, SEXP weightsSEXP, SEXP calculate_sim_matrixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type memberships(membershipsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type calculate_sim_matrix(calculate_sim_matrixSEXP);
+    rcpp_result_gen = Rcpp::wrap(weightedDisjointECS(memberships, weights, calculate_sim_matrix));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calculate_pac_cpp
 double calculate_pac_cpp(IntegerMatrix indicator, NumericMatrix connectivity, double lower_lim, double upper_lim);
 RcppExport SEXP _ClustAssess_calculate_pac_cpp(SEXP indicatorSEXP, SEXP connectivitySEXP, SEXP lower_limSEXP, SEXP upper_limSEXP) {
@@ -130,6 +143,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 4},
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_disjointECSaverage", (DL_FUNC) &_ClustAssess_disjointECSaverage, 2},
+    {"_ClustAssess_weightedDisjointECS", (DL_FUNC) &_ClustAssess_weightedDisjointECS, 3},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},

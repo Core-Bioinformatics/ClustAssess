@@ -15,7 +15,8 @@ assess_nn_stability(
   prune_value = -1,
   clustering_algorithm = 1,
   clustering_arguments = list(),
-  umap_arguments = list()
+  umap_arguments = list(),
+  return_nn_idx = TRUE
 )
 }
 \arguments{
@@ -51,6 +52,10 @@ details can be found in the Seurat's \code{FindClusters} function.}
 clustering algorithm. See the \code{FindClusters} function in Seurat for more details.}
 
 \item{umap_arguments}{Additional arguments passed to the the \code{uwot::umap} method.}
+
+\item{return_nn_idx}{A boolean indicating whether to return the precomputed
+nearest-neighbor index for PCA graph stability. Defaults to \code{TRUE} to preserve
+existing returned objects.}
 }
 \value{
 A list having three fields:
