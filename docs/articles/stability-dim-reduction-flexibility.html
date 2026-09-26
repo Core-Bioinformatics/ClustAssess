@@ -77,22 +77,13 @@
 
     
     
+<p>Install dependencies and datasets before rendering. The RNA example needs <code>SeuratData</code> and <code>pbmc3k</code>; the ATAC example also needs <code>Signac</code>, <code>Rsamtools</code>, and <code>pbmcMultiome</code>. Installation and download commands are separate setup steps, not evaluated during source rendering.</p>
+<p><strong>Version compatibility:</strong> ClustAssess 1.3.0 honors explicit <code>umap_arguments$n_neighbors</code>, capped at the cell count minus one. These examples request 30; older versions silently used 15. The illustrative figures below were produced with an earlier version and are not regenerated 1.3.0 results.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">is_seuratdata</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="http://www.satijalab.org/seurat" class="external-link">"SeuratData"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_seuratdata</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">'satijalab/seurat-data'</span>, upgrade <span class="op">=</span> <span class="st">"never"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<pre><code><span><span class="co">## Downloading GitHub repo satijalab/seurat-data@HEAD</span></span></code></pre>
-<pre><code><span><span class="co">## <span style="color: #00BBBB;">──</span> <span style="color: #00BBBB;">R CMD build</span> <span style="color: #00BBBB;">─────────────────────────────────────────────────────────────────</span></span></span>
-<span><span class="co">## * checking for file ‘/tmp/RtmppyRYcT/remotesc6e337361af/satijalab-seurat-data-3e51f44/DESCRIPTION’ ... OK</span></span>
-<span><span class="co">## * preparing ‘SeuratData’:</span></span>
-<span><span class="co">## * checking DESCRIPTION meta-information ... OK</span></span>
-<span><span class="co">## * checking for LF line-endings in source and make files and shell scripts</span></span>
-<span><span class="co">## * checking for empty or unneeded directories</span></span>
-<span><span class="co">## Omitted ‘LazyData’ from DESCRIPTION</span></span>
-<span><span class="co">## * building ‘SeuratData_0.2.2.9002.tar.gz’</span></span></code></pre>
-<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
-<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">is_harmony</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://github.com/immunogenomics/harmony" class="external-link">"harmony"</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">is_harmony</span><span class="op">)</span> <span class="op">{</span></span>
@@ -189,7 +180,9 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://bioconductor.org/packages/Rsamtools" class="external-link">Rsamtools</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">n_repetitions</span> <span class="op">&lt;-</span> <span class="fl">30</span></span></code></pre></div>
-<p>The <code>matrix processing</code> parameter of the <code>assess_feature_stability</code> function is a function that enables the user to specify any method to perform the dimensionality reduction prior to applying the UMAP algorithm and the clustering pipeline. By default, the dimensionality reduction used in <code>ClustAssess</code> is a precise PCA using the <code>prcomp</code> package. However, this function can be easily changed, as it will be shown in the following examples.</p>
+<p><code>matrix_processing</code> maps a cells-by-features matrix to a cells-by-components matrix, preserving cell order and row names. The default uses exact <code>stats::prcomp()</code> PCA and requests at most <code>min(30, n_features %/% 2)</code> components.</p>
+<p>The explicit <code>make_pca_matrix_processing(actual_npcs = 30, method = "exact")</code> factory instead caps components at <code>min(actual_npcs, n_cells - 1, n_features)</code> and leaves BLAS threads unchanged. The default processor uses the worker count for PCA threads, then sets them to one. The factory is therefore not an identical replacement. Its optional <code>method = "irlba"</code> uses fixed-seed approximate PCA, also caps below the feature count, and restores the caller RNG state; numerical outputs can differ from exact PCA. Automatic assessment records the actual embedding dimension in <code>stable_config$n_pcs</code>.</p>
+<p>Keep <code>compute_umap_embeddings = TRUE</code> for these feature plots, Shiny export, and Monocle conversion. Omitting output embeddings can change the RNG state before later unseeded stochastic processors, so manage their seeds when comparing settings.</p>
 <div class="section level2">
 <h2 id="clustassess-using-pca">ClustAssess using PCA<a class="anchor" aria-label="anchor" href="#clustassess-using-pca"></a>
 </h2>
@@ -197,8 +190,6 @@
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>timeout<span class="op">=</span><span class="fl">3600</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
-<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc3k"</span><span class="op">)</span></span>
 <span><span class="va">pbmc3k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/UpdateSeuratObject.html" class="external-link">UpdateSeuratObject</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">)</span></span></code></pre></div>
@@ -345,8 +336,6 @@
 <div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stuart-lab/signac" class="external-link">Signac</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://satijalab.org/seurat/reference/InstallData.html" class="external-link">InstallData</a></span><span class="op">(</span><span class="st">"pbmcMultiome"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Installing package into '/tmp/RtmpvumD9H/temp_libpath7ac96630a8e'</span></span>
-<span><span class="co">## (as 'lib' is unspecified)</span></span></code></pre>
 <div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"pbmc.atac"</span><span class="op">)</span></span></code></pre></div>
 <p>As presented in the (Signac)(<a href="https://stuartlab.org/signac/articles/pbmc_vignette" class="external-link uri">https://stuartlab.org/signac/articles/pbmc_vignette</a>) package, the ATAC-seq data is usually processed using the TF-IDF normalization followed by the the calculation of the singular values. These two steps are also known as LSI (Latent Semantic Indexing).</p>
@@ -359,7 +348,7 @@
 <div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pbmc.atac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://stuartlab.org/signac/reference/FindTopFeatures.html" class="external-link">FindTopFeatures</a></span><span class="op">(</span><span class="va">pbmc.atac</span>, min.cutoff <span class="op">=</span> <span class="st">"q5"</span><span class="op">)</span></span>
 <span><span class="va">var_peaks</span> <span class="op">&lt;-</span> <span class="va">pbmc.atac</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">ATAC</span><span class="op">@</span><span class="va">var.features</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">3000</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
-<p>To speedup the assessment, set a parallel backend with 6 cores.</p>
+<p>This example uses one core. Increase <code>ncores</code> only within the available CPU and memory budget; each worker adds memory overhead.</p>
 <div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">ncores</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
@@ -370,6 +359,8 @@
 <span>    <span class="op">)</span></span>
 <span></span>
 <span>    <span class="fu">doParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html" class="external-link">registerDoParallel</a></span><span class="op">(</span>cl <span class="op">=</span> <span class="va">my_cluster</span><span class="op">)</span></span>
+<span>} else {</span>
+<span>    foreach::registerDoSEQ()</span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Assess the stability of the dimensionality reduction by varying the number of highly variable peaks.</p>
 <div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
@@ -413,6 +404,10 @@
 <span><span class="co">## No assay specified, setting assay as RNA by default.</span></span>
 <span><span class="co">## No assay specified, setting assay as RNA by default.</span></span></code></pre>
 <div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span>if (ncores &gt; 1) {</span>
+<span>    parallel::stopCluster(my_cluster)</span>
+<span>}</span></code></pre></div>
+<div class="sourceCode"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/registerDoSEQ.html" class="external-link">registerDoSEQ</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Plot the distribution of the celltypes on the UMAP embedding obtained on the top 1000 Highly Variable peaks.</p>
 <div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">

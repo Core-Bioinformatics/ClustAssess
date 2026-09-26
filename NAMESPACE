@@ -62,10 +62,8 @@ export(write_objects)
 export(write_shiny_app)
 importClassesFrom(Matrix,Matrix)
 importFrom(dplyr,"%>%")
-importFrom(foreach,
-  "%do%",
-  "%dopar%"
-)
+importFrom(foreach,"%do%")
+importFrom(foreach,"%dopar%")
 importFrom(methods,new)
 importFrom(rlang,.data)
 useDynLib(ClustAssess)

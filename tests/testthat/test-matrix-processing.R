@@ -13,6 +13,35 @@ test_that("make_pca_matrix_processing exact method matches prcomp embedding", {
     expect_equal(observed, expected)
 })
 
+test_that("PCA factory rank caps are distinct from unchanged pipeline defaults", {
+    set.seed(1)
+    dt_mtx <- matrix(stats::rnorm(50 * 20), nrow = 50)
+    processor <- make_pca_matrix_processing(actual_npcs = 30)
+
+    thread_requests <- integer()
+    testthat::local_mocked_bindings(
+        blas_set_num_threads = function(n) {
+            thread_requests <<- c(thread_requests, n)
+            invisible(NULL)
+        },
+        .package = "RhpcBLASctl"
+    )
+
+    expect_equal(ncol(processor(dt_mtx)), 20L)
+    expect_equal(ncol(processor(dt_mtx[seq_len(8), ])), 7L)
+    expect_equal(ncol(processor(dt_mtx[, seq_len(4)])), 4L)
+    expect_length(thread_requests, 0L)
+
+    for (pipeline in list(assess_feature_stability, automatic_stability_assessment)) {
+        default_processor <- eval(formals(pipeline)$matrix_processing)
+        expect_equal(ncol(default_processor(dt_mtx)), 10L)
+    }
+    expect_equal(
+        thread_requests,
+        rep(c(foreach::getDoParWorkers(), 1), 2)
+    )
+})
+
 test_that("make_pca_matrix_processing irlba method returns named embedding", {
     testthat::skip_if_not_installed("irlba")
 

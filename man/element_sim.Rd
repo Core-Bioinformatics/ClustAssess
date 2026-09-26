@@ -93,6 +93,12 @@ The average element-wise similarity between the two Clusterings.
 Calculates the average element-centric similarity between two
 clustering results
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 km.res <- kmeans(mtcars, centers = 3)$cluster
 hc.res <- hclust(dist(mtcars))

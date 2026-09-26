@@ -39,6 +39,12 @@ over others.
 \note{
 The weighted ECC will be calculated as \eqn{\displaystyle \frac{\sum_{i} \sum_{j} w_i w_j ECS(i, j)}{\sum_{i} w_i}}
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 # cluster across 20 random seeds
 clustering_list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)

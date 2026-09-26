@@ -66,7 +66,9 @@ double disjointECSaverage(IntegerVector mb1, IntegerVector mb2) {
 			intersectSize = contTable(i, j);
 			int maxClusterSize = std::max(clustersSizes1(i), clustersSizes2(j));
 			if (maxClusterSize > 0) {
-				avgECS += intersectSize * intersectSize / (n * maxClusterSize);
+				// Promote before multiplying: large cell counts exceed integer range.
+				avgECS += intersectSize * intersectSize /
+					(static_cast<double>(n) * maxClusterSize);
 			}
 		}
 	}
@@ -119,8 +121,14 @@ SEXP weightedDisjointECS(IntegerMatrix memberships, NumericVector weights, bool 
 
     for (int i = 0; i < nClusterings - 1; i++) {
         for (int j = i + 1; j < nClusterings; j++) {
-            int nClusters1 = maxLabels[i], nClusters2 = maxLabels[j];
-            std::vector<int> contTable(nClusters1 * nClusters2, 0);
+            std::size_t nClusters1 = maxLabels[i], nClusters2 = maxLabels[j];
+            std::vector<int> contTable;
+            // Use allocation-sized arithmetic for table dimensions and all
+            // offsets below, and reject products outside the vector's range.
+            if (nClusters2 != 0 && nClusters1 > contTable.max_size() / nClusters2) {
+                stop("The cluster contingency table is too large to allocate.");
+            }
+            contTable.assign(nClusters1 * nClusters2, 0);
             std::vector<int> clusterSizes1(nClusters1, 0);
             std::vector<int> clusterSizes2(nClusters2, 0);
 

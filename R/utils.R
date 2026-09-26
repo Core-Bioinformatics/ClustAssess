@@ -31,7 +31,7 @@ process_umap_arguments <- function(umap_arguments, ncells) {
     umap_arguments[["n_threads"]] <- 1
     umap_arguments[["n_sgd_threads"]] <- 1
 
-    if (!("n_neighbors" %in% umap_arguments)) {
+    if (!("n_neighbors" %in% names(umap_arguments))) {
         umap_arguments[["n_neighbors"]] <- 15 # uwot's default
     }
 

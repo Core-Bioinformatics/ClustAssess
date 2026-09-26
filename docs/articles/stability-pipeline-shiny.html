@@ -78,6 +78,7 @@
     
     
 <p><code>ClustAssess</code> provide the option to run the entire stability pipeline automatically, by choosing the parameters based on their highest stability. Another useful feature is the option to create, based on this object, a shiny app that user can interact with and perform the assessment of the PhenoGraph configuration and of the clusters.</p>
+<p>Install the example dependencies and <code>pbmc3k</code> dataset before rendering; installation and downloads are separate setup steps. The illustrative printed outputs below were produced with an earlier ClustAssess version, not as a 1.3.0 validation run.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; Loading required package: SeuratObject</span></span>
@@ -90,7 +91,7 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link">ClustAssess</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.satijalab.org/seurat" class="external-link">SeuratData</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"ClustAssess"</span><span class="op">)</span> <span class="co"># should be 1.0.0</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"ClustAssess"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] '1.1.0'</span></span></code></pre></div>
 <p>Process the PBMC 3k Seurat object similarly to the <code>Stability-based parameter assessment</code> vignette.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -145,16 +146,20 @@
 <span><span class="co">#&gt; Warning: The default method for RunUMAP has changed from calling Python UMAP via reticulate to the R-native UWOT using the cosine metric</span></span>
 <span><span class="co">#&gt; To use Python UMAP via reticulate, set umap.method to 'umap-learn' and metric to 'correlation'</span></span>
 <span><span class="co">#&gt; This message will be shown once per session</span></span></code></pre></div>
-<p>Initialise the parallel backend.</p>
+<p>Initialise the parallel backend. One core uses sequential execution without a worker process. Increase the count only within the available CPU and memory budget; more workers do not guarantee a shorter pipeline.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">ncores</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="va">ncores</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
 <span><span class="va">my_cluster</span> <span class="op">&lt;-</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">makeCluster</a></span><span class="op">(</span></span>
 <span>    <span class="va">ncores</span>,</span>
 <span>    type <span class="op">=</span> <span class="st">"PSOCK"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">doParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html" class="external-link">registerDoParallel</a></span><span class="op">(</span>cl <span class="op">=</span> <span class="va">my_cluster</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">doParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html" class="external-link">registerDoParallel</a></span><span class="op">(</span>cl <span class="op">=</span> <span class="va">my_cluster</span><span class="op">)</span></span>
+<span>} else {</span>
+<span>    foreach::registerDoSEQ()</span>
+<span>}</span></code></pre></div>
 <p>Define the feature sets of interest.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">features</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">pbmc3k</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">RNA</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
@@ -168,7 +173,9 @@
 <span><span class="va">ma_hv_genes_intersection_sets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">steps</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">intersect</a></span><span class="op">(</span><span class="va">most_abundant_genes</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">x</span><span class="op">]</span>, <span class="va">var_features</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="va">x</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ma_hv_genes_intersection</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="va">union</span>, <span class="va">ma_hv_genes_intersection_sets</span><span class="op">)</span></span>
 <span><span class="va">ma_hv_steps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ma_hv_genes_intersection_sets</span>, <span class="va">length</span><span class="op">)</span></span></code></pre></div>
-<p>Apply the automatic assessment.</p>
+<p>Apply the automatic assessment. Keep <code>compute_umap_embeddings = TRUE</code> for feature UMAPs in the exported Shiny app. <code>return_nn_idx = FALSE</code> optionally omits stored neighbor indices; both outputs are retained by default.</p>
+<p><code>umap_arguments$n_neighbors = 30</code> controls UMAP, separately from the clustering graph's <code>n_neigh_sequence</code>. From 1.3.0 it is honored, capped at the cell count minus one; older versions silently used 15. UMAP-based results can therefore change even with matching seeds.</p>
+<p>The default processor still uses exact PCA. The explicit <code>make_pca_matrix_processing()</code> factory has different rank limits and BLAS thread handling. Selected configurations record the actual embedding dimension in <code>stable_config$n_pcs</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">automm_output</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/automatic_stability_assessment.html">automatic_stability_assessment</a></span><span class="op">(</span></span>
 <span>    expression_matrix <span class="op">=</span> <span class="va">pbmc3k</span><span class="op">@</span><span class="va">assays</span><span class="op">$</span><span class="va">RNA</span><span class="op">@</span><span class="va">scale.data</span>,</span>
@@ -204,6 +211,9 @@
 <span><span class="co">#&gt; [1] "MA 2000"</span></span>
 <span><span class="co">#&gt; [1] "MA 3000"</span></span></code></pre></div>
 <p>Close the connections opened when using multiple cores.</p>
+<pre><code class="language-r">if (ncores &gt; 1) {
+    parallel::stopCluster(my_cluster)
+}</code></pre>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/registerDoSEQ.html" class="external-link">registerDoSEQ</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Create the shiny app based on the ClustAssess output. You should also specify either a seurat object or a normalized expression matrix. <em>Note</em>: Please make sure that the directory mentioned in the parameter <code>project_folder</code> is empty / doesn’t exist.</p>

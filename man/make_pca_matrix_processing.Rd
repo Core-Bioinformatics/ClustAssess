@@ -15,8 +15,8 @@ make_pca_matrix_processing(
 }
 \arguments{
 \item{actual_npcs}{Number of principal components to request. The returned
-function keeps this value as its \code{actual_npcs} formal default for compatibility
-with the automatic stability pipeline.}
+function uses this value as its \code{actual_npcs} default, which can be overridden
+for each call.}
 
 \item{method}{PCA implementation. \code{"exact"} uses \code{\link[stats:prcomp]{stats::prcomp()}}.
 \code{"irlba"} uses \code{irlba::prcomp_irlba()} and requires the optional \code{irlba}
@@ -33,13 +33,26 @@ restored afterward. Exact PCA does not use this seed.}
 \item{...}{Additional arguments passed to the chosen PCA implementation.}
 }
 \value{
-A function with signature \code{function(dt_mtx, actual_npcs, ...)}.
+A function with signature \verb{function(dt_mtx, actual_npcs, ...)}.
 }
 \description{
 Builds a function suitable for the \code{matrix_processing} argument used by
 \code{\link[=assess_feature_stability]{assess_feature_stability()}} and \code{\link[=automatic_stability_assessment]{automatic_stability_assessment()}}. The
 returned function receives a cell-by-feature matrix and returns a
 cell-by-component embedding.
+}
+\details{
+For a cell-by-feature input, \code{"exact"} caps the requested component count at
+\code{min(actual_npcs, nrow(dt_mtx) - 1, ncol(dt_mtx))}. The \code{"irlba"} method also
+caps it at \code{ncol(dt_mtx) - 1}. The row cap applies even when \code{center = FALSE}.
+
+This factory is an explicit alternative to the default processors in
+\code{\link[=assess_feature_stability]{assess_feature_stability()}} and \code{\link[=automatic_stability_assessment]{automatic_stability_assessment()}}, not a
+promise of identical output. Those defaults request at most half the input
+features and temporarily use the registered foreach worker count for BLAS
+threads before setting it to one. Factory-created processors leave BLAS thread
+settings unchanged. Choose the same component count and thread settings when
+comparing implementations; approximate PCA can still produce different results.
 }
 \examples{
 matrix_processing <- make_pca_matrix_processing(actual_npcs = 20)

@@ -10,6 +10,13 @@ navbar:
       text: "ClustAssess Shiny app Tutorial"
       href: "tutorials/index.html"
 url: https://core-bioinformatics.github.io/ClustAssess/
+# The 1.3.0 sources are not published on the default branch yet. Keep repository
+# links, but omit source-file links until they can target the published release.
+repo:
+  url:
+    home: https://github.com/Core-Bioinformatics/ClustAssess/
+    issue: https://github.com/Core-Bioinformatics/ClustAssess/issues/
+    user: https://github.com/
 reference:
 - title: Element-Centric Scores
 - contents:
@@ -23,6 +30,7 @@ reference:
   - starts_with("plot_")
   - starts_with("get")
   - automatic_stability_assessment
+  - make_pca_matrix_processing
   - choose_stable_clusters
 - title: Shiny App Components
 - contents:

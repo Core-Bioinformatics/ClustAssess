@@ -94,6 +94,12 @@ each element.
 Calculates the element-wise element-centric similarity between
 two clustering results.
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 km.res <- kmeans(iris[, 1:4], centers = 8)$cluster
 hc.res <- hclust(dist(iris[, 1:4]))

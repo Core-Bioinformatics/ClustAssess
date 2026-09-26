@@ -17,3 +17,6 @@ cran-comments\.md
 ^analysis/clustassess_algorithm_performance_analysis\.md$
 ^analysis/bench/(fixtures|libraries|results|profiles)(/|$)
 ^analysis/bench/[^/]*\.(csv|rds|Rprof|Rprofmem|log|h5|h5ad)$
+^analysis$
+^CHANGELOG\.md$
+^PERFORMANCE\.md$

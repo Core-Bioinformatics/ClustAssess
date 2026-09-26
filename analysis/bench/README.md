@@ -49,9 +49,9 @@ and retained NN indices to focus on stability assessment and matrix processing.
 
 ## App-data automatic-pipeline benchmark
 
-The existing script and `CA_CANARD_*` option names are retained for compatibility;
-the input can be any compatible ClustAssess app fixture. There is no default
-dataset location: an unset or empty `CA_CANARD_APP_DIR` is an error.
+`benchmark_canard_fixture.R` accepts any compatible ClustAssess app fixture and
+uses `CA_CANARD_*` options. There is no default dataset location: an unset or
+empty `CA_CANARD_APP_DIR` is an error.
 
 ```sh
 CA_CANARD_APP_DIR="path/to/app" \
@@ -112,11 +112,15 @@ Comparison controls:
 - `CA_COMPARE_GENES`, `CA_COMPARE_CELLS`: bounded real-data slice size.
 - `CA_COMPARE_REPETITIONS`, `CA_COMPARE_N_NEIGH`, `CA_COMPARE_RESOLUTION`,
   `CA_COMPARE_TOP_CONFIGS`, `CA_COMPARE_UMAP_EPOCHS`: assessment settings.
-- `CA_COMPARE_WORKERS`: number of PSOCK workers.
+- `CA_COMPARE_WORKERS`: number of PSOCK workers (default: 8). Set this explicitly
+  to fit the available memory and CPU budget.
 - `CA_COMPARE_TRACE=true`, `CA_COMPARE_TRACE_FUNCTIONS`: function tracing.
 - `CA_COMPARE_RPROF=true`, `CA_COMPARE_PROFILE_DIR`: CPU/allocation profiles.
-- `CA_COMPARE_SAVE_RESULT`: optional RDS output for parity checks; use a path
-  under `analysis/bench/results/` after creating that directory.
+- `CA_COMPARE_SAVE_RESULT`: optional RDS output, with its MD5 recorded in the
+  timing table, for separate parity checks; use a path under
+  `analysis/bench/results/` after creating that directory. The harness does not
+  compare saved results. Load the baseline and current RDS files and compare
+  their contents separately; a hash alone is not a numerical parity test.
 
 Use `measure_process_tree.py` on Linux to measure the complete main/worker
 process session. Main-process RSS alone is misleading when work moves between
@@ -133,7 +137,7 @@ R_LIBS=analysis/bench/libraries/current \
 For output comparisons, distinguish documented bug fixes and optional
 `avg_agreement` metadata from numerical regressions. See
 [the performance notes](../../PERFORMANCE.md) for those boundaries and the
-limitations of historical timings. Repeat important cases before making release
+measurement requirements. Repeat important cases before making release
 performance claims; single runs are useful for scouting, not broad guarantees.
 
 ## Weighted ECC and profiling
@@ -161,6 +165,4 @@ directories are not automatically protected.
 
 Raw logs, profiles, saved objects, and process-sampler output can contain paths,
 commands, or data identifiers. Review and sanitize them before deliberately
-publishing results. Local agent instructions and investigation records are
-excluded separately; only portable rationale and reproduction instructions
-belong in the published documentation.
+publishing results.

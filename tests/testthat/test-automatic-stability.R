@@ -28,7 +28,8 @@ tiny_automatic_matrix_processing <- function(dt_mtx, actual_npcs = 2, ...) {
 
 run_tiny_automatic_stability <- function(force_gc = FALSE,
                                          compute_umap_embeddings = TRUE,
-                                         return_nn_idx = TRUE) {
+                                         return_nn_idx = TRUE,
+                                         matrix_processing = tiny_automatic_matrix_processing) {
     expression_matrix <- tiny_automatic_expression_matrix()
     features_sets <- list(all = rownames(expression_matrix))
     steps <- list(all = c(4, 8))
@@ -46,7 +47,7 @@ run_tiny_automatic_stability <- function(force_gc = FALSE,
             steps = steps,
             seed_sequence = c(1, 101),
             n_top_configs = 1,
-            matrix_processing = tiny_automatic_matrix_processing,
+            matrix_processing = matrix_processing,
             compute_umap_embeddings = compute_umap_embeddings,
             return_nn_idx = return_nn_idx,
             verbose = FALSE,
@@ -111,6 +112,43 @@ test_that("automatic_stability_assessment accepts PCA matrix-processing factory"
     expect_equal(config$stable_config$n_pcs, 2)
     expect_false("nn_idx" %in% names(config$nn_stability))
     expect_null(config$umap)
+})
+
+test_that("automatic stability records actual processor dimensions for small panels", {
+    testthat::skip_if_not_installed("Seurat")
+
+    processors <- list(
+        factory = make_pca_matrix_processing(actual_npcs = 30),
+        custom = function(dt_mtx, actual_npcs = 30, ...) {
+            tiny_automatic_matrix_processing(dt_mtx, actual_npcs = 3)
+        },
+        without_npcs_formal = function(dt_mtx) {
+            tiny_automatic_matrix_processing(dt_mtx, actual_npcs = 1)
+        }
+    )
+
+    for (processor_name in names(processors)) {
+        result <- run_tiny_automatic_stability(
+            compute_umap_embeddings = FALSE,
+            return_nn_idx = FALSE,
+            matrix_processing = processors[[processor_name]]
+        )
+        config <- result$all[[1]]
+        expected_npcs <- switch(
+            processor_name,
+            factory = min(7L, config$stable_config$n_features),
+            custom = 3L,
+            without_npcs_formal = 1L
+        )
+
+        expect_equal(nrow(config$pca), 8L, info = processor_name)
+        expect_equal(ncol(config$pca), expected_npcs, info = processor_name)
+        expect_equal(
+            config$stable_config$n_pcs,
+            ncol(config$pca),
+            info = processor_name
+        )
+    }
 })
 
 test_that("automatic_stability_assessment behavior is unchanged by optional GC mode", {

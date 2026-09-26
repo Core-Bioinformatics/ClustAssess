@@ -3,7 +3,7 @@ make_smoke_adjacency <- function() {
     adjacency[1:4, 1:4] <- 1
     adjacency[5:8, 5:8] <- 1
     diag(adjacency) <- 0
-    adjacency <- methods::as(Matrix::Matrix(adjacency, sparse = TRUE), "dgCMatrix")
+    adjacency <- methods::as(Matrix::Matrix(adjacency, sparse = TRUE), "generalMatrix")
     cell_names <- paste0("cell_", seq_len(nrow(adjacency)))
     rownames(adjacency) <- cell_names
     colnames(adjacency) <- cell_names

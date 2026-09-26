@@ -57,6 +57,12 @@ will be returned as well.
 Inspect the consistency of a set of clusterings by calculating
 their element-wise clustering consistency (also known as element-wise frustration).
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 # cluster across 20 random seeds
 clustering.list <- lapply(1:20, function(x) kmeans(mtcars, centers = 3)$cluster)

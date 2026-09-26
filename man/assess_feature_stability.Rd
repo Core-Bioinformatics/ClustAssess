@@ -28,7 +28,7 @@ assess_feature_stability(
      colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     
     return(embedding)
-  },
+ },
   umap_arguments = list(),
   prune_value = -1,
   clustering_algorithm = 1,
@@ -95,8 +95,15 @@ for more details.}
 be printed or not.}
 
 \item{compute_umap_embeddings}{A boolean indicating whether to compute and
-return the UMAP embeddings used by feature plotting helpers. Setting this to
-FALSE leaves stability scores unchanged but omits those embeddings.}
+return stored feature UMAP embeddings. Keep the default \code{TRUE} for feature
+plots, Shiny apps exported with \code{write_shiny_app()}, and Monocle conversions
+with \code{create_monocle_from_clustassess()} that use these embeddings.
+The stored embeddings are not used to calculate stability scores, but computing
+them resets and consumes R's global RNG state. Later unseeded stochastic steps,
+such as custom \code{matrix_processing} or UMAP graph reduction, can therefore differ
+when this option changes. Manage seeds in those steps if comparable results are
+required. Exact PCA and processors from \code{make_pca_matrix_processing()} do not
+depend on that intervening RNG state.}
 }
 \value{
 A list having one field associated with a step value. Each step

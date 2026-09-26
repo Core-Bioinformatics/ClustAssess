@@ -6,15 +6,8 @@ get_nn_conn_comps_umap <- function(embedding,
                                    umap_arguments = list()) {
     ncores <- foreach::getDoParWorkers()
 
-    umap_arguments[["n_threads"]] <- 1
-    umap_arguments[["n_sgd_threads"]] <- 1
-
     ncells <- nrow(embedding)
-    if (!("n_neighbors" %in% umap_arguments)) {
-        umap_arguments[["n_neighbors"]] <- 15 # uwot's default
-    }
-
-    umap_arguments[["n_neighbors"]] <- min(umap_arguments[["n_neighbors"]], ncells - 1)
+    umap_arguments <- process_umap_arguments(umap_arguments, ncells)
 
     nn_conn_comps_list <- list()
     if (ncores > 1 && is_package_installed("SharedObject")) {

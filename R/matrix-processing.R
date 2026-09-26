@@ -6,8 +6,8 @@
 #' cell-by-component embedding.
 #'
 #' @param actual_npcs Number of principal components to request. The returned
-#' function keeps this value as its `actual_npcs` formal default for compatibility
-#' with the automatic stability pipeline.
+#' function uses this value as its `actual_npcs` default, which can be overridden
+#' for each call.
 #' @param method PCA implementation. `"exact"` uses [stats::prcomp()].
 #' `"irlba"` uses `irlba::prcomp_irlba()` and requires the optional `irlba`
 #' package.
@@ -17,6 +17,19 @@
 #' applied inside each approximate PCA call and the caller's RNG state is
 #' restored afterward. Exact PCA does not use this seed.
 #' @param ... Additional arguments passed to the chosen PCA implementation.
+#'
+#' @details
+#' For a cell-by-feature input, `"exact"` caps the requested component count at
+#' `min(actual_npcs, nrow(dt_mtx) - 1, ncol(dt_mtx))`. The `"irlba"` method also
+#' caps it at `ncol(dt_mtx) - 1`. The row cap applies even when `center = FALSE`.
+#'
+#' This factory is an explicit alternative to the default processors in
+#' [assess_feature_stability()] and [automatic_stability_assessment()], not a
+#' promise of identical output. Those defaults request at most half the input
+#' features and temporarily use the registered foreach worker count for BLAS
+#' threads before setting it to one. Factory-created processors leave BLAS thread
+#' settings unchanged. Choose the same component count and thread settings when
+#' comparing implementations; approximate PCA can still produce different results.
 #'
 #' @return A function with signature `function(dt_mtx, actual_npcs, ...)`.
 #' @export

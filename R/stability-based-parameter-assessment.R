@@ -215,7 +215,10 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' by using a dimensionality reduction technique. The function should have
 #' one parameter, the data matrix, and should return an embedding describing the
 #' reduced space. By default, the function will use the precise PCA method with
-#' `prcomp`.
+#' `prcomp`. Each selected configuration's `stable_config$n_pcs` records the
+#' actual number of columns in its returned embedding, including for custom
+#' processors. See [make_pca_matrix_processing()] for explicit PCA alternatives
+#' and their component-count and thread settings.
 #' @param umap_arguments A list containing the arguments that will be passed to the
 #' UMAP function. Refer to the `uwot::umap` function for more details.
 #' @param prune_value Argument indicating whether to prune the SNN graph. If the
@@ -239,11 +242,23 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' @param save_temp A boolean value indicating if the object
 #' will be saved to a file.
 #' @param compute_umap_embeddings A boolean indicating whether to compute and
-#' return the UMAP embeddings used by feature plotting helpers. Setting this to
-#' FALSE leaves stability scores unchanged but omits those embeddings.
+#' return stored feature UMAP embeddings. Keep the default `TRUE` for feature
+#' plots, Shiny apps exported with `write_shiny_app()`, and Monocle conversions
+#' with `create_monocle_from_clustassess()` that use these embeddings.
+#' The stored embeddings are not used to calculate stability scores, but computing
+#' them resets and consumes R's global RNG state. Later unseeded stochastic steps,
+#' such as custom `matrix_processing` or UMAP graph reduction, can therefore differ
+#' when this option changes. Manage seeds in those steps if comparable results are
+#' required. Exact PCA and processors from `make_pca_matrix_processing()` do not
+#' depend on that intervening RNG state.
 #' @param return_nn_idx A boolean indicating whether to keep the precomputed
 #' nearest-neighbor index inside returned PCA graph-stability objects. Defaults
 #' to `TRUE` to preserve existing returned objects.
+#'
+#' @details
+#' Forced garbage collection at pipeline cleanup points is opt-in through
+#' `options(ClustAssess.force_gc = TRUE)`. R's normal automatic garbage collection
+#' remains active when this option is unset or `FALSE`.
 #'
 #' @return A list having two fields:
 #'
@@ -463,7 +478,6 @@ automatic_stability_assessment <- function(expression_matrix,
         feature_configs[[set_name]] <- list()
 
         # generate the pca and umap embeddings for each config
-        actual_npcs <- formals(matrix_processing)$actual_npcs
         for (j in seq_len(n_top_configs)) {
             n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
             current_features <- features_sets[[set_name]][seq_len(n_steps)]
@@ -482,7 +496,7 @@ automatic_stability_assessment <- function(expression_matrix,
                     stable_config = list(
                         feature_set = feature_set_names[i],
                         n_features = n_steps,
-                        n_pcs = min(actual_npcs, n_steps %/% 2)
+                        n_pcs = ncol(pca_emb)
                     )
                 )
         }

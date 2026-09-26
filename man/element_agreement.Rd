@@ -64,6 +64,12 @@ A vector containing the element-wise average agreement.
 Inspect how consistently of a set of clusterings agree with
 a reference clustering by calculating their element-wise average agreement.
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 # perform k-means clustering across 20 random seeds
 reference.clustering <- iris$Species

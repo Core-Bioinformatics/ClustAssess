@@ -32,7 +32,7 @@ automatic_stability_assessment(
      colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
     
     return(embedding)
-  },
+ },
   umap_arguments = list(),
   prune_value = -1,
   algorithm_dim_reduction = 1,
@@ -94,7 +94,10 @@ The options are "median", "max", "top_qt", "top_qt_max", "iqr", "iqr_median",
 by using a dimensionality reduction technique. The function should have
 one parameter, the data matrix, and should return an embedding describing the
 reduced space. By default, the function will use the precise PCA method with
-\code{prcomp}.}
+\code{prcomp}. Each selected configuration's \code{stable_config$n_pcs} records the
+actual number of columns in its returned embedding, including for custom
+processors. See \code{\link[=make_pca_matrix_processing]{make_pca_matrix_processing()}} for explicit PCA alternatives
+and their component-count and thread settings.}
 
 \item{umap_arguments}{A list containing the arguments that will be passed to the
 UMAP function. Refer to the \code{uwot::umap} function for more details.}
@@ -128,8 +131,15 @@ of the assessment.}
 will be saved to a file.}
 
 \item{compute_umap_embeddings}{A boolean indicating whether to compute and
-return the UMAP embeddings used by feature plotting helpers. Setting this to
-FALSE leaves stability scores unchanged but omits those embeddings.}
+return stored feature UMAP embeddings. Keep the default \code{TRUE} for feature
+plots, Shiny apps exported with \code{write_shiny_app()}, and Monocle conversions
+with \code{create_monocle_from_clustassess()} that use these embeddings.
+The stored embeddings are not used to calculate stability scores, but computing
+them resets and consumes R's global RNG state. Later unseeded stochastic steps,
+such as custom \code{matrix_processing} or UMAP graph reduction, can therefore differ
+when this option changes. Manage seeds in those steps if comparable results are
+required. Exact PCA and processors from \code{make_pca_matrix_processing()} do not
+depend on that intervening RNG state.}
 
 \item{return_nn_idx}{A boolean indicating whether to keep the precomputed
 nearest-neighbor index inside returned PCA graph-stability objects. Defaults
@@ -150,6 +160,11 @@ Evaluates the stability of different graph clustering methods
 in the clustering pipeline. The method will iterate through different values of
 the resolution parameter and compare, using the EC Consistency score, the
 partitions obtained at different seeds.
+}
+\details{
+Forced garbage collection at pipeline cleanup points is opt-in through
+\code{options(ClustAssess.force_gc = TRUE)}. R's normal automatic garbage collection
+remains active when this option is unset or \code{FALSE}.
 }
 \examples{
 \dontrun{

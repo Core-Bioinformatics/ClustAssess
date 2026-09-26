@@ -47,6 +47,12 @@ return the ECS matrix.
 Merge flat disjoint clusterings whose pairwise ECS score is
 above a given threshold. The merging is done using a complete linkage approach.
 }
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \examples{
 initial_list <- list(c(1, 1, 2), c(2, 2, 2), c("B", "B", "A"))
 merge_partitions(initial_list, 1)

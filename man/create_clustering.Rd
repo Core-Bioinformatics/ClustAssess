@@ -104,4 +104,10 @@ method.
 \item \code{create_clustering(hclust)}: Create Clustering Object from hclust
 
 }}
+\section{Missing labels}{
+
+Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
+assign missing elements before comparison. Empty strings are valid labels.
+}
+
 \keyword{internal}

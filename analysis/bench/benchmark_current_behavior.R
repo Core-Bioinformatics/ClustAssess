@@ -197,7 +197,7 @@ if (requireNamespace("Matrix", quietly = TRUE) &&
     adjacency[1:10, 1:10] <- 1
     adjacency[11:20, 11:20] <- 1
     diag(adjacency) <- 0
-    adjacency <- methods::as(Matrix::Matrix(adjacency, sparse = TRUE), "dgCMatrix")
+    adjacency <- methods::as(Matrix::Matrix(adjacency, sparse = TRUE), "generalMatrix")
     cell_names <- paste0("cell_", seq_len(nrow(adjacency)))
     rownames(adjacency) <- cell_names
     colnames(adjacency) <- cell_names

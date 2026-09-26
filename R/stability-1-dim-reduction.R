@@ -48,8 +48,15 @@
 #' @param verbose A boolean indicating if the intermediate progress will
 #' be printed or not.
 #' @param compute_umap_embeddings A boolean indicating whether to compute and
-#' return the UMAP embeddings used by feature plotting helpers. Setting this to
-#' FALSE leaves stability scores unchanged but omits those embeddings.
+#' return stored feature UMAP embeddings. Keep the default `TRUE` for feature
+#' plots, Shiny apps exported with `write_shiny_app()`, and Monocle conversions
+#' with `create_monocle_from_clustassess()` that use these embeddings.
+#' The stored embeddings are not used to calculate stability scores, but computing
+#' them resets and consumes R's global RNG state. Later unseeded stochastic steps,
+#' such as custom `matrix_processing` or UMAP graph reduction, can therefore differ
+#' when this option changes. Manage seeds in those steps if comparable results are
+#' required. Exact PCA and processors from `make_pca_matrix_processing()` do not
+#' depend on that intervening RNG state.
 #'
 #' @return A list having one field associated with a step value. Each step
 #' contains a list with three fields:

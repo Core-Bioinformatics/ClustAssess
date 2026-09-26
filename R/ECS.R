@@ -50,6 +50,9 @@ NULL
 #' clustering are linearly rescaled to be in-between 0 and 1.
 #'
 #' @return The average element-wise similarity between the two Clusterings.
+#' @section Missing labels:
+#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
+#' assign missing elements before comparison. Empty strings are valid labels.
 #' @export
 #'
 #' @examples
@@ -69,8 +72,8 @@ element_sim <- function(clustering1,
                         ppr_implementation_cl2 = "prpack",
                         dist_rescaled_cl2 = FALSE,
                         row_normalize_cl2 = TRUE) {
-    if (inherits(clustering1, c("numeric", "integer", "factor")) &&
-        inherits(clustering2, c("numeric", "integer", "factor"))) {
+    if (inherits(clustering1, c("numeric", "integer", "factor", "character")) &&
+        inherits(clustering2, c("numeric", "integer", "factor", "character"))) {
         if (length(clustering1) != length(clustering2)) {
             stop("clustering1 and clustering2 do not have the same length.")
         }
@@ -78,7 +81,10 @@ element_sim <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        return(disjointECSaverage(clustering1, clustering2))
+        return(disjointECSaverage(
+            encode_flat_disjoint_membership(clustering1),
+            encode_flat_disjoint_membership(clustering2)
+        ))
     }
 
     element_scores <- element_sim_elscore(
@@ -147,6 +153,7 @@ element_sim <- function(clustering1,
 #'
 #' @return Vector of element-centric similarity between the two clusterings for
 #'  each element.
+#' @inheritSection element_sim Missing labels
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -181,14 +188,10 @@ element_sim_elscore <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        if (inherits(clustering1, "character") || inherits(clustering2, "character")) {
-            node.scores <- corrected_l1_mb(clustering1, clustering2, alpha)
-        } else {
-            node.scores <- disjointECS(
-                clustering1,
-                clustering2
-            )
-        }
+        node.scores <- disjointECS(
+            encode_flat_disjoint_membership(clustering1),
+            encode_flat_disjoint_membership(clustering2)
+        )
 
         names(node.scores) <- names(clustering1)
         return(node.scores)
@@ -750,6 +753,7 @@ calculate_ppr_with_power_iteration <- function(W_matrix, index, alpha = 0.9,
 #' rescaled to be in-between 0 and 1.
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
+#' @inheritSection element_sim Missing labels
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -850,6 +854,10 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         stop("output_type must be data.frame or matrix.")
     }
 
+    for (mb in mb_list) {
+        validate_flat_membership_labels(mb)
+    }
+
     n_clusterings <- length(mb_list)
 
     if (n_clusterings == 1) {
@@ -880,7 +888,8 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         ecs_values <- foreach::foreach(
             i = seq_len(n_combinations),
             .packages = "ClustAssess",
-            .export = c("element_sim", "element_sim_elscore", "corrected_l1_mb"),
+            .export = c("element_sim", "element_sim_elscore", "corrected_l1_mb",
+                        "encode_flat_disjoint_membership", "validate_flat_membership_labels"),
             .noexport = c("my_cluster"),
             .combine = "c"
         ) %dopar% {
@@ -931,11 +940,9 @@ are_identical_memberships <- function(mb1, mb2) {
 }
 
 canonical_membership_key <- function(mb) {
-    if (inherits(mb, "factor")) {
-        mb <- as.character(mb)
-    }
-    labels <- as.character(mb)
-    ids <- match(labels, unique(labels))
+    # Match the exact comparator's label equivalence. Converting numbers to
+    # text can collapse distinct labels through rounding.
+    ids <- match(mb, unique(mb))
     n_clusters <- if (length(ids) == 0) {
         0L
     } else {
@@ -1069,6 +1076,7 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' Merge Partitions
 #' @description Merge flat disjoint clusterings whose pairwise ECS score is
 #' above a given threshold. The merging is done using a complete linkage approach.
+#' @inheritSection element_sim Missing labels
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
@@ -1141,6 +1149,11 @@ merge_partitions <- function(partition_list,
                 )
             }))
         }
+    }
+
+    # Validate before duplicate and single-partition shortcuts skip scoring.
+    for (partition in partition_list) {
+        validate_flat_membership_labels(partition$mb)
     }
 
     # if the threshold is 1, apply the identical merging
@@ -1242,6 +1255,7 @@ merge_partitions <- function(partition_list,
 #' Element-Wise Consistency Between a Set of Clusterings
 #' @description Inspect the consistency of a set of clusterings by calculating
 #' their element-wise clustering consistency (also known as element-wise frustration).
+#' @inheritSection element_sim Missing labels
 #'
 #' @param clustering_list The list of clustering results, each of which is either:
 #' * A numeric/character/factor vector of cluster labels for each element.
@@ -1283,6 +1297,10 @@ element_consistency <- function(clustering_list,
                                 ppr_implementation = "prpack",
                                 dist_rescaled = FALSE,
                                 row_normalize = TRUE) {
+    for (mb in clustering_list) {
+        validate_flat_membership_labels(mb)
+    }
+
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
         inherits(x, c("numeric", "integer", "factor", "character"))
@@ -1348,6 +1366,7 @@ element_consistency <- function(clustering_list,
 #' @description Calculate the weighted element-centric consistency of a set of
 #' clusterings. The weights are used to give more importance to some clusterings
 #' over others.
+#' @inheritSection element_sim Missing labels
 #'
 #' @param clustering_list The list of clustering results, each of which is either:
 #' * A numeric/character/factor vector of cluster labels for each element.
@@ -1375,6 +1394,9 @@ element_consistency <- function(clustering_list,
 weighted_element_consistency <- function(clustering_list,
                                          weights = NULL,
                                          calculate_sim_matrix = FALSE) {
+    for (mb in clustering_list) {
+        validate_flat_membership_labels(mb)
+    }
     n_clusterings <- length(clustering_list)
 
     if (n_clusterings <= 1) {
@@ -1451,6 +1473,32 @@ weighted_element_consistency <- function(clustering_list,
     return(list(ecc = consistency, ecs_matrix = ecs_sim_matrix))
 }
 
+validate_flat_membership_labels <- function(mb) {
+    if (inherits(mb, c("numeric", "integer", "factor", "character")) && anyNA(mb)) {
+        stop("Flat cluster labels must not contain missing values (NA or NaN).", call. = FALSE)
+    }
+}
+
+encode_flat_disjoint_membership <- function(mb) {
+    validate_flat_membership_labels(mb)
+    # Native kernels index contingency tables with integer labels. Coercion
+    # truncates fractional values, while indexing by the original range can
+    # allocate huge tables for sparse ids, so encode arbitrary labels first.
+    # This is the same label equivalence used by exact partition comparison.
+    if (is.numeric(mb) && !is.object(mb) && length(mb) > 0L) {
+        label_range <- range(mb)
+        # Reuse ordinary positive cluster ids, including doubles containing
+        # whole numbers. The square-root bound limits a pair of such inputs
+        # to at most one contingency-table entry per element.
+        if (all(is.finite(label_range)) && label_range[1] >= 1 &&
+            label_range[2] <= sqrt(length(mb)) &&
+            (is.integer(mb) || all(mb == trunc(mb)))) {
+            return(as.integer(mb))
+        }
+    }
+    match(mb, unique(mb))
+}
+
 encode_flat_disjoint_memberships <- function(clustering_list) {
     is_flat_disjoint <- vapply(clustering_list, function(x) {
         inherits(x, c("numeric", "integer", "factor", "character"))
@@ -1490,14 +1538,7 @@ encode_flat_disjoint_memberships <- function(clustering_list) {
     encoded_memberships <- matrix(NA_integer_, nrow = n_elements, ncol = n_clusterings)
     for (i in seq_len(n_clusterings)) {
         mb <- clustering_list[[i]]
-        if (anyNA(mb)) {
-            return(NULL)
-        }
-        if (is.numeric(mb) && !is.integer(mb) && !all(is.finite(mb) & mb == floor(mb))) {
-            return(NULL)
-        }
-
-        encoded_memberships[, i] <- match(mb, unique(mb))
+        encoded_memberships[, i] <- encode_flat_disjoint_membership(mb)
     }
 
     encoded_memberships
@@ -1506,6 +1547,7 @@ encode_flat_disjoint_memberships <- function(clustering_list) {
 #' Element-Wise Average Agreement Between a Set of Clusterings
 #' @description Inspect how consistently of a set of clusterings agree with
 #' a reference clustering by calculating their element-wise average agreement.
+#' @inheritSection element_sim Missing labels
 #'
 #' @param reference_clustering The reference clustering, that each clustering in
 #' clustering_list is compared to. It can be either:
@@ -1636,16 +1678,19 @@ element_agreement_flat_disjoint <- function(reference_clustering,
         }
     }
 
+    reference_ids <- encode_flat_disjoint_membership(reference_clustering)
+
     obj <- NA
 
     # calculate the average of the ecs between one member of the clustering list
     # and the reference clustering
     avg_agreement <- foreach::foreach(
         obj = clustering_list,
-        .export = c("corrected_l1_mb", "create_clu2elm_dict"),
+        .export = c("disjointECS", "encode_flat_disjoint_membership",
+                    "validate_flat_membership_labels"),
         .combine = "+"
     ) %do% {
-        corrected_l1_mb(reference_clustering, obj, alpha)
+        disjointECS(reference_ids, encode_flat_disjoint_membership(obj))
     }
 
     return(avg_agreement / length(clustering_list))
@@ -1734,6 +1779,7 @@ Clustering <- setClass(
 #' Create Clustering Object
 #' @description Creates a Clustering object from the output of a clustering
 #' method.
+#' @inheritSection element_sim Missing labels
 #'
 #' @param clustering_result The clustering result, either:
 #' * A numeric/character/factor vector of cluster labels for each element.
@@ -1763,6 +1809,7 @@ Clustering <- setClass(
 setGeneric(
     "create_clustering",
     function(clustering_result, ...) {
+        validate_flat_membership_labels(clustering_result)
         standardGeneric("create_clustering")
     }
 )
