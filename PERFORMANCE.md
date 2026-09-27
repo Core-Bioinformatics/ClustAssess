@@ -72,9 +72,14 @@ Exact PCA remains the pipeline default. The explicit
 `make_pca_matrix_processing(method = "exact")` factory is not a drop-in replica
 of the default processor: for a cells-by-features input it caps components at
 `min(requested_pcs, n_cells - 1, n_features)`, while the default processor caps
-them at `min(requested_pcs, n_features %/% 2)`. The factory uses the ambient BLAS
+them at `min(requested_pcs, max(1L, n_features %/% 2))`, retaining one component
+for a one-feature input. The factory uses the ambient BLAS
 thread settings; the default processor sets BLAS threads to the registered
 worker count for PCA and sets them to one afterward.
+This thread control applies only when the optional `RhpcBLASctl` package is
+installed; otherwise the caller's BLAS settings remain unchanged. Parallel
+nearest-neighbor workers use shared matrices when `SharedObject` is available
+and ordinary matrix exports otherwise, which can require more worker memory.
 Different component counts or numerical results are therefore possible even
 with the exact method. Automatic assessment records the actual returned
 embedding dimension in `stable_config$n_pcs`.
@@ -89,6 +94,35 @@ default `TRUE` for feature plots, Shiny apps exported with `write_shiny_app()`,
 and Monocle conversions with `create_monocle_from_clustassess()` that use these
 embeddings. `return_nn_idx = FALSE` omits retained neighbor indices from results.
 Both are opt-in output changes; defaults retain those outputs.
+
+With `include_umap_nn_assessment = TRUE`, automatic assessment ranks both PCA
+and UMAP graph summaries. If UMAP wins, the existing first merged representative
+for that graph type and neighbor count supplies the seed (frequency ordering
+with agreement tie-breaking). The pipeline replays only that UMAP with the same
+input, recorded worker RNG kinds, and normalized single-thread arguments, then
+builds the final graph from its neighbors. This adds one UMAP calculation for a
+UMAP winner without retaining
+every seed's embedding or neighbor matrix. `stable_config$umap_seed` records the
+selected seed; retained `nn_idx` and the configuration's `umap` correspond to that
+graph. The replay restores the caller's RNG kinds and state, even when workers
+use separate streams such as `clusterSetRNGStream()`.
+`compute_umap_embeddings = FALSE` still omits stored embeddings, not the UMAP
+calculations needed to assess and build graphs.
+
+The representative-graph choice is a workflow policy, not a uniquely optimal
+UMAP embedding. Results are merged in the supplied seed order, without sorting
+seed values, including when optional seed metadata is disabled. This makes
+tie handling independent of worker completion order. The original feature-stage
+plotting embeddings in `feature_stability$embedding_list` remain unchanged;
+feature plots use those coordinates with feature-stage scores. Selected
+configurations' `umap` coordinates instead serve graph/clustering plots and
+Monocle export, and can differ when UMAP wins the graph assessment.
+
+In both entrypoints, feature subset counts below one or above the feature-set
+size, including infinities, use the complete feature set before integer
+conversion. Remaining counts are truncated, sorted, and deduplicated; missing
+values (`NA` and `NaN`) are omitted. This keeps selected feature counts and cached
+embeddings consistent for integer, double, and fractional inputs.
 
 Stored feature UMAP embeddings are not used to calculate stability scores.
 However, computing them resets and consumes R's global RNG state. Later unseeded

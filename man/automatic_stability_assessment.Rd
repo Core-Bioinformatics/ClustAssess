@@ -20,12 +20,16 @@ automatic_stability_assessment(
   ecs_threshold = 1,
   matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
      actual_npcs <-
-    min(actual_npcs, ncol(dt_mtx)\%/\%2)
-    
+    min(actual_npcs, max(1L, ncol(dt_mtx)\%/\%2))
+     control_blas <-
+    is_package_installed("RhpcBLASctl")
+     if (control_blas)
+
     RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
      embedding <-
     stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
-    
+     if (control_blas)
+
     RhpcBLASctl::blas_set_num_threads(1)
      rownames(embedding) <- rownames(dt_mtx)
    
@@ -63,9 +67,11 @@ detection algorithms.}
 \item{features_sets}{A list of the feature sets. A feature set is a list of genes
 from the expression matrix that will be used in the dimensionality reduction.}
 
-\item{steps}{A list with the same names as \code{feature_sets}. Each name has assigned
-a ector containing the sizes of the subsets; negative values will
-be interpreted as using all features.}
+\item{steps}{A list with the same names as \code{features_sets}, containing numeric
+vectors of subset sizes. Values below one or above the feature-set size,
+including infinities, use all features before integer truncation. Counts are
+sorted and deduplicated; missing values (\code{NA} and \code{NaN}) are omitted, as in
+\code{\link[=assess_feature_stability]{assess_feature_stability()}}.}
 
 \item{seed_sequence}{A custom seed sequence; if the value is NULL, the
 sequence will be built starting from 1 with a step of 100.}
@@ -97,7 +103,9 @@ reduced space. By default, the function will use the precise PCA method with
 \code{prcomp}. Each selected configuration's \code{stable_config$n_pcs} records the
 actual number of columns in its returned embedding, including for custom
 processors. See \code{\link[=make_pca_matrix_processing]{make_pca_matrix_processing()}} for explicit PCA alternatives
-and their component-count and thread settings.}
+and their component-count and thread settings.
+The processor receives a cells-by-features matrix. Default BLAS thread control
+is used only when the optional \code{RhpcBLASctl} package is installed.}
 
 \item{umap_arguments}{A list containing the arguments that will be passed to the
 UMAP function. Refer to the \code{uwot::umap} function for more details.}
@@ -139,11 +147,14 @@ them resets and consumes R's global RNG state. Later unseeded stochastic steps,
 such as custom \code{matrix_processing} or UMAP graph reduction, can therefore differ
 when this option changes. Manage seeds in those steps if comparable results are
 required. Exact PCA and processors from \code{make_pca_matrix_processing()} do not
-depend on that intervening RNG state.}
+depend on that intervening RNG state.
+If UMAP wins the graph assessment, the selected configuration's \code{umap} is the
+graph-building embedding when this option is \code{TRUE}. Setting it to \code{FALSE}
+omits stored embeddings, but does not skip UMAP needed for graph assessment.}
 
 \item{return_nn_idx}{A boolean indicating whether to keep the precomputed
-nearest-neighbor index inside returned PCA graph-stability objects. Defaults
-to \code{TRUE} to preserve existing returned objects.}
+nearest-neighbor index inside returned graph-stability objects. This matrix
+belongs to the winning PCA or UMAP representation. Defaults to \code{TRUE}.}
 }
 \value{
 A list having two fields:
@@ -165,6 +176,21 @@ partitions obtained at different seeds.
 Forced garbage collection at pipeline cleanup points is opt-in through
 \code{options(ClustAssess.force_gc = TRUE)}. R's normal automatic garbage collection
 remains active when this option is unset or \code{FALSE}.
+
+With \code{include_umap_nn_assessment = TRUE}, PCA and UMAP summaries are ranked
+together. For a UMAP winner, the first partition returned by
+\code{\link[=merge_partitions]{merge_partitions()}} for the selected graph type and neighbor count supplies
+the seed: frequency ordering with agreement tie-breaking is unchanged. The
+selected UMAP is recomputed once with this seed, the recorded worker RNG kinds,
+and the same normalized, single-thread UMAP arguments, then used for the final
+graph. This replay restores the caller's RNG kinds and state afterward. Its
+seed is recorded in \code{stable_config$umap_seed}. PCA winners do not have this field.
+This avoids retaining every seed's embedding or neighbor matrix.
+Seed results are merged in their supplied order, without sorting seed values.
+This representative-graph rule is a workflow policy, not a claim that the
+chosen embedding is uniquely optimal. The \code{feature_stability$embedding_list}
+entries remain the original feature-stage plotting embeddings; only the
+selected configuration's \code{umap} is replaced by a winning graph's embedding.
 }
 \examples{
 \dontrun{

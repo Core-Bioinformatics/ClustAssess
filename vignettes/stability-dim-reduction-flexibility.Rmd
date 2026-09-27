@@ -52,7 +52,8 @@ function that maps a cells-by-features matrix to a cells-by-components matrix,
 preserving the cell order and row names. It can perform PCA, batch correction,
 or another reduction before graph construction and clustering. The default
 processor uses exact PCA with `stats::prcomp()` and requests at most
-`min(30, n_features %/% 2)` components.
+`min(30, max(1L, n_features %/% 2))` components, retaining one component for a
+one-feature input.
 
 The examples below retain feature UMAP embeddings for plotting. Keep
 `compute_umap_embeddings = TRUE` (the default) for those plots, Shiny export,
@@ -74,8 +75,11 @@ Use `make_pca_matrix_processing()` when an explicit, reusable processor is
 useful. This factory is an alternative to the default, not an identical
 replacement. Its exact method caps components at
 `min(actual_npcs, n_cells - 1, n_features)` and leaves BLAS thread settings unchanged.
-The default processor instead uses the half-feature cap, sets BLAS threads to
-the registered worker count during PCA, and sets them to one afterward.
+The default processor instead uses the half-feature cap with a minimum of one,
+sets BLAS threads to the registered worker count during PCA, and sets them to
+one afterward.
+That thread control requires the optional `RhpcBLASctl` package; without it,
+the default processor leaves BLAS settings unchanged.
 Match both component counts and thread settings when comparing the two.
 
 ```{r explicit_pca_processors, eval = FALSE}

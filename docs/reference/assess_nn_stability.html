@@ -72,7 +72,8 @@ namely the base embedding, the graph type and the number of neighbours.</p>
 <span>  clustering_algorithm <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  clustering_arguments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  umap_arguments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  return_nn_idx <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  return_nn_idx <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  return_partition_seeds <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -140,15 +141,30 @@ clustering algorithm. See the <code>FindClusters</code> function in Seurat for m
 nearest-neighbor index for PCA graph stability. Defaults to <code>TRUE</code> to preserve
 existing returned objects.</p></dd>
 
+
+<dt id="arg-return-partition-seeds">return_partition_seeds<a class="anchor" aria-label="anchor" href="#arg-return-partition-seeds"></a></dt>
+<dd><p>A boolean indicating whether to return
+<code>partition_seeds</code> for UMAP graph stability. Defaults to <code>FALSE</code>; ignored for
+PCA. For each graph type and neighbor count, this records the seed of the first
+representative from <code><a href="merge_partitions.html">merge_partitions()</a></code>, using its frequency ordering and
+agreement tie-breaking. UMAP results are merged in the supplied seed order,
+whether or not provenance is requested. The matching <code>partition_rng_kinds</code> field records the
+worker's RNG kinds for replay. No embeddings or neighbor matrices are retained.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list having three fields:</p><ul><li><p><code>n_neigh_k_corresp</code> - list containing the number of the clusters obtained by running
+    <p>A list with three summary fields and optional additional fields:</p><ul><li><p><code>n_neigh_k_corresp</code> - list containing the number of the clusters obtained by running
 the pipeline multiple times with different seed, number of neighbours and graph type (weighted vs unweigted)</p></li>
 <li><p><code>n_neigh_ec_consistency</code> - list containing the EC consistency of the partitions obtained
 at multiple runs when changing the number of neighbours or the graph type</p></li>
 <li><p><code>n_different_partitions</code> - the number of different partitions obtained by each
 number of neighbours</p></li>
+<li><p><code>nn_idx</code> - the PCA neighbor-index matrix, when <code>return_nn_idx = TRUE</code></p></li>
+<li><p><code>partition_seeds</code> - representative UMAP seeds by graph type and neighbor
+count, only when <code>return_partition_seeds = TRUE</code></p></li>
+<li><p><code>partition_rng_kinds</code> - matching RNG-kind vectors for those representatives,
+only when <code>return_partition_seeds = TRUE</code></p></li>
 </ul></div>
 
     <div class="section level2">

@@ -10,8 +10,10 @@
 #' and the observations on the columns.
 #' @param feature_set A set of feature names that can be found on the rownames
 #' of the data matrix.
-#' @param steps Vector containing the sizes of the subsets; negative values will
-#' be interpreted as using all features.
+#' @param steps Numeric vector containing the subset sizes. Values below one or
+#' above the feature-set size, including infinities, use all features. Remaining
+#' values are truncated to integers; counts are sorted and deduplicated. Missing
+#' values (`NA` and `NaN`) are omitted.
 #' @param feature_type A name associated to the feature_set.
 #' @param resolution A vector containing the resolution values used for
 #' clustering.
@@ -30,7 +32,10 @@
 #' by using a dimensionality reduction technique. The function should have
 #' one parameter, the data matrix, and should return an embedding describing the
 #' reduced space. By default, the function will use the precise PCA method with
-#' `prcomp`.
+#' `prcomp`. The processor receives a cells-by-features matrix, including for a
+#' single feature. If `RhpcBLASctl` is installed, the default temporarily uses
+#' the registered worker count for BLAS threads and sets it to one afterward;
+#' otherwise it leaves the caller's BLAS settings unchanged.
 #' @param umap_arguments A list containing the arguments that will be passed
 #' to the UMAP function. Refer to the `uwot::umap` function for more details.
 #' @param prune_value Argument indicating whether to prune the SNN graph. If the
@@ -115,10 +120,11 @@ assess_feature_stability <- function(data_matrix,
                                      matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
                                          # WARNING using more threads will lead to slightly different results
                                          # check using RhpcBLASctl::blas_get_num_procs()
-                                         actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
-                                         RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+                                         actual_npcs <- min(actual_npcs, max(1L, ncol(dt_mtx) %/% 2))
+                                         control_blas <- is_package_installed("RhpcBLASctl")
+                                         if (control_blas) RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
                                          embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
-                                         RhpcBLASctl::blas_set_num_threads(1)
+                                         if (control_blas) RhpcBLASctl::blas_set_num_threads(1)
 
                                          rownames(embedding) <- rownames(dt_mtx)
                                          colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
@@ -154,11 +160,7 @@ assess_feature_stability <- function(data_matrix,
         stop("all features from the feature_set should be found in the data_matrix")
     }
 
-    if (!is.numeric(steps)) {
-        stop("steps parameter should be numeric")
-    }
-    # convert steps to integers
-    steps <- as.integer(steps)
+    steps <- normalize_feature_steps(steps, length(feature_set))
 
     if (!is.character(feature_type)) {
         stop("feature_type parameter should be a string")
@@ -216,11 +218,6 @@ assess_feature_stability <- function(data_matrix,
         n_repetitions <- length(seed_sequence)
     }
 
-    # convert the negative steps to the size of the feature
-    steps[steps <= 0 |
-        steps > length(feature_set)] <- length(feature_set)
-    steps <- sort(unique(steps))
-
     umap_arguments <- process_umap_arguments(umap_arguments, ncells)
 
     if (verbose) {
@@ -245,7 +242,7 @@ assess_feature_stability <- function(data_matrix,
         partitions_list[[step]] <- list()
         steps_ecc_list[[object_name]][[step]] <- list()
 
-        embedding <- matrix_processing(data_matrix[, used_features])
+        embedding <- matrix_processing(data_matrix[, used_features, drop = FALSE])
 
         if (is.null(rownames(embedding))) {
             rownames(embedding) <- rownames(data_matrix)

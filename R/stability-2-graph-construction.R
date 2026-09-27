@@ -741,7 +741,8 @@ assess_nn_stability_umap <- function(embedding,
                                      prune_value = -1,
                                      clustering_algorithm = 1,
                                      clustering_arguments = list(),
-                                     umap_arguments = list()) {
+                                     umap_arguments = list(),
+                                     return_partition_seeds = FALSE) {
     ncores <- foreach::getDoParWorkers()
 
     object_names <- c("snn", "nn")
@@ -784,13 +785,14 @@ assess_nn_stability_umap <- function(embedding,
 
     seed_list <- foreach::foreach(
         seed = seed_sequence,
-        .inorder = FALSE,
+        .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
         .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
         .packages = package_needed
     ) %dopar% {
         # perform the dimensionality reduction
         set.seed(seed)
+        umap_rng_kind <- RNGkind()
         row_names <- rownames(shared_embedding)
         embedding <- do.call(uwot::umap, c(list(X = shared_embedding), umap_arguments))
         colnames(embedding) <- paste0("UMAP_", seq_len(ncol(embedding)))
@@ -828,7 +830,8 @@ assess_nn_stability_umap <- function(embedding,
                         )
                     ),
                     freq = 1,
-                    seed = seed
+                    seed = seed,
+                    rng_kind = umap_rng_kind
                 )
             }
 
@@ -846,7 +849,8 @@ assess_nn_stability_umap <- function(embedding,
                         )
                     ),
                     freq = 1,
-                    seed = seed
+                    seed = seed,
+                    rng_kind = umap_rng_kind
                 )
             }
         }
@@ -911,7 +915,7 @@ assess_nn_stability_umap <- function(embedding,
         })
     })
 
-    list(
+    result <- list(
         n_neigh_k_corresp = nn_object_n_clusters,
         n_neigh_ec_consistency = nn_ecs_object,
         n_different_partitions = lapply(partitions_list, function(config) {
@@ -920,6 +924,40 @@ assess_nn_stability_umap <- function(embedding,
             })
         })
     )
+    if (return_partition_seeds) {
+        # Keep the seed belonging to the first representative under the existing
+        # frequency/agreement ordering, separately for each graph type and k.
+        result$partition_seeds <- lapply(partitions_list, function(config) {
+            lapply(config, function(n_neigh) n_neigh$partitions[[1]]$seed)
+        })
+        result$partition_rng_kinds <- lapply(partitions_list, function(config) {
+            lapply(config, function(n_neigh) n_neigh$partitions[[1]]$rng_kind)
+        })
+    }
+    result
+}
+
+replay_umap_embedding <- function(embedding, umap_arguments, seed, rng_kind) {
+    old_rng_kind <- RNGkind()
+    had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    if (had_seed) old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    on.exit({
+        do.call(RNGkind, as.list(old_rng_kind))
+        if (had_seed) {
+            assign(".Random.seed", old_seed, envir = .GlobalEnv)
+        } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+            rm(".Random.seed", envir = .GlobalEnv)
+        }
+    }, add = TRUE)
+    # PSOCK workers can use a different RNG kind (e.g. clusterSetRNGStream).
+    do.call(RNGkind, as.list(rng_kind))
+    set.seed(seed)
+    result <- do.call(uwot::umap, c(
+        list(X = embedding), process_umap_arguments(umap_arguments, nrow(embedding))
+    ))
+    rownames(result) <- rownames(embedding)
+    colnames(result) <- paste0("UMAP_", seq_len(ncol(result)))
+    result
 }
 
 #' Assess the stability for Graph Building Parameters
@@ -954,8 +992,15 @@ assess_nn_stability_umap <- function(embedding,
 #' @param return_nn_idx A boolean indicating whether to return the precomputed
 #' nearest-neighbor index for PCA graph stability. Defaults to `TRUE` to preserve
 #' existing returned objects.
+#' @param return_partition_seeds A boolean indicating whether to return
+#' `partition_seeds` for UMAP graph stability. Defaults to `FALSE`; ignored for
+#' PCA. For each graph type and neighbor count, this records the seed of the first
+#' representative from [merge_partitions()], using its frequency ordering and
+#' agreement tie-breaking. UMAP results are merged in the supplied seed order,
+#' whether or not provenance is requested. The matching `partition_rng_kinds` field records the
+#' worker's RNG kinds for replay. No embeddings or neighbor matrices are retained.
 #'
-#' @return A list having three fields:
+#' @return A list with three summary fields and optional additional fields:
 #'
 #' * `n_neigh_k_corresp` - list containing the number of the clusters obtained by running
 #' the pipeline multiple times with different seed, number of neighbours and graph type (weighted vs unweigted)
@@ -963,6 +1008,11 @@ assess_nn_stability_umap <- function(embedding,
 #' at multiple runs when changing the number of neighbours or the graph type
 #' * `n_different_partitions` - the number of different partitions obtained by each
 #' number of neighbours
+#' * `nn_idx` - the PCA neighbor-index matrix, when `return_nn_idx = TRUE`
+#' * `partition_seeds` - representative UMAP seeds by graph type and neighbor
+#' count, only when `return_partition_seeds = TRUE`
+#' * `partition_rng_kinds` - matching RNG-kind vectors for those representatives,
+#' only when `return_partition_seeds = TRUE`
 #'
 #' @export
 #'
@@ -992,7 +1042,8 @@ assess_nn_stability <- function(embedding,
                                  clustering_algorithm = 1,
                                  clustering_arguments = list(),
                                  umap_arguments = list(),
-                                 return_nn_idx = TRUE) {
+                                 return_nn_idx = TRUE,
+                                 return_partition_seeds = FALSE) {
     # TODO vary by resolution
     # BUG check the performance
     # check parameters
@@ -1032,6 +1083,12 @@ assess_nn_stability <- function(embedding,
         length(return_nn_idx) != 1 ||
         is.na(return_nn_idx)) {
         stop("return_nn_idx parameter should be a single boolean value")
+    }
+
+    if (!is.logical(return_partition_seeds) ||
+        length(return_partition_seeds) != 1 ||
+        is.na(return_partition_seeds)) {
+        stop("return_partition_seeds parameter should be a single boolean value")
     }
 
     if (is.null(rownames(embedding))) {
@@ -1090,7 +1147,8 @@ assess_nn_stability <- function(embedding,
         prune_value = prune_value,
         clustering_algorithm = clustering_algorithm,
         clustering_arguments = clustering_arguments,
-        umap_arguments = umap_arguments
+        umap_arguments = umap_arguments,
+        return_partition_seeds = return_partition_seeds
     ))
 }
 

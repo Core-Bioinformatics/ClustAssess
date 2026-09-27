@@ -48,10 +48,12 @@ caps it at \code{ncol(dt_mtx) - 1}. The row cap applies even when \code{center =
 
 This factory is an explicit alternative to the default processors in
 \code{\link[=assess_feature_stability]{assess_feature_stability()}} and \code{\link[=automatic_stability_assessment]{automatic_stability_assessment()}}, not a
-promise of identical output. Those defaults request at most half the input
-features and temporarily use the registered foreach worker count for BLAS
-threads before setting it to one. Factory-created processors leave BLAS thread
-settings unchanged. Choose the same component count and thread settings when
+promise of identical output. Those defaults cap requested components at
+\code{max(1L, ncol(dt_mtx) \%/\% 2)} and, when \code{RhpcBLASctl} is installed,
+temporarily use the registered foreach worker count for BLAS threads before
+setting it to one. Without that
+optional package they leave BLAS settings unchanged. Factory-created processors
+leave BLAS thread settings unchanged. Choose the same component count and thread settings when
 comparing implementations; approximate PCA can still produce different results.
 }
 \examples{

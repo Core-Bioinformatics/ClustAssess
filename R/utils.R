@@ -306,6 +306,15 @@ read_sparse_matrix_from_app <- function(app_folder, nrows_chunk = 1000, refresh_
     return(final_matrix)
 }
 
+normalize_feature_steps <- function(steps, n_features) {
+    if (!is.numeric(steps)) {
+        stop("steps parameter should be numeric")
+    }
+    steps[!is.na(steps) & (steps < 1 | steps > n_features)] <- n_features
+    steps <- as.integer(steps)
+    sort(unique(steps))
+}
+
 parallel_nn2_idx <- function(embedding, k) {
     ncores <- foreach::getDoParWorkers()
 
@@ -320,7 +329,8 @@ parallel_nn2_idx <- function(embedding, k) {
         chunks[[ncores]] <- c(chunks[[ncores]], (chunk_size * ncores + 1):nrow(embedding))
     }
 
-    shared_emb <- SharedObject::share(embedding)
+    use_shared <- is_package_installed("SharedObject")
+    shared_emb <- if (use_shared) SharedObject::share(embedding) else embedding
     i <- NULL
 
     # HACK check if there is another way to not get the `already exported variable` warning
@@ -338,7 +348,9 @@ parallel_nn2_idx <- function(embedding, k) {
         )$nn.idx
     })
 
-    shared_emb <- SharedObject::unshare(shared_emb)
+    if (use_shared) {
+        shared_emb <- SharedObject::unshare(shared_emb)
+    }
 
     nn_result
 }

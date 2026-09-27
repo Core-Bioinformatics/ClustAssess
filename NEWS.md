@@ -35,8 +35,9 @@ tradeoffs and measurement requirements.
 
 - Added `make_pca_matrix_processing()` for explicit exact PCA and optional
   fixed-seed `irlba`-backed approximate PCA. The factory uses the input's rank
-  limits and ambient BLAS settings, whereas the unchanged default processor
-  caps components at half the feature count and controls BLAS threads. Exact
+  limits and ambient BLAS settings, whereas the default processor caps components
+  at half the feature count, with a minimum feature-derived cap of one, and
+  controls BLAS threads when `RhpcBLASctl` is available. Exact
   factory processing is therefore not necessarily equivalent to the default.
 - Added `compute_umap_embeddings` to `assess_feature_stability()` and
   `automatic_stability_assessment()` so callers can skip feature UMAP output
@@ -44,6 +45,9 @@ tradeoffs and measurement requirements.
 - Added `return_nn_idx` to `assess_nn_stability()` and
   `automatic_stability_assessment()` to reduce result size when stored neighbor
   indices are not needed.
+- Added opt-in `return_partition_seeds` to `assess_nn_stability()` to expose
+  the existing merged representative's seed and RNG kinds for each UMAP graph
+  type and neighbor count, without retaining all embeddings or neighbor matrices.
 - Frequency-ordered `merge_partitions()` calls no longer attach the
   undocumented `avg_agreement` field unless agreement is needed for ordering or
   tie resolution, or is already available from a requested ECS matrix.
@@ -88,7 +92,29 @@ tradeoffs and measurement requirements.
   to use `clustering_algorithm` rather than the auxiliary arguments list.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
-- Preserved default PCA and clustering behavior. Approximate PCA remains
+- Unified feature-count normalization between feature and automatic assessment,
+  fixing cache misses for large double-valued counts and fractional counts.
+  Counts below one or above the feature-set size, including infinities, use all
+  features before integer conversion; missing counts are omitted. Cache
+  fallbacks and single-feature processors receive dimension-preserving
+  cells-by-features matrices. Default PCA retains one component for a
+  one-feature subset.
+- Fixed combined PCA/UMAP graph assessment to merge named summaries without
+  corrupting neighbor indices, and to pass clustering arguments to both paths.
+  A UMAP winner now rebuilds the final graph from its evaluated representative
+  seed and worker RNG kinds, including PSOCK RNG streams. Replay restores the
+  caller's RNG state. The seed is recorded as `stable_config$umap_seed`, and the
+  graph-building embedding is returned when requested. PCA winners keep PCA
+  neighbor indices.
+- UMAP seed results are now merged in supplied seed order, with or without
+  optional provenance. This makes representative selection deterministic with
+  respect to worker completion order; tied threshold-merge results can differ
+  from previous backend-dependent ordering. Feature-stage plotting embeddings
+  remain unchanged by later representative-graph selection.
+- Made `RhpcBLASctl` and `SharedObject` genuinely optional on default PCA and
+  parallel nearest-neighbor paths. Missing packages leave BLAS settings alone
+  or use ordinary matrix exports; behavior with the packages installed is retained.
+- Exact PCA remains the default. Approximate PCA remains
   opt-in, uses a fixed seed for deterministic matrix processing, and restores
   the caller RNG state.
 

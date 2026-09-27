@@ -25,10 +25,12 @@
 #'
 #' This factory is an explicit alternative to the default processors in
 #' [assess_feature_stability()] and [automatic_stability_assessment()], not a
-#' promise of identical output. Those defaults request at most half the input
-#' features and temporarily use the registered foreach worker count for BLAS
-#' threads before setting it to one. Factory-created processors leave BLAS thread
-#' settings unchanged. Choose the same component count and thread settings when
+#' promise of identical output. Those defaults cap requested components at
+#' `max(1L, ncol(dt_mtx) %/% 2)` and, when `RhpcBLASctl` is installed,
+#' temporarily use the registered foreach worker count for BLAS threads before
+#' setting it to one. Without that
+#' optional package they leave BLAS settings unchanged. Factory-created processors
+#' leave BLAS thread settings unchanged. Choose the same component count and thread settings when
 #' comparing implementations; approximate PCA can still produce different results.
 #'
 #' @return A function with signature `function(dt_mtx, actual_npcs, ...)`.

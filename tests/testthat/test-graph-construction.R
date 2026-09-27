@@ -238,7 +238,8 @@ test_that("assess_nn_stability returns stable object structure for PCA graphs", 
             seed_sequence = c(1, 101),
             graph_reduction_type = "PCA",
             graph_type = 1,
-            clustering_algorithm = 1
+            clustering_algorithm = 1,
+            return_partition_seeds = TRUE
         )
     )
 
@@ -249,6 +250,7 @@ test_that("assess_nn_stability returns stable object structure for PCA graphs", 
     expect_equal(dim(result$nn_idx), c(nrow(embedding), 2L))
     expect_named(result$n_neigh_ec_consistency, "PCA_snn")
     expect_named(result$n_neigh_ec_consistency$PCA_snn, "2")
+    expect_false("partition_seeds" %in% names(result))
     expect_true(is.numeric(result$n_neigh_ec_consistency$PCA_snn[["2"]]))
 })
 
@@ -413,12 +415,14 @@ test_that("assess_nn_stability PCA works with PSOCK workers when package-install
             seed_sequence = c(1, 101),
             graph_reduction_type = "PCA",
             graph_type = 1,
-            clustering_algorithm = 1
+            clustering_algorithm = 1,
+            return_partition_seeds = TRUE
         )
     )
 
     expect_named(result$n_neigh_ec_consistency, "PCA_snn")
     expect_named(result$n_neigh_ec_consistency$PCA_snn, "2")
+    expect_false("partition_seeds" %in% names(result))
 })
 
 test_that("assess_nn_stability PCA multi-neighbor results match separate runs", {
@@ -571,6 +575,7 @@ test_that("assess_nn_stability UMAP works with PSOCK workers when package-instal
             graph_reduction_type = "UMAP",
             graph_type = 1,
             clustering_algorithm = 1,
+            return_partition_seeds = TRUE,
             umap_arguments = list(
                 n_neighbors = 5,
                 n_epochs = 20,
@@ -582,4 +587,9 @@ test_that("assess_nn_stability UMAP works with PSOCK workers when package-instal
 
     expect_named(result$n_neigh_ec_consistency, "UMAP_snn")
     expect_named(result$n_neigh_ec_consistency$UMAP_snn, c("2", "3"))
+    expect_named(result$partition_seeds, "UMAP_snn")
+    expect_named(result$partition_seeds$UMAP_snn, c("2", "3"))
+    expect_true(all(unlist(result$partition_seeds) %in% c(1L, 101L)))
+    expect_named(result$partition_rng_kinds, "UMAP_snn")
+    expect_named(result$partition_rng_kinds$UMAP_snn, c("2", "3"))
 })

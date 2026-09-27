@@ -16,7 +16,8 @@ assess_nn_stability(
   clustering_algorithm = 1,
   clustering_arguments = list(),
   umap_arguments = list(),
-  return_nn_idx = TRUE
+  return_nn_idx = TRUE,
+  return_partition_seeds = FALSE
 )
 }
 \arguments{
@@ -56,9 +57,17 @@ clustering algorithm. See the \code{FindClusters} function in Seurat for more de
 \item{return_nn_idx}{A boolean indicating whether to return the precomputed
 nearest-neighbor index for PCA graph stability. Defaults to \code{TRUE} to preserve
 existing returned objects.}
+
+\item{return_partition_seeds}{A boolean indicating whether to return
+\code{partition_seeds} for UMAP graph stability. Defaults to \code{FALSE}; ignored for
+PCA. For each graph type and neighbor count, this records the seed of the first
+representative from \code{\link[=merge_partitions]{merge_partitions()}}, using its frequency ordering and
+agreement tie-breaking. UMAP results are merged in the supplied seed order,
+whether or not provenance is requested. The matching \code{partition_rng_kinds} field records the
+worker's RNG kinds for replay. No embeddings or neighbor matrices are retained.}
 }
 \value{
-A list having three fields:
+A list with three summary fields and optional additional fields:
 \itemize{
 \item \code{n_neigh_k_corresp} - list containing the number of the clusters obtained by running
 the pipeline multiple times with different seed, number of neighbours and graph type (weighted vs unweigted)
@@ -66,6 +75,11 @@ the pipeline multiple times with different seed, number of neighbours and graph 
 at multiple runs when changing the number of neighbours or the graph type
 \item \code{n_different_partitions} - the number of different partitions obtained by each
 number of neighbours
+\item \code{nn_idx} - the PCA neighbor-index matrix, when \code{return_nn_idx = TRUE}
+\item \code{partition_seeds} - representative UMAP seeds by graph type and neighbor
+count, only when \code{return_partition_seeds = TRUE}
+\item \code{partition_rng_kinds} - matching RNG-kind vectors for those representatives,
+only when \code{return_partition_seeds = TRUE}
 }
 }
 \description{

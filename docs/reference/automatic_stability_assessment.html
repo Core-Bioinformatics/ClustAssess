@@ -79,12 +79,16 @@ partitions obtained at different seeds.</p>
 <span>  ecs_threshold <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  matrix_processing <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">dt_mtx</span>, <span class="va">actual_npcs</span> <span class="op">=</span> <span class="fl">30</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
 <span>     <span class="va">actual_npcs</span> <span class="op">&lt;-</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span><span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span><span class="fl">2</span><span class="op">)</span></span>
-<span>    </span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span><span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span>     <span class="va">control_blas</span> <span class="op">&lt;-</span></span>
+<span>    <span class="fu">is_package_installed</span><span class="op">(</span><span class="st">"RhpcBLASctl"</span><span class="op">)</span></span>
+<span>     <span class="kw">if</span> <span class="op">(</span><span class="va">control_blas</span><span class="op">)</span></span>
+<span></span>
 <span>    <span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/getDoParWorkers.html" class="external-link">getDoParWorkers</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span>     <span class="va">embedding</span> <span class="op">&lt;-</span></span>
 <span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/prcomp.html" class="external-link">prcomp</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">dt_mtx</span>, rank. <span class="op">=</span> <span class="va">actual_npcs</span><span class="op">)</span><span class="op">$</span><span class="va">x</span></span>
-<span>    </span>
+<span>     <span class="kw">if</span> <span class="op">(</span><span class="va">control_blas</span><span class="op">)</span></span>
+<span></span>
 <span>    <span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span></span>
 <span>   </span>
@@ -137,9 +141,11 @@ from the expression matrix that will be used in the dimensionality reduction.</p
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
-<dd><p>A list with the same names as <code>feature_sets</code>. Each name has assigned
-a ector containing the sizes of the subsets; negative values will
-be interpreted as using all features.</p></dd>
+<dd><p>A list with the same names as <code>features_sets</code>, containing numeric
+vectors of subset sizes. Values below one or above the feature-set size,
+including infinities, use all features before integer truncation. Counts are
+sorted and deduplicated; missing values (<code>NA</code> and <code>NaN</code>) are omitted, as in
+<code><a href="assess_feature_stability.html">assess_feature_stability()</a></code>.</p></dd>
 
 
 <dt id="arg-seed-sequence">seed_sequence<a class="anchor" aria-label="anchor" href="#arg-seed-sequence"></a></dt>
@@ -187,7 +193,9 @@ reduced space. By default, the function will use the precise PCA method with
 <code>prcomp</code>. Each selected configuration's <code>stable_config$n_pcs</code> records the
 actual number of columns in its returned embedding, including for custom
 processors. See <code><a href="make_pca_matrix_processing.html">make_pca_matrix_processing()</a></code> for explicit PCA alternatives
-and their component-count and thread settings.</p></dd>
+and their component-count and thread settings.
+The processor receives a cells-by-features matrix. Default BLAS thread control
+is used only when the optional <code>RhpcBLASctl</code> package is installed.</p></dd>
 
 
 <dt id="arg-umap-arguments">umap_arguments<a class="anchor" aria-label="anchor" href="#arg-umap-arguments"></a></dt>
@@ -249,13 +257,16 @@ them resets and consumes R's global RNG state. Later unseeded stochastic steps,
 such as custom <code>matrix_processing</code> or UMAP graph reduction, can therefore differ
 when this option changes. Manage seeds in those steps if comparable results are
 required. Exact PCA and processors from <code><a href="make_pca_matrix_processing.html">make_pca_matrix_processing()</a></code> do not
-depend on that intervening RNG state.</p></dd>
+depend on that intervening RNG state.
+If UMAP wins the graph assessment, the selected configuration's <code>umap</code> is the
+graph-building embedding when this option is <code>TRUE</code>. Setting it to <code>FALSE</code>
+omits stored embeddings, but does not skip UMAP needed for graph assessment.</p></dd>
 
 
 <dt id="arg-return-nn-idx">return_nn_idx<a class="anchor" aria-label="anchor" href="#arg-return-nn-idx"></a></dt>
 <dd><p>A boolean indicating whether to keep the precomputed
-nearest-neighbor index inside returned PCA graph-stability objects. Defaults
-to <code>TRUE</code> to preserve existing returned objects.</p></dd>
+nearest-neighbor index inside returned graph-stability objects. This matrix
+belongs to the winning PCA or UMAP representation. Defaults to <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -271,6 +282,20 @@ size</p></li>
     <p>Forced garbage collection at pipeline cleanup points is opt-in through
 <code>options(ClustAssess.force_gc = TRUE)</code>. R's normal automatic garbage collection
 remains active when this option is unset or <code>FALSE</code>.</p>
+<p>With <code>include_umap_nn_assessment = TRUE</code>, PCA and UMAP summaries are ranked
+together. For a UMAP winner, the first partition returned by
+<code><a href="merge_partitions.html">merge_partitions()</a></code> for the selected graph type and neighbor count supplies
+the seed: frequency ordering with agreement tie-breaking is unchanged. The
+selected UMAP is recomputed once with this seed, the recorded worker RNG kinds,
+and the same normalized, single-thread UMAP arguments, then used for the final
+graph. This replay restores the caller's RNG kinds and state afterward. Its
+seed is recorded in <code>stable_config$umap_seed</code>. PCA winners do not have this field.
+This avoids retaining every seed's embedding or neighbor matrix.
+Seed results are merged in their supplied order, without sorting seed values.
+This representative-graph rule is a workflow policy, not a claim that the
+chosen embedding is uniquely optimal. The <code>feature_stability$embedding_list</code>
+entries remain the original feature-stage plotting embeddings; only the
+selected configuration's <code>umap</code> is replaced by a winning graph's embedding.</p>
     </div>
 
     <div class="section level2">

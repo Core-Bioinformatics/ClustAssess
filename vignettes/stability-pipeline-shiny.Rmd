@@ -126,6 +126,27 @@ feature UMAP plots in the exported Shiny app. `return_nn_idx = FALSE` is an
 optional way to omit stored neighbor indices when downstream code does not
 need them; the example preserves both outputs.
 
+Setting `include_umap_nn_assessment = TRUE` compares PCA- and UMAP-based graphs.
+If UMAP wins, the final graph and the configuration's stored `umap` use the seed
+of the first merged representative for the selected graph type and neighbor
+count, recorded in `stable_config$umap_seed`. The pipeline recomputes only that
+UMAP with the same single-thread settings and the recorded worker RNG kinds,
+restoring the caller's RNG state afterward; it does not retain every seed's
+embedding. `return_nn_idx` then controls storage of the winning representation's
+neighbor indices. Disabling stored UMAP embeddings does not skip UMAP needed
+for graph assessment.
+
+This is a representative-graph workflow policy, not selection of a uniquely
+optimal embedding. Seed results are merged in their supplied order. The
+feature-stage plots keep the original `feature_stability$embedding_list`
+coordinates, while graph/clustering plots use the selected configuration's
+`umap`; these can differ when a UMAP graph wins.
+
+Subset sizes in `steps` below one or above the feature-set size, including
+infinities, select all features before integer conversion, consistently with
+feature assessment. Remaining counts are truncated, sorted, and deduplicated;
+missing values (`NA` and `NaN`) are omitted.
+
 Here `umap_arguments$n_neighbors = 30` controls UMAP, whereas
 `n_neigh_sequence` controls the clustering graphs. From ClustAssess 1.3.0,
 explicit UMAP neighbor counts are honored and capped at the cell count minus

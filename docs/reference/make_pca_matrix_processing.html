@@ -118,10 +118,12 @@ restored afterward. Exact PCA does not use this seed.</p></dd>
 caps it at <code>ncol(dt_mtx) - 1</code>. The row cap applies even when <code>center = FALSE</code>.</p>
 <p>This factory is an explicit alternative to the default processors in
 <code><a href="assess_feature_stability.html">assess_feature_stability()</a></code> and <code><a href="automatic_stability_assessment.html">automatic_stability_assessment()</a></code>, not a
-promise of identical output. Those defaults request at most half the input
-features and temporarily use the registered foreach worker count for BLAS
-threads before setting it to one. Factory-created processors leave BLAS thread
-settings unchanged. Choose the same component count and thread settings when
+promise of identical output. Those defaults cap requested components at
+<code>max(1L, ncol(dt_mtx) %/% 2)</code> and, when <code>RhpcBLASctl</code> is installed,
+temporarily use the registered foreach worker count for BLAS threads before
+setting it to one. Without that
+optional package they leave BLAS settings unchanged. Factory-created processors
+leave BLAS thread settings unchanged. Choose the same component count and thread settings when
 comparing implementations; approximate PCA can still produce different results.</p>
     </div>
 

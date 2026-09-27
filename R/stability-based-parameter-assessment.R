@@ -192,9 +192,11 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' detection algorithms.
 #' @param features_sets A list of the feature sets. A feature set is a list of genes
 #' from the expression matrix that will be used in the dimensionality reduction.
-#' @param steps A list with the same names as `feature_sets`. Each name has assigned
-#' a ector containing the sizes of the subsets; negative values will
-#' be interpreted as using all features.
+#' @param steps A list with the same names as `features_sets`, containing numeric
+#' vectors of subset sizes. Values below one or above the feature-set size,
+#' including infinities, use all features before integer truncation. Counts are
+#' sorted and deduplicated; missing values (`NA` and `NaN`) are omitted, as in
+#' [assess_feature_stability()].
 #' @param seed_sequence A custom seed sequence; if the value is NULL, the
 #' sequence will be built starting from 1 with a step of 100.
 #' @param graph_reduction_embedding The type of dimensionality reduction used for
@@ -219,6 +221,8 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' actual number of columns in its returned embedding, including for custom
 #' processors. See [make_pca_matrix_processing()] for explicit PCA alternatives
 #' and their component-count and thread settings.
+#' The processor receives a cells-by-features matrix. Default BLAS thread control
+#' is used only when the optional `RhpcBLASctl` package is installed.
 #' @param umap_arguments A list containing the arguments that will be passed to the
 #' UMAP function. Refer to the `uwot::umap` function for more details.
 #' @param prune_value Argument indicating whether to prune the SNN graph. If the
@@ -251,14 +255,32 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' when this option changes. Manage seeds in those steps if comparable results are
 #' required. Exact PCA and processors from `make_pca_matrix_processing()` do not
 #' depend on that intervening RNG state.
+#' If UMAP wins the graph assessment, the selected configuration's `umap` is the
+#' graph-building embedding when this option is `TRUE`. Setting it to `FALSE`
+#' omits stored embeddings, but does not skip UMAP needed for graph assessment.
 #' @param return_nn_idx A boolean indicating whether to keep the precomputed
-#' nearest-neighbor index inside returned PCA graph-stability objects. Defaults
-#' to `TRUE` to preserve existing returned objects.
+#' nearest-neighbor index inside returned graph-stability objects. This matrix
+#' belongs to the winning PCA or UMAP representation. Defaults to `TRUE`.
 #'
 #' @details
 #' Forced garbage collection at pipeline cleanup points is opt-in through
 #' `options(ClustAssess.force_gc = TRUE)`. R's normal automatic garbage collection
 #' remains active when this option is unset or `FALSE`.
+#'
+#' With `include_umap_nn_assessment = TRUE`, PCA and UMAP summaries are ranked
+#' together. For a UMAP winner, the first partition returned by
+#' [merge_partitions()] for the selected graph type and neighbor count supplies
+#' the seed: frequency ordering with agreement tie-breaking is unchanged. The
+#' selected UMAP is recomputed once with this seed, the recorded worker RNG kinds,
+#' and the same normalized, single-thread UMAP arguments, then used for the final
+#' graph. This replay restores the caller's RNG kinds and state afterward. Its
+#' seed is recorded in `stable_config$umap_seed`. PCA winners do not have this field.
+#' This avoids retaining every seed's embedding or neighbor matrix.
+#' Seed results are merged in their supplied order, without sorting seed values.
+#' This representative-graph rule is a workflow policy, not a claim that the
+#' chosen embedding is uniquely optimal. The `feature_stability$embedding_list`
+#' entries remain the original feature-stage plotting embeddings; only the
+#' selected configuration's `umap` is replaced by a winning graph's embedding.
 #'
 #' @return A list having two fields:
 #'
@@ -328,10 +350,11 @@ automatic_stability_assessment <- function(expression_matrix,
                                            matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
                                                # WARNING using more threads will lead to slightly different results
                                                # check using RhpcBLASctl::blas_get_num_procs()
-                                               actual_npcs <- min(actual_npcs, ncol(dt_mtx) %/% 2)
-                                               RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
+                                               actual_npcs <- min(actual_npcs, max(1L, ncol(dt_mtx) %/% 2))
+                                               control_blas <- is_package_installed("RhpcBLASctl")
+                                               if (control_blas) RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
                                                embedding <- stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
-                                               RhpcBLASctl::blas_set_num_threads(1)
+                                               if (control_blas) RhpcBLASctl::blas_set_num_threads(1)
 
                                                rownames(embedding) <- rownames(dt_mtx)
                                                colnames(embedding) <- paste0("PC_", seq_len(ncol(embedding)))
@@ -376,9 +399,7 @@ automatic_stability_assessment <- function(expression_matrix,
     # FEATURE STABILITY
     # sort the steps in an increasing order
     for (set_name in feature_set_names) {
-        steps[[set_name]][steps[[set_name]] <= 0 |
-            steps[[set_name]] > length(features_sets[[set_name]])] <- length(features_sets[[set_name]])
-        steps[[set_name]] <- sort(unique(steps[[set_name]]))
+        steps[[set_name]] <- normalize_feature_steps(steps[[set_name]], length(features_sets[[set_name]]))
     }
 
     feature_stability_object <- list(
@@ -482,7 +503,9 @@ automatic_stability_assessment <- function(expression_matrix,
             n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
             current_features <- features_sets[[set_name]][seq_len(n_steps)]
             if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {
-                pca_emb <- matrix_processing(expression_matrix[current_features, ])
+                feature_matrix <- expression_matrix[current_features, , drop = FALSE]
+                feature_matrix <- if (inherits(feature_matrix, "dgCMatrix")) Matrix::t(feature_matrix) else t(feature_matrix)
+                pca_emb <- matrix_processing(feature_matrix)
             } else {
                 pca_emb <- feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]]
             }
@@ -576,21 +599,29 @@ automatic_stability_assessment <- function(expression_matrix,
             )
 
             if (include_umap_nn_assessment) {
-                feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- mapply(c,
-                    feature_configs[[set_name]][[n_steps]][["nn_stability"]],
-                    assess_nn_stability(
-                        embedding = feature_configs[[set_name]][[n_steps]]$pca,
-                        n_neigh_sequence = n_neigh_sequence,
-                        n_repetitions = n_repetitions,
-                        seed_sequence = seed_sequence,
-                        graph_reduction_type = "UMAP",
-                        ecs_thresh = ecs_threshold,
-                        prune_value = prune_value,
-                        clustering_algorithm = algorithm_graph_construct,
-                        umap_arguments = umap_arguments
-                    ),
-                    SIMPLIFY = FALSE
+                umap_stability <- assess_nn_stability(
+                    embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                    n_neigh_sequence = n_neigh_sequence,
+                    n_repetitions = n_repetitions,
+                    seed_sequence = seed_sequence,
+                    graph_reduction_type = "UMAP",
+                    ecs_thresh = ecs_threshold,
+                    prune_value = prune_value,
+                    clustering_algorithm = algorithm_graph_construct,
+                    clustering_arguments = clustering_arguments,
+                    umap_arguments = umap_arguments,
+                    return_partition_seeds = TRUE
                 )
+                # Only these summaries share ownership across representations.
+                # PCA's nn_idx remains a matrix until the winning graph is known.
+                for (field in c("n_neigh_k_corresp", "n_neigh_ec_consistency", "n_different_partitions")) {
+                    feature_configs[[set_name]][[n_steps]]$nn_stability[[field]] <- c(
+                        feature_configs[[set_name]][[n_steps]]$nn_stability[[field]],
+                        umap_stability[[field]]
+                    )
+                }
+                feature_configs[[set_name]][[n_steps]]$nn_stability$partition_seeds <- umap_stability$partition_seeds
+                feature_configs[[set_name]][[n_steps]]$nn_stability$partition_rng_kinds <- umap_stability$partition_rng_kinds
             }
 
             if (verbose) {
@@ -632,6 +663,26 @@ automatic_stability_assessment <- function(expression_matrix,
             split_configs <- strsplit(best_config, "_")[[1]]
             base_embedding <- tolower(split_configs[length(split_configs) - 1])
             graph_type <- split_configs[length(split_configs)] # NOTE update if you decide to remove ecs thresh
+            if (base_embedding == "umap") {
+                umap_seed <- feature_configs[[set_name]][[n_steps]]$nn_stability$partition_seeds[[best_config]][[as.character(best_nn)]]
+                umap_rng_kind <- feature_configs[[set_name]][[n_steps]]$nn_stability$partition_rng_kinds[[best_config]][[as.character(best_nn)]]
+                # Replay only the selected representative with the same input,
+                # single-thread arguments, evaluated seed, and worker RNG kinds.
+                umap_emb <- replay_umap_embedding(
+                    feature_configs[[set_name]][[n_steps]]$pca,
+                    umap_arguments, umap_seed, umap_rng_kind
+                )
+                feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx <- parallel_nn2_idx(
+                    umap_emb,
+                    ncol(feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx)
+                )
+                if (compute_umap_embeddings) {
+                    feature_configs[[set_name]][[n_steps]]$umap <- umap_emb
+                }
+                feature_configs[[set_name]][[n_steps]]$stable_config$umap_seed <- umap_seed
+            }
+            feature_configs[[set_name]][[n_steps]]$nn_stability$partition_seeds <- NULL
+            feature_configs[[set_name]][[n_steps]]$nn_stability$partition_rng_kinds <- NULL
             feature_configs[[set_name]][[n_steps]]$adj_matrix <- getNNmatrix(
                 feature_configs[[set_name]][[n_steps]]$nn_stability$nn_idx,
                 best_nn,

@@ -16,12 +16,16 @@ assess_feature_stability(
   ecs_thresh = 1,
   matrix_processing = function(dt_mtx, actual_npcs = 30, ...) {
      actual_npcs <-
-    min(actual_npcs, ncol(dt_mtx)\%/\%2)
-    
+    min(actual_npcs, max(1L, ncol(dt_mtx)\%/\%2))
+     control_blas <-
+    is_package_installed("RhpcBLASctl")
+     if (control_blas)
+
     RhpcBLASctl::blas_set_num_threads(foreach::getDoParWorkers())
      embedding <-
     stats::prcomp(x = dt_mtx, rank. = actual_npcs)$x
-    
+     if (control_blas)
+
     RhpcBLASctl::blas_set_num_threads(1)
      rownames(embedding) <- rownames(dt_mtx)
    
@@ -44,8 +48,10 @@ and the observations on the columns.}
 \item{feature_set}{A set of feature names that can be found on the rownames
 of the data matrix.}
 
-\item{steps}{Vector containing the sizes of the subsets; negative values will
-be interpreted as using all features.}
+\item{steps}{Numeric vector containing the subset sizes. Values below one or
+above the feature-set size, including infinities, use all features. Remaining
+values are truncated to integers; counts are sorted and deduplicated. Missing
+values (\code{NA} and \code{NaN}) are omitted.}
 
 \item{feature_type}{A name associated to the feature_set.}
 
@@ -71,7 +77,10 @@ matrix
 by using a dimensionality reduction technique. The function should have
 one parameter, the data matrix, and should return an embedding describing the
 reduced space. By default, the function will use the precise PCA method with
-\code{prcomp}.}
+\code{prcomp}. The processor receives a cells-by-features matrix, including for a
+single feature. If \code{RhpcBLASctl} is installed, the default temporarily uses
+the registered worker count for BLAS threads and sets it to one afterward;
+otherwise it leaves the caller's BLAS settings unchanged.}
 
 \item{umap_arguments}{A list containing the arguments that will be passed
 to the UMAP function. Refer to the \code{uwot::umap} function for more details.}

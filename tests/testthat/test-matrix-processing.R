@@ -14,6 +14,7 @@ test_that("make_pca_matrix_processing exact method matches prcomp embedding", {
 })
 
 test_that("PCA factory rank caps are distinct from unchanged pipeline defaults", {
+    testthat::skip_if_not_installed("RhpcBLASctl")
     set.seed(1)
     dt_mtx <- matrix(stats::rnorm(50 * 20), nrow = 50)
     processor <- make_pca_matrix_processing(actual_npcs = 30)

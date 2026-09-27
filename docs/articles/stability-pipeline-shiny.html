@@ -71,7 +71,7 @@
       <h1>Automatic ClustAssess pipeline. Generating the ClustAssess shiny-app</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/vignettes/stability-pipeline-shiny.Rmd" class="external-link"><code>vignettes/stability-pipeline-shiny.Rmd</code></a></small>
+      <small class="dont-index">Source: <code>vignettes/stability-pipeline-shiny.Rmd</code></small>
       <div class="d-none name"><code>stability-pipeline-shiny.Rmd</code></div>
     </div>
 
@@ -174,6 +174,9 @@
 <span><span class="va">ma_hv_genes_intersection</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span><span class="va">union</span>, <span class="va">ma_hv_genes_intersection_sets</span><span class="op">)</span></span>
 <span><span class="va">ma_hv_steps</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ma_hv_genes_intersection_sets</span>, <span class="va">length</span><span class="op">)</span></span></code></pre></div>
 <p>Apply the automatic assessment. Keep <code>compute_umap_embeddings = TRUE</code> for feature UMAPs in the exported Shiny app. <code>return_nn_idx = FALSE</code> optionally omits stored neighbor indices; both outputs are retained by default.</p>
+<p>Setting <code>include_umap_nn_assessment = TRUE</code> compares PCA- and UMAP-based graphs. If UMAP wins, the final graph and the configuration's stored <code>umap</code> use the seed of the first merged representative for the selected graph type and neighbor count, recorded in <code>stable_config$umap_seed</code>. The pipeline recomputes only that UMAP with the same single-thread settings and the recorded worker RNG kinds, restoring the caller's RNG state afterward; it does not retain every seed's embedding. <code>return_nn_idx</code> then controls storage of the winning representation's neighbor indices. Disabling stored UMAP embeddings does not skip UMAP needed for graph assessment.</p>
+<p>This is a representative-graph workflow policy, not selection of a uniquely optimal embedding. Seed results are merged in their supplied order. The feature-stage plots keep the original <code>feature_stability$embedding_list</code> coordinates, while graph/clustering plots use the selected configuration's <code>umap</code>; these can differ when a UMAP graph wins.</p>
+<p>Subset sizes in <code>steps</code> below one or above the feature-set size, including infinities, select all features before integer conversion, consistently with feature assessment. Remaining counts are truncated, sorted, and deduplicated; missing values (<code>NA</code> and <code>NaN</code>) are omitted.</p>
 <p><code>umap_arguments$n_neighbors = 30</code> controls UMAP, separately from the clustering graph's <code>n_neigh_sequence</code>. From 1.3.0 it is honored, capped at the cell count minus one; older versions silently used 15. UMAP-based results can therefore change even with matching seeds.</p>
 <p>The default processor still uses exact PCA. The explicit <code>make_pca_matrix_processing()</code> factory has different rank limits and BLAS thread handling. Selected configurations record the actual embedding dimension in <code>stable_config$n_pcs</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">

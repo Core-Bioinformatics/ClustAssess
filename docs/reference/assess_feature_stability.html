@@ -69,12 +69,16 @@ based on incremental subsets of a given feature set.</p>
 <span>  ecs_thresh <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  matrix_processing <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">dt_mtx</span>, <span class="va">actual_npcs</span> <span class="op">=</span> <span class="fl">30</span>, <span class="va">...</span><span class="op">)</span> <span class="op">{</span></span>
 <span>     <span class="va">actual_npcs</span> <span class="op">&lt;-</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span><span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span><span class="fl">2</span><span class="op">)</span></span>
-<span>    </span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">actual_npcs</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span><span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span>     <span class="va">control_blas</span> <span class="op">&lt;-</span></span>
+<span>    <span class="fu">is_package_installed</span><span class="op">(</span><span class="st">"RhpcBLASctl"</span><span class="op">)</span></span>
+<span>     <span class="kw">if</span> <span class="op">(</span><span class="va">control_blas</span><span class="op">)</span></span>
+<span></span>
 <span>    <span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/getDoParWorkers.html" class="external-link">getDoParWorkers</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span>     <span class="va">embedding</span> <span class="op">&lt;-</span></span>
 <span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/prcomp.html" class="external-link">prcomp</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">dt_mtx</span>, rank. <span class="op">=</span> <span class="va">actual_npcs</span><span class="op">)</span><span class="op">$</span><span class="va">x</span></span>
-<span>    </span>
+<span>     <span class="kw">if</span> <span class="op">(</span><span class="va">control_blas</span><span class="op">)</span></span>
+<span></span>
 <span>    <span class="fu">RhpcBLASctl</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/RhpcBLASctl/man/RhpcBLASctl-package.html" class="external-link">blas_set_num_threads</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">dt_mtx</span><span class="op">)</span></span>
 <span>   </span>
@@ -106,8 +110,10 @@ of the data matrix.</p></dd>
 
 
 <dt id="arg-steps">steps<a class="anchor" aria-label="anchor" href="#arg-steps"></a></dt>
-<dd><p>Vector containing the sizes of the subsets; negative values will
-be interpreted as using all features.</p></dd>
+<dd><p>Numeric vector containing the subset sizes. Values below one or
+above the feature-set size, including infinities, use all features. Remaining
+values are truncated to integers; counts are sorted and deduplicated. Missing
+values (<code>NA</code> and <code>NaN</code>) are omitted.</p></dd>
 
 
 <dt id="arg-feature-type">feature_type<a class="anchor" aria-label="anchor" href="#arg-feature-type"></a></dt>
@@ -147,7 +153,10 @@ matrix
 by using a dimensionality reduction technique. The function should have
 one parameter, the data matrix, and should return an embedding describing the
 reduced space. By default, the function will use the precise PCA method with
-<code>prcomp</code>.</p></dd>
+<code>prcomp</code>. The processor receives a cells-by-features matrix, including for a
+single feature. If <code>RhpcBLASctl</code> is installed, the default temporarily uses
+the registered worker count for BLAS threads and sets it to one afterward;
+otherwise it leaves the caller's BLAS settings unchanged.</p></dd>
 
 
 <dt id="arg-umap-arguments">umap_arguments<a class="anchor" aria-label="anchor" href="#arg-umap-arguments"></a></dt>

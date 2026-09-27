@@ -71,7 +71,7 @@
       <h1>Flexibility of the dimensionality reduction assessment</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Core-Bioinformatics/ClustAssess/blob/HEAD/vignettes/stability-dim-reduction-flexibility.Rmd" class="external-link"><code>vignettes/stability-dim-reduction-flexibility.Rmd</code></a></small>
+      <small class="dont-index">Source: <code>vignettes/stability-dim-reduction-flexibility.Rmd</code></small>
       <div class="d-none name"><code>stability-dim-reduction-flexibility.Rmd</code></div>
     </div>
 
@@ -180,8 +180,8 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://bioconductor.org/packages/Rsamtools" class="external-link">Rsamtools</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">n_repetitions</span> <span class="op">&lt;-</span> <span class="fl">30</span></span></code></pre></div>
-<p><code>matrix_processing</code> maps a cells-by-features matrix to a cells-by-components matrix, preserving cell order and row names. The default uses exact <code>stats::prcomp()</code> PCA and requests at most <code>min(30, n_features %/% 2)</code> components.</p>
-<p>The explicit <code>make_pca_matrix_processing(actual_npcs = 30, method = "exact")</code> factory instead caps components at <code>min(actual_npcs, n_cells - 1, n_features)</code> and leaves BLAS threads unchanged. The default processor uses the worker count for PCA threads, then sets them to one. The factory is therefore not an identical replacement. Its optional <code>method = "irlba"</code> uses fixed-seed approximate PCA, also caps below the feature count, and restores the caller RNG state; numerical outputs can differ from exact PCA. Automatic assessment records the actual embedding dimension in <code>stable_config$n_pcs</code>.</p>
+<p><code>matrix_processing</code> maps a cells-by-features matrix to a cells-by-components matrix, preserving cell order and row names. The default uses exact <code>stats::prcomp()</code> PCA and requests at most <code>min(30, max(1L, n_features %/% 2))</code> components, retaining one component for a one-feature input.</p>
+<p>The explicit <code>make_pca_matrix_processing(actual_npcs = 30, method = "exact")</code> factory instead caps components at <code>min(actual_npcs, n_cells - 1, n_features)</code> and leaves BLAS threads unchanged. The default processor uses the half-feature cap with a minimum of one. It uses the worker count for PCA threads, then sets them to one, when the optional <code>RhpcBLASctl</code> package is available; without it, the default processor leaves BLAS settings unchanged. The factory is therefore not an identical replacement. Its optional <code>method = "irlba"</code> uses fixed-seed approximate PCA, also caps below the feature count, and restores the caller RNG state; numerical outputs can differ from exact PCA. Automatic assessment records the actual embedding dimension in <code>stable_config$n_pcs</code>.</p>
 <p>Keep <code>compute_umap_embeddings = TRUE</code> for these feature plots, Shiny export, and Monocle conversion. Omitting output embeddings can change the RNG state before later unseeded stochastic processors, so manage their seeds when comparing settings.</p>
 <div class="section level2">
 <h2 id="clustassess-using-pca">ClustAssess using PCA<a class="anchor" aria-label="anchor" href="#clustassess-using-pca"></a>
