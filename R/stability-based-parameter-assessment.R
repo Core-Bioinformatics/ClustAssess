@@ -80,14 +80,20 @@ leiden_clustering <- function(g,
     best_mb <- NULL
     best_quality <- NULL
 
+    # leidenbase seeds itself from the clock when it gets no seed, so several
+    # starts get seeds drawn from `seed`. R's random number state is then put
+    # back as set.seed() left it, for the steps that follow.
     if (num_starts > 1) {
         set.seed(seed)
+        seeded_state <- get(".Random.seed", envir = globalenv())
+        start_seeds <- sample.int(.Machine$integer.max, num_starts)
+        assign(".Random.seed", seeded_state, envir = globalenv())
     }
 
     for (i in seq_len(num_starts)) {
         starting_seed <- seed
         if (num_starts > 1) {
-            starting_seed <- NULL
+            starting_seed <- start_seeds[[i]]
         }
         cluster_result <- leidenbase::leiden_find_partition(
             igraph = g,

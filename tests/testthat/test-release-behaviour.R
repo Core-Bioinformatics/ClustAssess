@@ -655,3 +655,39 @@ test_that("algorithm 6 gives the partitions of leidenbase on a new igraph of eac
         }
     }
 })
+
+test_that("algorithm 6 with several starts gives the same partition for the same seed", {
+    testthat::skip_if_not_installed("leidenbase")
+    # A graph of 300 cells without groups, whose partitions depend on the seed.
+    set.seed(5)
+    embedding <- matrix(stats::rnorm(300 * 10), 300)
+    rownames(embedding) <- paste0("cell_", seq_len(300))
+    snn <- ClustAssess:::build_neigh_matrix(
+        nn_idx = RANN::nn2(embedding, k = 15)$nn.idx,
+        n_neigh = 15,
+        cell_names = rownames(embedding),
+        graph_type = 2,
+        prune_value = -1
+    )$snn
+    cluster <- function(seed) {
+        ClustAssess:::clustering_functions(snn, resolution = 1, seed = seed, algorithm = 6,
+            num_iters = 1, num_starts = 3, verbose = FALSE)
+    }
+    first <- cluster(1)
+    # leidenbase without a seed seeds itself from the clock, in seconds.
+    Sys.sleep(1.1)
+    expect_identical(cluster(1), first)
+    expect_false(identical(cluster(2), first))
+    # The random number state is as set.seed() left it.
+    set.seed(1)
+    seeded_state <- .Random.seed
+    cluster(1)
+    expect_identical(.Random.seed, seeded_state)
+})
+
+test_that("algorithm 6 with one start and no seed still clusters", {
+    testthat::skip_if_not_installed("leidenbase")
+    membership <- ClustAssess:::leiden_clustering(igraph::make_ring(10), resolution = 1, seed = NULL,
+        num_starts = 1)
+    expect_length(membership, 10)
+})

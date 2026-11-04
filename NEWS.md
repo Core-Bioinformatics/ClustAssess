@@ -132,6 +132,11 @@ robustness" and these implementation effects:
   - `assess_feature_stability()`, `assess_nn_stability()` and the matching
     steps of `automatic_stability_assessment()` accept it, as
     `assess_clustering_stability()` did.
+  - with several starts (`num_starts` above 1 in `clustering_arguments`), it
+    gives the same partitions for the same seeds. Each start now gets a seed
+    drawn from the clustering's seed; it had none, so `leidenbase` seeded it
+    from the clock and the partitions changed from run to run. R's random
+    number state after the clustering is as before.
 - Fixed the point shapes of `plot_k_resolution_corresp()`,
   `plot_k_n_partitions()` and the Shiny app for five or more clustering
   methods or configurations: the fifth had no shape, or the plot failed. The
