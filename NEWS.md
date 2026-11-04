@@ -132,6 +132,9 @@ robustness" and these implementation effects:
   methods or configurations: the fifth had no shape, or the plot failed. The
   shapes repeat after the five filled ones. The app's method filters show
   every method by default, `Leiden_matrix` and `Leidenbase` included.
+- Fixed the Shiny app's plot of the number of partitions per number of
+  clusters with its legend at small text sizes, which stopped with "figure
+  margins too large": its legend row now holds the margins of its plots.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
 - Unified feature-count normalization between feature and automatic assessment,

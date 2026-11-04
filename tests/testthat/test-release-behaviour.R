@@ -233,7 +233,20 @@ test_that("the app's ggplot k plots give each clustering method a shape", {
     }
 })
 
-test_that("the app's k plots draw every clustering method", {
+# The arguments of each plot() call of an app plot function.
+capture_plot_calls <- function(fn, ...) {
+    env <- new.env(parent = environment(fn))
+    env$calls <- list()
+    env$plot <- function(...) {
+        env$calls[[length(env$calls) + 1L]] <- list(...)
+        graphics::plot(...)
+    }
+    environment(fn) <- env
+    fn(...)
+    env$calls
+}
+
+test_that("the app's k plots give each clustering method its shape", {
     methods <- ClustAssess:::algorithm_names
     summary_df <- expand.grid(k = 2:3, cl_method = methods, stringsAsFactors = FALSE)
     summary_df$res <- rep(c(0.5, 1), length(methods))
@@ -241,9 +254,23 @@ test_that("the app's k plots draw every clustering method", {
     summary_df$total_freq <- 10
     summary_df$ecc <- seq(0.6, 0.9, length.out = nrow(summary_df))
     summary_df$n_partitions <- 2
+    # Two points of each of the six methods, in their order.
+    expected <- rep(c(21:25, 21), each = 2)
 
-    grDevices::pdf(NULL, width = 20, height = 20)
+    grDevices::pdf(NULL, width = 10, height = 8)
     on.exit(grDevices::dev.off(), add = TRUE)
-    expect_no_error(ClustAssess:::shiny_plot_k_res(summary_df))
-    expect_no_error(ClustAssess:::shiny_plot_k_n_partitions(summary_df, plt_height = 600))
+    calls <- capture_plot_calls(ClustAssess:::shiny_plot_k_res, summary_df)
+    expect_equal(calls[[1]]$pch, expected)
+    # With its legend, at a small text size and at the default of the app.
+    for (text_size in c(1, 1.5)) {
+        calls <- capture_plot_calls(
+            ClustAssess:::shiny_plot_k_n_partitions,
+            summary_df,
+            plt_height = 576,
+            display_legend = TRUE,
+            text_size = text_size
+        )
+        expect_equal(calls[[1]]$pch, expected)
+        expect_equal(calls[[2]]$pch, c(21:25, 21))
+    }
 })

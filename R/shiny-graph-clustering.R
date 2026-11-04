@@ -1645,6 +1645,11 @@ shiny_plot_k_n_partitions <- function(summary_df,
         plt_height <- plt_height / ppi
 
         predicted_height <- graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = text_size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5)
+        # The legend row also holds the margins of its plots, whose lines a
+        # layout of three columns draws at 0.66 of the character height; a
+        # shorter row stops the plot with "figure margins too large".
+        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2] * 0.66
+        predicted_height <- max(predicted_height, margin_height + 0.25)
         layout.matrix <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, ncol = 3, byrow = TRUE)
 
         graphics::layout(

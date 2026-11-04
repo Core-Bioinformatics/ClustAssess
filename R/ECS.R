@@ -1094,22 +1094,23 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' - "avg_agreement": order the partitions based on their average agreement index.
 #' The average agreement index of a partition is the mean ECS between that
 #' partition and the partitions of the other repetitions, each partition
-#' counted as often as it was found (its frequency after merging). When every
-#' repetition gives the same partition, its agreement is 1; a single
-#' repetition has none.
+#' counted as often as it was found (its frequency after merging). When
+#' merging leaves one partition, found by more than one repetition, its
+#' agreement is 1; a single repetition has none.
 #' The partition with the highest agreement will be  the first on the list.
 #' Both "freq" and "avg_agreement" record this index as `avg_agreement`.
 #' - "none": do not perform any ordering (not recommended). If selected, the
 #' average agreement scores will not be calculated.
 #' @param return_ecs_matrix A logical: if TRUE, the function will add the
-#' ECS matrix to the return list. Defaults to FALSE.
+#' ECS matrix to the return list, unless merging leaves one partition.
+#' Defaults to FALSE.
 #' @param check_ties A logical value that indicates whether to check for ties
 #' in the highest frequency partitions or not. If TRUE, the function will put
 #' at the first position the partition that has the highest similarity
-#' with the other partitions. Defaults to `FALSE`.
+#' with the other partitions. Defaults to `TRUE`.
 #' @return a list of the merged partitions, together with their associated
-#' ECC score. If `return_ecs_matrix` is set to TRUE, the function will also
-#' return the ECS matrix.
+#' ECC score. If `return_ecs_matrix` is set to TRUE and merging leaves more
+#' than one partition, the function will also return the ECS matrix.
 #' @export
 #' @examples
 #' initial_list <- list(c(1, 1, 2), c(2, 2, 2), c("B", "B", "A"))
