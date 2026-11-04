@@ -274,3 +274,240 @@ test_that("the app's k plots give each clustering method its shape", {
         expect_equal(calls[[2]]$pch, c(21:25, 21))
     }
 })
+
+# The k summary of four clustering methods, as the app plots it.
+k_summary <- function() {
+    methods <- ClustAssess:::algorithm_names[c(1, 2, 3, 6)]
+    summary_df <- expand.grid(k = 2:9, cl_method = methods, stringsAsFactors = FALSE)
+    summary_df$first_freq <- 8
+    summary_df$total_freq <- rep(c(5, 10, 20, 15), length.out = nrow(summary_df))
+    summary_df$ecc <- seq(0.6, 0.95, length.out = nrow(summary_df))
+    summary_df$n_partitions <- rep(1:4, length.out = nrow(summary_df))
+    summary_df
+}
+
+test_that("a legend row keeps its text size while its plot has room", {
+    fit <- ClustAssess:::fit_legend_size
+    # A legend of one inch per unit of text size, beside a plot with 5 inches
+    # for the legend and itself.
+    height <- function(size) size
+    region <- function(legend) 5 - legend
+    expect_equal(fit(2, height, region), 2)
+    smaller <- fit(10, height, region)
+    expect_lt(smaller, 10)
+    expect_gte(region(height(smaller)), 0.1)
+    expect_null(fit(10, function(size) 5, region))
+})
+
+test_that("the app's plots with a legend row draw at every size of their sliders", {
+    ns <- asNamespace("ClustAssess")
+    summary_df <- k_summary()
+    groups <- rep(c("Louvain", "Louvain.refined", "SLM"), times = 6)
+    resolutions <- rep(seq(0.6, 1.1, by = 0.1), each = 3)
+    boxes <- lapply(seq_along(groups), function(i) seq(0.5, 1, length.out = 20))
+    # The app sets the colours of each number of groups when it starts.
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    ns$add_env_variable("discrete_colors", list("3" = c("#1B9E77", "#D95F02", "#7570B3")))
+    on.exit(
+        if (had_colours) {
+            assign("discrete_colors", old_colours, envir = ns$pkg_env)
+        } else {
+            rm("discrete_colors", envir = ns$pkg_env)
+        },
+        add = TRUE
+    )
+    embedding <- cbind(seq(-1, 1, length.out = 200), sin(seq(0, 6, length.out = 200)))
+    labels <- paste("cluster", 1:8)
+    discrete <- factor(rep(labels, length.out = 200), levels = labels)
+    continuous <- seq(0, 1, length.out = 200)
+
+    draw <- list(
+        k = function(h, w, size) {
+            ns$shiny_plot_k_n_partitions(summary_df, plt_height = h * ns$ppi, display_legend = TRUE,
+                text_size = size, pt_size_range = c(1.35, 2.35))
+        },
+        k_large_points = function(h, w, size) {
+            ns$shiny_plot_k_n_partitions(summary_df, plt_height = h * ns$ppi, display_legend = TRUE,
+                text_size = size, pt_size_range = c(0.1, 5))
+        },
+        boxplot = function(h, w, size) {
+            ns$grouped_boxplot_list(boxes, groups, resolutions, plt_height = h * ns$ppi,
+                plt_width = w * ns$ppi, xlab_text = "resolution", display_legend = TRUE, text_size = size)
+        },
+        umap = function(h, w, size) {
+            ns$color_plot2(embedding, discrete, grDevices::rainbow(8), plt_height = h * ns$ppi,
+                plt_width = w * ns$ppi, unique_values = labels, display_legend = TRUE, legend_text_size = size)
+        },
+        colour_bar = function(h, w, size) {
+            ns$color_plot2(embedding, continuous, NULL, plt_height = h * ns$ppi, plt_width = w * ns$ppi,
+                display_legend = TRUE, legend_text_size = size)
+        },
+        # A legend height given by the caller, as the sandbox gives it.
+        given_height = function(h, w, size) {
+            ns$color_plot2(embedding, continuous, NULL, plt_height = h * ns$ppi, plt_width = w * ns$ppi,
+                display_legend = TRUE, predicted_height = size / 2)
+        }
+    )
+    # Downloads are from 3 inches high and wide; the sliders go up to 10.
+    for (name in names(draw)) {
+        for (h in c(3, 7)) {
+            for (w in c(3, 7)) {
+                for (size in c(0.1, 0.5, 1.5, 2, 4.5, 7.5, 10)) {
+                    grDevices::pdf(NULL, width = w, height = h)
+                    result <- tryCatch(
+                        {
+                            draw[[name]](h, w, size)
+                            "drawn"
+                        },
+                        error = conditionMessage
+                    )
+                    grDevices::dev.off()
+                    expect_identical(result, "drawn", label = sprintf("%s, %g x %g inches, size %g", name, w, h, size))
+                }
+            }
+        }
+    }
+})
+
+test_that("the app's k plot legend is drawn smaller only when the plot has no room", {
+    ns <- asNamespace("ClustAssess")
+    # Each plot of the app has its own device, as here.
+    k_plot_calls <- function(height, text_size) {
+        grDevices::pdf(NULL, width = 10, height = height)
+        on.exit(grDevices::dev.off())
+        capture_plot_calls(ns$shiny_plot_k_n_partitions, k_summary(),
+            plt_height = height * ns$ppi, display_legend = TRUE, text_size = text_size)
+    }
+    calls <- k_plot_calls(8, 1.5)
+    expect_equal(calls[[1]]$cex.axis, 1.5)
+    expect_equal(calls[[2]]$cex.main, 1.5)
+    calls <- k_plot_calls(7, 10)
+    expect_equal(calls[[1]]$cex.axis, 10)
+    expect_lt(calls[[2]]$cex.main, 10)
+})
+
+# A stability.h5 with the overall feature stability of two feature sets of
+# 100 and 200 features, as the app reads it from its folder.
+write_feature_stability <- function(folder) {
+    file <- file.path(folder, "stability.h5")
+    rhdf5::h5createFile(file)
+    rhdf5::h5createGroup(file, "feature_stability")
+    rhdf5::h5createGroup(file, "feature_stability/overall")
+    scores <- expand.grid(ftype = c("A", "B"), fsize = c("100", "200"), rep = 1:20, stringsAsFactors = FALSE)
+    scores$ecc <- seq(0.5, 1, length.out = nrow(scores))
+    rhdf5::h5write(scores, file, "feature_stability/overall/by_step")
+    rhdf5::h5write(scores, file, "feature_stability/overall/incremental")
+}
+
+test_that("the app's feature stability boxplots draw at every size of their sliders", {
+    testthat::skip_if_not_installed("rhdf5")
+    ns <- asNamespace("ClustAssess")
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    ns$add_env_variable("discrete_colors", list("2" = c("#1B9E77", "#D95F02")))
+    folder <- tempfile("feature-stability")
+    dir.create(folder)
+    old_folder <- setwd(folder)
+    on.exit(
+        {
+            setwd(old_folder)
+            unlink(folder, recursive = TRUE)
+            if (had_colours) {
+                assign("discrete_colors", old_colours, envir = ns$pkg_env)
+            } else {
+                rm("discrete_colors", envir = ns$pkg_env)
+            }
+        },
+        add = TRUE
+    )
+    write_feature_stability(folder)
+    ordering <- list(
+        original = list(A = c("100", "200"), B = c("100", "200")),
+        original_incremental = list(A = c("100", "200"), B = c("100", "200"))
+    )
+    draw <- list(
+        by_step = ns$shiny_plot_feature_stability_boxplot,
+        incremental = ns$shiny_plot_feature_stability_incremental
+    )
+    for (name in names(draw)) {
+        for (h in c(3, 7)) {
+            for (w in c(3, 7)) {
+                for (size in c(0.1, 0.5, 1.5, 2, 4.5, 7.5, 10)) {
+                    grDevices::pdf(NULL, width = w, height = h)
+                    result <- tryCatch(
+                        {
+                            draw[[name]]("overall", ordering, plt_height = h * ns$ppi, plt_width = w * ns$ppi,
+                                text_size = size)
+                            "drawn"
+                        },
+                        error = conditionMessage
+                    )
+                    grDevices::dev.off()
+                    expect_identical(result, "drawn", label = sprintf("%s, %g x %g inches, size %g", name, w, h, size))
+                }
+            }
+        }
+    }
+})
+
+test_that("the app's separate colour bar draws at every legend size", {
+    ns <- asNamespace("ClustAssess")
+    values <- seq(0, 1, length.out = 500)
+    for (size in c(0.1, 0.2, 0.3, 0.5, 1, 2, 4.5, 10)) {
+        # The app makes the legend as high as three lines of its text.
+        grDevices::pdf(NULL)
+        text_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = size)
+        grDevices::dev.off()
+        for (w in c(2, 3, 7)) {
+            grDevices::pdf(NULL, width = w, height = text_height)
+            result <- tryCatch(
+                {
+                    ns$only_legend_plot(NULL, NULL, values, plt_width = w * ns$ppi, text_size = size)
+                    "drawn"
+                },
+                error = conditionMessage
+            )
+            grDevices::dev.off()
+            expect_identical(result, "drawn", label = sprintf("width %g, size %g", w, size))
+        }
+    }
+})
+
+test_that("the app's k plot draws on a narrow screen", {
+    ns <- asNamespace("ClustAssess")
+    for (w in c(2, 2.4, 2.5)) {
+        for (size in c(0.5, 1.5, 4.5)) {
+            grDevices::pdf(NULL, width = w, height = 7)
+            result <- tryCatch(
+                {
+                    ns$shiny_plot_k_n_partitions(k_summary(), plt_height = 7 * ns$ppi, display_legend = TRUE,
+                        text_size = size, pt_size_range = c(1.35, 2.35))
+                    "drawn"
+                },
+                error = conditionMessage
+            )
+            grDevices::dev.off()
+            expect_identical(result, "drawn", label = sprintf("width %g, size %g", w, size))
+        }
+    }
+})
+
+test_that("a UMAP colour bar keeps the height given by the caller where it fits", {
+    ns <- asNamespace("ClustAssess")
+    embedding <- cbind(seq(-1, 1, length.out = 200), sin(seq(0, 6, length.out = 200)))
+    values <- seq(0, 1, length.out = 200)
+    colour_bar_height <- function(predicted_height) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        on.exit(grDevices::dev.off())
+        ns$color_plot2(embedding, values, NULL, plt_height = 7 * ns$ppi, plt_width = 7 * ns$ppi,
+            display_legend = TRUE, predicted_height = predicted_height)
+        # The colour bar is drawn last, in its row of the layout.
+        graphics::par("fin")[2]
+    }
+    # The rows are drawn at 2.5 cm per inch.
+    expect_equal(colour_bar_height(0.205), 0.205 * 2.5 / 2.54)
+    expect_equal(colour_bar_height(1), 1 * 2.5 / 2.54)
+    # A row too low for the 0.1 inch above and below the colour bar is raised.
+    expect_equal(colour_bar_height(0.1), 0.21)
+})

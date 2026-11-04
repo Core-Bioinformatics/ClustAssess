@@ -20,6 +20,24 @@ get_env_var <- function(variable_name) {
     return(get(variable_name, envir = pkg_env))
 }
 
+# The text size of a legend drawn in a row under a plot. `legend_height` gives
+# the height (inches) of the legend row at a text size, and `plot_region` the
+# height (inches) left for the plot itself, inside its margins, beside a legend
+# row of a given height. A legend that left the plot no room stopped it with
+# "figure margins too large". The legend keeps the requested size while the
+# plot has at least `min_region` inches; otherwise its text is drawn smaller
+# until the plot has room. NULL: even a legend of `min_size` does not fit, and
+# the plot is drawn without it.
+fit_legend_size <- function(size, legend_height, plot_region, min_region = 0.1, min_size = 0.1) {
+    while (plot_region(legend_height(size)) < min_region) {
+        if (size <= min_size) {
+            return(NULL)
+        }
+        size <- max(size * 0.9, min_size)
+    }
+    size
+}
+
 mean_functions <- list(
     logNormalize = function(x, pseudocount_use = 1, base = 2) {
         return(log(x = Matrix::rowMeans(x = expm1(x = x)) + pseudocount_use, base = base))
@@ -164,26 +182,39 @@ grouped_boxplot_list <- function(groups_list,
     text_coords[count_diff + 1] <- mean(at_values[start_index:n_boxplots])
 
     if (display_legend) {
-        predicted_width <- graphics::strwidth(c(" ", unique_groups_values), units = "inches", cex = text_size)
-        space_width <- predicted_width[1]
-        predicted_width <- predicted_width[2:length(predicted_width)]
-        number_columns <- min(
-            max(
-                plt_width %/% (6 * space_width + max(predicted_width)),
-                1
-            ),
-            length(unique_groups_values)
-        )
-        number_rows <- ceiling(length(unique_groups_values) / number_columns)
+        legend_height <- function(size) {
+            predicted_width <- graphics::strwidth(c(" ", unique_groups_values), units = "inches", cex = size)
+            space_width <- predicted_width[1]
+            predicted_width <- predicted_width[2:length(predicted_width)]
+            number_columns <- min(
+                max(
+                    plt_width %/% (6 * space_width + max(predicted_width)),
+                    1
+                ),
+                length(unique_groups_values)
+            )
+            number_rows <- ceiling(length(unique_groups_values) / number_columns)
 
-        text_height <- graphics::strheight(
-            paste(
-                rep("TEXT", number_rows + 1),
-                collapse = "\n"
-            ),
-            units = "inches",
-            cex = text_size
-        ) + 0.1
+            graphics::strheight(
+                paste(
+                    rep("TEXT", number_rows + 1),
+                    collapse = "\n"
+                ),
+                units = "inches",
+                cex = size
+            ) + 0.1
+        }
+        # The boxplots above the legend keep their margins; a large text size
+        # draws the legend smaller, or not at all, so that they keep room.
+        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+        legend_size <- fit_legend_size(text_size, legend_height, function(height) {
+            plt_height - height - 0.05 - margin_height
+        })
+        display_legend <- !is.null(legend_size)
+    }
+
+    if (display_legend) {
+        text_height <- legend_height(legend_size)
 
         graphics::layout(
             matrix(c(1, 2), nrow = 2),
@@ -220,8 +251,8 @@ grouped_boxplot_list <- function(groups_list,
         legend = unique_groups_values,
         col = groups_colours,
         pch = 15,
-        cex = text_size,
-        pt.cex = text_size * 2,
+        cex = legend_size,
+        pt.cex = legend_size * 2,
         bty = "n",
         horiz = TRUE,
         xpd = TRUE
@@ -553,7 +584,12 @@ only_legend_plot <- function(unique_values,
     plt_width <- plt_width / ppi
 
     if (is_continuous) {
-        graphics::par(mai = c(0.1, 0, 0.1, 0))
+        # The colour bar keeps 0.1 inch above and below it, less on a device
+        # too short for that, which stopped the plot with "figure margins too
+        # large".
+        device_height <- graphics::par("din")[2]
+        vertical_margin <- if (device_height > 0.2) 0.1 else max(0, (device_height - 0.01) / 2)
+        graphics::par(mai = c(vertical_margin, 0, vertical_margin, 0))
         if (!is.null(value_cap) && !all(is.na(value_cap))) {
             observed_min <- min(color_info, na.rm = TRUE)
             observed_max <- max(color_info, na.rm = TRUE)
@@ -737,34 +773,63 @@ color_plot2 <- function(embedding,
         if (is_continuous) {
             unique_values <- c(continuous_scale_min, continuous_scale_max)
             number_rows <- 2
+        }
 
-            if (is.null(predicted_height)) {
-                predicted_height <- graphics::strheight("TE\nXT\n", units = "inches", cex = legend_text_size)
-            }
-        } else {
-            # calculate space needed for the legend
-            predicted_width <- graphics::strwidth(unique_values, units = "inches", cex = legend_text_size)
-            space_width <- graphics::strwidth(" ", units = "inches", cex = legend_text_size)
-            number_columns <- min(
+        # calculate space needed for the legend
+        legend_columns <- function(size) {
+            predicted_width <- graphics::strwidth(unique_values, units = "inches", cex = size)
+            space_width <- graphics::strwidth(" ", units = "inches", cex = size)
+            min(
                 max(
                     plt_width %/% (6 * space_width + max(predicted_width)),
                     1
                 ),
                 length(unique_values)
             )
-
-
-            if (is.null(predicted_height)) {
-                number_rows <- ceiling(length(unique_values) / number_columns)
-                predicted_height <- graphics::strheight(
-                    paste(
-                        rep("TEXT", number_rows + 1),
-                        collapse = "\n"
-                    ),
-                    units = "inches",
-                    cex = legend_text_size
-                )
+        }
+        # The colour bar keeps 0.1 inch above and below it. A row of 0.2 inch
+        # or less (the rows are drawn at 2.5 cm per inch) stopped the plot
+        # with "figure margins too large"; such a row is made 0.21 inch high.
+        fit_colour_bar <- function(height) {
+            if (is_continuous && height * 2.5 / 2.54 <= 0.2) 0.21 * 2.54 / 2.5 else height
+        }
+        legend_height <- function(size) {
+            if (is_continuous) {
+                return(fit_colour_bar(graphics::strheight("TE\nXT\n", units = "inches", cex = size)))
             }
+            number_rows <- ceiling(length(unique_values) / legend_columns(size))
+            graphics::strheight(
+                paste(
+                    rep("TEXT", number_rows + 1),
+                    collapse = "\n"
+                ),
+                units = "inches",
+                cex = size
+            )
+        }
+        # The plot above the legend keeps its margins; the rows are drawn at
+        # 2.5 cm per inch. A large text size draws the legend smaller, or not
+        # at all, and a legend height given by the caller is lowered, so that
+        # the plot keeps room.
+        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+        plot_region <- function(height) {
+            (plt_height - height) * 2.5 / 2.54 - margin_height
+        }
+        if (is.null(predicted_height)) {
+            legend_text_size <- fit_legend_size(legend_text_size, legend_height, plot_region)
+            display_legend <- !is.null(legend_text_size)
+            if (display_legend) {
+                predicted_height <- legend_height(legend_text_size)
+            }
+        } else {
+            predicted_height <- fit_colour_bar(predicted_height)
+            if (plot_region(predicted_height) < 0.1) {
+                predicted_height <- plt_height - (margin_height + 0.1) * 2.54 / 2.5
+            }
+            display_legend <- if (is_continuous) predicted_height * 2.5 / 2.54 > 0.2 else predicted_height > 0
+        }
+        if (display_legend && !is_continuous) {
+            number_columns <- legend_columns(legend_text_size)
         }
     }
 

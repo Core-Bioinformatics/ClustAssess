@@ -135,6 +135,15 @@ robustness" and these implementation effects:
 - Fixed the Shiny app's plot of the number of partitions per number of
   clusters with its legend at small text sizes, which stopped with "figure
   margins too large": its legend row now holds the margins of its plots.
+- Fixed the Shiny app's plots with a legend (the plot of the number of
+  partitions per number of clusters, the boxplots of the clustering and
+  feature stability, and the UMAPs) at large text or legend sizes or on
+  narrow screens, which stopped with "figure margins too large" when the
+  legend left the plot no room: the legend text is then drawn smaller, or the
+  plot without its legend when even a small one does not fit. A UMAP colour
+  bar at a small legend size, under its UMAP or on its own, which stopped in
+  the same way, now fits. Where the plot and its legend had 0.1 inch or more,
+  they are drawn as before.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
 - Unified feature-count normalization between feature and automatic assessment,

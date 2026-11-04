@@ -1104,15 +1104,25 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     plt_width <- plt_width / 96
     # calculate space needed for the legend
     fgroups <- names(feature_ordering$original)
-    predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = text_size)
-    predicted_height <- graphics::strheight(fgroups[1], units = "inches", cex = text_size)
-    number_columns <- plt_width %/% (1.5 * max(predicted_width))
-    number_rows <- ceiling(length(fgroups) / number_columns)
+    legend_columns <- function(size) {
+        predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = size)
+        max(plt_width %/% (1.5 * max(predicted_width)), 1)
+    }
+    legend_margin <- function(size) {
+        number_rows <- ceiling(length(fgroups) / legend_columns(size))
+        (number_rows + 2) * graphics::strheight(fgroups[1], units = "inches", cex = size) * 1.2
+    }
     current_margins <- graphics::par("mai")
-    old_margin <- current_margins[1]
-    current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
     if (text_size > 1.5) {
-        current_margins[2] <- current_margins[2] + 0.5 * predicted_height[1]
+        current_margins[2] <- current_margins[2] + 0.5 * graphics::strheight(fgroups[1], units = "inches", cex = text_size)
+    }
+    # The legend takes room in the bottom margin; a large text size draws it
+    # smaller, or not at all, so that the boxplots keep room.
+    legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
+        graphics::par("din")[2] - current_margins[1] - margin - current_margins[3]
+    })
+    if (!is.null(legend_size)) {
+        current_margins[1] <- current_margins[1] + legend_margin(legend_size)
     }
     graphics::par(mai = current_margins)
 
@@ -1174,16 +1184,20 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         las = 2,
         xpd = NA
     )
-    
+
+    if (is.null(legend_size)) {
+        return()
+    }
+
     graphics::legend(
         "bottomleft",
         legend = fgroups,
         col = col,
         pch = 15,
-        cex = text_size,
-        pt.cex = text_size * 2,
+        cex = legend_size,
+        pt.cex = legend_size * 2,
         bty = "n",
-        ncol = number_columns,
+        ncol = legend_columns(legend_size),
         xpd = TRUE
     )
 }
@@ -1203,15 +1217,25 @@ shiny_plot_feature_stability_incremental <- function(resval,
     plt_width <- plt_width / 96
     # calculate space needed for the legend
     fgroups <- names(feature_ordering$original_incremental)
-    predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = text_size)
-    predicted_height <- graphics::strheight(fgroups[1], units = "inches", cex = text_size)
-    number_columns <- plt_width %/% (1.2 * max(predicted_width))
-    number_rows <- ceiling(length(fgroups) / number_columns)
+    legend_columns <- function(size) {
+        predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = size)
+        max(plt_width %/% (1.2 * max(predicted_width)), 1)
+    }
+    legend_margin <- function(size) {
+        number_rows <- ceiling(length(fgroups) / legend_columns(size))
+        (number_rows + 2) * graphics::strheight(fgroups[1], units = "inches", cex = size) * 1.2
+    }
     current_margins <- graphics::par("mai")
-    old_margin <- current_margins[1]
-    current_margins[1] <- current_margins[1] + (number_rows + 2) * predicted_height[1] * 1.2
     if (text_size > 1.5) {
-        current_margins[2] <- current_margins[2] + 0.5 * predicted_height[1]
+        current_margins[2] <- current_margins[2] + 0.5 * graphics::strheight(fgroups[1], units = "inches", cex = text_size)
+    }
+    # The legend takes room in the bottom margin; a large text size draws it
+    # smaller, or not at all, so that the boxplots keep room.
+    legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
+        graphics::par("din")[2] - current_margins[1] - margin - current_margins[3]
+    })
+    if (!is.null(legend_size)) {
+        current_margins[1] <- current_margins[1] + legend_margin(legend_size)
     }
     graphics::par(mai = current_margins)
 
@@ -1273,15 +1297,19 @@ shiny_plot_feature_stability_incremental <- function(resval,
         las = 2
     )
 
+    if (is.null(legend_size)) {
+        return()
+    }
+
     graphics::legend(
         "bottomleft",
         legend = fgroups,
         col = col,
         pch = 15,
-        cex = text_size,
-        pt.cex = text_size * 2,
+        cex = legend_size,
+        pt.cex = legend_size * 2,
         bty = "n",
-        ncol = number_columns,
+        ncol = legend_columns(legend_size),
         xpd = TRUE
     )
 }

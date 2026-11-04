@@ -1644,12 +1644,28 @@ shiny_plot_k_n_partitions <- function(summary_df,
     if (display_legend) {
         plt_height <- plt_height / ppi
 
-        predicted_height <- graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = text_size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5)
         # The legend row also holds the margins of its plots, whose lines a
         # layout of three columns draws at 0.66 of the character height; a
         # shorter row stops the plot with "figure margins too large".
         margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2] * 0.66
-        predicted_height <- max(predicted_height, margin_height + 0.25)
+        legend_height <- function(size) {
+            max(
+                graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5),
+                margin_height + 0.25
+            )
+        }
+        # The plot above the legend has the same margins; a large text size
+        # draws the legend smaller, or not at all, so that the plot keeps room.
+        legend_size <- fit_legend_size(text_size, legend_height, function(height) {
+            plt_height - height - 0.1 - margin_height
+        })
+        # Each legend plot also needs its side margins in a third of the width.
+        legend_width <- graphics::par("din")[1] / 3 - sum(graphics::par("mar")[c(2, 4)]) * graphics::par("cin")[2] * 0.66
+        display_legend <- !is.null(legend_size) && legend_width >= 0.1
+    }
+
+    if (display_legend) {
+        predicted_height <- legend_height(legend_size)
         layout.matrix <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, ncol = 3, byrow = TRUE)
 
         graphics::layout(
@@ -1678,8 +1694,8 @@ shiny_plot_k_n_partitions <- function(summary_df,
 
     if (display_legend) {
         # point shape
-        plot(seq_len(n_methods) - 1, rep(1, n_methods), axes = FALSE, bty = "n", ylab = "", xlab = "", cex = pt_size_range[2], pch = available_pchs[seq_len(n_methods)], main = "Clustering\nmethods", ylim = c(-1, 1.5), cex.main = text_size)
-        graphics::text(y = -0.15, x = seq_len(n_methods) - 1, labels = unique_cl_method, cex = text_size, xpd = TRUE)
+        plot(seq_len(n_methods) - 1, rep(1, n_methods), axes = FALSE, bty = "n", ylab = "", xlab = "", cex = pt_size_range[2], pch = available_pchs[seq_len(n_methods)], main = "Clustering\nmethods", ylim = c(-1, 1.5), cex.main = legend_size)
+        graphics::text(y = -0.15, x = seq_len(n_methods) - 1, labels = unique_cl_method, cex = legend_size, xpd = TRUE)
 
         # point size
         nfreqs <- sum(summary_df$total_freq)
@@ -1689,14 +1705,14 @@ shiny_plot_k_n_partitions <- function(summary_df,
         } else {
             pt_sizes <- rep(pt_size_range[2], 5)
         }
-        plot(0:4, rep(1, 5), axes = FALSE, bty = "n", ylab = "", xlab = "", pch = 19, cex = pt_sizes, main = "k frequency", ylim = c(-1, 1.5), cex.main = text_size)
-        graphics::text(y = -0.15, x = 0:4, labels = round(chosen_numbers / nfreqs, digits = 3), cex = text_size, xpd = TRUE)
+        plot(0:4, rep(1, 5), axes = FALSE, bty = "n", ylab = "", xlab = "", pch = 19, cex = pt_sizes, main = "k frequency", ylim = c(-1, 1.5), cex.main = legend_size)
+        graphics::text(y = -0.15, x = 0:4, labels = round(chosen_numbers / nfreqs, digits = 3), cex = legend_size, xpd = TRUE)
 
         # point colour
         unique_values <- c(min(summary_df$ecc), max(summary_df$ecc))
         legend_image <- grDevices::as.raster(matrix(color_values, nrow = 1))
-        plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "", main = "Average ECC", cex.main = text_size)
-        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = text_size)
+        plot(c(0, 1), c(-1, 1), type = "n", axes = F, bty = "n", ylab = "", xlab = "", main = "Average ECC", cex.main = legend_size)
+        graphics::text(y = -0.5, x = seq(0, 1, l = 5), labels = round(seq(from = unique_values[1], to = unique_values[2], length.out = 5), digits = 3), cex = legend_size)
         graphics::rasterImage(legend_image, 0, 0, 1, 1)
     }
 }
