@@ -753,7 +753,11 @@ calculate_ppr_with_power_iteration <- function(W_matrix, index, alpha = 0.9,
 #' rescaled to be in-between 0 and 1.
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
-#' @inheritSection element_sim Missing labels
+#' @section Missing labels:
+#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
+#' assign missing elements before comparison. Empty strings are valid labels.
+#' A list of one flat partition compares nothing: it gives a 1 x 1 matrix of 1
+#' without this check.
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -1076,7 +1080,10 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' Merge Partitions
 #' @description Merge flat disjoint clusterings whose pairwise ECS score is
 #' above a given threshold. The merging is done using a complete linkage approach.
-#' @inheritSection element_sim Missing labels
+#' @section Missing labels:
+#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
+#' assign missing elements before comparison. Empty strings are valid labels.
+#' A list of one partition compares nothing: it is returned without this check.
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
@@ -1085,9 +1092,13 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' - "freq": order the partitions based on their frequencies. The partition with
 #' the highest frequency will be the first on the list (default).
 #' - "avg_agreement": order the partitions based on their average agreement index.
-#' The average agreement index of a partition is calculated as the mean of
-#' the ECS scores between that partition and the other partitions from the list.
+#' The average agreement index of a partition is the mean ECS between that
+#' partition and the partitions of the other repetitions, each partition
+#' counted as often as it was found (its frequency after merging). When every
+#' repetition gives the same partition, its agreement is 1; a single
+#' repetition has none.
 #' The partition with the highest agreement will be  the first on the list.
+#' Both "freq" and "avg_agreement" record this index as `avg_agreement`.
 #' - "none": do not perform any ordering (not recommended). If selected, the
 #' average agreement scores will not be calculated.
 #' @param return_ecs_matrix A logical: if TRUE, the function will add the
@@ -1168,6 +1179,11 @@ merge_partitions <- function(partition_list,
     }
 
     if (length(part_list) == 1) {
+        # Every repetition found this partition, so it agrees fully with the
+        # other repetitions. A single repetition has no other to agree with.
+        if (order_logic != "none") {
+            part_list[[1]]$avg_agreement <- if (part_list[[1]]$freq > 1) 1 else NULL
+        }
         return(list(partitions = part_list, ecc = rep(1, length(part_list[[1]]$mb))))
     }
 

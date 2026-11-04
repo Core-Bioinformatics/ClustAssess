@@ -10,6 +10,15 @@ algorithm_names_mapping <- list(
     Leiden_matrix = 5,
     Leidenbase = 6
 )
+
+# The point shapes of the clustering methods or configurations in the plots,
+# in the order they are drawn: the five filled shapes, then again from the
+# first. Each one also has its own position within a group of points and its
+# name in the legend.
+method_shapes <- function(n_methods) {
+    rep_len(21:25, n_methods)
+}
+
 seed <- NULL
 job_index <- NULL
 
@@ -823,7 +832,7 @@ plot_k_resolution_corresp <- function(clust_object,
         ggplot2::scale_fill_viridis_c(guide = "colorbar") +
         ggplot2::scale_shape_manual(
             name = "Clustering method",
-            values = 21:24,
+            values = method_shapes(nlevels(appearances_df$configuration)),
             guide = "legend"
         ) +
         ggplot2::labs(
@@ -999,7 +1008,11 @@ plot_k_n_partitions <- function(clust_object,
         ) +
         ggplot2::geom_point(position = ggplot2::position_dodge(dodge_width)) +
         ggplot2::theme_classic() +
-        ggplot2::scale_shape_manual(name = "Clustering method", values = 21:24, guide = "legend") +
+        ggplot2::scale_shape_manual(
+            name = "Clustering method",
+            values = method_shapes(nlevels(unique_parts$configuration)),
+            guide = "legend"
+        ) +
         ggplot2::scale_fill_viridis_c(
             name = ifelse(colour_information == "ecc",
                 "ECC",

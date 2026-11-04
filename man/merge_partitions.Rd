@@ -23,9 +23,13 @@ It can take these three values:
 \item "freq": order the partitions based on their frequencies. The partition with
 the highest frequency will be the first on the list (default).
 \item "avg_agreement": order the partitions based on their average agreement index.
-The average agreement index of a partition is calculated as the mean of
-the ECS scores between that partition and the other partitions from the list.
+The average agreement index of a partition is the mean ECS between that
+partition and the partitions of the other repetitions, each partition
+counted as often as it was found (its frequency after merging). When every
+repetition gives the same partition, its agreement is 1; a single
+repetition has none.
 The partition with the highest agreement will be  the first on the list.
+Both "freq" and "avg_agreement" record this index as \code{avg_agreement}.
 \item "none": do not perform any ordering (not recommended). If selected, the
 average agreement scores will not be calculated.
 }}
@@ -51,6 +55,7 @@ above a given threshold. The merging is done using a complete linkage approach.
 
 Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
 assign missing elements before comparison. Empty strings are valid labels.
+A list of one partition compares nothing: it is returned without this check.
 }
 
 \examples{

@@ -76,21 +76,28 @@ robustness" and these implementation effects:
   negative, large, and precision-sensitive labels retain their equality pattern
   instead of being truncated or rounded through integer/text conversion.
   Internal compact encoding also avoids allocating tables from raw label ranges.
-- Flat membership vectors containing `NA` or `NaN` now produce a clear error
-  when they are compared, including duplicate merging, instead of failing in
-  native code. A single partition is still returned as it is. Empty-string
-  labels remain valid; missing observations must be handled explicitly before
-  comparison.
+- Flat membership vectors containing `NA` or `NaN` now stop with a clear error
+  as soon as a function that compares partitions receives them (including
+  duplicate merging), instead of failing in native code; the internal
+  clustering object is no longer created from them. `merge_partitions()` and
+  `element_sim_matrix()` still accept a list of one such partition, as they
+  compare nothing. Empty-string labels remain valid; missing observations must
+  be handled explicitly before comparison.
 - Hardened native batched ECC contingency-table dimension and index arithmetic
   against integer overflow. This does not make intrinsically large tables fit
   available memory.
 - Fixed exact duplicate merging for numeric relabellings whose label ranges
   contain unused values.
 - Fixed the `avg_agreement` value of `merge_partitions()` (frequency and
-  agreement ordering) to weight agreement by merged partition frequencies.
-  Earlier versions counted each distinct partition once, so a partition found
-  in most repetitions got a low value. Ordering by agreement, and breaking
-  frequency ties by it, can change.
+  agreement ordering): after duplicate or threshold merging, it now uses the
+  frequencies of the merged partitions. Before, it could use the frequencies of
+  the input records, which gave wrong values (for example a low value to a
+  partition found in most repetitions) and a wrong order of tied partitions.
+  Ordering by agreement, and breaking frequency ties by it, can change.
+- `merge_partitions()` with frequency or agreement ordering now gives
+  `avg_agreement` 1 when every repetition found the same partition. Before,
+  that result had no value, or kept a value given with its input. A single
+  repetition has no value.
 - Fixed exact duplicate merging of factors to ignore unused factor levels.
 - Fixed `merge_partitions()` to forward `return_ecs_matrix` and `check_ties`
   through pre-merged and nested partition inputs.
@@ -120,6 +127,11 @@ robustness" and these implementation effects:
   - `assess_feature_stability()`, `assess_nn_stability()` and the matching
     steps of `automatic_stability_assessment()` accept it, as
     `assess_clustering_stability()` did.
+- Fixed the point shapes of `plot_k_resolution_corresp()`,
+  `plot_k_n_partitions()` and the Shiny app for five or more clustering
+  methods or configurations: the fifth had no shape, or the plot failed. The
+  shapes repeat after the five filled ones. The app's method filters show
+  every method by default, `Leiden_matrix` and `Leidenbase` included.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
 - Unified feature-count normalization between feature and automatic assessment,
@@ -139,8 +151,9 @@ robustness" and these implementation effects:
 - UMAP seed results are now merged in supplied seed order, with or without
   optional provenance. This makes representative selection deterministic with
   respect to worker completion order; tied threshold-merge results can differ
-  from previous backend-dependent ordering. Feature-stage plotting embeddings
-  remain unchanged by later representative-graph selection.
+  from previous backend-dependent ordering. The feature-stage UMAPs in
+  `feature_stability$embedding_list` stay unchanged; the `umap` of a selected
+  configuration can be replaced by the embedding of the winning UMAP graph.
 - Made `RhpcBLASctl` and `SharedObject` genuinely optional on default PCA and
   parallel nearest-neighbor paths. Missing packages leave BLAS settings alone
   or use ordinary matrix exports; behavior with the packages installed is retained.

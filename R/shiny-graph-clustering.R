@@ -1513,9 +1513,9 @@ shiny_plot_k_res <- function(summary_df,
                              filtered_cl_methods = NULL,
                              threshold_ecc = 0,
                              threshold_freq = 0) {
-    available_pchs <- 21:24
+    available_pchs <- method_shapes(length(algorithm_names))
     if (is.null(filtered_cl_methods)) {
-        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leidenbase")
+        filtered_cl_methods <- algorithm_names
     }
 
     summary_df$freq_partition <- summary_df$first_freq / summary_df$total_freq
@@ -1587,9 +1587,9 @@ shiny_plot_k_n_partitions <- function(summary_df,
                                       threshold_occurences = 0,
                                       display_legend = FALSE,
                                       threshold_nparts = NULL) {
-    available_pchs <- 21:24
+    available_pchs <- method_shapes(length(algorithm_names))
     if (is.null(filtered_cl_methods)) {
-        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leidenbase")
+        filtered_cl_methods <- algorithm_names
     }
 
     if (is.null(threshold_nparts)) {
@@ -1788,7 +1788,7 @@ shiny_ggplot_k_resolution_corresp <- function(clust_object,
         ggplot2::scale_fill_viridis_c(guide = "colorbar") +
         ggplot2::scale_shape_manual(
             name = "Clustering method",
-            values = 21:24,
+            values = method_shapes(length(algorithm_names)),
             guide = "legend"
         ) +
         ggplot2::labs(
@@ -1901,7 +1901,7 @@ shiny_ggplot_k_n_partitions <- function(clust_object,
         ) +
         ggplot2::geom_point(position = ggplot2::position_dodge(dodge_width)) +
         ggplot2::theme_classic() +
-        ggplot2::scale_shape_manual(name = "Clustering method", values = 21:24, guide = "legend") +
+        ggplot2::scale_shape_manual(name = "Clustering method", values = method_shapes(length(algorithm_names)), guide = "legend") +
         ggplot2::scale_fill_viridis_c(
             name = ifelse(colour_information == "ecc",
                 "ECC",
