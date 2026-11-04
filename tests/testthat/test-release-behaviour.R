@@ -511,3 +511,147 @@ test_that("a UMAP colour bar keeps the height given by the caller where it fits"
     # A row too low for the 0.1 inch above and below the colour bar is raised.
     expect_equal(colour_bar_height(0.1), 0.21)
 })
+
+# The nearest-neighbour and shared-nearest-neighbour graphs of 300 cells in
+# three groups.
+three_group_graphs <- function() {
+    set.seed(3)
+    centers <- matrix(stats::rnorm(3 * 10, sd = 3), 3)
+    embedding <- centers[rep(1:3, each = 100), ] + matrix(stats::rnorm(300 * 10), 300)
+    rownames(embedding) <- paste0("cell_", seq_len(300))
+    ClustAssess:::build_neigh_matrix(
+        nn_idx = RANN::nn2(embedding, k = 15)$nn.idx,
+        n_neigh = 15,
+        cell_names = rownames(embedding),
+        graph_type = 2,
+        prune_value = -1
+    )
+}
+
+test_that("the workers build the igraph of a graph once for its consecutive clusterings", {
+    ns <- asNamespace("ClustAssess")
+    graphs <- three_group_graphs()
+    builds <- 0
+    counting_env <- new.env(parent = ns)
+    counting_env$leiden_graph <- function(object) {
+        builds <<- builds + 1
+        ns$leiden_graph(object)
+    }
+    remembering_leiden_graph <- ns$remembering_leiden_graph
+    environment(remembering_leiden_graph) <- counting_env
+    graph_of <- remembering_leiden_graph()
+
+    snn <- graph_of(graphs$snn)
+    expect_false(igraph::is_directed(snn$graph))
+    expect_identical(snn$weights, igraph::E(snn$graph)$weight)
+    expect_identical(graph_of(graphs$snn), snn)
+    expect_equal(builds, 1)
+    # A matrix of ones is a directed graph without weights.
+    nn <- graph_of(graphs$nn)
+    expect_true(igraph::is_directed(nn$graph))
+    expect_null(nn$weights)
+    expect_equal(builds, 2)
+    graph_of(graphs$snn)
+    expect_equal(builds, 3)
+    # A copy with the same content uses the graph already built.
+    copy <- graphs$snn
+    copy@x <- copy@x + 0
+    expect_identical(graph_of(copy), graph_of(graphs$snn))
+    expect_equal(builds, 3)
+    # An igraph is used as it is, each time.
+    graph_of(snn$graph)
+    graph_of(snn$graph)
+    expect_equal(builds, 5)
+})
+
+test_that("the workers' Leidenbase graph follows a shared matrix that changes in place", {
+    testthat::skip_if_not_installed("SharedObject")
+    testthat::skip_if_not_installed("leidenbase")
+    # A graph of 300 cells without groups, whose partitions depend on its weights.
+    set.seed(5)
+    embedding <- matrix(stats::rnorm(300 * 10), 300)
+    rownames(embedding) <- paste0("cell_", seq_len(300))
+    shared <- SharedObject::share(ClustAssess:::build_neigh_matrix(
+        nn_idx = RANN::nn2(embedding, k = 15)$nn.idx,
+        n_neigh = 15,
+        cell_names = rownames(embedding),
+        graph_type = 2,
+        prune_value = -1
+    )$snn)
+    SharedObject::setCopyOnWrite(shared@x, FALSE)
+    worker_clustering <- ClustAssess:::prepare_clustering_functions_for_workers()
+    cluster <- function(clustering) {
+        clustering(shared, resolution = 1, seed = 1, algorithm = 6, num_iters = 10, num_starts = 1,
+            verbose = FALSE)
+    }
+    weighted <- cluster(worker_clustering)
+    # Weights of one, written in place: a directed graph without weights.
+    shared@x[] <- 1
+    expect_identical(cluster(worker_clustering), cluster(ClustAssess:::clustering_functions))
+    expect_false(identical(cluster(worker_clustering), weighted))
+})
+
+test_that("the copy that keys the Leidenbase graph keeps slot attributes and has its own data", {
+    ns <- asNamespace("ClustAssess")
+    x <- methods::as(Matrix::sparseMatrix(i = 1:4, j = 1:4, x = 1, dims = c(4, 4)), "generalMatrix")
+    # A slot with an attribute: its copy is identical, so the graph is reused.
+    attr(x@x, "source") <- "probe"
+    expect_identical(ns$unshared_copy(x), x)
+    graph_of <- ns$remembering_leiden_graph()
+    first <- graph_of(x)
+    expect_identical(graph_of(x), first)
+
+    testthat::skip_if_not_installed("SharedObject")
+    # A slot with a class, shared without copy-on-write and changed in place
+    # through another object on the same memory.
+    x@p <- SharedObject::share(structure(x@p, levels = as.character(0:4), class = "factor"))
+    SharedObject::setCopyOnWrite(x@p, FALSE)
+    same_memory <- unclass(x@p)
+    SharedObject::setCopyOnWrite(same_memory, FALSE)
+    graph_of <- ns$remembering_leiden_graph()
+    graph_of(x)
+    same_memory[] <- c(0L, 2L, 2L, 3L, 4L)
+    edges <- function(graph) igraph::as_edgelist(graph$graph, names = FALSE)
+    expect_identical(edges(graph_of(x)), edges(ns$leiden_graph(x)))
+})
+
+test_that("algorithm 6 gives the partitions of leidenbase on a new igraph of each graph", {
+    testthat::skip_if_not_installed("leidenbase")
+    graphs <- three_group_graphs()
+    worker_clustering <- ClustAssess:::prepare_clustering_functions_for_workers()
+    leidenbase_partition <- function(adjacency, directed, resolution, seed) {
+        g <- igraph::graph_from_adjacency_matrix(
+            adjacency,
+            mode = if (directed) "directed" else "undirected",
+            weighted = if (directed) NULL else TRUE
+        )
+        leidenbase::leiden_find_partition(
+            igraph = g,
+            partition_type = "RBConfigurationVertexPartition",
+            edge_weights = igraph::E(g)$weight,
+            resolution_parameter = resolution,
+            num_iter = 10,
+            seed = seed
+        )$membership
+    }
+    # The worker alternates between the graphs, as the graph step does.
+    for (resolution in c(0.5, 1.5)) {
+        for (seed in c(1, 42)) {
+            for (graph in c("snn", "nn")) {
+                expect_identical(
+                    worker_clustering(
+                        graphs[[graph]],
+                        resolution = resolution,
+                        seed = seed,
+                        algorithm = 6,
+                        num_iters = 10,
+                        num_starts = 1,
+                        verbose = FALSE
+                    ),
+                    leidenbase_partition(graphs[[graph]], graph == "nn", resolution, seed),
+                    label = sprintf("%s graph, resolution %g, seed %d", graph, resolution, seed)
+                )
+            }
+        }
+    }
+})

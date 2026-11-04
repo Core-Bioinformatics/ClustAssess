@@ -31,6 +31,11 @@ tradeoffs and measurement requirements.
 - Made forced garbage collection in stability workflows opt-in via
   `options(ClustAssess.force_gc = TRUE)`. Avoiding forced pauses can also delay
   memory reclamation; normal R garbage collection remains active.
+- Leiden with `leidenbase` (`clustering_algorithm = 6`): a worker reuses the
+  igraph and edge weights of the last adjacency matrix it clustered for the
+  next clusterings of the same matrix, rather than building them for each
+  clustering and start. Each worker keeps a copy of that matrix's data and
+  its igraph.
 
 Results are those of 1.2.0, except for the fixes under "Correctness and
 robustness" and these implementation effects:

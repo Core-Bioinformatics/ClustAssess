@@ -66,7 +66,8 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
 
 # Leiden with leidenbase. The partition type is Seurat's: modularity with a
 # resolution parameter, on the same scale as Louvain and SLM (leidenbase
-# itself defaults to the Constant Potts Model).
+# itself defaults to the Constant Potts Model). `edge_weights` are the weights
+# of the edges of `g`, read once for all starts.
 leiden_clustering <- function(g,
                               resolution,
                               seed,
@@ -74,6 +75,7 @@ leiden_clustering <- function(g,
                               num_iter = 10,
                               num_starts = 1,
                               partition_type = "RBConfigurationVertexPartition",
+                              edge_weights = igraph::E(g)$weight,
                               ...) {
     best_mb <- NULL
     best_quality <- NULL
@@ -90,7 +92,7 @@ leiden_clustering <- function(g,
         cluster_result <- leidenbase::leiden_find_partition(
             igraph = g,
             partition_type = partition_type,
-            edge_weights = igraph::E(g)$weight,
+            edge_weights = edge_weights,
             resolution_parameter = resolution,
             num_iter = num_iter,
             seed = starting_seed,
@@ -127,6 +129,25 @@ clustering_functions <- function(object,
         ))
     }
 
+    graph <- leiden_graph(object)
+
+    return(
+        leiden_clustering(
+            g = graph$graph,
+            resolution = resolution,
+            seed = seed,
+            num_iter = num_iters,
+            num_starts = num_starts,
+            edge_weights = graph$weights,
+            ...
+        )
+    )
+}
+
+# The igraph that leidenbase clusters for an adjacency matrix, with its edge
+# weights: a matrix of ones is a directed nearest-neighbour graph, any other
+# matrix an undirected weighted graph. An igraph is used as it is.
+leiden_graph <- function(object) {
     if (!inherits(object, "igraph")) {
         is_nn <- all(object@x == 1)
         if (is_nn) {
@@ -143,16 +164,43 @@ clustering_functions <- function(object,
         }
     }
 
-    return(
-        leiden_clustering(
-            g = object,
-            resolution = resolution,
-            seed = seed,
-            num_iter = num_iters,
-            num_starts = num_starts,
-            ...
-        )
-    )
+    list(graph = object, weights = igraph::E(object)$weight)
+}
+
+# leiden_graph() that keeps its result for the last adjacency matrix, so that
+# consecutive clusterings of one graph, at several resolutions and seeds,
+# build its igraph and read its weights once. The matrix is compared with a
+# copy of its data, because shared memory can change in place. An igraph is
+# used as it is.
+remembering_leiden_graph <- function() {
+    last_copy <- NULL
+    last_graph <- NULL
+    function(object) {
+        if (inherits(object, "igraph")) {
+            return(leiden_graph(object))
+        }
+        if (is.null(last_graph) || !identical(object, last_copy)) {
+            last_graph <<- leiden_graph(object)
+            last_copy <<- unshared_copy(object)
+        }
+        last_graph
+    }
+}
+
+# A copy of a matrix whose numbers do not share memory with it: the data of
+# each logical, integer, double, complex or raw slot, whatever its class, is
+# copied to new storage, with the slot's attributes.
+unshared_copy <- function(object) {
+    for (name in methods::slotNames(object)) {
+        value <- methods::slot(object, name)
+        if (typeof(value) %in% c("logical", "integer", "double", "complex", "raw")) {
+            copy <- vector(typeof(value), length(value))
+            copy[] <- value
+            attributes(copy) <- attributes(value)
+            methods::slot(object, name, check = FALSE) <- copy
+        }
+    }
+    object
 }
 
 prepare_clustering_functions_for_workers <- function() {
@@ -160,6 +208,7 @@ prepare_clustering_functions_for_workers <- function() {
     worker_env <- new.env(parent = environment(clustering_functions))
     worker_env$seurat_clustering <- seurat_clustering
     worker_env$leiden_clustering <- leiden_clustering
+    worker_env$leiden_graph <- remembering_leiden_graph()
     environment(worker_clustering_functions) <- worker_env
     worker_clustering_functions
 }
