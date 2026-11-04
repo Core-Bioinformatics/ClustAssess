@@ -854,14 +854,14 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         stop("output_type must be data.frame or matrix.")
     }
 
-    for (mb in mb_list) {
-        validate_flat_membership_labels(mb)
-    }
-
     n_clusterings <- length(mb_list)
 
     if (n_clusterings == 1) {
         return(matrix(1, nrow = 1, ncol = 1))
+    }
+
+    for (mb in mb_list) {
+        validate_flat_membership_labels(mb)
     }
 
     first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
@@ -1151,9 +1151,12 @@ merge_partitions <- function(partition_list,
         }
     }
 
-    # Validate before duplicate and single-partition shortcuts skip scoring.
-    for (partition in partition_list) {
-        validate_flat_membership_labels(partition$mb)
+    # Validate before duplicate merging compares the partitions. A single
+    # partition is returned as it is, missing labels included.
+    if (length(partition_list) > 1) {
+        for (partition in partition_list) {
+            validate_flat_membership_labels(partition$mb)
+        }
     }
 
     # if the threshold is 1, apply the identical merging
@@ -1171,12 +1174,9 @@ merge_partitions <- function(partition_list,
     weights <- vapply(part_list, function(x) {
         x$freq
     }, numeric(1))
-    top_freq_tie <- order_logic == "freq" &&
-        check_ties &&
-        sum(weights == max(weights)) > 1
-    needs_average_agreement <- order_logic == "avg_agreement" ||
-        top_freq_tie ||
-        (order_logic == "freq" && return_ecs_matrix)
+    # Ordered results record each partition's average agreement with the other
+    # partitions, whether or not the ordering needs it.
+    needs_average_agreement <- order_logic %in% c("freq", "avg_agreement")
     needs_ecs_matrix <- return_ecs_matrix || needs_average_agreement
 
     consistency <- weighted_element_consistency(

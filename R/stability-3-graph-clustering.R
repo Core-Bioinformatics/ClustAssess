@@ -1,13 +1,14 @@
 # 3. The assessment of the stability for clustering paramters
 # (such as clustering method, number of clusters)
 
-algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leiden_matrix")
+algorithm_names <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leiden_matrix", "Leidenbase")
 algorithm_names_mapping <- list(
     Louvain = 1,
     Louvain.refined = 2,
     SLM = 3,
     Leiden = 4,
-    Leiden_matrix = 5
+    Leiden_matrix = 5,
+    Leidenbase = 6
 )
 seed <- NULL
 job_index <- NULL
@@ -152,8 +153,10 @@ summarize_clustering_memberships <- function(clustering_memberships,
 #' sequence will be built starting from 1 with a step of 100.
 #' @param ecs_thresh The ECS threshold used for merging similar clusterings.
 #' @param clustering_algorithm An index or a list of indexes indicating which community detection
-#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
-#' More details can be found in the Seurat's `FindClusters` function. Defaults to `1:3`.
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3), Leiden with
+#' the `leiden` package (4, or 5 for a dense matrix) or Leiden with the
+#' `leidenbase` package (6). More details can be found in the Seurat's
+#' `FindClusters` function. Defaults to `1:3`.
 #' @param clustering_arguments A list of additional arguments that will be passed to the
 #' clustering method. More details can be found in the Seurat's `FindClusters` function.
 #' @param verbose Boolean value used for displaying the progress bar.

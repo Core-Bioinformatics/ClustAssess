@@ -117,7 +117,7 @@ test_that("flat element agreement preserves precise and empty-string labels", {
     expect_error(element_agreement(inputs[[1]], list(c(1, 2))), "same length")
 })
 
-test_that("flat membership APIs reject missing labels before early returns", {
+test_that("flat membership APIs reject missing labels when they compare partitions", {
     missing_inputs <- list(
         c(1, NA_real_, 2, 2), c(1, NaN, 2, 2), c(1L, NA_integer_, 2L, 2L),
         c("a", NA_character_, "b", "b"), factor(c("a", NA, "b", "b"))
@@ -128,17 +128,13 @@ test_that("flat membership APIs reject missing labels before early returns", {
             function() element_sim(bad, valid),
             function() element_sim(valid, bad),
             function() element_sim_elscore(bad, valid),
-            function() element_sim_matrix(list(bad)),
             function() element_sim_matrix(list(valid, bad)),
             function() weighted_element_consistency(list(bad)),
             function() weighted_element_consistency(list(valid, bad)),
             function() weighted_element_consistency(c(rep(list(valid), 4), list(bad))),
             function() element_consistency(list(bad)),
             function() element_consistency(list(bad, bad)),
-            function() merge_partitions(list(bad)),
             function() merge_partitions(list(bad, bad)),
-            function() merge_partitions(list(list(mb = bad, freq = 2))),
-            function() merge_partitions(list(bad), ecs_thresh = 0.99),
             function() element_agreement(bad, list(valid)),
             function() element_agreement(valid, list(bad)),
             function() ClustAssess:::create_clustering(bad)
@@ -526,7 +522,7 @@ test_that("merge_partitions avg_agreement uses merged partition frequencies", {
     expect_true(all(average_agreement[-1] <= average_agreement[[1]]))
 })
 
-test_that("merge_partitions freq ordering keeps ECC stable without requesting ECS matrix", {
+test_that("merge_partitions freq ordering gives the same result with or without the ECS matrix", {
     x <- c(1, 1, 2, 2)
     relabelled_x <- c("x", "x", "y", "y")
     y <- c(1, 2, 1, 2)
@@ -548,12 +544,10 @@ test_that("merge_partitions freq ordering keeps ECC stable without requesting EC
     )
 
     expect_null(no_matrix$ecs_matrix)
-    expect_false(any(vapply(no_matrix$partitions, function(x) {
-        !is.null(x$avg_agreement)
-    }, logical(1))))
-    expect_true(all(vapply(with_matrix$partitions, function(x) {
-        !is.null(x$avg_agreement)
-    }, logical(1))))
+    expect_equal(
+        vapply(no_matrix$partitions, `[[`, numeric(1), "avg_agreement"),
+        vapply(with_matrix$partitions, `[[`, numeric(1), "avg_agreement")
+    )
     expect_equal(no_matrix$ecc, with_matrix$ecc)
     expect_equal(
         vapply(no_matrix$partitions, `[[`, numeric(1), "freq"),

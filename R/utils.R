@@ -306,6 +306,11 @@ read_sparse_matrix_from_app <- function(app_folder, nrows_chunk = 1000, refresh_
     return(final_matrix)
 }
 
+with_storage_mode <- function(value, mode) {
+    storage.mode(value) <- mode
+    value
+}
+
 normalize_feature_steps <- function(steps, n_features) {
     if (!is.numeric(steps)) {
         stop("steps parameter should be numeric")

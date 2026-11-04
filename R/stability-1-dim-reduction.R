@@ -43,9 +43,10 @@
 #' edges with weight under the pruning value will be removed. If the value is
 #' -1, the highest pruning value will be calculated automatically and used.
 #' @param clustering_algorithm An index indicating which community detection
-#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or
-#' Leiden (4). More details can be found in the Seurat's
-#' `FindClusters` function.
+#' algorithm will be used: Louvain (1), Louvain refined (2), SLM (3),
+#' Leiden with the `leiden` package (4, or 5 for a dense matrix) or Leiden
+#' with the `leidenbase` package (6). More details can be found in the
+#' Seurat's `FindClusters` function.
 #' @param clustering_arguments A list containing the arguments that will be
 #' passed to the community detection algorithm, such as the number of iterations
 #' and the number of starts. Refer to the Seurat's `FindClusters` function
@@ -186,8 +187,8 @@ assess_feature_stability <- function(data_matrix,
         stop("ecs_thresh parameter should be numeric")
     }
 
-    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:5)) {
-        stop("algorithm should be a number between 1 and 5")
+    if (!is.numeric(clustering_algorithm) || length(clustering_algorithm) > 1 || !(clustering_algorithm %in% 1:6)) {
+        stop("algorithm should be a number between 1 and 6")
     }
 
     if (is.null(rownames(data_matrix))) {

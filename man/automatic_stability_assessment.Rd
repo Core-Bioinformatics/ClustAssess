@@ -123,8 +123,9 @@ algorithm that will be used in the Graph construction step.}
 
 \item{algorithms_clustering_assessment}{An index indicating which community
 detection algorithm will be used for the clustering step: Louvain (1),
-Louvain refined (2), SLM (3) or Leiden (4). More details can be found in
-the Seurat's \code{FindClusters} function.}
+Louvain refined (2), SLM (3), Leiden with the \code{leiden} package (4, or 5 for
+a dense matrix) or Leiden with the \code{leidenbase} package (6). More details
+can be found in the Seurat's \code{FindClusters} function.}
 
 \item{clustering_arguments}{A list containing the arguments that will be passed to the
 community detection algorithm, such as the number of iterations and the number of starts.

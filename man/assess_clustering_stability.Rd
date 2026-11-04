@@ -34,8 +34,10 @@ sequence will be built starting from 1 with a step of 100.}
 \item{ecs_thresh}{The ECS threshold used for merging similar clusterings.}
 
 \item{clustering_algorithm}{An index or a list of indexes indicating which community detection
-algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
-More details can be found in the Seurat's \code{FindClusters} function. Defaults to \code{1:3}.}
+algorithm will be used: Louvain (1), Louvain refined (2), SLM (3), Leiden with
+the \code{leiden} package (4, or 5 for a dense matrix) or Leiden with the
+\code{leidenbase} package (6). More details can be found in the Seurat's
+\code{FindClusters} function. Defaults to \code{1:3}.}
 
 \item{clustering_arguments}{A list of additional arguments that will be passed to the
 clustering method. More details can be found in the Seurat's \code{FindClusters} function.}

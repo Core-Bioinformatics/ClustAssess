@@ -91,9 +91,10 @@ edges with weight under the pruning value will be removed. If the value is
 -1, the highest pruning value will be calculated automatically and used.}
 
 \item{clustering_algorithm}{An index indicating which community detection
-algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or
-Leiden (4). More details can be found in the Seurat's
-\code{FindClusters} function.}
+algorithm will be used: Louvain (1), Louvain refined (2), SLM (3),
+Leiden with the \code{leiden} package (4, or 5 for a dense matrix) or Leiden
+with the \code{leidenbase} package (6). More details can be found in the
+Seurat's \code{FindClusters} function.}
 
 \item{clustering_arguments}{A list containing the arguments that will be
 passed to the community detection algorithm, such as the number of iterations

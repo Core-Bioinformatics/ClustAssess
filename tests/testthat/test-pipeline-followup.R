@@ -62,7 +62,9 @@ test_that("automatic feature counts share integer cache identities", {
         expect_identical(forwarded_steps, c(100000L, 100002L))
         expect_named(result$all, c("100000", "feature_list"))
         config <- result$all[["100000"]]
-        expect_identical(config$stable_config$n_features, 100000L)
+        # The stored count keeps the number type of the given steps.
+        expect_equal(config$stable_config$n_features, 100000)
+        expect_identical(storage.mode(config$stable_config$n_features), storage.mode(steps))
         expect_equal(dim(config$pca), c(4L, 2L))
         expect_equal(config$umap, config$pca)
     }

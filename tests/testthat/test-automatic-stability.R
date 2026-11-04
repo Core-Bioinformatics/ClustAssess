@@ -29,10 +29,11 @@ tiny_automatic_matrix_processing <- function(dt_mtx, actual_npcs = 2, ...) {
 run_tiny_automatic_stability <- function(force_gc = FALSE,
                                          compute_umap_embeddings = TRUE,
                                          return_nn_idx = TRUE,
-                                         matrix_processing = tiny_automatic_matrix_processing) {
+                                         matrix_processing = tiny_automatic_matrix_processing,
+                                         steps = list(all = c(4, 8)),
+                                         ...) {
     expression_matrix <- tiny_automatic_expression_matrix()
     features_sets <- list(all = rownames(expression_matrix))
-    steps <- list(all = c(4, 8))
 
     old_options <- options(ClustAssess.force_gc = force_gc)
     on.exit(options(old_options), add = TRUE)
@@ -51,10 +52,39 @@ run_tiny_automatic_stability <- function(force_gc = FALSE,
             compute_umap_embeddings = compute_umap_embeddings,
             return_nn_idx = return_nn_idx,
             verbose = FALSE,
-            save_temp = FALSE
+            save_temp = FALSE,
+            ...
         )
     )
 }
+
+test_that("automatic_stability_assessment stores feature and PC counts with their earlier number types", {
+    testthat::skip_if_not_installed("Seurat")
+
+    double_steps <- run_tiny_automatic_stability()$all[[1]]$stable_config
+    expect_type(double_steps$n_features, "double")
+    expect_type(double_steps$n_pcs, "double")
+
+    integer_steps <- run_tiny_automatic_stability(steps = list(all = c(4L, 8L)))$all[[1]]$stable_config
+    expect_type(integer_steps$n_features, "integer")
+    expect_type(integer_steps$n_pcs, "double")
+    expect_equal(integer_steps$n_features, double_steps$n_features)
+    expect_equal(integer_steps$n_pcs, double_steps$n_pcs)
+})
+
+test_that("automatic_stability_assessment runs every step with leidenbase (algorithm 6)", {
+    testthat::skip_if_not_installed("Seurat")
+    testthat::skip_if_not_installed("leidenbase")
+
+    result <- run_tiny_automatic_stability(
+        algorithm_dim_reduction = 6,
+        algorithm_graph_construct = 6,
+        algorithms_clustering_assessment = 6
+    )
+    clustering <- result$all[[1]]$clustering_stability
+    expect_named(clustering$split_by_resolution, "Leidenbase")
+    expect_named(clustering$split_by_k, "Leidenbase")
+})
 
 test_that("automatic_stability_assessment returns complete tiny pipeline object", {
     testthat::skip_if_not_installed("Seurat")

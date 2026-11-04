@@ -12,7 +12,8 @@ tradeoffs and measurement requirements.
   the same label equivalence as the exact comparison and no numeric-to-text
   rounding. Exact comparisons guard against hash collisions.
 - Avoided unnecessary pairwise ECS matrix construction when callers only need
-  aggregate ECC values.
+  aggregate ECC values (for example `element_consistency()` and unordered
+  merging).
 - Reused exact single-cluster-count summary ECC instead of recomputing the same
   weighted consistency result.
 - Avoided hidden PSOCK dispatch for non-identity ECS-threshold partition
@@ -31,6 +32,18 @@ tradeoffs and measurement requirements.
   `options(ClustAssess.force_gc = TRUE)`. Avoiding forced pauses can also delay
   memory reclamation; normal R garbage collection remains active.
 
+Results are those of 1.2.0, except for the fixes under "Correctness and
+robustness" and these implementation effects:
+
+- ECS sums and products run in another order, so values can differ in their
+  last bits (about 1e-16). A merge threshold equal to a score at that precision
+  can then fall on the other side of it.
+- Flat ECS calls on character labels run in native code, which creates R's
+  random number state (`.Random.seed`) when none exists. They draw no random
+  numbers.
+- Serial similarity matrices no longer warn that `%dopar%` runs sequentially,
+  and their errors no longer start with `task 1 failed`.
+
 ## API and options
 
 - Added `make_pca_matrix_processing()` for explicit exact PCA and optional
@@ -48,9 +61,6 @@ tradeoffs and measurement requirements.
 - Added opt-in `return_partition_seeds` to `assess_nn_stability()` to expose
   the existing merged representative's seed and RNG kinds for each UMAP graph
   type and neighbor count, without retaining all embeddings or neighbor matrices.
-- Frequency-ordered `merge_partitions()` calls no longer attach the
-  undocumented `avg_agreement` field unless agreement is needed for ordering or
-  tie resolution, or is already available from a requested ECS matrix.
 
 ## Correctness and robustness
 
@@ -66,16 +76,22 @@ tradeoffs and measurement requirements.
   negative, large, and precision-sensitive labels retain their equality pattern
   instead of being truncated or rounded through integer/text conversion.
   Internal compact encoding also avoids allocating tables from raw label ranges.
-- Flat membership vectors containing `NA` or `NaN` now produce a clear error,
-  including singleton and duplicate merge shortcuts. Empty-string labels remain
-  valid; missing observations must be handled explicitly before comparison.
+- Flat membership vectors containing `NA` or `NaN` now produce a clear error
+  when they are compared, including duplicate merging, instead of failing in
+  native code. A single partition is still returned as it is. Empty-string
+  labels remain valid; missing observations must be handled explicitly before
+  comparison.
 - Hardened native batched ECC contingency-table dimension and index arithmetic
   against integer overflow. This does not make intrinsically large tables fit
   available memory.
 - Fixed exact duplicate merging for numeric relabellings whose label ranges
   contain unused values.
-- Fixed `merge_partitions(order_logic = "avg_agreement")` to weight agreement
-  values by merged partition frequencies.
+- Fixed the `avg_agreement` value of `merge_partitions()` (frequency and
+  agreement ordering) to weight agreement by merged partition frequencies.
+  Earlier versions counted each distinct partition once, so a partition found
+  in most repetitions got a low value. Ordering by agreement, and breaking
+  frequency ties by it, can change.
+- Fixed exact duplicate merging of factors to ignore unused factor levels.
 - Fixed `merge_partitions()` to forward `return_ecs_matrix` and `check_ties`
   through pre-merged and nested partition inputs.
 - Fixed `merge_partitions(return_ecs_matrix = TRUE)` so the full returned ECS
@@ -84,12 +100,26 @@ tradeoffs and measurement requirements.
   connected-component assessment to honor `umap_arguments$n_neighbors` instead
   of silently replacing it with 15. The default remains 15, capped at the cell
   count minus one. Results can change for previously ignored explicit settings.
-- Fixed UMAP graph-stability handling for custom seed sequences.
-- Fixed NN-only and SNN-only UMAP graph-stability output names.
+- Fixed UMAP graph-stability handling for custom seed sequences and for
+  repeated neighbor counts.
+- Fixed NN-only and SNN-only UMAP graph-stability output names. PCA NN-only
+  graph stability (`graph_type = 0`) no longer returns extra `PCA_snn`
+  summaries.
 - Fixed installed-package PSOCK worker execution paths for graph and clustering
   stability workflows.
 - Fixed Leiden worker dependency selection in `assess_clustering_stability()`
   to use `clustering_algorithm` rather than the auxiliary arguments list.
+- Fixed Leiden with `leidenbase` (`clustering_algorithm = 6`):
+  - its results are named `Leidenbase`; they were stored under `NA`, which the
+    Shiny app and `get_clusters_from_clustassess_object()` could not read;
+  - it uses Seurat's partition type, `RBConfigurationVertexPartition`
+    (modularity with a resolution parameter, on the scale of Louvain), unless
+    `clustering_arguments` sets `partition_type`. `leidenbase`'s own default,
+    the Constant Potts Model, reads the resolution on another scale and put
+    almost every cell in its own cluster at the usual resolutions;
+  - `assess_feature_stability()`, `assess_nn_stability()` and the matching
+    steps of `automatic_stability_assessment()` accept it, as
+    `assess_clustering_stability()` did.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
 - Unified feature-count normalization between feature and automatic assessment,

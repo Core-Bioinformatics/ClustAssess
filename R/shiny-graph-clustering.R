@@ -1515,7 +1515,7 @@ shiny_plot_k_res <- function(summary_df,
                              threshold_freq = 0) {
     available_pchs <- 21:24
     if (is.null(filtered_cl_methods)) {
-        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
+        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leidenbase")
     }
 
     summary_df$freq_partition <- summary_df$first_freq / summary_df$total_freq
@@ -1589,7 +1589,7 @@ shiny_plot_k_n_partitions <- function(summary_df,
                                       threshold_nparts = NULL) {
     available_pchs <- 21:24
     if (is.null(filtered_cl_methods)) {
-        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden")
+        filtered_cl_methods <- c("Louvain", "Louvain.refined", "SLM", "Leiden", "Leidenbase")
     }
 
     if (is.null(threshold_nparts)) {

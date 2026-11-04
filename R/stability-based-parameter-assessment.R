@@ -64,12 +64,16 @@ seurat_clustering <- function(object, resolution, seed, algorithm = 3, num_start
     return(cluster_result)
 }
 
+# Leiden with leidenbase. The partition type is Seurat's: modularity with a
+# resolution parameter, on the same scale as Louvain and SLM (leidenbase
+# itself defaults to the Constant Potts Model).
 leiden_clustering <- function(g,
                               resolution,
                               seed,
                               initial_membership = NULL,
                               num_iter = 10,
                               num_starts = 1,
+                              partition_type = "RBConfigurationVertexPartition",
                               ...) {
     best_mb <- NULL
     best_quality <- NULL
@@ -85,6 +89,7 @@ leiden_clustering <- function(g,
         }
         cluster_result <- leidenbase::leiden_find_partition(
             igraph = g,
+            partition_type = partition_type,
             edge_weights = igraph::E(g)$weight,
             resolution_parameter = resolution,
             num_iter = num_iter,
@@ -235,8 +240,9 @@ rank_configs <- function(ecc_list, rank_by = "top_qt_max", return_type = "order"
 #' algorithm that will be used in the Graph construction step.
 #' @param algorithms_clustering_assessment An index indicating which community
 #' detection algorithm will be used for the clustering step: Louvain (1),
-#' Louvain refined (2), SLM (3) or Leiden (4). More details can be found in
-#' the Seurat's `FindClusters` function.
+#' Louvain refined (2), SLM (3), Leiden with the `leiden` package (4, or 5 for
+#' a dense matrix) or Leiden with the `leidenbase` package (6). More details
+#' can be found in the Seurat's `FindClusters` function.
 #' @param clustering_arguments A list containing the arguments that will be passed to the
 #' community detection algorithm, such as the number of iterations and the number of starts.
 #' Refer to the Seurat's `FindClusters` function for more details.
@@ -397,8 +403,11 @@ automatic_stability_assessment <- function(expression_matrix,
     # TODO: check if the name of the feature sets are the same with the steps
 
     # FEATURE STABILITY
-    # sort the steps in an increasing order
+    # sort the steps in an increasing order; the stable configurations keep
+    # the number type of the given steps
+    step_modes <- list()
     for (set_name in feature_set_names) {
+        step_modes[[set_name]] <- storage.mode(steps[[set_name]])
         steps[[set_name]] <- normalize_feature_steps(steps[[set_name]], length(features_sets[[set_name]]))
     }
 
@@ -518,8 +527,9 @@ automatic_stability_assessment <- function(expression_matrix,
                     umap = umap_emb,
                     stable_config = list(
                         feature_set = feature_set_names[i],
-                        n_features = n_steps,
-                        n_pcs = ncol(pca_emb)
+                        n_features = with_storage_mode(n_steps, step_modes[[set_name]]),
+                        # a PC count, stored as a double as before
+                        n_pcs = as.double(ncol(pca_emb))
                     )
                 )
         }
