@@ -754,6 +754,9 @@ assess_nn_stability_umap <- function(embedding,
 
     ncells <- nrow(embedding)
     umap_arguments <- process_umap_arguments(umap_arguments, ncells)
+    # The results are named by the number of neighbours: a repeated number is
+    # assessed once, as in PCA graph stability.
+    n_neigh_sequence <- unique(n_neigh_sequence)
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
         shared_embedding <- SharedObject::share(embedding)

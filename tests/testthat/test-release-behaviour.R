@@ -721,3 +721,24 @@ test_that("feature stability seeds the UMAP of each repetition from its seed", {
     # a seed given in umap_arguments is replaced by the seed of the repetition
     expect_identical(run(30, list(n_epochs = 20, seed = 999)), first)
 })
+
+test_that("graph stability assesses a repeated number of neighbours once", {
+    set.seed(123)
+    embedding <- matrix(
+        stats::rnorm(80 * 12), 80,
+        dimnames = list(paste0("c", 1:80), paste0("PC", 1:12))
+    )
+    run <- function(n_neigh_sequence, reduction) {
+        suppressWarnings(assess_nn_stability(
+            embedding,
+            n_neigh_sequence = n_neigh_sequence,
+            n_repetitions = 3,
+            graph_reduction_type = reduction,
+            prune_value = 0.05,
+            umap_arguments = list(n_epochs = 25)
+        ))
+    }
+    for (reduction in c("PCA", "UMAP")) {
+        expect_identical(run(c(5, 5, 10), reduction), run(c(5, 10), reduction))
+    }
+})

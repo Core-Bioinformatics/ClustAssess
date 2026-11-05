@@ -113,7 +113,8 @@ robustness" and these implementation effects:
   of silently replacing it with 15. The default remains 15, capped at the cell
   count minus one. Results can change for previously ignored explicit settings.
 - Fixed UMAP graph-stability handling for custom seed sequences and for
-  repeated neighbor counts.
+  repeated neighbor counts, which stopped with an error. A repeated count is
+  assessed once, as in PCA graph stability.
 - Fixed NN-only and SNN-only UMAP graph-stability output names. PCA NN-only
   graph stability (`graph_type = 0`) no longer returns extra `PCA_snn`
   summaries.
