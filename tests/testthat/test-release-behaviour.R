@@ -691,3 +691,33 @@ test_that("algorithm 6 with one start and no seed still clusters", {
         num_starts = 1)
     expect_length(membership, 10)
 })
+
+test_that("feature stability seeds the UMAP of each repetition from its seed", {
+    set.seed(7)
+    expression <- matrix(
+        stats::rpois(40 * 60, 3), 40,
+        dimnames = list(paste0("gene_", 1:40), paste0("cell_", 1:60))
+    )
+    run <- function(outer_seed, umap_arguments = list(n_epochs = 20)) {
+        set.seed(outer_seed)
+        result <- suppressWarnings(assess_feature_stability(
+            data_matrix = expression,
+            feature_set = rownames(expression),
+            steps = 40,
+            feature_type = "genes",
+            resolution = c(0.5, 1),
+            seed_sequence = c(11, 23),
+            graph_reduction_type = "UMAP",
+            umap_arguments = umap_arguments,
+            compute_umap_embeddings = FALSE,
+            verbose = FALSE
+        ))
+        result$by_steps$genes[["40"]]
+    }
+
+    first <- run(10)
+    # R's random number state before the call does not change the result
+    expect_identical(run(20), first)
+    # a seed given in umap_arguments is replaced by the seed of the repetition
+    expect_identical(run(30, list(n_epochs = 20, seed = 999)), first)
+})

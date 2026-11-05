@@ -137,6 +137,12 @@ robustness" and these implementation effects:
     drawn from the clustering's seed; it had none, so `leidenbase` seeded it
     from the clock and the partitions changed from run to run. R's random
     number state after the clustering is as before.
+- Fixed `assess_feature_stability()` with `graph_reduction_type = "UMAP"`,
+  also as a step of `automatic_stability_assessment()`: each repetition's UMAP
+  now starts from the seed of that repetition, as in `assess_nn_stability()`.
+  It started from R's random number state at that time unless
+  `umap_arguments` had a `seed`, so runs on several workers gave other results
+  each time. Results change where `umap_arguments` had no `seed`.
 - Fixed the point shapes of `plot_k_resolution_corresp()`,
   `plot_k_n_partitions()` and the Shiny app for five or more clustering
   methods or configurations: the fifth had no shape, or the plot failed. The

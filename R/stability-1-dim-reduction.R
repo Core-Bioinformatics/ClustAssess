@@ -327,7 +327,10 @@ assess_feature_stability <- function(data_matrix,
         ) %dopar% {
             if (graph_reduction_type == "UMAP") {
                 row_names <- rownames(shared_embedding)
-                # calculate the umap embedding
+                # calculate the umap embedding from the seed of the
+                # repetition, as graph stability does; a `seed` given in
+                # `umap_arguments` is replaced by that seed
+                set.seed(seed)
                 if ("seed" %in% names(umap_arguments)) {
                     umap_arguments$seed <- seed
                 }
