@@ -51,8 +51,11 @@ NULL
 #'
 #' @return The average element-wise similarity between the two Clusterings.
 #' @section Missing labels:
-#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
-#' assign missing elements before comparison. Empty strings are valid labels.
+#' Flat membership vectors should not contain `NA` or `NaN`: remove or
+#' explicitly assign missing elements before comparison. Where version 1.2.0
+#' compared vectors with missing labels, they are compared as it compared them;
+#' where it failed, they stop with an error (see the package NEWS for the
+#' details and exceptions). Empty strings are valid labels.
 #' @export
 #'
 #' @examples
@@ -86,9 +89,10 @@ element_sim <- function(clustering1,
         } else {
             disjointECSaverage
         }
+        pair <- flat_labels_as_compared(list(clustering1, clustering2))
         return(native_ecs_average(
-            encode_flat_disjoint_membership(clustering1),
-            encode_flat_disjoint_membership(clustering2)
+            encode_flat_disjoint_membership(pair[[1]]),
+            encode_flat_disjoint_membership(pair[[2]])
         ))
     }
 
@@ -194,9 +198,10 @@ element_sim_elscore <- function(clustering1,
         }
 
         native_ecs <- if (has_character_labels(list(clustering1, clustering2))) disjointECSNoRNG else disjointECS
+        pair <- flat_labels_as_compared(list(clustering1, clustering2))
         node.scores <- native_ecs(
-            encode_flat_disjoint_membership(clustering1),
-            encode_flat_disjoint_membership(clustering2)
+            encode_flat_disjoint_membership(pair[[1]]),
+            encode_flat_disjoint_membership(pair[[2]])
         )
 
         names(node.scores) <- names(clustering1)
@@ -760,10 +765,13 @@ calculate_ppr_with_power_iteration <- function(W_matrix, index, alpha = 0.9,
 #'
 #' @return A matrix or data.frame containing the pairwise ECS values.
 #' @section Missing labels:
-#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
-#' assign missing elements before comparison. Empty strings are valid labels.
-#' A list of one flat partition compares nothing: it gives a 1 x 1 matrix of 1
-#' without this check.
+#' Flat membership vectors should not contain `NA` or `NaN`: remove or
+#' explicitly assign missing elements before comparison. Where version 1.2.0
+#' compared vectors with missing labels, they are compared as it compared them;
+#' where it failed, they stop with an error (see the package NEWS for the
+#' details and exceptions). Empty strings are valid labels.
+#' A list of one flat partition compares nothing: it gives a 1 x 1 matrix of 1,
+#' whatever its labels.
 #' @export
 #'
 #' @references Gates, A. J., Wood, I. B., Hetrick, W. P., & Ahn, Y. Y. (2019).
@@ -870,9 +878,7 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         return(matrix(1, nrow = 1, ncol = 1))
     }
 
-    for (mb in mb_list) {
-        validate_flat_membership_labels(mb)
-    }
+    # element_sim() compares each pair, missing labels as 1.2.0 compared them.
 
     first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
         rep(i, n_clusterings - i)
@@ -899,7 +905,8 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
             i = seq_len(n_combinations),
             .packages = "ClustAssess",
             .export = c("element_sim", "element_sim_elscore", "corrected_l1_mb",
-                        "encode_flat_disjoint_membership", "validate_flat_membership_labels"),
+                        "encode_flat_disjoint_membership", "validate_flat_membership_labels",
+                        "flat_labels_as_compared", "stop_for_missing_labels", "has_character_labels"),
             .noexport = c("my_cluster"),
             .combine = "c"
         ) %dopar% {
@@ -959,6 +966,118 @@ canonical_membership_key <- function(mb) {
         max(ids)
     }
     paste(length(ids), n_clusters, rlang::hash(ids), sep = ":")
+}
+
+has_missing_labels <- function(partition_list) {
+    any(vapply(partition_list, function(partition) {
+        inherits(partition$mb, c("numeric", "integer", "factor", "character")) && anyNA(partition$mb)
+    }, logical(1)))
+}
+
+# Whether two flat membership vectors give the same partition by the check
+# that 1.2.0 merged identical partitions with. It compared character and
+# factor labels through table(), which leaves out the elements with a missing
+# label in either vector and keeps the unused levels of a factor. It compared
+# other labels in native code, as they are compared (flat_labels_as_compared()
+# stops where that code failed), in a table over the range of their integer
+# values: unused values in a range made two labellings of one partition
+# different, and labels that differ only after the decimal point were the
+# same. Numeric vectors of different lengths are not the same partition here.
+# Labels that are not integers for 1.2.0, and objects other than vectors, are
+# compared as in 1.3.0.
+are_identical_memberships_1_2_0 <- function(mb1, mb2) {
+    if (inherits(mb1, c("character", "factor")) || inherits(mb2, c("character", "factor"))) {
+        contingency_table <- table(mb1, mb2) != 0
+        if (nrow(contingency_table) != ncol(contingency_table)) {
+            return(FALSE)
+        }
+        # only singleton clusters
+        if (nrow(contingency_table) == length(mb1)) {
+            return(TRUE)
+        }
+        return(all(colSums(contingency_table) == 1) && all(rowSums(contingency_table) == 1))
+    }
+    pair <- flat_labels_as_compared(list(mb1, mb2))
+    if (length(mb1) != length(mb2)) {
+        return(FALSE)
+    }
+    if (!inherits(mb1, c("numeric", "integer")) || !inherits(mb2, c("numeric", "integer")) ||
+        length(mb1) == 0) {
+        return(are_identical_memberships(mb1, mb2))
+    }
+    labels1 <- suppressWarnings(as.integer(pair[[1]]))
+    labels2 <- suppressWarnings(as.integer(pair[[2]]))
+    if (anyNA(labels1) || anyNA(labels2)) {
+        return(are_identical_memberships(mb1, mb2))
+    }
+    # the rows and columns of the table: the ranges of the labels
+    n_rows <- as.numeric(max(labels1)) - min(labels1) + 1
+    n_columns <- as.numeric(max(labels2)) - min(labels2) + 1
+    if (n_rows != n_columns) {
+        return(FALSE)
+    }
+    # only singleton clusters
+    if (n_rows == length(mb1)) {
+        return(TRUE)
+    }
+    # one nonzero cell in each row and column: every value of both ranges is
+    # used, each with one value of the other
+    length(unique(labels1)) == n_rows && length(unique(labels2)) == n_columns &&
+        nrow(unique(cbind(labels1, labels2))) == n_rows
+}
+
+# 1.2.0 merged identical partitions also when some had missing labels: each
+# partition joined the first partition kept before it that the check above
+# found the same, and every two partitions kept were then compared, which
+# failed for some missing labels. This merge does the same and stops with a
+# clear error where 1.2.0 failed. Then the partitions kept without missing
+# labels that give the same partition are merged, as 1.3.0 merges them
+# (unused factor levels and label values do not matter there).
+merge_partitions_with_missing_labels <- function(partition_list) {
+    kept_partitions <- list(partition_list[[1]])
+    for (partition in partition_list[-1]) {
+        same_index <- NA_integer_
+        for (j in seq_along(kept_partitions)) {
+            if (are_identical_memberships_1_2_0(kept_partitions[[j]]$mb, partition$mb)) {
+                same_index <- j
+                break
+            }
+        }
+
+        if (is.na(same_index)) {
+            kept_partitions[[length(kept_partitions) + 1]] <- partition
+        } else {
+            kept_partitions[[same_index]]$freq <- kept_partitions[[same_index]]$freq + partition$freq
+        }
+    }
+
+    # stop where 1.2.0 failed to compare two flat partitions it kept
+    kept_mbs <- lapply(kept_partitions, function(partition) partition$mb)
+    is_flat <- vapply(kept_mbs, inherits, logical(1), what = c("numeric", "integer", "factor", "character"))
+    if (sum(is_flat) > 1) {
+        flat_labels_as_compared(kept_mbs[is_flat])
+    }
+
+    merged_partitions <- list()
+    for (partition in kept_partitions) {
+        same_index <- NA_integer_
+        if (!anyNA(partition$mb)) {
+            for (j in seq_along(merged_partitions)) {
+                merged_mb <- merged_partitions[[j]]$mb
+                if (!anyNA(merged_mb) && are_identical_memberships(merged_mb, partition$mb)) {
+                    same_index <- j
+                    break
+                }
+            }
+        }
+
+        if (is.na(same_index)) {
+            merged_partitions[[length(merged_partitions) + 1]] <- partition
+        } else {
+            merged_partitions[[same_index]]$freq <- merged_partitions[[same_index]]$freq + partition$freq
+        }
+    }
+    merged_partitions
 }
 
 # merge partitions that are identical (meaning the ecs threshold is 1)
@@ -1087,9 +1206,13 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' @description Merge flat disjoint clusterings whose pairwise ECS score is
 #' above a given threshold. The merging is done using a complete linkage approach.
 #' @section Missing labels:
-#' Flat membership vectors must not contain `NA` or `NaN`. Remove or explicitly
-#' assign missing elements before comparison. Empty strings are valid labels.
-#' A list of one partition compares nothing: it is returned without this check.
+#' Flat membership vectors should not contain `NA` or `NaN`: remove or
+#' explicitly assign missing elements before comparison. Where version 1.2.0
+#' compared vectors with missing labels, they are compared as it compared them;
+#' where it failed, they stop with an error (see the package NEWS for the
+#' details and exceptions). Empty strings are valid labels.
+#' A list of one partition compares nothing: it is returned as it is,
+#' missing labels included.
 #'
 #' @param partition_list A list of flat disjoint membership vectors.
 #' @param ecs_thresh A numeric: the ecs threshold.
@@ -1169,16 +1292,13 @@ merge_partitions <- function(partition_list,
         }
     }
 
-    # Validate before duplicate merging compares the partitions. A single
-    # partition is returned as it is, missing labels included.
-    if (length(partition_list) > 1) {
-        for (partition in partition_list) {
-            validate_flat_membership_labels(partition$mb)
-        }
-    }
-
-    # if the threshold is 1, apply the identical merging
-    if (ecs_thresh == 1) {
+    # Missing labels are compared as 1.2.0 compared them; where it failed,
+    # the comparison stops with a clear error. A single partition is returned
+    # as it is, missing labels included.
+    if (ecs_thresh == 1 && length(partition_list) > 1 && has_missing_labels(partition_list)) {
+        part_list <- merge_partitions_with_missing_labels(partition_list)
+    } else if (ecs_thresh == 1) {
+        # if the threshold is 1, apply the identical merging
         part_list <- merge_identical_partitions(partition_list)
     } else {
         # otherwise merge the partitions using the `merge_partitions_ecs` function
@@ -1320,9 +1440,8 @@ element_consistency <- function(clustering_list,
                                 ppr_implementation = "prpack",
                                 dist_rescaled = FALSE,
                                 row_normalize = TRUE) {
-    for (mb in clustering_list) {
-        validate_flat_membership_labels(mb)
-    }
+    # Membership vectors are checked for missing labels when merge_partitions()
+    # compares them below, as in 1.2.0.
 
     # check if all objects are flat disjoint membership vectors
     are_all_flat_disjoint <- sapply(clustering_list, function(x) {
@@ -1417,9 +1536,8 @@ element_consistency <- function(clustering_list,
 weighted_element_consistency <- function(clustering_list,
                                          weights = NULL,
                                          calculate_sim_matrix = FALSE) {
-    for (mb in clustering_list) {
-        validate_flat_membership_labels(mb)
-    }
+    # Missing labels are compared as 1.2.0 compared them, pair by pair (see
+    # element_sim_elscore()); where it failed, a clear error.
     n_clusterings <- length(clustering_list)
 
     if (n_clusterings <= 1) {
@@ -1510,8 +1628,34 @@ has_character_labels <- function(memberships) {
 
 validate_flat_membership_labels <- function(mb) {
     if (inherits(mb, c("numeric", "integer", "factor", "character")) && anyNA(mb)) {
-        stop("Flat cluster labels must not contain missing values (NA or NaN).", call. = FALSE)
+        stop_for_missing_labels()
     }
+}
+
+stop_for_missing_labels <- function() {
+    stop("Flat cluster labels must not contain missing values (NA or NaN).", call. = FALSE)
+}
+
+# Flat membership vectors with missing labels (NA or NaN), compared with each
+# other as 1.2.0 compared them. Where none had character labels, 1.2.0 used
+# native code: a vector whose labels were all missing was one cluster, and a
+# vector with only some missing labels stopped R. Where one had character
+# labels, it used R code, which failed on any missing label. Here these
+# failures stop with a clear error, and a vector whose labels are all missing
+# is returned as one cluster.
+flat_labels_as_compared <- function(memberships) {
+    has_missing <- vapply(memberships, anyNA, logical(1))
+    if (!any(has_missing)) {
+        return(memberships)
+    }
+    all_missing <- vapply(memberships, function(mb) all(is.na(mb)), logical(1))
+    if (has_character_labels(memberships) || any(has_missing & !all_missing)) {
+        stop_for_missing_labels()
+    }
+    memberships[has_missing] <- lapply(memberships[has_missing], function(mb) {
+        stats::setNames(rep(1L, length(mb)), names(mb))
+    })
+    memberships
 }
 
 encode_flat_disjoint_membership <- function(mb) {
@@ -1570,6 +1714,8 @@ encode_flat_disjoint_memberships <- function(clustering_list) {
         }
     }
 
+    # Missing labels: compared as 1.2.0 compared them, or a clear error.
+    clustering_list <- flat_labels_as_compared(clustering_list)
     encoded_memberships <- matrix(NA_integer_, nrow = n_elements, ncol = n_clusterings)
     for (i in seq_len(n_clusterings)) {
         mb <- clustering_list[[i]]
@@ -1845,7 +1991,8 @@ Clustering <- setClass(
 setGeneric(
     "create_clustering",
     function(clustering_result, ...) {
-        validate_flat_membership_labels(clustering_result)
+        # A missing label gives its element no cluster, as in 1.2.0: the
+        # comparisons with a hierarchical or an overlapping clustering use it.
         standardGeneric("create_clustering")
     }
 )

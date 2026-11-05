@@ -54,8 +54,8 @@ test_that("a single partition with missing labels is returned without the label 
 
         expect_equal(element_sim_matrix(list(mb)), matrix(1, nrow = 1, ncol = 1))
 
-        # Comparing partitions with missing labels still stops.
-        expect_error(merge_partitions(list(mb, mb)), "missing values")
+        # Comparing different partitions with missing labels still stops.
+        expect_error(merge_partitions(list(mb, c(1, 2, 1, 2))), "missing values")
         expect_error(element_sim_matrix(list(mb, c(1, 1, 2, 2))), "missing values")
     }
 })
@@ -775,4 +775,105 @@ test_that("comparisons create R's random number state only where 1.2.0 did", {
     expect_true(creates_state(function() element_sim(a, b)))
     expect_true(creates_state(function() element_sim(factor(a), factor(b))))
     expect_true(creates_state(function() element_consistency(lapply(1:5, function(i) if (i %% 2 == 1) a else b))))
+})
+
+test_that("partitions with missing labels give the results of 1.2.0 where it gave one", {
+    valid <- c(1, 1, 2, 2)
+    other <- c(1, 2, 1, 2)
+    for (mb in list(c("a", NA, "b", "b"), factor(c("a", NA, "b", "b")))) {
+        # identical partitions are merged before anything is compared
+        merged <- merge_partitions(list(mb, mb), order_logic = "none")
+        expect_length(merged$partitions, 1)
+        expect_identical(merged$partitions[[1]]$mb, mb)
+        expect_equal(merged$partitions[[1]]$freq, 2)
+        expect_equal(merged$ecc, rep(1, 4))
+        expect_equal(element_consistency(list(mb, mb, mb)), rep(1, 4))
+        # character and factor labels are compared where both partitions
+        # have a label
+        expect_length(merge_partitions(list(mb, valid))$partitions, 1)
+        # a partition without missing labels found first is compared as usual
+        merged <- merge_partitions(list(valid, mb, other), order_logic = "none")
+        expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), c(2, 1))
+        expect_equal(merged$ecc, element_consistency(list(valid, valid, other)))
+    }
+    # 1.2.0 compared numeric labels in native code, which failed on them
+    expect_error(merge_partitions(list(c(1, NA, 2, 2), c(1, NA, 2, 2))), "missing values")
+
+    # A hierarchical clustering is compared with the element of a missing label
+    # in no cluster; values from 1.2.0.
+    hc <- stats::hclust(stats::dist(c(1, 2, 4, 8)))
+    scores <- c(0.368878280201, 0.444444444444, 0.446497648926, 0.541449078797)
+    for (mb in list(c("a", NA, "b", "b"), c(1, NA, 2, 2))) {
+        expect_equal(unname(element_sim_elscore(mb, hc)), scores, tolerance = 1e-10)
+        expect_equal(element_sim(mb, hc), 0.450317363092, tolerance = 1e-10)
+        expect_equal(suppressWarnings(element_agreement(mb, list(hc))), scores, tolerance = 1e-10)
+    }
+    for (mb in list(c("a", NA, "b", "b"), c(1, NA, 2, 2), factor(c("a", NA, "b", "b")))) {
+        expect_equal(unname(weighted_element_consistency(list(mb, hc), c(1, 1))), scores, tolerance = 1e-10)
+    }
+
+    # 1.2.0 compared two vectors of numbers or factors in native code, where a
+    # vector whose labels were all missing was one cluster; values from 1.2.0.
+    for (all_missing in list(rep(NA_integer_, 4), rep(NaN, 4), factor(rep(NA, 4), levels = "a"))) {
+        expect_equal(element_sim(all_missing, valid), 0.5)
+        expect_equal(element_sim_elscore(all_missing, valid), rep(0.5, 4))
+        expect_equal(weighted_element_consistency(list(all_missing, valid), c(1, 1)), rep(0.5, 4))
+        expect_equal(weighted_element_consistency(c(list(all_missing), rep(list(valid), 4))), rep(0.8, 4))
+        expect_equal(element_sim_matrix(list(all_missing, valid)), matrix(c(1, 0.5, 0.5, 1), 2))
+    }
+    expect_length(merge_partitions(list(rep(NA_integer_, 4), rep(NA_integer_, 4)))$partitions, 1)
+    # Any missing label stopped where character labels were compared.
+    expect_error(element_sim(rep(NA_integer_, 4), c("a", "a", "b", "b")), "missing values")
+
+    # The identity check of 1.2.0 counted the unused levels of a factor: two
+    # such factors with a missing label were left to compare, which stopped R.
+    unused <- factor(c("a", NA, "b", "b"), levels = c("a", "b", "unused"))
+    expect_error(merge_partitions(list(unused, unused)), "missing values")
+    # A factor without levels, all its labels missing, was the same partition
+    # as itself; one with a level was not, and was compared as one cluster.
+    expect_length(merge_partitions(list(factor(rep(NA, 4)), factor(rep(NA, 4))))$partitions, 1)
+    with_level <- factor(rep(NA, 4), levels = "a")
+    merged <- merge_partitions(list(with_level, with_level))
+    expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), c(1, 1))
+    expect_equal(merged$ecc, rep(1, 4))
+
+    # 1.2.0 compared each pair of a partition list on its own: a vector with
+    # missing labels was compared with a tree as above; values from 1.2.0.
+    hc6 <- stats::hclust(stats::dist(c(1, 2, 4, 8, 16, 32)))
+    merged <- merge_partitions(list(hc6, c(1, NA, 2, 3, 3, 1), hc6), ecs_thresh = 0.9)
+    expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), c(2, 1))
+    expect_equal(unname(merged$ecc), c(0.561324735177, 0.62962962963, 0.490709564862, 0.546025826201,
+        0.572292678288, 0.648829859017), tolerance = 1e-10)
+    # A vector whose labels are all missing is not the same partition as a
+    # matrix of another length.
+    overlap <- matrix(c(1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1), nrow = 6)
+    merged <- merge_partitions(list(rep(NA_real_, 6), overlap))
+    expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), c(1, 1))
+    expect_equal(unname(merged$ecc), rep(4 / 9, 6))
+
+    # 1.2.0 merged a list with missing labels by its own check, in its order:
+    # a factor with an unused level and a numeric vector of the same partition
+    # stayed apart, and a factor with a missing label could join the second.
+    # That merge comes first; the partitions without missing labels are then
+    # merged. The consistency is that of 1.2.0.
+    u <- factor(c(1, 1, 2, 2), levels = 1:3)
+    v <- c(1, 1, 2, 2)
+    m <- factor(c("a", NA, "b", "b"))
+    for (order in list(c(1, 2, 3), c(2, 1, 3), c(2, 3, 1))) {
+        merged <- merge_partitions(list(u, v, m)[order])
+        expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), 3)
+        expect_equal(merged$ecc, rep(1, 4))
+        expect_equal(element_consistency(list(u, v, m)[order]), rep(1, 4))
+    }
+    for (freq in list(c(0, 1, 3), c(2, 2, 4))) {
+        merged <- merge_partitions(Map(function(mb, f) list(mb = mb, freq = f), list(u, v, m), freq))
+        expect_equal(vapply(merged$partitions, `[[`, numeric(1), "freq"), sum(freq))
+        expect_equal(merged$ecc, rep(1, 4))
+    }
+    # Where the factor with a missing label stayed apart, 1.2.0 failed.
+    for (order in list(c(1, 3, 2), c(3, 1, 2), c(3, 2, 1))) {
+        expect_error(merge_partitions(list(u, v, m)[order]), "missing values")
+    }
+    # Vectors of different lengths are not the same partition.
+    expect_error(merge_partitions(list(NA_real_, rep(NA_real_, 4))), "same length")
 })

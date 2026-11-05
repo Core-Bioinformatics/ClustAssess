@@ -123,25 +123,26 @@ test_that("flat membership APIs reject missing labels when they compare partitio
         c("a", NA_character_, "b", "b"), factor(c("a", NA, "b", "b"))
     )
     valid <- c(1L, 1L, 2L, 2L)
+    other <- c(1L, 2L, 1L, 2L)
     for (bad in missing_inputs) {
         calls <- list(
             function() element_sim(bad, valid),
             function() element_sim(valid, bad),
             function() element_sim_elscore(bad, valid),
             function() element_sim_matrix(list(valid, bad)),
-            function() weighted_element_consistency(list(bad)),
             function() weighted_element_consistency(list(valid, bad)),
             function() weighted_element_consistency(c(rep(list(valid), 4), list(bad))),
-            function() element_consistency(list(bad)),
-            function() element_consistency(list(bad, bad)),
-            function() merge_partitions(list(bad, bad)),
+            function() element_consistency(list(bad, other)),
+            function() merge_partitions(list(bad, other)),
+            function() merge_partitions(list(bad, bad), ecs_thresh = 0.9),
             function() element_agreement(bad, list(valid)),
-            function() element_agreement(valid, list(bad)),
-            function() ClustAssess:::create_clustering(bad)
+            function() element_agreement(valid, list(bad))
         )
         for (call in calls) {
             expect_error(call(), "Flat cluster labels must not contain missing values")
         }
+        expect_error(element_consistency(list(bad)), "At least two clusterings are required")
+        expect_error(weighted_element_consistency(list(bad)), "At least two clusterings are required")
     }
 })
 

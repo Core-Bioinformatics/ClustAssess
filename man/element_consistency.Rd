@@ -59,8 +59,11 @@ their element-wise clustering consistency (also known as element-wise frustratio
 }
 \section{Missing labels}{
 
-Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
-assign missing elements before comparison. Empty strings are valid labels.
+Flat membership vectors should not contain \code{NA} or \code{NaN}: remove or
+explicitly assign missing elements before comparison. Where version 1.2.0
+compared vectors with missing labels, they are compared as it compared them;
+where it failed, they stop with an error (see the package NEWS for the
+details and exceptions). Empty strings are valid labels.
 }
 
 \examples{

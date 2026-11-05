@@ -83,13 +83,29 @@ robustness" and these implementation effects:
   negative, large, and precision-sensitive labels retain their equality pattern
   instead of being truncated or rounded through integer/text conversion.
   Internal compact encoding also avoids allocating tables from raw label ranges.
-- Flat membership vectors containing `NA` or `NaN` now stop with a clear error
-  as soon as a function that compares partitions receives them (including
-  duplicate merging), instead of failing in native code; the internal
-  clustering object is no longer created from them. `merge_partitions()` and
-  `element_sim_matrix()` still accept a list of one such partition, as they
-  compare nothing. Empty-string labels remain valid; missing observations must
-  be handled explicitly before comparison.
+- Flat membership vectors with missing labels (`NA` or `NaN`) now stop with a
+  clear error where 1.2.0 failed on them, often by stopping R in native code.
+  Where 1.2.0 gave a result, the missing labels are compared as 1.2.0 compared
+  them:
+  - two vectors of numbers or factors are compared as 1.2.0 compared them in
+    native code: a vector whose labels are all missing is one cluster. A
+    vector with only some missing labels, and any missing label where
+    character labels are compared, stop;
+  - `merge_partitions()` with `ecs_thresh = 1`, and `element_consistency()`,
+    merge a list with missing labels first as 1.2.0 merged it: in its order
+    and with its check, also for the partitions without missing labels
+    (character and factor labels through `table()`, where both have a label
+    and with the unused levels of a factor; other labels as integers). They
+    stop where 1.2.0 failed to compare two of the partitions left. Of these,
+    the partitions without missing labels that give the same partition are
+    then merged, as without missing labels;
+  - a comparison with a hierarchical or overlapping clustering puts the
+    element with a missing label in no cluster;
+  - `merge_partitions()` and `element_sim_matrix()` accept a list of one such
+    partition.
+
+  Vectors of different lengths are not the same partition, which 1.2.0 could
+  find for numbers. Empty-string labels remain valid.
 - Hardened native batched ECC contingency-table dimension and index arithmetic
   against integer overflow. This does not make intrinsically large tables fit
   available memory.

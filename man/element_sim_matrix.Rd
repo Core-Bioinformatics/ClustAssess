@@ -61,10 +61,13 @@ average element-centric clustering similarities.
 }
 \section{Missing labels}{
 
-Flat membership vectors must not contain \code{NA} or \code{NaN}. Remove or explicitly
-assign missing elements before comparison. Empty strings are valid labels.
-A list of one flat partition compares nothing: it gives a 1 x 1 matrix of 1
-without this check.
+Flat membership vectors should not contain \code{NA} or \code{NaN}: remove or
+explicitly assign missing elements before comparison. Where version 1.2.0
+compared vectors with missing labels, they are compared as it compared them;
+where it failed, they stop with an error (see the package NEWS for the
+details and exceptions). Empty strings are valid labels.
+A list of one flat partition compares nothing: it gives a 1 x 1 matrix of 1,
+whatever its labels.
 }
 
 \examples{
