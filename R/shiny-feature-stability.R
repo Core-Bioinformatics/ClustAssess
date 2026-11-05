@@ -1106,21 +1106,28 @@ shiny_plot_feature_stability_boxplot <- function(resval,
     fgroups <- names(feature_ordering$original)
     legend_columns <- function(size) {
         predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = size)
-        max(plt_width %/% (1.5 * max(predicted_width)), 1)
+        plt_width %/% (1.5 * max(predicted_width))
     }
     legend_margin <- function(size) {
-        number_rows <- ceiling(length(fgroups) / legend_columns(size))
+        number_rows <- ceiling(length(fgroups) / max(legend_columns(size), 1))
         (number_rows + 2) * graphics::strheight(fgroups[1], units = "inches", cex = size) * 1.2
     }
     current_margins <- graphics::par("mai")
     if (text_size > 1.5) {
         current_margins[2] <- current_margins[2] + 0.5 * graphics::strheight(fgroups[1], units = "inches", cex = text_size)
     }
-    # The legend takes room in the bottom margin; a large text size draws it
-    # smaller, or not at all, so that the boxplots keep room.
-    legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
-        graphics::par("din")[2] - current_margins[1] - margin - current_margins[3]
-    })
+    # The legend takes room in the bottom margin. Only where R does not draw
+    # the boxplots with it, which stopped the plot with "figure margins too
+    # large" (or, where not one legend column fitted the width, with a margin
+    # too large to set), is it drawn smaller, or not at all.
+    legend_size <- text_size
+    with_legend <- current_margins
+    with_legend[1] <- with_legend[1] + legend_margin(text_size)
+    if (legend_columns(text_size) < 1 || !layout_draws(matrix(1), 1, list(mai = with_legend))) {
+        legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
+            graphics::par("fin")[2] - current_margins[1] - margin - current_margins[3]
+        })
+    }
     if (!is.null(legend_size)) {
         current_margins[1] <- current_margins[1] + legend_margin(legend_size)
     }
@@ -1197,7 +1204,7 @@ shiny_plot_feature_stability_boxplot <- function(resval,
         cex = legend_size,
         pt.cex = legend_size * 2,
         bty = "n",
-        ncol = legend_columns(legend_size),
+        ncol = max(legend_columns(legend_size), 1),
         xpd = TRUE
     )
 }
@@ -1219,21 +1226,28 @@ shiny_plot_feature_stability_incremental <- function(resval,
     fgroups <- names(feature_ordering$original_incremental)
     legend_columns <- function(size) {
         predicted_width <- graphics::strwidth(fgroups, units = "inches", cex = size)
-        max(plt_width %/% (1.2 * max(predicted_width)), 1)
+        plt_width %/% (1.2 * max(predicted_width))
     }
     legend_margin <- function(size) {
-        number_rows <- ceiling(length(fgroups) / legend_columns(size))
+        number_rows <- ceiling(length(fgroups) / max(legend_columns(size), 1))
         (number_rows + 2) * graphics::strheight(fgroups[1], units = "inches", cex = size) * 1.2
     }
     current_margins <- graphics::par("mai")
     if (text_size > 1.5) {
         current_margins[2] <- current_margins[2] + 0.5 * graphics::strheight(fgroups[1], units = "inches", cex = text_size)
     }
-    # The legend takes room in the bottom margin; a large text size draws it
-    # smaller, or not at all, so that the boxplots keep room.
-    legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
-        graphics::par("din")[2] - current_margins[1] - margin - current_margins[3]
-    })
+    # The legend takes room in the bottom margin. Only where R does not draw
+    # the boxplots with it, which stopped the plot with "figure margins too
+    # large" (or, where not one legend column fitted the width, with a margin
+    # too large to set), is it drawn smaller, or not at all.
+    legend_size <- text_size
+    with_legend <- current_margins
+    with_legend[1] <- with_legend[1] + legend_margin(text_size)
+    if (legend_columns(text_size) < 1 || !layout_draws(matrix(1), 1, list(mai = with_legend))) {
+        legend_size <- fit_legend_size(text_size, legend_margin, function(margin) {
+            graphics::par("fin")[2] - current_margins[1] - margin - current_margins[3]
+        })
+    }
     if (!is.null(legend_size)) {
         current_margins[1] <- current_margins[1] + legend_margin(legend_size)
     }
@@ -1309,7 +1323,7 @@ shiny_plot_feature_stability_incremental <- function(resval,
         cex = legend_size,
         pt.cex = legend_size * 2,
         bty = "n",
-        ncol = legend_columns(legend_size),
+        ncol = max(legend_columns(legend_size), 1),
         xpd = TRUE
     )
 }

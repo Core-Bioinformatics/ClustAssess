@@ -387,6 +387,74 @@ test_that("the app's k plot legend is drawn smaller only when the plot has no ro
     expect_lt(calls[[2]]$cex.main, 10)
 })
 
+test_that("the app's plots keep their legend size wherever it leaves the plot room", {
+    ns <- asNamespace("ClustAssess")
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    ns$add_env_variable("discrete_colors", list("3" = c("#1B9E77", "#D95F02", "#7570B3")))
+    on.exit(
+        if (had_colours) {
+            assign("discrete_colors", old_colours, envir = ns$pkg_env)
+        } else {
+            rm("discrete_colors", envir = ns$pkg_env)
+        },
+        add = TRUE
+    )
+    groups <- rep(c("Louvain", "Louvain.refined", "SLM"), times = 6)
+    resolutions <- rep(seq(0.6, 1.1, by = 0.1), each = 3)
+    boxes <- lapply(seq_along(groups), function(i) seq(0.5, 1, length.out = 20))
+    embedding <- cbind(seq(-1, 1, length.out = 200), sin(seq(0, 6, length.out = 200)))
+    labels <- paste("cluster", 1:8)
+    discrete <- factor(rep(labels, length.out = 200), levels = labels)
+
+    # The margins (inches) above and below a plot, at a character size.
+    grDevices::pdf(NULL)
+    margins <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+    grDevices::dev.off()
+    # The height (inches) of the legend row, the last row of the layout.
+    legend_row <- function(draw, height) {
+        grDevices::pdf(NULL, width = 7, height = height)
+        on.exit(grDevices::dev.off())
+        draw(height)
+        graphics::par("fin")[2]
+    }
+    plots <- list(
+        # A layout of three columns draws the margins at 0.66 of their size;
+        # the plot is 0.1 inch shorter than the room above the legend.
+        k = list(
+            draw = function(height) {
+                ns$shiny_plot_k_n_partitions(k_summary(), plt_height = height * ns$ppi, display_legend = TRUE,
+                    text_size = 3, pt_size_range = c(1.35, 2.35))
+            },
+            height = function(row, room) row + 0.1 + margins * 0.66 + room
+        ),
+        boxplot = list(
+            draw = function(height) {
+                ns$grouped_boxplot_list(boxes, groups, resolutions, plt_height = height * ns$ppi,
+                    plt_width = 7 * ns$ppi, xlab_text = "resolution", display_legend = TRUE, text_size = 1)
+            },
+            height = function(row, room) row + 0.05 + margins + room
+        ),
+        # The rows of the UMAP are drawn at 2.5 cm per inch.
+        umap = list(
+            draw = function(height) {
+                ns$color_plot2(embedding, discrete, grDevices::rainbow(8), plt_height = height * ns$ppi,
+                    plt_width = 7 * ns$ppi, unique_values = labels, display_legend = TRUE, legend_text_size = 1)
+            },
+            height = function(row, room) (row + margins + room) * 2.54 / 2.5
+        )
+    )
+    for (name in names(plots)) {
+        plot <- plots[[name]]
+        # The legend row at its size, with room to spare.
+        row <- legend_row(plot$draw, 12)
+        # 0.05 inch of room inside the margins of the plot: the legend keeps
+        # its size. Without room, the plot stopped: the legend is smaller.
+        expect_equal(legend_row(plot$draw, plot$height(row, 0.05)), row, label = name)
+        expect_lt(legend_row(plot$draw, plot$height(row, -0.05)), row, label = name)
+    }
+})
+
 # A stability.h5 with the overall feature stability of two feature sets of
 # 100 and 200 features, as the app reads it from its folder.
 write_feature_stability <- function(folder) {
@@ -451,6 +519,56 @@ test_that("the app's feature stability boxplots draw at every size of their slid
     }
 })
 
+test_that("the app's feature stability boxplots keep their legend size wherever it leaves room", {
+    testthat::skip_if_not_installed("rhdf5")
+    ns <- asNamespace("ClustAssess")
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    ns$add_env_variable("discrete_colors", list("2" = c("#1B9E77", "#D95F02")))
+    folder <- tempfile("feature-stability")
+    dir.create(folder)
+    old_folder <- setwd(folder)
+    on.exit(
+        {
+            setwd(old_folder)
+            unlink(folder, recursive = TRUE)
+            if (had_colours) {
+                assign("discrete_colors", old_colours, envir = ns$pkg_env)
+            } else {
+                rm("discrete_colors", envir = ns$pkg_env)
+            }
+        },
+        add = TRUE
+    )
+    write_feature_stability(folder)
+    ordering <- list(
+        original = list(A = c("100", "200"), B = c("100", "200")),
+        original_incremental = list(A = c("100", "200"), B = c("100", "200"))
+    )
+    draw <- list(
+        by_step = ns$shiny_plot_feature_stability_boxplot,
+        incremental = ns$shiny_plot_feature_stability_incremental
+    )
+    # The legend is drawn in the bottom margin (inches) of the boxplots.
+    bottom_margin <- function(plot, height) {
+        grDevices::pdf(NULL, width = 7, height = height)
+        on.exit(grDevices::dev.off())
+        plot("overall", ordering, plt_height = height * ns$ppi, plt_width = 7 * ns$ppi, text_size = 3)
+        graphics::par("mai")[1]
+    }
+    grDevices::pdf(NULL)
+    top_margin <- graphics::par("mai")[3]
+    grDevices::dev.off()
+    for (name in names(draw)) {
+        # The bottom margin with the legend at its size, with room to spare.
+        margin <- bottom_margin(draw[[name]], 12)
+        # 0.05 inch of room inside the margins of the boxplots: the legend
+        # keeps its size. Without room, the plot stopped: the legend is smaller.
+        expect_equal(bottom_margin(draw[[name]], margin + top_margin + 0.05), margin, label = name)
+        expect_lt(bottom_margin(draw[[name]], margin + top_margin - 0.05), margin, label = name)
+    }
+})
+
 test_that("the app's separate colour bar draws at every legend size", {
     ns <- asNamespace("ClustAssess")
     values <- seq(0, 1, length.out = 500)
@@ -510,6 +628,417 @@ test_that("a UMAP colour bar keeps the height given by the caller where it fits"
     expect_equal(colour_bar_height(1), 1 * 2.5 / 2.54)
     # A row too low for the 0.1 inch above and below the colour bar is raised.
     expect_equal(colour_bar_height(0.1), 0.21)
+    # A row that leaves the UMAP 0.05 inch inside its margins is kept; a
+    # higher one, which leaves it no room, is lowered.
+    grDevices::pdf(NULL)
+    margins <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+    grDevices::dev.off()
+    tight <- 7 - (margins + 0.05) * 2.54 / 2.5
+    expect_equal(colour_bar_height(tight), tight * 2.5 / 2.54)
+    expect_lt(colour_bar_height(tight + 0.1), (tight + 0.1) * 2.5 / 2.54)
+})
+
+# Whether R draws a plot in every panel of a layout (FALSE: it stops).
+draws_every_panel <- function(mat, heights, last_par = NULL) {
+    tryCatch(
+        {
+            graphics::layout(mat, heights = heights)
+            for (panel in seq_len(max(mat))) {
+                if (panel == max(mat) && !is.null(last_par)) {
+                    graphics::par(last_par)
+                }
+                graphics::plot.new()
+            }
+            TRUE
+        },
+        error = function(e) FALSE
+    )
+}
+
+test_that("the check of a legend layout gives R's answer at the limits of its margins", {
+    ns <- asNamespace("ClustAssess")
+    grDevices::pdf(NULL)
+    margins <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+    grDevices::dev.off()
+    two_rows <- matrix(c(1, 2), nrow = 2)
+    k_rows <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, byrow = TRUE)
+    # Each layout at the limit of one panel, as the app's plots make them: a
+    # colour bar of 0.2 inch with 0.1 inch above and below it, a UMAP or a k
+    # plot with no room inside its margins, and k legend plots in a row as
+    # high as their margins (a layout of three columns draws them at 0.66).
+    layouts <- function(d) {
+        bar <- 0.2 * 2.54 / 2.5 + d
+        umap <- 7 - (margins + d) * 2.54 / 2.5
+        k_plot <- 7 - 0.1 - margins * 0.66 - d
+        k_legend <- margins * 0.66 + d
+        list(
+            bar = list(two_rows, c(graphics::lcm((7 - bar) * 2.5), graphics::lcm(bar * 2.5)),
+                list(mai = c(0.1, 0, 0.1, 0))),
+            umap = list(two_rows, c(graphics::lcm((7 - umap) * 2.5), graphics::lcm(umap * 2.5)),
+                list(mar = c(0, 0, 0, 0))),
+            k_plot = list(k_rows, c(graphics::lcm((7 - k_plot - 0.1) * 2.54), graphics::lcm(k_plot * 2.54))),
+            k_legend = list(k_rows, c(graphics::lcm((7 - k_legend - 0.1) * 2.54), graphics::lcm(k_legend * 2.54)))
+        )
+    }
+    answers <- character()
+    for (d in c(-1e-12, -4e-16, -2e-16, 0, 2e-16, 4e-16, 1e-12)) {
+        cases <- layouts(d)
+        for (name in names(cases)) {
+            case <- cases[[name]]
+            last_par <- if (length(case) > 2) case[[3]]
+            grDevices::pdf(NULL, width = 7, height = 7)
+            expected <- draws_every_panel(case[[1]], case[[2]], last_par)
+            grDevices::dev.off()
+            grDevices::pdf(NULL, width = 7, height = 7)
+            checked <- ns$layout_draws(case[[1]], case[[2]], last_par)
+            grDevices::dev.off()
+            expect_identical(checked, expected, label = sprintf("%s at %g", name, d))
+            answers <- c(answers, expected)
+        }
+    }
+    # The limits are crossed: some layouts draw and some do not.
+    expect_true(any(answers == "TRUE") && any(answers == "FALSE"))
+})
+
+test_that("a UMAP colour bar keeps the height given by the caller wherever R draws it", {
+    ns <- asNamespace("ClustAssess")
+    embedding <- cbind(seq(-1, 1, length.out = 200), sin(seq(0, 6, length.out = 200)))
+    values <- seq(0, 1, length.out = 200)
+    for (d in c(-4e-16, -2e-16, 0, 2e-16, 4e-16)) {
+        # A colour bar of 0.2 inch (the rows are drawn at 2.5 cm per inch).
+        given <- 0.2 * 2.54 / 2.5 + d
+        grDevices::pdf(NULL, width = 7, height = 7)
+        drawn <- draws_every_panel(matrix(c(1, 2), nrow = 2),
+            c(graphics::lcm((7 - given) * 2.5), graphics::lcm(given * 2.5)),
+            list(mai = c(0.1, 0, 0.1, 0)))
+        grDevices::dev.off()
+        grDevices::pdf(NULL, width = 7, height = 7)
+        result <- tryCatch(
+            {
+                ns$color_plot2(embedding, values, NULL, plt_height = 7 * ns$ppi, plt_width = 7 * ns$ppi,
+                    display_legend = TRUE, predicted_height = given)
+                "drawn"
+            },
+            error = conditionMessage
+        )
+        bar <- graphics::par("fin")[2]
+        grDevices::dev.off()
+        expect_identical(result, "drawn")
+        # Kept where R draws it; raised to 0.21 inch where it does not.
+        expect_identical(abs(bar - given * 2.5 / 2.54) < 1e-9, drawn, label = sprintf("bar kept at %g", d))
+    }
+})
+
+test_that("the app's plots keep the caller's text size, margins and layout", {
+    ns <- asNamespace("ClustAssess")
+    # the app keeps its colours in this environment; leave them as they were
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    on.exit(
+        if (had_colours) {
+            assign("discrete_colors", old_colours, envir = ns$pkg_env)
+        } else {
+            rm("discrete_colors", envir = ns$pkg_env)
+        },
+        add = TRUE
+    )
+    # Values from 1.2.0: a legend drawn at the caller's text size, and a
+    # legend row measured at it.
+    grDevices::pdf(NULL, width = 7, height = 7)
+    graphics::par(cex = 2)
+    ns$only_legend_plot(NULL, grDevices::rainbow(50), seq(0, 1, length.out = 20),
+        plt_width = 7 * ns$ppi, text_size = 1.5)
+    expect_equal(graphics::par("cex"), 2)
+    grDevices::dev.off()
+    grDevices::pdf(NULL, width = 7, height = 7)
+    graphics::par(cex = 2)
+    ns$add_env_variable("discrete_colors", list("2" = c("red", "blue")))
+    ns$grouped_boxplot_list(list(c(0.2, 0.3, 0.4), c(0.4, 0.6, 0.8)), c("A", "B"), c(1, 1),
+        plt_height = 7 * ns$ppi, plt_width = 7 * ns$ppi, xlab_text = "resolution", text_size = 1.5)
+    expect_equal(graphics::par("fin")[2], 1.059, tolerance = 1e-9)
+    grDevices::dev.off()
+
+    # The check of a plot of one panel keeps the caller's layout; the check of
+    # a layout keeps the caller's text size, margin line height and margins.
+    grDevices::pdf(NULL, width = 7, height = 7)
+    graphics::par(mfrow = c(2, 2))
+    graphics::par(cex = 1.5, mex = 2, mar = c(1, 2, 3, 4))
+    expect_true(ns$layout_draws(matrix(1), 1, list(mai = c(0.1, 0, 0.1, 0))))
+    expect_equal(graphics::par("mfrow"), c(2, 2))
+    expect_equal(graphics::par(c("cex", "mex", "mar")), list(cex = 1.5, mex = 2, mar = c(1, 2, 3, 4)))
+    expect_true(ns$layout_draws(matrix(c(1, 2), nrow = 2), c(graphics::lcm(10), graphics::lcm(5))))
+    expect_equal(graphics::par(c("cex", "mex", "mar")), list(cex = 1.5, mex = 2, mar = c(1, 2, 3, 4)))
+    grDevices::dev.off()
+
+    # In a figure of the caller's own layout, the next one, a plot of one
+    # panel is drawn as in 1.2.0, also where the current figure is too small.
+    for (advance in c(FALSE, TRUE)) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        graphics::layout(matrix(1:2, nrow = 2), heights = if (advance) c(0.1, 6.9) else c(6.9, 0.1))
+        graphics::par(mar = rep(0, 4))
+        if (advance) {
+            graphics::plot.new()
+        }
+        expect_error(ns$only_legend_plot(NULL, grDevices::rainbow(50), seq(0, 1, length.out = 20),
+            plt_width = 7 * ns$ppi, text_size = 1.5), NA)
+        expect_equal(graphics::par("mai"), c(0.1, 0, 0.1, 0))
+        expect_equal(graphics::par("fin")[2], 6.9)
+        grDevices::dev.off()
+    }
+})
+
+# The graphical parameters of each panel as plot.new() sets it up, and of the
+# device after `draw()`.
+drawn_states <- function(draw) {
+    hooks <- getHook("plot.new")
+    on.exit(setHook("plot.new", hooks, "replace"))
+    states <- list()
+    setHook("plot.new", function() {
+        states[[length(states) + 1]] <<- graphics::par(c("fig", "plt", "pin", "mai", "mar", "cex", "mex"))
+    })
+    draw()
+    c(states, list(graphics::par(no.readonly = TRUE)))
+}
+
+test_that("the plots that 1.2.0 drew keep the caller's plot region and margins", {
+    ns <- asNamespace("ClustAssess")
+    had_colours <- exists("discrete_colors", envir = ns$pkg_env, inherits = FALSE)
+    old_colours <- if (had_colours) get("discrete_colors", envir = ns$pkg_env)
+    on.exit(
+        if (had_colours) {
+            assign("discrete_colors", old_colours, envir = ns$pkg_env)
+        } else {
+            rm("discrete_colors", envir = ns$pkg_env)
+        },
+        add = TRUE
+    )
+    ns$add_env_variable("discrete_colors", list("2" = c("red", "blue")))
+    k_df <- expand.grid(k = 2:5, cl_method = c("Louvain", "Leiden"), stringsAsFactors = FALSE)
+    k_df$first_freq <- 8
+    k_df$total_freq <- rep(c(5, 10, 20, 15), length.out = nrow(k_df))
+    k_df$ecc <- seq(0.6, 0.95, length.out = nrow(k_df))
+    k_df$n_partitions <- rep(1:4, length.out = nrow(k_df))
+    embedding <- cbind(seq(-1, 1, length.out = 200), sin(seq(0, 6, length.out = 200)))
+    values <- seq(0, 1, length.out = 200)
+    labels <- rep(c("a", "b"), 100)
+    plots <- list(
+        k = function() {
+            ns$shiny_plot_k_n_partitions(k_df, plt_height = 7 * ns$ppi, display_legend = TRUE,
+                pt_size_range = c(1.35, 2.35))
+        },
+        boxplot = function() {
+            ns$grouped_boxplot_list(list(c(0.2, 0.3, 0.4), c(0.4, 0.6, 0.8)), c("A", "B"), c(1, 1),
+                plt_height = 7 * ns$ppi, plt_width = 7 * ns$ppi, xlab_text = "resolution")
+        },
+        umap = function() {
+            ns$color_plot2(embedding, labels, color_values = c("red", "blue"), plt_height = 7 * ns$ppi,
+                plt_width = 7 * ns$ppi, unique_values = c("a", "b"), display_legend = TRUE)
+        },
+        colour_bar = function() {
+            ns$color_plot2(embedding, values, NULL, plt_height = 7 * ns$ppi, plt_width = 7 * ns$ppi,
+                display_legend = TRUE)
+        },
+        # Two rows of 3.5 inches: with `pty = "s"`, R maps squares of the same
+        # size from the margins in both panels and in the right half of the
+        # device.
+        colour_bar_halves = function() {
+            ns$color_plot2(embedding, values, NULL, plt_height = 7 * 2.54 / 2.5 * ns$ppi,
+                plt_width = 7 * ns$ppi, display_legend = TRUE, predicted_height = 7 * 2.54 / 2.5 / 2)
+        },
+        legend = function() {
+            ns$only_legend_plot(NULL, grDevices::rainbow(50), values, plt_width = 7 * ns$ppi)
+        }
+    )
+    # A plot region or margins that the caller set, which 1.2.0 kept: margins
+    # in inches with a text size that the layout of a plot changes, a region,
+    # a size, and a square region, also in margins of the same size on every
+    # side.
+    settings <- list(
+        mai = function() graphics::par(cex = 1.5, mai = c(0.1, 0.3, 0.2, 0.1)),
+        plt = function() graphics::par(plt = c(0.3, 0.6, 0.4, 0.6)),
+        pin = function() graphics::par(pin = c(1.5, 0.4)),
+        square = function() graphics::par(pty = "s"),
+        square_margins = function() graphics::par(mar = rep(1, 4), pty = "s")
+    )
+    draw_with <- function(plot, setting) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        on.exit(grDevices::dev.off())
+        graphics::par(mar = c(2, 2, 1, 1))
+        settings[[setting]]()
+        drawn_states(plots[[plot]])
+    }
+    for (plot in names(plots)) {
+        for (setting in names(settings)) {
+            # 1.2.0 drew these plots with their legend: the check finds that
+            # R draws them, and every panel is drawn as without the check.
+            unchecked <- with_mocked_bindings(
+                draw_with(plot, setting),
+                layout_draws = function(...) TRUE,
+                .package = "ClustAssess"
+            )
+            expect_identical(draw_with(plot, setting), unchecked, label = paste(plot, setting))
+        }
+    }
+    # Margins too small to change the regions in figures of the device's size,
+    # but not in a plot row of 0.3 inch, or of 2e-15 (times 2.5 / 2.54) inch,
+    # and margins too large to count in lines.
+    small_margins <- list(
+        lines = list(margins = function() graphics::par(mar = c(0, 0, 1e-16, 1e-16)), row = 0.3),
+        inches = list(margins = function() graphics::par(mai = c(0, 0, 3e-17, 3e-17)), row = 0.3),
+        tiny_inches = list(margins = function() graphics::par(mai = c(0, 0, 1e-31, 1e-31)), row = 2e-15),
+        # Margins of 1e308 inches are more lines than R can count; with a
+        # region or a size that the caller set, the plot is drawn.
+        huge_inches_region = list(margins = function() {
+            graphics::par(mai = rep(1e308, 4))
+            graphics::par(plt = c(0.1, 0.9, 0.1, 0.9))
+        }, row = 3.5),
+        huge_inches_size = list(margins = function() {
+            graphics::par(mai = rep(1e308, 4))
+            graphics::par(pin = c(2, 1))
+        }, row = 3.5),
+        huge_lines_region = list(margins = function() {
+            graphics::par(mar = rep(1e308, 4))
+            graphics::par(plt = c(0.1, 0.9, 0.1, 0.9))
+        }, row = 3.5)
+    )
+    for (margins in names(small_margins)) {
+        draw_row <- function() {
+            grDevices::pdf(NULL, width = 7, height = 7)
+            on.exit(grDevices::dev.off())
+            small_margins[[margins]]$margins()
+            drawn_states(function() {
+                ns$color_plot2(embedding, values, NULL, plt_height = 7 * 2.54 / 2.5 * ns$ppi,
+                    plt_width = 7 * ns$ppi, display_legend = TRUE,
+                    predicted_height = 7 * 2.54 / 2.5 - small_margins[[margins]]$row)
+            })
+        }
+        unchecked <- with_mocked_bindings(
+            draw_row(),
+            layout_draws = function(...) TRUE,
+            .package = "ClustAssess"
+        )
+        expect_identical(draw_row(), unchecked, label = paste("small plot row, margins", margins))
+    }
+
+    # The check of a colour bar row sets the caller's margins and plot region
+    # back as the caller set them, where R draws the row and where it does
+    # not: a plot drawn next at a larger text size has the margins and plot
+    # region that it would have had, also where the region or size that the
+    # caller set is the one that R maps from the margins in the first panel,
+    # and where R maps squares of the same size in figures of other shapes
+    # (two rows of 3.5 inches).
+    bar_rows <- list(drawn = c(6.7, 0.3), not_drawn = c(6.9, 0.1), halves = c(3.5, 3.5) * 2.54 / 2.5)
+    first_panel <- function(rows, what) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        on.exit(grDevices::dev.off())
+        graphics::par(mar = c(2, 2, 1, 1))
+        graphics::layout(matrix(c(2, 1), nrow = 2), heights = graphics::lcm(rows * 2.5))
+        graphics::par(what)
+    }
+    callers <- list(
+        mai = function(rows) graphics::par(cex = 1.5, mai = c(0.1, 0.3, 0.2, 0.1)),
+        plt = function(rows) graphics::par(plt = c(0.3, 0.6, 0.4, 0.6)),
+        pin = function(rows) graphics::par(pin = c(1.5, 0.4)),
+        square = function(rows) graphics::par(pty = "s"),
+        square_margins = function(rows) graphics::par(mar = rep(1, 4), pty = "s"),
+        first_plt = function(rows) graphics::par(plt = first_panel(rows, "plt")),
+        first_pin = function(rows) graphics::par(pin = first_panel(rows, "pin")),
+        figure_pin = function(rows) graphics::par(mar = rep(0, 4), pin = first_panel(rows, "fin")),
+        # `pty` set after a region gives the region up.
+        region_then_pty = function(rows) {
+            graphics::par(mar = rep(0, 4), plt = c(0.15, 0.85, 0.2, 0.7))
+            graphics::par(pty = "m")
+        }
+    )
+    regions <- function(caller, rows, check) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        on.exit(grDevices::dev.off())
+        graphics::par(mar = c(2, 2, 1, 1))
+        callers[[caller]](rows)
+        if (check) {
+            drawn <- ns$layout_draws(matrix(c(1, 2), nrow = 2), graphics::lcm(rows * 2.5),
+                list(mai = c(0.1, 0, 0.1, 0)))
+            expect_identical(drawn, rows[2] > 0.2 * 2.54 / 2.5, label = paste("check", caller, rows[2]))
+        }
+        graphics::par(cex = 3)
+        graphics::plot.new()
+        graphics::par(c("mar", "mai", "plt", "pin"))
+    }
+    for (caller in names(callers)) {
+        for (rows in bar_rows) {
+            expect_identical(regions(caller, rows, TRUE), regions(caller, rows, FALSE),
+                label = paste("colour bar row", rows[2], caller))
+        }
+    }
+    # Margins too small to change the regions of figures of these sizes show
+    # in a plot drawn next with margin lines 1e16 times as high, or in a figure
+    # 1e-30 of the device wide and high: margins in lines (also so small that
+    # they are 0 inches) or in inches, and such margins with a region that the
+    # caller set. Margins of 0 in lines and in inches differ with margin lines
+    # of no height (5e-324 times as high), set before or after the check: 0
+    # inches are then no finite number of lines. Margins of 1e308 inches are
+    # no finite number of lines at any height.
+    small_callers <- list(
+        lines = function() graphics::par(mar = c(0, 0, 1e-16, 1e-16)),
+        lines_and_region = function() {
+            graphics::par(mar = c(0, 0, 1e-16, 1e-16))
+            graphics::par(plt = c(0, 1, 0, 1))
+        },
+        lines_of_no_inches = function() graphics::par(mar = c(0, 0, 1e-323, 1e-323)),
+        inches = function() graphics::par(mai = c(0, 0, 1e-31, 1e-31)),
+        inches_and_region = function() {
+            graphics::par(mai = c(0, 0, 1e-31, 1e-31))
+            graphics::par(plt = c(0, 1, 0, 1))
+        },
+        zero_lines = function() graphics::par(mar = rep(0, 4)),
+        zero_inches = function() graphics::par(mai = rep(0, 4)),
+        zero_lines_no_height = function() graphics::par(mar = rep(0, 4), mex = 5e-324),
+        zero_inches_no_height = function() graphics::par(mai = rep(0, 4), mex = 5e-324),
+        huge_inches = function() graphics::par(mai = rep(1e308, 4)),
+        huge_inches_region = function() {
+            graphics::par(mai = rep(1e308, 4))
+            graphics::par(plt = c(0.1, 0.9, 0.1, 0.9))
+        },
+        huge_inches_size = function() {
+            graphics::par(mai = rep(1e308, 4))
+            graphics::par(pin = c(2, 1))
+        },
+        huge_lines_region = function() {
+            graphics::par(mar = rep(1e308, 4))
+            graphics::par(plt = c(0.1, 0.9, 0.1, 0.9))
+        }
+    )
+    next_plots <- list(
+        tall_lines = function() graphics::par(mex = 1e16),
+        tiny_figure = function() graphics::par(fig = c(0, 1e-30, 0, 1e-30)),
+        lines_of_no_height = function() graphics::par(mex = 5e-324)
+    )
+    small_regions <- function(caller, next_plot, rows, check) {
+        grDevices::pdf(NULL, width = 7, height = 7)
+        on.exit(grDevices::dev.off())
+        small_callers[[caller]]()
+        if (check) {
+            ns$layout_draws(matrix(c(1, 2), nrow = 2), graphics::lcm(rows * 2.5),
+                list(mai = c(0.1, 0, 0.1, 0)))
+        }
+        next_plots[[next_plot]]()
+        tryCatch(
+            {
+                graphics::plot.new()
+                graphics::par(c("mar", "mai", "plt", "pin"))
+            },
+            error = conditionMessage
+        )
+    }
+    for (caller in names(small_callers)) {
+        for (next_plot in names(next_plots)) {
+            for (rows in bar_rows) {
+                expect_identical(small_regions(caller, next_plot, rows, TRUE),
+                    small_regions(caller, next_plot, rows, FALSE),
+                    label = paste("colour bar row", rows[2], "small margins", caller, next_plot))
+            }
+        }
+    }
 })
 
 # The nearest-neighbour and shared-nearest-neighbour graphs of 300 cells in

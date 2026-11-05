@@ -1644,37 +1644,45 @@ shiny_plot_k_n_partitions <- function(summary_df,
     if (display_legend) {
         plt_height <- plt_height / ppi
 
-        # The legend row also holds the margins of its plots, whose lines a
-        # layout of three columns draws at 0.66 of the character height; a
-        # shorter row stops the plot with "figure margins too large".
-        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2] * 0.66
-        legend_height <- function(size) {
-            max(
-                graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5),
-                margin_height + 0.25
+        k_layout <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, ncol = 3, byrow = TRUE)
+        k_layout_heights <- function(legend_height) {
+            c(
+                graphics::lcm((plt_height - legend_height - 0.1) * 2.54),
+                graphics::lcm(legend_height * 2.54)
             )
         }
-        # The plot above the legend has the same margins; a large text size
-        # draws the legend smaller, or not at all, so that the plot keeps room.
-        legend_size <- fit_legend_size(text_size, legend_height, function(height) {
-            plt_height - height - 0.1 - margin_height
-        })
-        # Each legend plot also needs its side margins in a third of the width.
-        legend_width <- graphics::par("din")[1] / 3 - sum(graphics::par("mar")[c(2, 4)]) * graphics::par("cin")[2] * 0.66
-        display_legend <- !is.null(legend_size) && legend_width >= 0.1
+        text_height <- function(size) {
+            graphics::strheight(paste(rep("TEXT", 4), collapse = "\n"), units = "inches", cex = size) + graphics::strheight("TE\nXT", units = "inches", cex = pt_size_range[2] / 1.5)
+        }
+        legend_size <- text_size
+        predicted_height <- text_height(text_size)
+        # Where R does not draw the plot with this legend row, it stops with
+        # "figure margins too large": a plot has no room inside its margins
+        # (the plot above a high legend row, or the legend plots in a row
+        # lower than their margins or in a third of a narrow width). Only
+        # there is the legend changed: its row holds the margins of its plots
+        # and 0.25 inch more, and a large text size draws the legend smaller,
+        # or not at all, so that the plot above keeps room.
+        if (!layout_draws(k_layout, k_layout_heights(predicted_height))) {
+            # A layout of three columns draws the margins of its plots at
+            # 0.66 of the character height.
+            margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2] * 0.66
+            legend_width <- graphics::par("din")[1] / 3 - sum(graphics::par("mar")[c(2, 4)]) * graphics::par("cin")[2] * 0.66
+            legend_height <- function(size) {
+                max(text_height(size), margin_height + 0.25)
+            }
+            legend_size <- fit_legend_size(text_size, legend_height, function(height) {
+                plt_height - height - 0.1 - margin_height
+            })
+            display_legend <- !is.null(legend_size) && legend_width >= 0.1
+            if (display_legend) {
+                predicted_height <- legend_height(legend_size)
+            }
+        }
     }
 
     if (display_legend) {
-        predicted_height <- legend_height(legend_size)
-        layout.matrix <- matrix(c(1, 1, 1, 2, 3, 4), nrow = 2, ncol = 3, byrow = TRUE)
-
-        graphics::layout(
-            mat = layout.matrix,
-            heights = c(
-                graphics::lcm((plt_height - predicted_height - 0.1) * 2.54),
-                graphics::lcm(predicted_height * 2.54)
-            )
-        )
+        graphics::layout(mat = k_layout, heights = k_layout_heights(predicted_height))
     }
 
     plot(

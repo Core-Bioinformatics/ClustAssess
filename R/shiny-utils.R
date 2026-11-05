@@ -23,11 +23,12 @@ get_env_var <- function(variable_name) {
 # The text size of a legend drawn in a row under a plot. `legend_height` gives
 # the height (inches) of the legend row at a text size, and `plot_region` the
 # height (inches) left for the plot itself, inside its margins, beside a legend
-# row of a given height. A legend that left the plot no room stopped it with
-# "figure margins too large". The legend keeps the requested size while the
-# plot has at least `min_region` inches; otherwise its text is drawn smaller
-# until the plot has room. NULL: even a legend of `min_size` does not fit, and
-# the plot is drawn without it.
+# row of a given height. The legend keeps the requested size while the plot
+# has at least `min_region` inches; otherwise its text is drawn smaller until
+# the plot has room. NULL: even a legend of `min_size` does not fit, and the
+# plot is drawn without it. The plots use it only where R does not draw them
+# with their legend at the requested size (`layout_draws()`), which stopped
+# them with "figure margins too large"; elsewhere they keep that legend.
 fit_legend_size <- function(size, legend_height, plot_region, min_region = 0.1, min_size = 0.1) {
     while (plot_region(legend_height(size)) < min_region) {
         if (size <= min_size) {
@@ -36,6 +37,120 @@ fit_legend_size <- function(size, legend_height, plot_region, min_region = 0.1, 
         size <- max(size * 0.9, min_size)
     }
     size
+}
+
+# Whether R draws a plot in every panel of the layout `mat` with row heights
+# `heights`, or stops with "figure margins too large" or another check that
+# plot.new() makes on the figure and plot regions of a panel. When it sets a
+# layout up, R maps the regions of its last panel, as plot.new() maps them for
+# that panel; each panel is made the last one in turn and its regions are
+# checked as plot.new() checks them, so that the answer is R's own, also at the
+# limits. The panels are checked with the caller's margins and plot region
+# (`mar` or `mai`, `plt` or `pin`, `pty`), which the check does not set: a
+# margin set again, even to the same size, replaces a plot region that the
+# caller set, and margins set in inches would then change with the text size.
+# `last_par` gives the margins (`mar` or `mai`) that the plot sets for its last
+# panel after it has drawn the others. Margins of 0 are not set, and only the
+# figure of that panel is checked: its plot region fills the figure (a square
+# in it with `pty = "s"`). Other margins (the colour bar under the first of two
+# panels) are set for the check. Before that, a figure of no width and margin
+# lines of no height tell whether the caller set a plot region (`plt`) or
+# its size (`pin`), which R keeps in figures of every size, or only margins,
+# and whether in inches or in lines; after it, the caller's margins are set
+# back as the caller set them, and then a region or size that the caller set. A
+# plot of one panel is drawn without a layout, in the caller's next figure,
+# with its `last_par`, which stay set (the plot sets them next). On a device of
+# one figure that is the current figure, whose regions are checked; R does not
+# tell which of several figures of the caller is next without drawing, so there
+# the answer is yes and R draws the plot, or stops, as in 1.2.0. So it is for a
+# plot of several panels after `par(new = TRUE)`, which R draws in other
+# figures than those of the layout. The caller's text size and margin line
+# height (cex and mex) are kept; after a layout of several panels the device
+# has no layout, and the plot then sets its own.
+layout_draws <- function(mat, heights, last_par = NULL) {
+    # FLT_EPSILON, the tolerance of the checks of plot.new().
+    tolerance <- 1.1920928955078125e-07
+    # A region that is not a number is not drawn either.
+    inside <- function(region) {
+        isTRUE(region[1] < region[2] && region[3] < region[4] &&
+            region[1] > -tolerance && region[2] < 1 + tolerance &&
+            region[3] > -tolerance && region[4] < 1 + tolerance)
+    }
+    if (length(mat) == 1) {
+        if (prod(graphics::par("mfrow")) > 1) {
+            return(TRUE)
+        }
+        if (!is.null(last_par)) {
+            graphics::par(last_par)
+        }
+        return(inside(graphics::par("fig")) && inside(graphics::par("plt")))
+    }
+    if (graphics::par("new")) {
+        return(TRUE)
+    }
+    last <- max(mat)
+    own_margins <- any(unlist(last_par) > 0)
+    stopifnot(!own_margins || last == 2)
+    old_par <- graphics::par(c("cex", "mex", "mar", "mai"))
+    on.exit({
+        graphics::par(mfrow = c(1, 1))
+        graphics::par(old_par[c("cex", "mex")])
+    })
+    # Maps the regions of `panel`; FALSE where R sets no such layout up.
+    map_panel <- function(panel) {
+        probe <- mat
+        probe[mat == panel] <- last
+        probe[mat == last] <- panel
+        tryCatch(
+            {
+                graphics::layout(probe, heights = heights)
+                TRUE
+            },
+            error = function(e) FALSE
+        )
+    }
+    for (panel in seq_len(last)) {
+        if (!map_panel(panel) || !inside(graphics::par("fig"))) {
+            return(FALSE)
+        }
+        if ((panel < last || is.null(last_par)) && !inside(graphics::par("plt"))) {
+            return(FALSE)
+        }
+    }
+    if (!own_margins) {
+        return(TRUE)
+    }
+    # R keeps a plot region set as `plt`, or a size set as `pin`, in figures
+    # of every size, and maps its own region from the margins, which has no
+    # finite coordinates in a figure of no width. So a figure of no width
+    # tells which one the caller set, and the lower half of the device its
+    # value (`par()` reports a region that a later `par(pty = )` has given up
+    # until R maps the regions again). With margin lines of no height (`cex`
+    # and `mex` so small that their product is 0), R keeps margins set in
+    # lines, which it takes only finite, and margins set in inches have no
+    # finite number of lines.
+    graphics::layout(matrix(c(1, 2), nrow = 2))
+    lower_half <- graphics::par(c("plt", "pin"))
+    graphics::par(cex = .Machine$double.xmin, mex = .Machine$double.xmin)
+    in_lines <- all(is.finite(graphics::par("mar")))
+    graphics::layout(matrix(c(1, 2), nrow = 1), widths = c(1, 0))
+    no_width <- graphics::par(c("plt", "pin"))
+    set_plt <- identical(no_width$plt, lower_half$plt)
+    set_pin <- !set_plt && identical(no_width$pin, lower_half$pin)
+    map_panel(last)
+    graphics::par(last_par)
+    draws <- inside(graphics::par("plt"))
+    if (in_lines) {
+        graphics::par(mar = old_par$mar)
+    } else {
+        graphics::par(mai = old_par$mai)
+    }
+    if (set_plt) {
+        graphics::par(plt = lower_half$plt)
+    } else if (set_pin) {
+        graphics::par(pin = lower_half$pin)
+    }
+    draws
 }
 
 mean_functions <- list(
@@ -204,25 +319,29 @@ grouped_boxplot_list <- function(groups_list,
                 cex = size
             ) + 0.1
         }
-        # The boxplots above the legend keep their margins; a large text size
-        # draws the legend smaller, or not at all, so that they keep room.
-        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
-        legend_size <- fit_legend_size(text_size, legend_height, function(height) {
-            plt_height - height - 0.05 - margin_height
-        })
+        boxplot_layout <- matrix(c(1, 2), nrow = 2)
+        boxplot_layout_heights <- function(legend_height) {
+            c(
+                graphics::lcm((plt_height - legend_height - 0.05) * 2.54),
+                graphics::lcm(legend_height * 2.54)
+            )
+        }
+        # The boxplots above the legend keep their margins. Only where the
+        # legend left them no room, which stopped the plot with "figure
+        # margins too large", is it drawn smaller, or not at all.
+        legend_size <- text_size
+        legend_par <- list(mar = c(0, 0, 0, 0))
+        if (!layout_draws(boxplot_layout, boxplot_layout_heights(legend_height(text_size)), legend_par)) {
+            margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+            legend_size <- fit_legend_size(text_size, legend_height, function(height) {
+                plt_height - height - 0.05 - margin_height
+            })
+        }
         display_legend <- !is.null(legend_size)
     }
 
     if (display_legend) {
-        text_height <- legend_height(legend_size)
-
-        graphics::layout(
-            matrix(c(1, 2), nrow = 2),
-            heights = c(
-                graphics::lcm((plt_height - text_height - 0.05) * 2.54),
-                graphics::lcm(text_height * 2.54)
-            )
-        )
+        graphics::layout(boxplot_layout, heights = boxplot_layout_heights(legend_height(legend_size)))
     }
 
     graphics::boxplot(
@@ -584,12 +703,15 @@ only_legend_plot <- function(unique_values,
     plt_width <- plt_width / ppi
 
     if (is_continuous) {
-        # The colour bar keeps 0.1 inch above and below it, less on a device
-        # too short for that, which stopped the plot with "figure margins too
-        # large".
-        device_height <- graphics::par("din")[2]
-        vertical_margin <- if (device_height > 0.2) 0.1 else max(0, (device_height - 0.01) / 2)
-        graphics::par(mai = c(vertical_margin, 0, vertical_margin, 0))
+        # The colour bar keeps 0.1 inch above and below it, less only where R
+        # does not draw it so, on a device too short for that, which stopped
+        # the plot with "figure margins too large".
+        bar_margins <- c(0.1, 0, 0.1, 0)
+        if (!layout_draws(matrix(1), 1, list(mai = bar_margins))) {
+            vertical_margin <- max(0, (graphics::par("fin")[2] - 0.01) / 2)
+            bar_margins <- c(vertical_margin, 0, vertical_margin, 0)
+        }
+        graphics::par(mai = bar_margins)
         if (!is.null(value_cap) && !all(is.na(value_cap))) {
             observed_min <- min(color_info, na.rm = TRUE)
             observed_max <- max(color_info, na.rm = TRUE)
@@ -787,15 +909,9 @@ color_plot2 <- function(embedding,
                 length(unique_values)
             )
         }
-        # The colour bar keeps 0.1 inch above and below it. A row of 0.2 inch
-        # or less (the rows are drawn at 2.5 cm per inch) stopped the plot
-        # with "figure margins too large"; such a row is made 0.21 inch high.
-        fit_colour_bar <- function(height) {
-            if (is_continuous && height * 2.5 / 2.54 <= 0.2) 0.21 * 2.54 / 2.5 else height
-        }
         legend_height <- function(size) {
             if (is_continuous) {
-                return(fit_colour_bar(graphics::strheight("TE\nXT\n", units = "inches", cex = size)))
+                return(graphics::strheight("TE\nXT\n", units = "inches", cex = size))
             }
             number_rows <- ceiling(length(unique_values) / legend_columns(size))
             graphics::strheight(
@@ -807,26 +923,50 @@ color_plot2 <- function(embedding,
                 cex = size
             )
         }
-        # The plot above the legend keeps its margins; the rows are drawn at
-        # 2.5 cm per inch. A large text size draws the legend smaller, or not
-        # at all, and a legend height given by the caller is lowered, so that
-        # the plot keeps room.
-        margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
-        plot_region <- function(height) {
-            (plt_height - height) * 2.5 / 2.54 - margin_height
+        # The rows of the layout are drawn at 2.5 cm per inch; the colour bar
+        # has 0.1 inch above and below it.
+        umap_layout <- matrix(c(1, 2), nrow = 2)
+        umap_layout_heights <- function(legend_height) {
+            c(
+                graphics::lcm((plt_height - legend_height) * 2.5),
+                graphics::lcm(legend_height * 2.5)
+            )
         }
-        if (is.null(predicted_height)) {
-            legend_text_size <- fit_legend_size(legend_text_size, legend_height, plot_region)
-            display_legend <- !is.null(legend_text_size)
-            if (display_legend) {
-                predicted_height <- legend_height(legend_text_size)
+        legend_par <- if (is_continuous) list(mai = c(0.1, 0, 0.1, 0)) else list(mar = c(0, 0, 0, 0))
+        height_given <- !is.null(predicted_height)
+        if (!height_given) {
+            predicted_height <- legend_height(legend_text_size)
+        }
+        # Only where R does not draw the plot with this legend, which stopped
+        # it with "figure margins too large" (no room for the plot inside its
+        # margins, or a colour bar row of 0.2 inch or less), is the legend
+        # changed: a colour bar row is made at least 0.21 inch high, a large
+        # text size draws the legend smaller, or not at all, and a legend
+        # height given by the caller is lowered, so that the plot has room.
+        if (!layout_draws(umap_layout, umap_layout_heights(predicted_height), legend_par)) {
+            fit_colour_bar <- function(height) {
+                if (is_continuous && height * 2.5 / 2.54 < 0.21) 0.21 * 2.54 / 2.5 else height
             }
-        } else {
-            predicted_height <- fit_colour_bar(predicted_height)
-            if (plot_region(predicted_height) < 0.1) {
-                predicted_height <- plt_height - (margin_height + 0.1) * 2.54 / 2.5
+            margin_height <- sum(graphics::par("mar")[c(1, 3)]) * graphics::par("cin")[2]
+            plot_region <- function(height) {
+                (plt_height - height) * 2.5 / 2.54 - margin_height
             }
-            display_legend <- if (is_continuous) predicted_height * 2.5 / 2.54 > 0.2 else predicted_height > 0
+            if (height_given) {
+                predicted_height <- fit_colour_bar(predicted_height)
+                if (plot_region(predicted_height) < 0.1) {
+                    predicted_height <- plt_height - (margin_height + 0.1) * 2.54 / 2.5
+                }
+                display_legend <- if (is_continuous) predicted_height * 2.5 / 2.54 >= 0.21 else predicted_height > 0
+            } else {
+                fitted_height <- function(size) {
+                    fit_colour_bar(legend_height(size))
+                }
+                legend_text_size <- fit_legend_size(legend_text_size, fitted_height, plot_region)
+                display_legend <- !is.null(legend_text_size)
+                if (display_legend) {
+                    predicted_height <- fitted_height(legend_text_size)
+                }
+            }
         }
         if (display_legend && !is_continuous) {
             number_columns <- legend_columns(legend_text_size)
@@ -853,13 +993,7 @@ color_plot2 <- function(embedding,
     }
 
     if (display_legend) {
-        graphics::layout(
-            matrix(c(1, 2), nrow = 2),
-            heights = c(
-                graphics::lcm((plt_height - predicted_height) * 2.5),
-                graphics::lcm(predicted_height * 2.5)
-            )
-        )
+        graphics::layout(umap_layout, heights = umap_layout_heights(predicted_height))
     }
 
     plot(

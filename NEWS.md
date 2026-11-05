@@ -175,8 +175,11 @@ robustness" and these implementation effects:
   legend left the plot no room: the legend text is then drawn smaller, or the
   plot without its legend when even a small one does not fit. A UMAP colour
   bar at a small legend size, under its UMAP or on its own, which stopped in
-  the same way, now fits. Where the plot and its legend had 0.1 inch or more,
-  they are drawn as before.
+  the same way, now fits. The plots that 1.2.0 drew are drawn as before,
+  whatever graphical parameters the caller set. After `par(new = TRUE)`, the
+  plots with a legend row are drawn as in 1.2.0, as are the separate colour
+  bar and the feature stability plots drawn into one figure of a caller's own
+  layout of several figures.
 - Fixed `automatic_stability_assessment()` to record the actual embedding
   dimension in `stable_config$n_pcs`, including for custom matrix processors.
 - Unified feature-count normalization between feature and automatic assessment,
