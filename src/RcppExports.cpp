@@ -62,6 +62,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// disjointECSNoRNG
+NumericVector disjointECSNoRNG(IntegerVector mb1, IntegerVector mb2);
+RcppExport SEXP _ClustAssess_disjointECSNoRNG(SEXP mb1SEXP, SEXP mb2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type mb1(mb1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type mb2(mb2SEXP);
+    rcpp_result_gen = Rcpp::wrap(disjointECSNoRNG(mb1, mb2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// disjointECSaverageNoRNG
+double disjointECSaverageNoRNG(IntegerVector mb1, IntegerVector mb2);
+RcppExport SEXP _ClustAssess_disjointECSaverageNoRNG(SEXP mb1SEXP, SEXP mb2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type mb1(mb1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type mb2(mb2SEXP);
+    rcpp_result_gen = Rcpp::wrap(disjointECSaverageNoRNG(mb1, mb2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// weightedDisjointECSNoRNG
+SEXP weightedDisjointECSNoRNG(IntegerMatrix memberships, NumericVector weights, bool calculate_sim_matrix);
+RcppExport SEXP _ClustAssess_weightedDisjointECSNoRNG(SEXP membershipsSEXP, SEXP weightsSEXP, SEXP calculate_sim_matrixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type memberships(membershipsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type calculate_sim_matrix(calculate_sim_matrixSEXP);
+    rcpp_result_gen = Rcpp::wrap(weightedDisjointECSNoRNG(memberships, weights, calculate_sim_matrix));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calculate_pac_cpp
 double calculate_pac_cpp(IntegerMatrix indicator, NumericMatrix connectivity, double lower_lim, double upper_lim);
 RcppExport SEXP _ClustAssess_calculate_pac_cpp(SEXP indicatorSEXP, SEXP connectivitySEXP, SEXP lower_limSEXP, SEXP upper_limSEXP) {
@@ -144,6 +178,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_disjointECSaverage", (DL_FUNC) &_ClustAssess_disjointECSaverage, 2},
     {"_ClustAssess_weightedDisjointECS", (DL_FUNC) &_ClustAssess_weightedDisjointECS, 3},
+    {"_ClustAssess_disjointECSNoRNG", (DL_FUNC) &_ClustAssess_disjointECSNoRNG, 2},
+    {"_ClustAssess_disjointECSaverageNoRNG", (DL_FUNC) &_ClustAssess_disjointECSaverageNoRNG, 2},
+    {"_ClustAssess_weightedDisjointECSNoRNG", (DL_FUNC) &_ClustAssess_weightedDisjointECSNoRNG, 3},
     {"_ClustAssess_calculate_pac_cpp", (DL_FUNC) &_ClustAssess_calculate_pac_cpp, 4},
     {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},

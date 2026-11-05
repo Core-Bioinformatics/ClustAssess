@@ -43,9 +43,11 @@ robustness" and these implementation effects:
 - ECS sums and products run in another order, so values can differ in their
   last bits (about 1e-16). A merge threshold equal to a score at that precision
   can then fall on the other side of it.
-- Flat ECS calls on character labels run in native code, which creates R's
-  random number state (`.Random.seed`) when none exists. They draw no random
-  numbers.
+- `merge_partitions()` and `element_consistency()` no longer create R's random
+  number state (`.Random.seed`) when none exists while they look for identical
+  partitions with numeric labels; 1.2.0 created it in the native code of that
+  check. They create it only where two partitions without character labels
+  are then compared, as 1.2.0 also did. These functions draw no random numbers.
 - Serial similarity matrices no longer warn that `%dopar%` runs sequentially,
   and their errors no longer start with `task 1 failed`.
 

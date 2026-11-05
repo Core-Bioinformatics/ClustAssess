@@ -742,3 +742,37 @@ test_that("graph stability assesses a repeated number of neighbours once", {
         expect_identical(run(c(5, 5, 10), reduction), run(c(5, 10), reduction))
     }
 })
+
+test_that("comparisons create R's random number state only where 1.2.0 did", {
+    had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+    if (had_seed) {
+        old_seed <- get(".Random.seed", envir = globalenv())
+        on.exit(assign(".Random.seed", old_seed, envir = globalenv()), add = TRUE)
+    }
+    creates_state <- function(compare) {
+        if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+            rm(".Random.seed", envir = globalenv())
+        }
+        compare()
+        exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+    }
+    a <- c(1, 1, 2, 2, 3, 3)
+    b <- c(1, 2, 2, 3, 3, 1)
+    text <- function(x) letters[x]
+    five <- lapply(1:5, function(i) text(if (i %% 2 == 1) a else b))
+
+    # 1.2.0 compared character labels, and ran element_agreement(), in R code
+    expect_false(creates_state(function() element_sim(text(a), text(b))))
+    expect_false(creates_state(function() element_sim(text(a), b)))
+    expect_false(creates_state(function() element_sim_elscore(text(a), text(b))))
+    expect_false(creates_state(function() element_consistency(five)))
+    expect_false(creates_state(function() weighted_element_consistency(five, c(2, 1, 1, 1, 1))))
+    expect_false(creates_state(function() element_sim_matrix(list(text(a), text(b), text(a)))))
+    expect_false(creates_state(function() merge_partitions(list(text(a), text(a), text(b)))))
+    expect_false(creates_state(function() element_agreement(a, list(b, a))))
+    expect_false(creates_state(function() element_agreement(factor(a), list(factor(b)))))
+    # and numeric or factor labels in native code
+    expect_true(creates_state(function() element_sim(a, b)))
+    expect_true(creates_state(function() element_sim(factor(a), factor(b))))
+    expect_true(creates_state(function() element_consistency(lapply(1:5, function(i) if (i %% 2 == 1) a else b))))
+})

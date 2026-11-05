@@ -17,6 +17,18 @@ weightedDisjointECS <- function(memberships, weights, calculate_sim_matrix = FAL
     .Call('_ClustAssess_weightedDisjointECS', PACKAGE = 'ClustAssess', memberships, weights, calculate_sim_matrix)
 }
 
+disjointECSNoRNG <- function(mb1, mb2) {
+    .Call('_ClustAssess_disjointECSNoRNG', PACKAGE = 'ClustAssess', mb1, mb2)
+}
+
+disjointECSaverageNoRNG <- function(mb1, mb2) {
+    .Call('_ClustAssess_disjointECSaverageNoRNG', PACKAGE = 'ClustAssess', mb1, mb2)
+}
+
+weightedDisjointECSNoRNG <- function(memberships, weights, calculate_sim_matrix = FALSE) {
+    .Call('_ClustAssess_weightedDisjointECSNoRNG', PACKAGE = 'ClustAssess', memberships, weights, calculate_sim_matrix)
+}
+
 calculate_pac_cpp <- function(indicator, connectivity, lower_lim, upper_lim) {
     .Call('_ClustAssess_calculate_pac_cpp', PACKAGE = 'ClustAssess', indicator, connectivity, lower_lim, upper_lim)
 }

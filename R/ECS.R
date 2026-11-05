@@ -81,7 +81,12 @@ element_sim <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        return(disjointECSaverage(
+        native_ecs_average <- if (has_character_labels(list(clustering1, clustering2))) {
+            disjointECSaverageNoRNG
+        } else {
+            disjointECSaverage
+        }
+        return(native_ecs_average(
             encode_flat_disjoint_membership(clustering1),
             encode_flat_disjoint_membership(clustering2)
         ))
@@ -188,7 +193,8 @@ element_sim_elscore <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        node.scores <- disjointECS(
+        native_ecs <- if (has_character_labels(list(clustering1, clustering2))) disjointECSNoRNG else disjointECS
+        node.scores <- native_ecs(
             encode_flat_disjoint_membership(clustering1),
             encode_flat_disjoint_membership(clustering2)
         )
@@ -1443,7 +1449,11 @@ weighted_element_consistency <- function(clustering_list,
         NULL
     }
     if (!is.null(encoded_memberships) && length(weights) == n_clusterings) {
-        consistency <- weightedDisjointECS(
+        # 1.2.0 compared the pairs one at a time, in native code only for the
+        # pairs without character labels (see has_character_labels)
+        is_character <- vapply(clustering_list, is.character, logical(1))
+        native_weighted_ecs <- if (sum(!is_character) >= 2) weightedDisjointECS else weightedDisjointECSNoRNG
+        consistency <- native_weighted_ecs(
             memberships = encoded_memberships,
             weights = weights,
             calculate_sim_matrix = calculate_sim_matrix
@@ -1488,6 +1498,14 @@ weighted_element_consistency <- function(clustering_list,
     ecs_sim_matrix[n_clusterings, n_clusterings] <- 1
 
     return(list(ecc = consistency, ecs_matrix = ecs_sim_matrix))
+}
+
+# 1.2.0 compared a pair of membership vectors in R code when either had
+# character labels, and in native code otherwise. The native functions create
+# R's random number state (.Random.seed) when there is none; the R code left
+# it alone, as their NoRNG versions do.
+has_character_labels <- function(memberships) {
+    any(vapply(memberships, is.character, logical(1)))
 }
 
 validate_flat_membership_labels <- function(mb) {
@@ -1700,14 +1718,15 @@ element_agreement_flat_disjoint <- function(reference_clustering,
     obj <- NA
 
     # calculate the average of the ecs between one member of the clustering list
-    # and the reference clustering
+    # and the reference clustering; 1.2.0 did this in R code, which left R's
+    # random number state alone, for every type of label
     avg_agreement <- foreach::foreach(
         obj = clustering_list,
-        .export = c("disjointECS", "encode_flat_disjoint_membership",
+        .export = c("disjointECSNoRNG", "encode_flat_disjoint_membership",
                     "validate_flat_membership_labels"),
         .combine = "+"
     ) %do% {
-        disjointECS(reference_ids, encode_flat_disjoint_membership(obj))
+        disjointECSNoRNG(reference_ids, encode_flat_disjoint_membership(obj))
     }
 
     return(avg_agreement / length(clustering_list))

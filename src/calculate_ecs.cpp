@@ -170,3 +170,23 @@ SEXP weightedDisjointECS(IntegerMatrix memberships, NumericVector weights, bool 
 
     return consistency;
 }
+
+// The same calculations without R's random number scope. Rcpp's scope creates
+// R's random number state (.Random.seed) when there is none, although these
+// functions draw no random numbers. 1.2.0 compared character labels, and ran
+// element_agreement(), in R code, which left that state alone; those callers
+// use these functions.
+// [[Rcpp::export(rng = false)]]
+NumericVector disjointECSNoRNG(IntegerVector mb1, IntegerVector mb2) {
+    return disjointECS(mb1, mb2);
+}
+
+// [[Rcpp::export(rng = false)]]
+double disjointECSaverageNoRNG(IntegerVector mb1, IntegerVector mb2) {
+    return disjointECSaverage(mb1, mb2);
+}
+
+// [[Rcpp::export(rng = false)]]
+SEXP weightedDisjointECSNoRNG(IntegerMatrix memberships, NumericVector weights, bool calculate_sim_matrix = false) {
+    return weightedDisjointECS(memberships, weights, calculate_sim_matrix);
+}
