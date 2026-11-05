@@ -117,8 +117,6 @@ robustness" and these implementation effects:
 - Fixed NN-only and SNN-only UMAP graph-stability output names. PCA NN-only
   graph stability (`graph_type = 0`) no longer returns extra `PCA_snn`
   summaries.
-- Fixed installed-package PSOCK worker execution paths for graph and clustering
-  stability workflows.
 - Fixed Leiden worker dependency selection in `assess_clustering_stability()`
   to use `clustering_algorithm` rather than the auxiliary arguments list.
 - Fixed Leiden with `leidenbase` (`clustering_algorithm = 6`):
