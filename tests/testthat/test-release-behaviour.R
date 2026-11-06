@@ -139,7 +139,7 @@ test_that("feature and graph stability accept algorithm 6 and reject 7", {
     )
 })
 
-test_that("one partition found by every repetition has agreement 1", {
+test_that("one partition found by every repetition has agreement 1 unless its input gives one", {
     x <- c(1, 1, 2, 2)
     relabelled <- c(2, 2, 1, 1)
     records <- list(
@@ -152,25 +152,34 @@ test_that("one partition found by every repetition has agreement 1", {
         expect_length(merged$partitions, 1)
         expect_equal(merged$partitions[[1]]$freq, 3)
         expect_equal(merged$partitions[[1]]$avg_agreement, 1)
+        # The kept partition is the first; its input has no agreement.
+        expect_equal(
+            merge_partitions(
+                list(list(mb = x, freq = 2), list(mb = x, freq = 1, avg_agreement = -99)),
+                order_logic = order_logic
+            )$partitions[[1]]$avg_agreement,
+            1
+        )
 
-        # A supplied value is replaced, also in pre-merged and nested inputs.
+        # An agreement given with the kept partition stays, as in 1.2.0, also
+        # in pre-merged and nested inputs and for a single repetition.
         expect_equal(
             merge_partitions(records, order_logic = order_logic)$partitions[[1]]$avg_agreement,
-            1
+            99
         )
         expect_equal(
             merge_partitions(list(partitions = records), order_logic = order_logic)$partitions[[1]]$avg_agreement,
-            1
+            99
         )
         nested <- merge_partitions(list(records, records), order_logic = order_logic)
-        expect_equal(nested[[2]]$partitions[[1]]$avg_agreement, 1)
-
-        # A single repetition has no other repetition to agree with.
+        expect_equal(nested[[2]]$partitions[[1]]$avg_agreement, 99)
         single <- merge_partitions(
             list(list(mb = x, freq = 1, avg_agreement = 99)),
             order_logic = order_logic
         )
-        expect_null(single$partitions[[1]]$avg_agreement)
+        expect_equal(single$partitions[[1]]$avg_agreement, 99)
+
+        # A single repetition has no other repetition to agree with.
         expect_null(merge_partitions(list(x), order_logic = order_logic)$partitions[[1]]$avg_agreement)
     }
 

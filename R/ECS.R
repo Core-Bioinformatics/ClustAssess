@@ -1251,7 +1251,8 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
 #' partition and the partitions of the other repetitions, each partition
 #' counted as often as it was found (its frequency after merging). When
 #' merging leaves one partition, found by more than one repetition, its
-#' agreement is 1; a single repetition has none.
+#' agreement is 1; a single repetition has none. An agreement given with
+#' that partition's input is kept.
 #' The partition with the highest agreement will be  the first on the list.
 #' Both "freq" and "avg_agreement" record this index as `avg_agreement`.
 #' - "none": do not perform any ordering (not recommended). If selected, the
@@ -1334,8 +1335,9 @@ merge_partitions <- function(partition_list,
     if (length(part_list) == 1) {
         # Every repetition found this partition, so it agrees fully with the
         # other repetitions. A single repetition has no other to agree with.
-        if (order_logic != "none") {
-            part_list[[1]]$avg_agreement <- if (part_list[[1]]$freq > 1) 1 else NULL
+        # An agreement given with the input is kept, as in 1.2.0.
+        if (order_logic != "none" && is.null(part_list[[1]]$avg_agreement) && part_list[[1]]$freq > 1) {
+            part_list[[1]]$avg_agreement <- 1
         }
         return(list(partitions = part_list, ecc = rep(1, length(part_list[[1]]$mb))))
     }

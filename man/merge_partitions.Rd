@@ -27,7 +27,8 @@ The average agreement index of a partition is the mean ECS between that
 partition and the partitions of the other repetitions, each partition
 counted as often as it was found (its frequency after merging). When
 merging leaves one partition, found by more than one repetition, its
-agreement is 1; a single repetition has none.
+agreement is 1; a single repetition has none. An agreement given with
+that partition's input is kept.
 The partition with the highest agreement will be  the first on the list.
 Both "freq" and "avg_agreement" record this index as \code{avg_agreement}.
 \item "none": do not perform any ordering (not recommended). If selected, the

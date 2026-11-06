@@ -112,9 +112,9 @@ robustness" and these implementation effects:
   partition found in most repetitions) and a wrong order of tied partitions.
   Ordering by agreement, and breaking frequency ties by it, can change.
 - `merge_partitions()` with frequency or agreement ordering now gives
-  `avg_agreement` 1 when every repetition found the same partition. Before,
-  that result had no value, or kept a value given with its input. A single
-  repetition has no value.
+  `avg_agreement` 1 when every repetition found the same partition; before,
+  that result had no value. An agreement given with the input is kept, and a
+  single repetition has no value, as before.
 - Fixed exact duplicate merging of factors to ignore unused factor levels.
 - Fixed `merge_partitions()` to forward `return_ecs_matrix` and `check_ties`
   through pre-merged and nested partition inputs.
