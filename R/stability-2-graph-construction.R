@@ -39,9 +39,10 @@ get_nn_conn_comps_umap <- function(embedding,
     seed <- NA
 
     # send the name of the dim reduction arguments
+    # The results come in seed order, whatever order the workers finish in.
     nn_conn_comps_list_temp <- foreach::foreach(
         seed = seed_sequence,
-        .inorder = FALSE,
+        .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
         .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
         .packages = worker_packages_if_installed("ClustAssess")
@@ -628,9 +629,10 @@ assess_nn_stability_pca <- function(embedding,
         )
         all_vars <- ls()
 
+        # The results come in seed order, whatever order the workers finish in.
         partitions_list_temp <- foreach::foreach(
             seed = seed_sequence,
-            .inorder = FALSE,
+            .inorder = TRUE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
             .packages = package_needed
         ) %dopar% {

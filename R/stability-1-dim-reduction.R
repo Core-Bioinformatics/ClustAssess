@@ -318,9 +318,10 @@ assess_feature_stability <- function(data_matrix,
         seed <- 0
 
         # send the name of the umap arguments
+        # The results come in seed order, whatever order the workers finish in.
         partitions_list[[step]] <- foreach::foreach(
             seed = seed_sequence,
-            .inorder = FALSE,
+            .inorder = TRUE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
             .export = "run_optional_gc",
             .packages = package_needed

@@ -190,10 +190,12 @@ robustness" and these implementation effects:
   caller's RNG state. The seed is recorded as `stable_config$umap_seed`, and the
   graph-building embedding is returned when requested. PCA winners keep PCA
   neighbor indices.
-- UMAP seed results are now merged in supplied seed order, with or without
-  optional provenance. This makes representative selection deterministic with
-  respect to worker completion order; tied threshold-merge results can differ
-  from previous backend-dependent ordering. The feature-stage UMAPs in
+- Feature stability and graph stability (PCA and UMAP, also their counts of
+  connected components) now take the results of the repetitions in seed order,
+  whatever order the workers finish in. One core and `doParallel` gave this
+  order before; with a backend that returns results as they finish, the
+  representative partitions and their order, and the merges at a threshold
+  below 1, no longer depend on worker timing. The feature-stage UMAPs in
   `feature_stability$embedding_list` stay unchanged; the `umap` of a selected
   configuration can be replaced by the embedding of the winning UMAP graph.
 - Made `RhpcBLASctl` and `SharedObject` genuinely optional on default PCA and

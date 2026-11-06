@@ -289,6 +289,66 @@ test_that("ECS and ECC values keep the arithmetic of 1.2.0", {
     )
 })
 
+test_that("feature and graph stability take the repetitions in seed order", {
+    # A backend that returns unordered results in reverse order, as a backend
+    # that returns results as the workers finish can.
+    reverse_completion <- function() {
+        foreach::setDoPar(function(obj, expr, envir, data) {
+            results <- foreach:::doSEQ(obj, expr, envir, data)
+            if (!obj$combineInfo$in.order && is.list(results)) rev(results) else results
+        }, data = NULL, info = function(data, item) {
+            switch(item, workers = 1L, name = "reverse completion", version = "1")
+        })
+    }
+    on.exit(foreach::registerDoSEQ(), add = TRUE)
+    seeds <- c(901L, 7L, 103L, 5L)
+    patterns <- list(c(1L, 1L, 2L, 2L), c(1L, 2L, 1L, 2L), c(1L, 2L, 2L, 1L), c(1L, 1L, 1L, 2L))
+    memberships <- stats::setNames(lapply(patterns, function(p) rep(p, 6)), seeds)
+    seed_of <- function(x) {
+        mb <- if (is.list(x)) x$mb else x
+        names(memberships)[vapply(memberships, function(m) identical(as.integer(mb), m), logical(1))]
+    }
+    set.seed(3)
+    genes <- matrix(stats::rpois(40 * 24, 5) + 0, nrow = 40,
+                    dimnames = list(paste0("g", 1:40), paste0("c", 1:24)))
+    embedding <- matrix(stats::rnorm(24 * 4), nrow = 24,
+                        dimnames = list(paste0("c", 1:24), paste0("PC_", 1:4)))
+
+    # The partitions reach merge_partitions() in seed order.
+    received <- character()
+    real_merge <- merge_partitions
+    testthat::local_mocked_bindings(
+        prepare_clustering_functions_for_workers = function() {
+            function(object, resolution, seed, ...) memberships[[as.character(seed)]]
+        },
+        merge_partitions = function(partition_list, ...) {
+            received <<- c(received, paste(vapply(partition_list, seed_of, ""), collapse = ","))
+            real_merge(partition_list, ...)
+        },
+        .package = "ClustAssess"
+    )
+    reverse_completion()
+    assess_feature_stability(genes, rownames(genes), steps = 20, feature_type = "genes",
+        resolution = 0.8, n_repetitions = 4, seed_sequence = seeds, prune_value = 0.05,
+        matrix_processing = function(dt_mtx, actual_npcs = 4, ...) {
+            z <- stats::prcomp(dt_mtx, rank. = actual_npcs)$x
+            colnames(z) <- paste0("PC_", seq_len(ncol(z)))
+            z
+        }, compute_umap_embeddings = FALSE)
+    assess_nn_stability(embedding, c(4, 6), n_repetitions = 4, seed_sequence = seeds,
+        graph_reduction_type = "PCA", graph_type = 2, prune_value = 0.05)
+    expect_gt(length(received), 0)
+    expect_true(all(received == paste(seeds, collapse = ",")))
+
+    # The counts of connected components of the UMAP graphs follow the seeds.
+    components <- lapply(c(FALSE, TRUE), function(reversed) {
+        if (reversed) reverse_completion() else foreach::registerDoSEQ()
+        get_nn_conn_comps(embedding, c(3, 5), n_repetitions = 4, seed_sequence = seeds, include_umap = TRUE,
+            umap_arguments = list(n_neighbors = 5, n_epochs = 30, init = "random"))
+    })
+    expect_identical(components[[2]], components[[1]])
+})
+
 test_that("the method shapes keep those of 1.2.0 and cover every method", {
     expect_equal(ClustAssess:::method_shapes(4), 21:24)
     expect_equal(ClustAssess:::method_shapes(5), 21:25)
