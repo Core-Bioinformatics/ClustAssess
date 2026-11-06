@@ -82,18 +82,19 @@ test_that("flat scoring uses compact ids for negative and widely spaced labels",
     }
 })
 
-test_that("flat label encoding preserves safe ids and compacts other labels", {
+test_that("flat label encoding preserves safe ids and compacts other labels in order", {
     for (dense in list(c(2L, 1L, 2L, 1L), c(2, 1, 2, 1))) {
         expect_identical(ClustAssess:::encode_flat_disjoint_membership(dense), as.integer(dense))
     }
-    for (x in list(c(2L, 4L, 2L, 4L), c(-2L, -1L, -2L, -1L),
-                   c(1.2, 1.7, 1.2, 1.7), factor(c("b", "a", "b", "a")))) {
+    for (x in list(c(2L, 4L, 2L, 4L), c(-2L, -1L, -2L, -1L), c(1.2, 1.7, 1.2, 1.7),
+                   factor(c("a", "b", "a", "b"), levels = c("a", "b", "c")), c("b", "a", "b", "a"))) {
         expect_identical(ClustAssess:::encode_flat_disjoint_membership(x), c(1L, 2L, 1L, 2L))
     }
-    encoded <- ClustAssess:::encode_flat_disjoint_memberships(
-        rep(list(c(1.2, 1.7, 1.2, 1.7)), 5)
-    )
-    expect_identical(encoded, matrix(rep(c(1L, 2L, 1L, 2L), 5), ncol = 5))
+    # Numbers keep their order and factors the order of their levels.
+    for (x in list(c(9L, 0L, 9L, 0L), c(1.7, 1.2, 1.7, 1.2), factor(c("b", "a", "b", "a")),
+                   factor(c("x", "y", "x", "y"), levels = c("z", "y", "x")))) {
+        expect_identical(ClustAssess:::encode_flat_disjoint_membership(x), c(2L, 1L, 2L, 1L))
+    }
 })
 
 test_that("flat element agreement preserves precise and empty-string labels", {

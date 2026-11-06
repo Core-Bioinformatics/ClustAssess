@@ -178,6 +178,108 @@ test_that("one partition found by every repetition has agreement 1", {
     expect_null(merge_partitions(list(x, x), order_logic = "none")$partitions[[1]]$avg_agreement)
 })
 
+test_that("ECS and ECC values keep the arithmetic of 1.2.0", {
+    # 1.2.0's arithmetic: corrected_l1_mb() (R code) where either vector has
+    # character labels, and the native scores of the labels themselves for
+    # numbers and factors; the weighted ECC adds the pairs in this order.
+    elscore_1_2_0 <- function(a, b) {
+        if (is.character(a) || is.character(b)) corrected_l1_mb(a, b) else disjointECS(a, b)
+    }
+    ecc_1_2_0 <- function(mbs, weights) {
+        total <- sum(weights)
+        norm_factor <- total * (total - 1) / 2
+        consistency <- 0
+        for (i in seq_len(length(mbs) - 1)) {
+            consistency <- consistency + weights[i] / norm_factor * (weights[i] - 1) / 2
+            for (j in seq(from = i + 1, to = length(mbs))) {
+                consistency <- consistency + elscore_1_2_0(mbs[[i]], mbs[[j]]) * weights[i] / norm_factor * weights[j]
+            }
+        }
+        unname(consistency + weights[length(mbs)] / norm_factor * (weights[length(mbs)] - 1) / 2)
+    }
+    set.seed(7)
+    for (i in 1:48) {
+        n <- sample(c(11, 60, 300), 1)
+        k <- sample(2:6, 1)
+        labels <- switch(i %% 4 + 1,
+            function() sample(k, n, TRUE),
+            function() sample(k, n, TRUE) - 1L,
+            function() paste0("c", sample(k, n, TRUE)),
+            function() factor(sample(letters[1:k], n, TRUE), levels = letters[6:1])
+        )
+        mbs <- replicate(sample(2:7, 1), labels(), simplify = FALSE)
+        weights <- sample(1:4, length(mbs), TRUE)
+        a <- mbs[[1]]
+        b <- mbs[[2]]
+        expect_identical(unname(weighted_element_consistency(mbs, weights)), ecc_1_2_0(mbs, weights))
+        expect_identical(unname(element_sim_elscore(a, b)), elscore_1_2_0(a, b))
+        expect_identical(element_sim(a, b), if (is.character(a)) mean(corrected_l1_mb(a, b)) else disjointECSaverage(a, b))
+        expect_identical(element_sim_matrix(list(a, b))[1, 2], mean(elscore_1_2_0(a, b)))
+        expect_identical(
+            element_agreement(a, mbs[-1]),
+            Reduce(`+`, lapply(mbs[-1], function(x) corrected_l1_mb(a, x))) / (length(mbs) - 1)
+        )
+    }
+
+    # The configuration chosen from ECC medians, as the automatic assessment
+    # chooses one, is that of 1.2.0.
+    set.seed(2)
+    p <- replicate(5, sample.int(4, 11, TRUE), simplify = FALSE)
+    m <- vapply(list(p, rev(p)), function(x) stats::median(merge_partitions(x)$ecc), numeric(1))
+    expect_identical(which(m >= stats::fivenum(m)[4]), 1L)
+
+    # A threshold equal to the 1.2.0 score of a pair merges it, and a threshold
+    # equal to a higher score from another arithmetic keeps both partitions.
+    find_pair <- function(seed, labels, other, direction) {
+        set.seed(seed)
+        for (i in 1:1000) {
+            pair <- list(labels(), labels())
+            if (direction(other(pair[[1]], pair[[2]]), mean(elscore_1_2_0(pair[[1]], pair[[2]])))) {
+                return(pair)
+            }
+        }
+        stop("no pair found")
+    }
+    survivors <- function(pair, threshold) {
+        length(merge_partitions(pair, ecs_thresh = threshold, order_logic = "none")$partitions)
+    }
+    cases <- list(
+        numeric = list(seed = 981, labels = function() sample(1:4, 31, TRUE), other = element_sim),
+        character = list(seed = 52, labels = function() paste0("c", sample(1:5, 40, TRUE)),
+                         other = function(a, b) disjointECSaverage(match(a, unique(a)), match(b, unique(b))))
+    )
+    for (case in cases) {
+        below <- find_pair(case$seed, case$labels, case$other, `<`)
+        expect_equal(survivors(below, mean(elscore_1_2_0(below[[1]], below[[2]]))), 1)
+        above <- find_pair(case$seed, case$labels, case$other, `>`)
+        expect_equal(survivors(above, case$other(above[[1]], above[[2]])), 2)
+    }
+
+    # corrected_l1_mb_at_once() gives the values of corrected_l1_mb(), with
+    # labels equal only when they are equal.
+    set.seed(11)
+    for (i in 1:60) {
+        n <- sample(c(5, 31, 200), 1)
+        first <- paste0("c", sample(sample(2:9, 1), n, TRUE))
+        second <- switch(i %% 3 + 1,
+            paste0("d", sample(sample(2:9, 1), n, TRUE)),
+            sample(sample(2:9, 1), n, TRUE) * 1.5,
+            factor(sample(letters[1:5], n, TRUE), levels = letters[6:1])
+        )
+        expect_identical(corrected_l1_mb_at_once(first, second), corrected_l1_mb(first, second))
+        expect_identical(corrected_l1_mb_at_once(second, first), corrected_l1_mb(second, first))
+    }
+    by_column <- c("a", "a", "b", "b")
+    expect_identical(
+        corrected_l1_mb_at_once(c(1, 1 + 1e-15, 1, 1 + 1e-15), by_column),
+        corrected_l1_mb(c(1, 2, 1, 2), by_column)
+    )
+    expect_identical(
+        corrected_l1_mb_at_once(c("", "x", "", "x"), by_column),
+        corrected_l1_mb(c("e", "x", "e", "x"), by_column)
+    )
+})
+
 test_that("the method shapes keep those of 1.2.0 and cover every method", {
     expect_equal(ClustAssess:::method_shapes(4), 21:24)
     expect_equal(ClustAssess:::method_shapes(5), 21:25)

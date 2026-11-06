@@ -142,12 +142,12 @@ performance claims; single runs are useful for scouting, not broad guarantees.
 
 ## Weighted ECC and profiling
 
-`benchmark_weighted_ecc.R` compares installed dispatch, an independent pairwise
-reference, encoding alone, and the native kernel on pre-encoded input. Controls
+`benchmark_weighted_ecc.R` compares the installed function with an independent
+pairwise reference. Controls
 include `CA_ECC_LIB`, `CA_ECC_INPUT`, `CA_ECC_ELEMENTS`, `CA_ECC_CLUSTERINGS`,
 `CA_ECC_CLUSTERS`, `CA_ECC_SIM_MATRIX`, `CA_ECC_ITERATIONS`, and
 `CA_ECC_CALLS_PER_ITERATION`. Without `CA_ECC_INPUT` it generates synthetic data.
-Parity checks include legacy names and mixed-name fallback behavior.
+Parity checks compare values and names with the reference.
 
 General benchmarks use base `system.time()`, one explicit pre-case `gc()`, and
 `gcFirst = FALSE`. Set `CA_BENCH_PROFILE=true` for CPU/allocation diagnostics.

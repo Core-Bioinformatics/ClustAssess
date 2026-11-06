@@ -84,13 +84,13 @@ element_sim <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        native_ecs_average <- if (has_character_labels(list(clustering1, clustering2))) {
-            disjointECSaverageNoRNG
-        } else {
-            disjointECSaverage
+        # As in 1.2.0: the mean of the per-element scores when either vector
+        # has character labels, and the native average otherwise.
+        if (has_character_labels(list(clustering1, clustering2))) {
+            return(mean(element_sim_elscore(clustering1, clustering2)))
         }
         pair <- flat_labels_as_compared(list(clustering1, clustering2))
-        return(native_ecs_average(
+        return(disjointECSaverage(
             encode_flat_disjoint_membership(pair[[1]]),
             encode_flat_disjoint_membership(pair[[2]])
         ))
@@ -197,12 +197,17 @@ element_sim_elscore <- function(clustering1,
             stop("Not all elements of clustering1 and clustering2 are the same.")
         }
 
-        native_ecs <- if (has_character_labels(list(clustering1, clustering2))) disjointECSNoRNG else disjointECS
         pair <- flat_labels_as_compared(list(clustering1, clustering2))
-        node.scores <- native_ecs(
-            encode_flat_disjoint_membership(pair[[1]]),
-            encode_flat_disjoint_membership(pair[[2]])
-        )
+        if (has_character_labels(pair)) {
+            # 1.2.0 compared character labels in R code, which rounds
+            # otherwise than the native code; this is its arithmetic.
+            node.scores <- corrected_l1_mb_at_once(pair[[1]], pair[[2]])
+        } else {
+            node.scores <- disjointECS(
+                encode_flat_disjoint_membership(pair[[1]]),
+                encode_flat_disjoint_membership(pair[[2]])
+            )
+        }
 
         names(node.scores) <- names(clustering1)
         return(node.scores)
@@ -432,6 +437,25 @@ corrected_l1_mb <- function(mb1, mb2, alpha = 0.9) {
     }
 
     return(ecs)
+}
+
+# The per-element scores of corrected_l1_mb(), with its arithmetic on each
+# element, for all elements at once. Two labels are the same cluster only when
+# they are equal: corrected_l1_mb() compared labels as text, so it put distinct
+# numbers that print alike in one cluster, and it failed on empty strings.
+corrected_l1_mb_at_once <- function(mb1, mb2) {
+    if (length(mb1) == 0) {
+        return(numeric(0))
+    }
+    ids1 <- encode_flat_disjoint_membership(mb1)
+    ids2 <- encode_flat_disjoint_membership(mb2)
+    pair_ids <- (ids1 - 1) * as.numeric(max(ids2)) + ids2
+    pair_ids <- match(pair_ids, unique(pair_ids))
+    Csize1 <- as.numeric(tabulate(ids1))[ids1]
+    Csize2 <- as.numeric(tabulate(ids2))[ids2]
+    intersect_size <- tabulate(pair_ids)[pair_ids]
+    temp_ecs <- abs((1 / Csize1 - 1 / Csize2) * intersect_size)
+    1 - 0.5 * (temp_ecs + (Csize1 - intersect_size) / Csize1 + (Csize2 - intersect_size) / Csize2)
 }
 
 # PPR calculation for partition
@@ -878,7 +902,8 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         return(matrix(1, nrow = 1, ncol = 1))
     }
 
-    # element_sim() compares each pair, missing labels as 1.2.0 compared them.
+    # As in 1.2.0, the ecs of a pair is the mean of its per-element scores,
+    # which compare missing labels as 1.2.0 compared them.
 
     first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
         rep(i, n_clusterings - i)
@@ -889,32 +914,32 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
     n_combinations <- n_clusterings * (n_clusterings - 1) / 2
 
     pair_ecs <- function(pair_index) {
-        element_sim(
+        mean(element_sim_elscore(
             mb_list[[first_index[pair_index]]],
             mb_list[[second_index[pair_index]]],
             alpha = alpha
-        )
+        ))
     }
 
     # Calculate the ecs between every pair of partitions. Use the registered
     # parallel backend when present; otherwise avoid foreach's sequential
-    # overhead and call the scalar ECS path directly.
+    # overhead.
     if (isTRUE(use_parallel)) {
         i <- NA
         ecs_values <- foreach::foreach(
             i = seq_len(n_combinations),
             .packages = "ClustAssess",
-            .export = c("element_sim", "element_sim_elscore", "corrected_l1_mb",
+            .export = c("element_sim_elscore", "corrected_l1_mb_at_once",
                         "encode_flat_disjoint_membership", "validate_flat_membership_labels",
                         "flat_labels_as_compared", "stop_for_missing_labels", "has_character_labels"),
             .noexport = c("my_cluster"),
             .combine = "c"
         ) %dopar% {
-            element_sim(
+            mean(element_sim_elscore(
                 mb_list[[first_index[i]]],
                 mb_list[[second_index[i]]],
                 alpha = alpha
-            )
+            ))
         }
     } else {
         ecs_values <- vapply(seq_len(n_combinations), pair_ecs, numeric(1))
@@ -1129,7 +1154,8 @@ merge_partitions_ecs <- function(partition_list, ecs_thresh = 0.99) {
         return(partition_list)
     }
 
-    # calculate the pairwise ecs between the partitions
+    # calculate the pairwise ecs between the partitions; as in 1.2.0, each is
+    # the mean of the per-element scores
     sim_matrix <- element_sim_matrix_flat_disjoint(
         lapply(partition_list, function(x) {
             x$mb
@@ -1559,33 +1585,9 @@ weighted_element_consistency <- function(clustering_list,
         weights <- rep(1, n_clusterings)
     }
 
-    # Encoding dominates the pairwise work for very small lists. The native
-    # batch path becomes consistently faster from five clusterings onward.
-    encoded_memberships <- if (n_clusterings >= 5) {
-        encode_flat_disjoint_memberships(clustering_list)
-    } else {
-        NULL
-    }
-    if (!is.null(encoded_memberships) && length(weights) == n_clusterings) {
-        # 1.2.0 compared the pairs one at a time, in native code only for the
-        # pairs without character labels (see has_character_labels)
-        is_character <- vapply(clustering_list, is.character, logical(1))
-        native_weighted_ecs <- if (sum(!is_character) >= 2) weightedDisjointECS else weightedDisjointECSNoRNG
-        consistency <- native_weighted_ecs(
-            memberships = encoded_memberships,
-            weights = weights,
-            calculate_sim_matrix = calculate_sim_matrix
-        )
-
-        if (calculate_sim_matrix) {
-            names(consistency$ecc) <- names(clustering_list[[1]])
-            return(consistency)
-        }
-
-        names(consistency) <- names(clustering_list[[1]])
-        return(consistency)
-    }
-
+    # As in 1.2.0, compare the pairs one at a time and add their scores in this
+    # order. The stability workflows compare these values with each other, so
+    # another order, which can change their last bits, could change a choice.
     consistency <- 0
     total_weights <- sum(weights)
     norm_factor <- total_weights * (total_weights - 1) / 2
@@ -1621,7 +1623,7 @@ weighted_element_consistency <- function(clustering_list,
 # 1.2.0 compared a pair of membership vectors in R code when either had
 # character labels, and in native code otherwise. The native functions create
 # R's random number state (.Random.seed) when there is none; the R code left
-# it alone, as their NoRNG versions do.
+# it alone.
 has_character_labels <- function(memberships) {
     any(vapply(memberships, is.character, logical(1)))
 }
@@ -1664,6 +1666,9 @@ encode_flat_disjoint_membership <- function(mb) {
     # truncates fractional values, while indexing by the original range can
     # allocate huge tables for sparse ids, so encode arbitrary labels first.
     # This is the same label equivalence used by exact partition comparison.
+    if (is.factor(mb)) {
+        mb <- as.integer(mb)
+    }
     if (is.numeric(mb) && !is.object(mb) && length(mb) > 0L) {
         label_range <- range(mb)
         # Reuse ordinary positive cluster ids, including doubles containing
@@ -1675,54 +1680,12 @@ encode_flat_disjoint_membership <- function(mb) {
             return(as.integer(mb))
         }
     }
-    match(mb, unique(mb))
-}
-
-encode_flat_disjoint_memberships <- function(clustering_list) {
-    is_flat_disjoint <- vapply(clustering_list, function(x) {
-        inherits(x, c("numeric", "integer", "factor", "character"))
-    }, logical(1))
-
-    if (!all(is_flat_disjoint)) {
-        return(NULL)
+    if (is.character(mb)) {
+        return(match(mb, unique(mb)))
     }
-
-    n_clusterings <- length(clustering_list)
-    n_elements <- length(clustering_list[[1]])
-
-    for (i in seq_len(n_clusterings)) {
-        if (length(clustering_list[[i]]) != n_elements) {
-            stop("clustering1 and clustering2 do not have the same length.")
-        }
-    }
-
-    has_names <- vapply(clustering_list, function(x) {
-        !is.null(names(x))
-    }, logical(1))
-    # Pairwise arithmetic has legacy, position-dependent name propagation when
-    # named and unnamed memberships are mixed. Keep those permissive inputs on
-    # the pairwise path so the optimized branch cannot change output names.
-    if (any(has_names) && !all(has_names)) {
-        return(NULL)
-    }
-    if (all(has_names)) {
-        reference_names <- names(clustering_list[[1]])
-        for (i in seq.int(2, n_clusterings)) {
-            if (any(reference_names != names(clustering_list[[i]]))) {
-                stop("Not all elements of clustering1 and clustering2 are the same.")
-            }
-        }
-    }
-
-    # Missing labels: compared as 1.2.0 compared them, or a clear error.
-    clustering_list <- flat_labels_as_compared(clustering_list)
-    encoded_memberships <- matrix(NA_integer_, nrow = n_elements, ncol = n_clusterings)
-    for (i in seq_len(n_clusterings)) {
-        mb <- clustering_list[[i]]
-        encoded_memberships[, i] <- encode_flat_disjoint_membership(mb)
-    }
-
-    encoded_memberships
+    # Numbers keep their order, and factors the order of their levels, as in
+    # 1.2.0: the average ECS adds its terms in the order of the clusters.
+    match(mb, sort(unique(mb)))
 }
 
 #' Element-Wise Average Agreement Between a Set of Clusterings
@@ -1859,20 +1822,20 @@ element_agreement_flat_disjoint <- function(reference_clustering,
         }
     }
 
-    reference_ids <- encode_flat_disjoint_membership(reference_clustering)
+    validate_flat_membership_labels(reference_clustering)
 
     obj <- NA
 
     # calculate the average of the ecs between one member of the clustering list
-    # and the reference clustering; 1.2.0 did this in R code, which left R's
-    # random number state alone, for every type of label
+    # and the reference clustering; as 1.2.0, with the arithmetic of
+    # corrected_l1_mb() for every type of label
     avg_agreement <- foreach::foreach(
         obj = clustering_list,
-        .export = c("disjointECSNoRNG", "encode_flat_disjoint_membership",
+        .export = c("corrected_l1_mb_at_once", "encode_flat_disjoint_membership",
                     "validate_flat_membership_labels"),
         .combine = "+"
     ) %do% {
-        disjointECSNoRNG(reference_ids, encode_flat_disjoint_membership(obj))
+        corrected_l1_mb_at_once(reference_clustering, obj)
     }
 
     return(avg_agreement / length(clustering_list))

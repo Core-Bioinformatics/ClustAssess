@@ -17,10 +17,10 @@ tradeoffs and measurement requirements.
 - Reused exact single-cluster-count summary ECC instead of recomputing the same
   weighted consistency result.
 - Avoided hidden PSOCK dispatch for non-identity ECS-threshold partition
-  merging, keeping that internal path on the native serial calculation.
-- Added an adaptive C++ fast path for weighted flat-disjoint ECC calculations,
-  retaining the original pairwise path for tiny lists, mixed named/unnamed
-  memberships, and unsupported inputs.
+  merging; that internal path runs serially.
+- Computed the per-element ECS of character labels, and `element_agreement()`,
+  for all elements at once with the arithmetic of 1.2.0, rather than element
+  by element.
 - Centralized NN/SNN graph construction from precomputed neighbor indices. PCA
   graph stability now builds one neighborhood's graph matrices at a time in the
   main process rather than building all neighborhoods in parallel on workers.
@@ -40,9 +40,6 @@ tradeoffs and measurement requirements.
 Results are those of 1.2.0, except for the fixes under "Correctness and
 robustness" and these implementation effects:
 
-- ECS sums and products run in another order, so values can differ in their
-  last bits (about 1e-16). A merge threshold equal to a score at that precision
-  can then fall on the other side of it.
 - `merge_partitions()` and `element_consistency()` no longer create R's random
   number state (`.Random.seed`) when none exists while they look for identical
   partitions with numeric labels; 1.2.0 created it in the native code of that
@@ -78,7 +75,7 @@ robustness" and these implementation effects:
 - Fixed average ECS for partitions whose numeric label ranges contain unused
   values.
 - Made flat numeric labels consistent across scalar/per-element ECS, reference
-  comparisons with `element_agreement()`, pairwise and batched ECC, similarity
+  comparisons with `element_agreement()`, ECC, similarity
   matrices, and partition merging. Fractional,
   negative, large, and precision-sensitive labels retain their equality pattern
   instead of being truncated or rounded through integer/text conversion.
@@ -106,9 +103,6 @@ robustness" and these implementation effects:
 
   Vectors of different lengths are not the same partition, which 1.2.0 could
   find for numbers. Empty-string labels remain valid.
-- Hardened native batched ECC contingency-table dimension and index arithmetic
-  against integer overflow. This does not make intrinsically large tables fit
-  available memory.
 - Fixed exact duplicate merging for numeric relabellings whose label ranges
   contain unused values.
 - Fixed the `avg_agreement` value of `merge_partitions()` (frequency and

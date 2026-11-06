@@ -16,16 +16,21 @@ changes.
 - Flat numeric labels are identifiers, not integer cluster indices. Native
   scoring uses a shared compact encoding when needed, preserving distinctions
   between fractional, negative, large, or precision-sensitive values and avoiding
-  tables sized from the raw label range. Ordinary pairwise calls incur some
-  validation/encoding cost; this correction is not itself a speedup claim.
+  tables sized from the raw label range. The encoding keeps the order of
+  numbers and of factor levels, so sums over clusters run in the order of
+  1.2.0. Ordinary pairwise calls incur some validation/encoding cost; this
+  correction is not itself a speedup claim.
 - `merge_partitions()` computes the ECS matrix and average agreement only when
   needed. Frequency ordering no longer attaches the undocumented
   `avg_agreement` field unless needed for ordering/ties or available from an
   explicitly requested ECS matrix. Nested calls forward the same options.
-- Weighted flat-disjoint ECC uses a batched native path from five partitions
-  upward. Tiny lists, mixed named/unnamed memberships, and unsupported inputs
-  retain the pairwise path. Encoding overhead makes the batch path unsuitable
-  for every call size; reference tests cover values and name attributes.
+- ECS and ECC values use the arithmetic of 1.2.0 and add their terms in its
+  order. The stability workflows compare these values strictly, so a
+  difference in their last bits can change a selected configuration or the
+  order of partitions. Weighted ECC therefore compares the partitions one pair
+  at a time. Per-element ECS with character labels, and `element_agreement()`,
+  use the arithmetic of 1.2.0's R code for all elements at once rather than
+  element by element.
 - PCA graph stability constructs one neighborhood's graph matrices at a time.
   SNN-only workers do not retain an unused NN matrix. Shared graph construction
   is checked against the original primitives, including automatic pruning.

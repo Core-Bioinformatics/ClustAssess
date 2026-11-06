@@ -232,20 +232,6 @@ methods <- list(
     )
 )
 
-namespace <- asNamespace("ClustAssess")
-if (exists("encode_flat_disjoint_memberships", envir = namespace, inherits = FALSE) &&
-    exists("weightedDisjointECS", envir = namespace, inherits = FALSE)) {
-    encode <- get("encode_flat_disjoint_memberships", envir = namespace)
-    weighted_cpp <- get("weightedDisjointECS", envir = namespace)
-    encoded <- encode(clustering_list)
-    methods$encode_only <- function() encode(clustering_list)
-    methods$cpp_preencoded <- function() weighted_cpp(
-        encoded,
-        weights,
-        calculate_sim_matrix
-    )
-}
-
 results <- do.call(rbind, lapply(names(methods), function(name) {
     measure(
         name,
