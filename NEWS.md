@@ -68,6 +68,11 @@ robustness" and these implementation effects:
 
 ## Correctness and robustness
 
+- Fixed the writing of the app's expression file (`write_objects()`, used by
+  `write_shiny_app()`) for an expression matrix with one gene more than a
+  multiple of `chunk_size` (100 by default): the last block of one gene lost
+  its matrix shape, and the function stopped. Such a block is now read as a
+  matrix of one row.
 - Fixed integer overflow in `element_sim()` when the cell count times a cluster
   size exceeds the integer range, which could produce negative, infinite, or
   inflated similarity values. The optimized similarity-matrix and threshold

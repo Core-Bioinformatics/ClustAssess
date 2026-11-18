@@ -18,6 +18,30 @@ generate_colours <- function(n_unique_values, qualpalr_colorspace, single_color 
     single_color
 }
 
+# The rows of `expression_matrix` (dense or sparse) whose variance is above
+# `threshold`, as a dense matrix with their names, read `chunk_size` rows at a
+# time. A chunk of one row stays a matrix of one row: a matrix with one row
+# more than a multiple of `chunk_size` has such a last chunk.
+dense_rows_above_variance <- function(expression_matrix, chunk_size, threshold) {
+    num_rows <- nrow(expression_matrix)
+    num_chunks <- ceiling(num_rows / chunk_size)
+    dense_chunks <- lapply(seq_len(num_chunks), function(i) {
+        start_row <- (i - 1) * chunk_size + 1
+        end_row <- min(i * chunk_size, num_rows)
+        chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, , drop = FALSE])
+        gene_vars <- matrixStats::rowVars(chunk_matrix)
+        # filter by var threshold
+        mask <- gene_vars > threshold
+        if (sum(mask) == 0) {
+            return(NULL)
+        }
+        return(chunk_matrix[mask, , drop = FALSE])
+    })
+
+    print("merging chunks")
+    do.call(rbind, dense_chunks)
+}
+
 #' Write the objects for the ClustAssess ShinyApp
 #'
 #' @description Given the output of the ClustAssess pipeline, the expression matrix
@@ -387,29 +411,17 @@ write_objects <- function(clustassess_object,
     # advantages: lower required space
     # disadvantages: would the rows be as easily accesible as in a normal matrix?
     print(glue::glue("[{Sys.time()}] Removing the genes from the expression matrix with low variance"))
-    num_rows <- nrow(expression_matrix)
-    num_chunks <- ceiling(num_rows / chunk_size)
-    dense_chunks <- lapply(seq_len(num_chunks), function(i) {
-        start_row <- (i - 1) * chunk_size + 1
-        end_row <- min(i * chunk_size, num_rows)
-        chunk_matrix <- as.matrix(expression_matrix[start_row:end_row, ])
-        gene_vars <- matrixStats::rowVars(chunk_matrix)
-        # filter by var threshold
-        mask <- gene_vars > gene_variance_threshold
-        if (sum(mask) == 0) {
-            return(NULL)
-        }
-        return(chunk_matrix[gene_vars > gene_variance_threshold, , drop = FALSE])
-    })
-
-    print("merging chunks")
-    expression_matrix <- do.call(rbind, dense_chunks)
+    expression_matrix <- dense_rows_above_variance(
+        expression_matrix,
+        chunk_size,
+        gene_variance_threshold
+    )
     print("chunks merged")
  
     gene_avg_expression <- matrixStats::rowMeans2(expression_matrix)
     order_expression <- order(gene_avg_expression, decreasing = TRUE)
     # order the genes based on their average expression
-    expression_matrix <- expression_matrix[order_expression, ]
+    expression_matrix <- expression_matrix[order_expression, , drop = FALSE]
     gene_avg_expression <- gene_avg_expression[order_expression]
 
     print(glue::glue("[{Sys.time()}] Writing the gene matrix"))
