@@ -408,3 +408,114 @@ test_that("parallel_nn2_idx cache distinguishes fractional k from integer k", {
         expect_error(ClustAssess:::parallel_nn2_idx(emb, 3.5))
     })
 })
+
+
+test_that("ECS rejects NA element names consistently and matches fallback on classed weights", {
+    a <- stats::setNames(c(1L, 1L, 2L, 2L), c("c1", NA, "c3", "c4"))
+    b <- stats::setNames(c(1L, 2L, 2L, 1L), c("c1", NA, "c3", "c4"))
+    expect_error(element_sim_elscore(a, b))
+    expect_error(weighted_element_consistency(list(a, b), calculate_sim_matrix = TRUE))
+    expect_error(element_sim_matrix(list(a, b)))
+
+    # Classed numeric weights must behave consistently regardless of calculate_sim_matrix type
+    p1 <- c(1L, 1L, 2L, 2L, 3L, 3L)
+    p2 <- c(1L, 2L, 2L, 3L, 3L, 1L)
+    w_classed <- structure(c(1, 3), class = "review_num")
+    expect_identical(
+        weighted_element_consistency(list(p1, p2), weights = w_classed, calculate_sim_matrix = TRUE),
+        weighted_element_consistency(list(p1, p2), weights = w_classed, calculate_sim_matrix = 1L)
+    )
+})
+
+test_that("direct pairwise disjointECS and disjointECSaverage sparse path matches dense bit-for-bit", {
+    set.seed(321)
+    # 400 singletons -> 400 * 400 = 160,000 > max(4 * 400, 65536), exercising sparse path!
+    n <- 400L
+    p1 <- sample.int(n, n, replace = FALSE)
+    p2 <- sample.int(n, n, replace = FALSE)
+    # Also test partial ties with high K (300 clusters across 400 elements)
+    q1 <- c(sample.int(260L, 260L, replace = FALSE), sample.int(260L, 140L, replace = TRUE))
+    q2 <- c(sample.int(260L, 260L, replace = FALSE), sample.int(260L, 140L, replace = TRUE))
+
+    for (pair in list(list(p1, p2), list(q1, q2))) {
+        a <- pair[[1]]; b <- pair[[2]]
+        # Reference using myContTable (dense)
+        ct <- ClustAssess:::myContTable(a, b, min(a), min(b))
+        rs <- rowSums(ct); cs <- colSums(ct)
+        uniq <- ct / outer(rs, cs, pmax)
+        ref_el <- uniq[cbind(a - min(a) + 1L, b - min(b) + 1L)]
+        ref_avg <- 0
+        for (i in seq_len(nrow(ct))) {
+            for (j in rev(seq_len(ncol(ct)))) {
+                m <- max(rs[i], cs[j])
+                if (m > 0) ref_avg <- ref_avg + ct[i, j] * ct[i, j] / (as.double(n) * m)
+            }
+        }
+        expect_identical(ClustAssess:::disjointECS(a, b), ref_el)
+        expect_identical(ClustAssess:::disjointECSaverage(a, b), ref_avg)
+    }
+})
+
+test_that("get_highest_prune_param rejects non-finite weights and embedding/NN builders validate bounds", {
+    m_na <- methods::as(Matrix::sparseMatrix(i = 1:3, j = 1:3, x = c(1, NA_real_, 1), dims = c(3, 3)), "dgCMatrix")
+    expect_error(get_highest_prune_param(m_na, 2L), "missing or non-finite")
+    m_inf <- methods::as(Matrix::sparseMatrix(i = 1:3, j = 1:3, x = c(1, Inf, 1), dims = c(3, 3)), "dgCMatrix")
+    expect_error(get_highest_prune_param(m_inf, 2L), "missing or non-finite")
+
+    emb <- matrix(stats::rnorm(12), nrow = 4, ncol = 3)
+    expect_error(get_highest_prune_param_embedding(emb, 2.5), "whole number")
+    expect_error(get_highest_prune_param_embedding(emb, 0), "whole number")
+    expect_error(get_highest_prune_param_embedding(emb, 5), "whole number")
+    expect_error(getNNmatrix(matrix(c(1, 99, 1, 2), nrow = 2), 2, 0, -1), "1-based indices")
+    expect_error(getNNmatrix(matrix(c(1, 2, 1, 2), nrow = 2), 2, -1, -1), "start")
+})
+
+test_that("parallel_nn2_idx handles ncores > nrow(embedding) and bypasses cache for SharedObject", {
+    emb_small <- matrix(c(0, 1, 2, 0, 1, 2), nrow = 3L, ncol = 2L)
+    # Mock getDoParWorkers() = 4 > nrow(emb_small) = 3 while executing sequentially
+    foreach::registerDoSEQ()
+    testthat::local_mocked_bindings(
+        getDoParWorkers = function() 4L,
+        .package = "foreach"
+    )
+    res_small <- ClustAssess:::parallel_nn2_idx(emb_small, 2L)
+    expect_identical(res_small, RANN::nn2(emb_small, k = 2L)$nn.idx)
+
+    if (requireNamespace("SharedObject", quietly = TRUE)) {
+        sh_emb <- SharedObject::share(matrix(as.numeric(1:12), nrow = 6L, ncol = 2L))
+        on.exit(sh_emb <- SharedObject::unshare(sh_emb), add = TRUE)
+        SharedObject::setCopyOnWrite(sh_emb, FALSE)
+        ClustAssess:::with_nn2_idx_cache({
+            r1 <- ClustAssess:::parallel_nn2_idx(sh_emb, 3L)
+            sh_emb[1, 1] <- 1000
+            r2 <- ClustAssess:::parallel_nn2_idx(sh_emb, 3L)
+            expect_identical(r2, RANN::nn2(as.matrix(sh_emb), k = 3L)$nn.idx)
+            expect_false(identical(r1, r2))
+        })
+    }
+})
+
+test_that("automatic_stability_assessment keeps per-set n_top_configs and handles single-step sets", {
+    foreach::registerDoSEQ()
+    set.seed(23)
+    expr <- matrix(stats::rpois(40 * 24, 5) + 0, nrow = 40, ncol = 24,
+                   dimnames = list(paste0("g", 1:40), paste0("c", 1:24)))
+    genes <- rownames(expr)
+    # Single-step feature set first (1 eligible step) followed by multi-step set (4 steps) with n_top_configs = 2
+    res <- suppressWarnings(automatic_stability_assessment(
+        expression_matrix = expr,
+        n_repetitions = 2,
+        n_neigh_sequence = c(3, 5),
+        resolution_sequence = c(0.6, 0.8),
+        features_sets = list(small = genes[1:10], big = genes),
+        steps = list(small = 10L, big = c(10L, 20L, 30L, 40L)),
+        n_top_configs = 2L,
+        umap_arguments = list(n_neighbors = 5, n_epochs = 5, init = "random"),
+        algorithms_clustering_assessment = 1,
+        verbose = FALSE,
+        save_temp = FALSE,
+        compute_umap_embeddings = FALSE
+    ))
+    expect_identical(setdiff(names(res$small), "feature_list"), "10")
+    expect_gte(length(setdiff(names(res$big), "feature_list")), 2L)
+})

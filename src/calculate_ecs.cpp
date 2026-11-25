@@ -81,7 +81,7 @@ bool encode_flat_membership_cpp(SEXP mb,
         bool small_int = true;
         int min_v = INT_MAX;
         int max_v = INT_MIN;
-        const int dense_limit = std::min<int>(std::max<int>(2 * n, 1024), 1048576);
+        const int64_t dense_limit = std::min<int64_t>(std::max<int64_t>(2LL * static_cast<int64_t>(n), 1024LL), 1048576LL);
         for (int i = 0; i < n; ++i) {
             const double v = ptr[i];
             if (ISNA(v) || ISNAN(v)) {
@@ -566,56 +566,154 @@ IntegerMatrix myContTable(IntegerVector &a, IntegerVector &b, int minim_mb1, int
 
 // [[Rcpp::export]]
 NumericVector disjointECS(IntegerVector mb1, IntegerVector mb2) {
-	int minim_mb1 = min(mb1), minim_mb2 = min(mb2);
-	int cluster1, cluster2;
-	
-	IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
-    int n = mb1.size(), nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
+	const int n = mb1.size();
+	if (n == 0) {
+		return NumericVector(0);
+	}
+	int minim_mb1 = mb1[0], maxim_mb1 = mb1[0];
+	int minim_mb2 = mb2[0], maxim_mb2 = mb2[0];
+	for (int i = 1; i < n; ++i) {
+		const int v1 = mb1[i], v2 = mb2[i];
+		if (v1 < minim_mb1) minim_mb1 = v1;
+		if (v1 > maxim_mb1) maxim_mb1 = v1;
+		if (v2 < minim_mb2) minim_mb2 = v2;
+		if (v2 > maxim_mb2) maxim_mb2 = v2;
+	}
+	const int64_t span1 = static_cast<int64_t>(maxim_mb1) - static_cast<int64_t>(minim_mb1) + 1;
+	const int64_t span2 = static_cast<int64_t>(maxim_mb2) - static_cast<int64_t>(minim_mb2) + 1;
+	const int64_t dense_cap = std::max<int64_t>(4LL * static_cast<int64_t>(n), 65536LL);
 
-	NumericMatrix uniqueECSvals(nClusters1, nClusters2);
-	NumericVector ecsScore(n);
-	IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
+	if (span1 > 0 && span2 > 0 &&
+	    static_cast<double>(span1) * static_cast<double>(span2) <= static_cast<double>(dense_cap)) {
+		int cluster1, cluster2;
+		IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
+		int nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
 
-	for (int i = 0; i < nClusters1; i++) {
-		for (int j = nClusters2 - 1; j >= 0; j--) {
-			uniqueECSvals(i, j) = (double) contTable(i, j) / std::max(clustersSizes1(i), clustersSizes2(j));
+		NumericMatrix uniqueECSvals(nClusters1, nClusters2);
+		NumericVector ecsScore(n);
+		IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
+
+		for (int i = 0; i < nClusters1; i++) {
+			for (int j = nClusters2 - 1; j >= 0; j--) {
+				uniqueECSvals(i, j) = (double) contTable(i, j) / std::max(clustersSizes1(i), clustersSizes2(j));
+			}
 		}
+
+		for (int i = 0; i < n; i++) {
+			cluster1 = mb1(i) - minim_mb1;
+			cluster2 = mb2(i) - minim_mb2;
+			ecsScore(i) = uniqueECSvals(cluster1, cluster2);
+		}
+
+		return ecsScore;
 	}
 
-	for (int i = 0; i < n; i++) {
-		cluster1 = mb1(i) - minim_mb1;
-		cluster2 = mb2(i) - minim_mb2;
-		ecsScore(i) = uniqueECSvals(cluster1, cluster2);
-	}
-
-	return(ecsScore);
+	// Sparse O(n) path for high-cardinality pairs (avoids O(K1 * K2) allocation).
+	std::vector<int> c1, s1, c2, s2;
+	int K1 = 0, K2 = 0;
+	encode_flat_membership_cpp(mb1, c1, s1, K1);
+	encode_flat_membership_cpp(mb2, c2, s2, K2);
+	NumericVector out(n);
+	std::vector<int> cont;
+	std::vector<double> unique_ecs;
+	std::vector<double> unique_term;
+	std::vector<int> elem_pair_ids;
+	score_encoded_pair(
+		c1.data(), s1.data(), K1,
+		c2.data(), s2.data(), K2,
+		n, false,
+		false, 0.0, 0.0, 1.0, nullptr,
+		false, REAL(out),
+		cont, unique_ecs, unique_term, elem_pair_ids
+	);
+	return out;
 }
 
 // [[Rcpp::export]]
 double disjointECSaverage(IntegerVector mb1, IntegerVector mb2) {
 	// NOTE Eigen doesn't seem to improve performance
-	int minim_mb1 = min(mb1), minim_mb2 = min(mb2);
-	int cluster1, cluster2;
-	
-	IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
-    int nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
-	int n = sum(contTable);
+	const int n = mb1.size();
+	if (n == 0) {
+		return 0.0;
+	}
+	int minim_mb1 = mb1[0], maxim_mb1 = mb1[0];
+	int minim_mb2 = mb2[0], maxim_mb2 = mb2[0];
+	for (int i = 1; i < n; ++i) {
+		const int v1 = mb1[i], v2 = mb2[i];
+		if (v1 < minim_mb1) minim_mb1 = v1;
+		if (v1 > maxim_mb1) maxim_mb1 = v1;
+		if (v2 < minim_mb2) minim_mb2 = v2;
+		if (v2 > maxim_mb2) maxim_mb2 = v2;
+	}
+	const int64_t span1 = static_cast<int64_t>(maxim_mb1) - static_cast<int64_t>(minim_mb1) + 1;
+	const int64_t span2 = static_cast<int64_t>(maxim_mb2) - static_cast<int64_t>(minim_mb2) + 1;
+	const int64_t dense_cap = std::max<int64_t>(4LL * static_cast<int64_t>(n), 65536LL);
 
-	double avgECS = 0, intersectSize;
+	if (span1 > 0 && span2 > 0 &&
+	    static_cast<double>(span1) * static_cast<double>(span2) <= static_cast<double>(dense_cap)) {
+		IntegerMatrix contTable = myContTable(mb1, mb2, minim_mb1, minim_mb2);
+		int nClusters1 = contTable.nrow(), nClusters2 = contTable.ncol();
 
-	IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
+		double avgECS = 0, intersectSize;
+		IntegerVector clustersSizes1 = rowSums(contTable), clustersSizes2 = colSums(contTable);
 
-	for (int i = 0; i < nClusters1; i++) {
-		for (int j = nClusters2 - 1; j >= 0; j--) {
-			intersectSize = contTable(i, j);
-			int maxClusterSize = std::max(clustersSizes1(i), clustersSizes2(j));
-			if (maxClusterSize > 0) {
-				// Promote before multiplying: large cell counts exceed integer range.
-				avgECS += intersectSize * intersectSize /
-					(static_cast<double>(n) * maxClusterSize);
+		for (int i = 0; i < nClusters1; i++) {
+			for (int j = nClusters2 - 1; j >= 0; j--) {
+				intersectSize = contTable(i, j);
+				int maxClusterSize = std::max(clustersSizes1(i), clustersSizes2(j));
+				if (maxClusterSize > 0) {
+					// Promote before multiplying: large cell counts exceed integer range.
+					avgECS += intersectSize * intersectSize /
+						(static_cast<double>(n) * maxClusterSize);
+				}
 			}
 		}
+
+		return avgECS;
 	}
 
-	return(avgECS);
+	// Sparse O(n log n) path for high-cardinality pairs: sort observed pairs by
+	// (label1 ASC, label2 DESC) to match the dense kernel's exact summation order.
+	std::unordered_map<int, int> size1;
+	std::unordered_map<int, int> size2;
+	std::unordered_map<uint64_t, int> pair_counts;
+	size1.reserve(std::min<int>(n, 4096));
+	size2.reserve(std::min<int>(n, 4096));
+	pair_counts.reserve(std::min<int>(n, 4096));
+
+	for (int i = 0; i < n; ++i) {
+		const int a = mb1[i];
+		const int b = mb2[i];
+		size1[a]++;
+		size2[b]++;
+		const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(a)) << 32) |
+		                     static_cast<uint64_t>(static_cast<uint32_t>(b));
+		pair_counts[key]++;
+	}
+
+	struct SparsePair {
+		int a;
+		int b;
+		int cnt;
+	};
+	std::vector<SparsePair> pairs;
+	pairs.reserve(pair_counts.size());
+	for (const auto& kv : pair_counts) {
+		const int a = static_cast<int>(static_cast<uint32_t>(kv.first >> 32));
+		const int b = static_cast<int>(static_cast<uint32_t>(kv.first & 0xFFFFFFFFu));
+		pairs.push_back(SparsePair{a, b, kv.second});
+	}
+	std::sort(pairs.begin(), pairs.end(), [](const SparsePair& x, const SparsePair& y) {
+		if (x.a != y.a) return x.a < y.a;
+		return x.b > y.b;
+	});
+
+	double avgECS = 0.0;
+	const double n_d = static_cast<double>(n);
+	for (const SparsePair& sp : pairs) {
+		const int maxClusterSize = std::max(size1[sp.a], size2[sp.b]);
+		const double intersectSize = static_cast<double>(sp.cnt);
+		avgECS += intersectSize * intersectSize / (n_d * maxClusterSize);
+	}
+	return avgECS;
 }

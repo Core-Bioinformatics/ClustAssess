@@ -33,9 +33,11 @@ changes.
   Unsupported, mixed-type, or missing-label inputs retain the R pairwise path.
 - Automatic SNN pruning (`get_highest_prune_param()`,
   `get_highest_prune_param_embedding()`) and kNN connected-component evolution
-  (`get_nn_conn_comps()`) run native C++ disjoint-set searches directly on
-  sparse CSC / kNN-index arrays, avoiding full unpruned SNN and `igraph`
-  allocations while returning bit-identical thresholds and matrices.
+  (`get_nn_conn_comps()`) run native C++ disjoint-set searches on CSC /
+  kNN-index storage for eligible `dgCMatrix` inputs with positive integer
+  `n_neigh` (falling back to the R implementation otherwise). Standard binary
+  NN inputs with nonzero cutoffs avoid materializing the unpruned SNN matrix;
+  zero-cutoff and weighted inputs still materialize it before pruning.
 - `automatic_stability_assessment()` reuses each selected configuration's PCA
   kNN index across connected-component and NN-stability stages via a scoped
   cache cleared unconditionally on exit.

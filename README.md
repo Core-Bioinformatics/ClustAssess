@@ -246,17 +246,15 @@ vignettes, the following packages are also needed:
 
 To manually install the required dependencies, please use the following commands:
 ```r
-install.packages(c("dplyr", "DT", "fastcluster", "foreach", "glue", "Gmedian", "ggnewscale", "ggplot2", "ggrastr", "ggrepel", "ggtext", "gprofiler2", "igraph", "jsonlite", "leiden", "Matrix", "matrixStats", "methods", "progress", "stringr", "paletteer", "plotly", "qualpalr", "RANN", "reshape2", "rlang", "Seurat", "shiny", "shinyjs", "shinyLP", "shinyWidgets", "stats", "uwot", "vioplot"), Ncpus = 1)
-install.packages("BiocManager")
-BiocManager::install(c("ComplexHeatmap"))
+install.packages(c("dplyr", "DT", "fastcluster", "foreach", "glue", "Gmedian", "ggnewscale", "ggplot2", "ggrastr", "ggrepel", "gprofiler2", "igraph", "jsonlite", "leiden", "Matrix", "matrixStats", "progress", "stringr", "paletteer", "plotly", "qualpalr", "RANN", "reshape2", "rlang", "Seurat", "shiny", "shinyjs", "shinyLP", "shinyWidgets", "uwot", "vioplot", "zip"), Ncpus = 1)
 ```
 
 To manually install the suggested dependencies, please use the following commands:
 ```r
-install.packages(c("colourpicker", "devtools", "doParallel", "doRNG", "knitr", "leidenbase", "patchwork", "ragg", "rmarkdown", "RhpcBLASctl", "scales", "SeuratObject", "styler", "testthat"), Ncpus = 1)
+install.packages(c("colourpicker", "devtools", "doParallel", "doRNG", "irlba", "knitr", "leidenbase", "patchwork", "ragg", "rmarkdown", "RhpcBLASctl", "scales", "SeuratObject", "styler", "testthat"), Ncpus = 1)
 
 install.packages("BiocManager")
-BiocManager::install(c("DelayedMatrixStats", "rhdf5"))
+BiocManager::install(c("ComplexHeatmap", "DelayedMatrixStats", "rhdf5"))
 
 devtools::install_github('cole-trapnell-lab/monocle3')
 devtools::install_github("Jiefei-Wang/SharedObject")

@@ -341,7 +341,9 @@ with_nn2_idx_cache <- function(expr) {
 }
 
 parallel_nn2_idx <- function(embedding, k) {
-    if (isTRUE(.nn2_idx_cache$active)) {
+    use_cache <- isTRUE(.nn2_idx_cache$active) &&
+        !(is_package_installed("SharedObject") && SharedObject::is.shared(embedding))
+    if (use_cache) {
         entries <- .nn2_idx_cache$entries
         for (idx in seq_along(entries)) {
             if (identical(entries[[idx]]$k, k) &&
@@ -352,10 +354,11 @@ parallel_nn2_idx <- function(embedding, k) {
     }
 
     ncores <- foreach::getDoParWorkers()
+    n_rows <- nrow(embedding)
 
-    if (ncores == 1) {
+    if (ncores <= 1L || n_rows <= 1L) {
         nn_result <- RANN::nn2(embedding, k = k)$nn.idx
-        if (isTRUE(.nn2_idx_cache$active)) {
+        if (use_cache) {
             .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
                 embedding = embedding,
                 k = k,
@@ -365,11 +368,12 @@ parallel_nn2_idx <- function(embedding, k) {
         return(nn_result)
     }
 
-    chunk_size <- nrow(embedding) %/% ncores
-    chunks <- split(seq_len(chunk_size * ncores), rep(seq_len(ncores), each = chunk_size))
+    n_chunks <- min(as.integer(ncores), n_rows)
+    chunk_size <- n_rows %/% n_chunks
+    chunks <- split(seq_len(chunk_size * n_chunks), rep(seq_len(n_chunks), each = chunk_size))
 
-    if (chunk_size * ncores != nrow(embedding)) {
-        chunks[[ncores]] <- c(chunks[[ncores]], (chunk_size * ncores + 1):nrow(embedding))
+    if (chunk_size * n_chunks != n_rows) {
+        chunks[[n_chunks]] <- c(chunks[[n_chunks]], (chunk_size * n_chunks + 1L):n_rows)
     }
 
     use_shared <- is_package_installed("SharedObject")
@@ -383,7 +387,7 @@ parallel_nn2_idx <- function(embedding, k) {
 
     # HACK check if there is another way to not get the `already exported variable` warning
     nn_result <- suppressWarnings(foreach::foreach (
-        i = seq_len(ncores),
+        i = seq_len(n_chunks),
         .inorder = TRUE,
         .combine = rbind,
         .export = c("shared_emb", "chunks", "k")
@@ -401,7 +405,7 @@ parallel_nn2_idx <- function(embedding, k) {
         rm(shared_emb)
     }
 
-    if (isTRUE(.nn2_idx_cache$active)) {
+    if (use_cache) {
         .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
             embedding = embedding,
             k = k,

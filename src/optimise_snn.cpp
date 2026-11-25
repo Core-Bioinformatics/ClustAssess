@@ -147,10 +147,15 @@ Eigen::SparseMatrix<double> computeSNN(Eigen::SparseMatrix<double> &nnMatrix, in
 List getNNmatrix(Eigen::MatrixXd nnRanked, int k = -1, int start = 0, double prune = 0) {
     int nRows = nnRanked.rows(), nCols = nnRanked.cols();
 
+    if (start < 0 || start > nCols) {
+        stop("start must be between 0 and ncol(nnRanked).");
+    }
     if (k == -1 || k > nCols) {
         k = nCols;
     }
-
+    if (k < 0) {
+        stop("k must be -1 or non-negative.");
+    }
     if (start + k > nCols) {
         k = nCols - start;
     }
@@ -160,7 +165,11 @@ List getNNmatrix(Eigen::MatrixXd nnRanked, int k = -1, int start = 0, double pru
 
     for (int j = start; j < start + k; j++) {
         for (int i = 0; i < nRows; i++) {
-            tripletList.push_back(Eigen::Triplet<double>(i, nnRanked(i, j) - 1, 1));
+            const double raw = nnRanked(i, j);
+            if (!R_FINITE(raw) || raw < 1.0 || raw > static_cast<double>(nRows)) {
+                stop("nnRanked entries must be finite 1-based indices within [1, nrow(nnRanked)].");
+            }
+            tripletList.push_back(Eigen::Triplet<double>(i, static_cast<int>(raw) - 1, 1));
         }
     }
 
@@ -195,19 +204,25 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
     const double* c_val = nn_matrix.valuePtr();
     const int nnz = nn_matrix.nonZeros();
 
-    // Check whether nn_matrix is binary with row degrees <= n_neigh.
+    // Reject non-finite weights up front (matches igraph/1.2.0 rejecting NA/NaN/Inf weights)
+    // and check whether nn_matrix is binary with row degrees <= n_neigh.
     bool is_standard_binary = true;
     std::vector<int> row_deg(n, 0);
     for (int p = 0; p < nnz; ++p) {
-        if (c_val[p] != 1.0) {
-            is_standard_binary = false;
-            break;
+        const double val = c_val[p];
+        if (!R_FINITE(val)) {
+            stop("nn_matrix must not contain missing or non-finite values.");
         }
-        const int r = c_inner[p];
-        row_deg[r]++;
-        if (row_deg[r] > n_neigh) {
-            is_standard_binary = false;
-            break;
+        if (is_standard_binary) {
+            if (val != 1.0) {
+                is_standard_binary = false;
+            } else {
+                const int r = c_inner[p];
+                row_deg[r]++;
+                if (row_deg[r] > n_neigh) {
+                    is_standard_binary = false;
+                }
+            }
         }
     }
 
@@ -322,6 +337,9 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
             for (int i = 0; i < n; ++i) {
                 total_nnz += static_cast<size_t>(col_nnz[i]);
             }
+            if (total_nnz > static_cast<size_t>(INT_MAX)) {
+                stop("Pruned SNN matrix exceeds maximum sparse index capacity.");
+            }
 
             Eigen::SparseMatrix<double> SNN(n, n);
             SNN.resize(n, n);
@@ -408,6 +426,14 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
     // General fallback for non-binary or high-degree nn_matrix inputs.
     Eigen::SparseMatrix<double> nn_copy(nn_matrix);
     Eigen::SparseMatrix<double> SNN = computeSNN(nn_copy, n_neigh, 0.0);
+
+    for (int col = 0; col < SNN.outerSize(); ++col) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(SNN, col); it; ++it) {
+            if (!R_FINITE(it.value())) {
+                stop("SNN matrix contains missing or non-finite edge weights.");
+            }
+        }
+    }
 
     DisjointSet uf_target(n);
     if (use_nn_target_comps) {

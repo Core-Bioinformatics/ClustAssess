@@ -329,6 +329,14 @@ get_n_strong_components <- function(nn_matrix,
 #' get_highest_prune_param_embedding(pca_embedding, 5)
 get_highest_prune_param_embedding <- function(embedding,
                                               n_neigh) {
+    if (!is.matrix(embedding) && !inherits(embedding, "Matrix")) {
+        stop("embedding parameter should be a matrix")
+    }
+    if (!is.numeric(n_neigh) || length(n_neigh) != 1L || !is.finite(n_neigh) ||
+        n_neigh < 1 || n_neigh != trunc(n_neigh) || n_neigh > nrow(embedding)) {
+        stop("n_neigh must be a single whole number between 1 and nrow(embedding)")
+    }
+    n_neigh <- as.integer(n_neigh)
     nn_matrix <- getNNmatrix(RANN::nn2(
         embedding,
         k = n_neigh

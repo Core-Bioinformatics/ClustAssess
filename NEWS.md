@@ -22,13 +22,19 @@ tradeoffs and measurement requirements.
   `element_sim_matrix()`, and `corrected_l1_mb_at_once()` that encode each
   partition once and execute the exact IEEE-754 arithmetic, pair summation
   order, compensated mean, element names, and `.Random.seed` semantics of 1.2.0
-  (with automatic sparse handling for singleton-heavy partitions and exact R
-  fallback for mixed/missing-label cases).
+  (with automatic `O(n)` sparse handling for high-cardinality pairs—also added
+  to direct pairwise `disjointECS()` and `disjointECSaverage()`—and exact R
+  fallback for mixed, classed-weight, bytes-encoded, missing-name, or
+  missing-label cases).
 - Replaced `igraph`-based binary search and union loops in
   `get_highest_prune_param()`, `get_highest_prune_param_embedding()`, and
-  `get_nn_conn_comps()` with native C++ disjoint-set operations directly on
-  sparse CSC / kNN-index arrays, avoiding unpruned SNN and `igraph` allocations
-  while returning bit-identical thresholds and adjacency matrices.
+  `get_nn_conn_comps()` with native C++ disjoint-set operations on CSC /
+  kNN-index arrays for standard `dgCMatrix` inputs with positive integer
+  `n_neigh` (falling back to the R implementation otherwise). Standard binary
+  NN inputs with nonzero cutoffs avoid materializing the unpruned SNN matrix
+  (zero-cutoff and weighted inputs still construct the full SNN matrix); inputs
+  with explicit stored zero entries now return a valid pruned matrix instead of
+  failing.
 - Reused each selected configuration's exact PCA kNN index across
   `get_nn_conn_comps()` and `assess_nn_stability()` inside
   `automatic_stability_assessment()` via a scoped cache cleared on exit.
@@ -93,9 +99,16 @@ robustness" and these implementation effects:
   unshared, including on worker error paths via `on.exit()` / `tryCatch(..., finally = ...)`.
 - Fixed four leaked `new[]` heap buffers and a 32-bit integer overflow in
   `src/wilcox.cpp::wilcox_test()` (`n1 * (n1 + 1)` overflowed for `n1 >= 46,341`).
-- Fixed `automatic_stability_assessment()` so `save_temp = FALSE` is also
-  respected during the connected-components and NN-stability stages when
-  `temp_file` is supplied.
+- Added input/index bounds validation in `get_highest_prune_param_embedding()`
+  and `getNNmatrix()` so fractional or out-of-range neighbor counts and indices
+  raise R errors instead of aborting R, and rejected non-finite weights in
+  `get_highest_prune_param()`.
+- Fixed `parallel_nn2_idx()` when more workers are registered than rows in
+  `embedding` by capping parallel chunks to `nrow(embedding)`.
+- Fixed `automatic_stability_assessment()` so `save_temp = FALSE` is respected
+  during the connected-components and NN-stability stages, `n_top_configs` is
+  capped per feature set rather than carried over across sets, and single-step
+  feature sets no longer fail during incremental ranking.
 - Fixed integer overflow in `element_sim()` when the cell count times a cluster
   size exceeds the integer range, which could produce negative, infinite, or
   inflated similarity values. The optimized similarity-matrix and threshold

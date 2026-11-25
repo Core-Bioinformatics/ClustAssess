@@ -534,36 +534,42 @@ automatic_stability_assessment <- function(expression_matrix,
         ecc_list_medians <- order(sapply(ecc_list, stats::median), decreasing = TRUE)
         ecc_above_median <- ecc_list_medians[seq_len(ceiling((length(ecc_list_medians) + 1) / 2))]
 
-        incremental_list <- c(
-            list(sapply(
-                feature_stability_object$incremental[[set_name]][[1]],
-                function(by_res) {
-                    ranking_functions[[overall_summary]](by_res)
-                }
-            )),
-            lapply(
-                feature_stability_object$incremental[[set_name]],
-                function(by_step) {
-                    sapply(by_step, function(by_res) {
+        if (length(steps[[set_name]]) == 1L) {
+            eligible_steps <- 1L
+            current_n_top_configs <- min(n_top_configs, 1L)
+            feature_stability_ranking <- 1L
+        } else {
+            incremental_list <- c(
+                list(sapply(
+                    feature_stability_object$incremental[[set_name]][[1]],
+                    function(by_res) {
                         ranking_functions[[overall_summary]](by_res)
-                    })
-                }
+                    }
+                )),
+                lapply(
+                    feature_stability_object$incremental[[set_name]],
+                    function(by_step) {
+                        sapply(by_step, function(by_res) {
+                            ranking_functions[[overall_summary]](by_res)
+                        })
+                    }
+                )
             )
-        )
 
-        incremental_medians <- order(sapply(incremental_list, stats::median), decreasing = TRUE)
-        incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))]
-        eligible_steps <- intersect(ecc_above_median, incremental_above_median)
-        n_top_configs <- min(n_top_configs, length(eligible_steps))
-        total_nconfigs <- total_nconfigs + n_top_configs
-        feature_stability_ranking <- rank_configs(lapply(eligible_steps, function(i) {
-            incremental_list[[i]] + ecc_list[[i]]
-        }), rank_by = ranking_criterion, return_type = "order")
+            incremental_medians <- order(sapply(incremental_list, stats::median), decreasing = TRUE)
+            incremental_above_median <- incremental_medians[seq_len(ceiling((length(incremental_medians) + 1) / 2))]
+            eligible_steps <- intersect(ecc_above_median, incremental_above_median)
+            current_n_top_configs <- min(n_top_configs, length(eligible_steps))
+            feature_stability_ranking <- rank_configs(lapply(eligible_steps, function(idx) {
+                incremental_list[[idx]] + ecc_list[[idx]]
+            }), rank_by = ranking_criterion, return_type = "order")
+        }
+        total_nconfigs <- total_nconfigs + current_n_top_configs
 
         feature_configs[[set_name]] <- list()
 
         # generate the pca and umap embeddings for each config
-        for (j in seq_len(n_top_configs)) {
+        for (j in seq_len(current_n_top_configs)) {
             n_steps <- steps[[i]][eligible_steps][feature_stability_ranking[j]]
             current_features <- features_sets[[set_name]][seq_len(n_steps)]
             if (is.null(feature_stability_object$pca_list[[set_name]][[as.character(n_steps)]])) {

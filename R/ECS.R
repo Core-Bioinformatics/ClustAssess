@@ -1699,7 +1699,7 @@ classify_flat_disjoint_list_for_native <- function(clustering_list, weights = NU
         return(NULL)
     }
     if (!is.null(weights)) {
-        if (!is.numeric(weights) || length(weights) != n_clusterings || anyNA(weights)) {
+        if (!is.numeric(weights) || is.object(weights) || length(weights) != n_clusterings || anyNA(weights)) {
             return(NULL)
         }
         if (n == 1L && !is.null(names(weights))) {
@@ -1716,6 +1716,9 @@ classify_flat_disjoint_list_for_native <- function(clustering_list, weights = NU
     }
     first_is_char <- is.character(first)
     first_names <- names(first)
+    if (!is.null(first_names) && anyNA(first_names)) {
+        return(NULL)
+    }
     for (i in seq_len(n_clusterings)) {
         x <- clustering_list[[i]]
         if (!inherits(x, c("numeric", "integer", "factor", "character")) ||
