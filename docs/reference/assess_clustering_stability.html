@@ -108,8 +108,10 @@ sequence will be built starting from 1 with a step of 100.</p></dd>
 
 <dt id="arg-clustering-algorithm">clustering_algorithm<a class="anchor" aria-label="anchor" href="#arg-clustering-algorithm"></a></dt>
 <dd><p>An index or a list of indexes indicating which community detection
-algorithm will be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4).
-More details can be found in the Seurat's <code>FindClusters</code> function. Defaults to <code>1:3</code>.</p></dd>
+algorithm will be used: Louvain (1), Louvain refined (2), SLM (3), Leiden with
+the <code>leiden</code> package (4, or 5 for a dense matrix) or Leiden with the
+<code>leidenbase</code> package (6). More details can be found in the Seurat's
+<code>FindClusters</code> function. Defaults to <code>1:3</code>.</p></dd>
 
 
 <dt id="arg-clustering-arguments">clustering_arguments<a class="anchor" aria-label="anchor" href="#arg-clustering-arguments"></a></dt>
@@ -132,33 +134,36 @@ size</p></li>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span>
-<span><span class="co"># create an artificial PCA embedding</span></span>
-<span><span class="va">pca_embedding</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fl">30</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"PC_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="va">adj_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="getNNmatrix.html">getNNmatrix</a></span><span class="op">(</span></span>
-<span>    <span class="fu">RANN</span><span class="fu">::</span><span class="fu"><a href="https://jefferislab.github.io/RANN/reference/nn2.html" class="external-link">nn2</a></span><span class="op">(</span><span class="va">pca_embedding</span>, k <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">$</span><span class="va">nn.idx</span>,</span>
-<span>    <span class="fl">10</span>,</span>
-<span>    <span class="fl">0</span>,</span>
-<span>    <span class="op">-</span><span class="fl">1</span></span>
-<span><span class="op">)</span><span class="op">$</span><span class="va">nn</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># alternatively, the adj_matrix can be calculated</span></span>
-<span><span class="co"># using the `Seurat::FindNeighbors` function.</span></span>
-<span></span>
-<span><span class="va">clust_diff_obj</span> <span class="op">&lt;-</span> <span class="fu">assess_clustering_stability</span><span class="op">(</span></span>
-<span>    graph_adjacency_matrix <span class="op">=</span> <span class="va">adj_matrix</span>,</span>
-<span>    resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>    clustering_algorithm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>,</span>
-<span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="plot_clustering_overall_stability.html">plot_clustering_overall_stability</a></span><span class="op">(</span><span class="va">clust_diff_obj</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># create an artificial PCA embedding</span></span></span>
+<span class="r-in"><span><span class="va">pca_embedding</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fl">30</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pca_embedding</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"PC_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">adj_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="getNNmatrix.html">getNNmatrix</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu">RANN</span><span class="fu">::</span><span class="fu"><a href="https://jefferislab.github.io/RANN/reference/nn2.html" class="external-link">nn2</a></span><span class="op">(</span><span class="va">pca_embedding</span>, k <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">$</span><span class="va">nn.idx</span>,</span></span>
+<span class="r-in"><span>    <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>    <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>    <span class="op">-</span><span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="op">)</span><span class="op">$</span><span class="va">nn</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cell_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">adj_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># alternatively, the adj_matrix can be calculated</span></span></span>
+<span class="r-in"><span><span class="co"># using the `Seurat::FindNeighbors` function.</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">clust_diff_obj</span> <span class="op">&lt;-</span> <span class="fu">assess_clustering_stability</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    graph_adjacency_matrix <span class="op">=</span> <span class="va">adj_matrix</span>,</span></span>
+<span class="r-in"><span>    resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>    clustering_algorithm <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>,</span></span>
+<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>executing %dopar% sequentially: no parallel backend registered</span>
+<span class="r-in"><span><span class="fu"><a href="plot_clustering_overall_stability.html">plot_clustering_overall_stability</a></span><span class="op">(</span><span class="va">clust_diff_obj</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="assess_clustering_stability-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

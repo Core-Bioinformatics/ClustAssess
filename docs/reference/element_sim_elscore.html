@@ -166,8 +166,11 @@ each element.</p>
     <h2 id="missing-labels">Missing labels<a class="anchor" aria-label="anchor" href="#missing-labels"></a></h2>
 
 
-<p>Flat membership vectors must not contain <code>NA</code> or <code>NaN</code>. Remove or explicitly
-assign missing elements before comparison. Empty strings are valid labels.</p>
+<p>Flat membership vectors should not contain <code>NA</code> or <code>NaN</code>: remove or
+explicitly assign missing elements before comparison. Where version 1.2.0
+compared vectors with missing labels, they are compared as it compared them;
+where it failed, they stop with an error (see the package NEWS for the
+details and exceptions). Empty strings are valid labels.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -178,9 +181,48 @@ Scientific reports, 9(1), 1-13. https://doi.org/10.1038/s41598-019-44892-y</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">km.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span>
-<span><span class="va">hc.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">element_sim_elscore</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">km.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/kmeans.html" class="external-link">kmeans</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, centers <span class="op">=</span> <span class="fl">8</span><span class="op">)</span><span class="op">$</span><span class="va">cluster</span></span></span>
+<span class="r-in"><span><span class="va">hc.res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/hclust.html" class="external-link">hclust</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/dist.html" class="external-link">dist</a></span><span class="op">(</span><span class="va">iris</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">element_sim_elscore</span><span class="op">(</span><span class="va">km.res</span>, <span class="va">hc.res</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         1         2         3         4         5         6         7         8 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3429951 0.2704961 0.2804278 0.2915945 0.3152810 0.1487722 0.2513819 0.3374329 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         9        10        11        12        13        14        15        16 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2665108 0.2704961 0.3271306 0.2030665 0.2574921 0.2512579 0.2041026 0.2041026 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        17        18        19        20        21        22        23        24 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2048270 0.3429951 0.1487722 0.3030111 0.3203423 0.3030111 0.2073279 0.2186672 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        25        26        27        28        29        30        31        32 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2030665 0.2574921 0.2186672 0.3258508 0.3258508 0.2401704 0.2401704 0.3203423 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        33        34        35        36        37        38        39        40 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2256816 0.2256816 0.2704961 0.1890511 0.3246313 0.3152810 0.2665108 0.3374329 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        41        42        43        44        45        46        47        48 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3340552 0.1734234 0.2672028 0.2032939 0.1568796 0.2704961 0.3003207 0.2915945 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        49        50        51        52        53        54        55        56 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3271306 0.1772625 0.5615872 0.5695092 0.5615872 0.5126399 0.5629010 0.5076306 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        57        58        59        60        61        62        63        64 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5695092 0.3908800 0.5629010 0.5264321 0.4115362 0.5186867 0.4990643 0.5552380 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        65        66        67        68        69        70        71        72 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5140981 0.5709574 0.5076306 0.5334057 0.5402229 0.5129418 0.5527553 0.5186867 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        73        74        75        76        77        78        79        80 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5427109 0.5700377 0.5701426 0.5709574 0.5708637 0.5802114 0.5622167 0.5140981 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        81        82        83        84        85        86        87        88 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5067423 0.5067423 0.5216867 0.5353018 0.5076306 0.5789617 0.5701318 0.5402229 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        89        90        91        92        93        94        95        96 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5268969 0.5126399 0.5076306 0.5552380 0.5216867 0.3908800 0.5293888 0.5204195 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        97        98        99       100       101       102       103       104 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5204195 0.5701426 0.4000052 0.5293888 0.3210165 0.5337377 0.3755263 0.4205974 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       105       106       107       108       109       110       111       112 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3183015 0.3841846 0.4339580 0.3760085 0.3114616 0.3888182 0.4262509 0.5525658 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       113       114       115       116       117       118       119       120 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3252371 0.5415077 0.5641356 0.4344607 0.4137821 0.3888182 0.3927228 0.5535691 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       121       122       123       124       125       126       127       128 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3385365 0.5508788 0.3841846 0.5427906 0.3464941 0.3675095 0.5427906 0.5432109 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       129       130       131       132       133       134       135       136 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3111297 0.3675095 0.3760085 0.3888182 0.3111297 0.5353018 0.5709338 0.3888182 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       137       138       139       140       141       142       143       144 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3085320 0.4137821 0.5432109 0.3252371 0.3416624 0.3252371 0.5337377 0.3385365 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       145       146       147       148       149       150 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3416624 0.3252371 0.5525658 0.4262509 0.4032985 0.5644242 </span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

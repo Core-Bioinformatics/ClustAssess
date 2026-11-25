@@ -223,8 +223,9 @@ algorithm that will be used in the Graph construction step.</p></dd>
 <dt id="arg-algorithms-clustering-assessment">algorithms_clustering_assessment<a class="anchor" aria-label="anchor" href="#arg-algorithms-clustering-assessment"></a></dt>
 <dd><p>An index indicating which community
 detection algorithm will be used for the clustering step: Louvain (1),
-Louvain refined (2), SLM (3) or Leiden (4). More details can be found in
-the Seurat's <code>FindClusters</code> function.</p></dd>
+Louvain refined (2), SLM (3), Leiden with the <code>leiden</code> package (4, or 5 for
+a dense matrix) or Leiden with the <code>leidenbase</code> package (6). More details
+can be found in the Seurat's <code>FindClusters</code> function.</p></dd>
 
 
 <dt id="arg-clustering-arguments">clustering_arguments<a class="anchor" aria-label="anchor" href="#arg-clustering-arguments"></a></dt>
@@ -300,48 +301,49 @@ selected configuration's <code>umap</code> is replaced by a winning graph's embe
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span>
-<span><span class="co"># create an already-transposed artificial expression matrix</span></span>
-<span><span class="va">expr_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">20</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">30</span> <span class="op">*</span> <span class="fl">10</span>, min <span class="op">=</span> <span class="fl">3</span>, max <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    nrow <span class="op">=</span> <span class="fl">10</span>, byrow <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"feature"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">autom_object</span> <span class="op">&lt;-</span> <span class="fu">automatic_stability_assessment</span><span class="op">(</span></span>
-<span>    expression_matrix <span class="op">=</span> <span class="va">expr_matrix</span>,</span>
-<span>    n_repetitions <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span>,</span>
-<span>    resolution_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
-<span>    features_sets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>        <span class="st">"set1"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    steps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>        <span class="st">"set1"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    umap_arguments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>        <span class="co"># the following parameters have been modified</span></span>
-<span>        <span class="co"># from the default values to ensure that</span></span>
-<span>        <span class="co"># the function will run under 5 seconds</span></span>
-<span>        n_neighbors <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>        approx_pow <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>        n_epochs <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>        init <span class="op">=</span> <span class="st">"random"</span>,</span>
-<span>        min_dist <span class="op">=</span> <span class="fl">0.3</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    n_top_configs <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    algorithms_clustering_assessment <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    save_temp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># the object can be further used to plot the assessment results</span></span>
-<span><span class="fu"><a href="plot_feature_overall_stability_boxplot.html">plot_feature_overall_stability_boxplot</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">feature_stability</span><span class="op">)</span></span>
-<span><span class="fu"><a href="plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">set1</span><span class="op">$</span><span class="st">"5"</span><span class="op">$</span><span class="va">nn_stability</span><span class="op">)</span></span>
-<span><span class="fu"><a href="plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">set1</span><span class="op">$</span><span class="st">"5"</span><span class="op">$</span><span class="va">clustering_stability</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="co"># }</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># create an already-transposed artificial expression matrix</span></span></span>
+<span class="r-in"><span><span class="va">expr_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">20</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">30</span> <span class="op">*</span> <span class="fl">10</span>, min <span class="op">=</span> <span class="fl">3</span>, max <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    nrow <span class="op">=</span> <span class="fl">10</span>, byrow <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"feature"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">autom_object</span> <span class="op">&lt;-</span> <span class="fu">automatic_stability_assessment</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    expression_matrix <span class="op">=</span> <span class="va">expr_matrix</span>,</span></span>
+<span class="r-in"><span>    n_repetitions <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    resolution_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.5</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    features_sets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>        <span class="st">"set1"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">expr_matrix</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
+<span class="r-in"><span>    steps <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>        <span class="st">"set1"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
+<span class="r-in"><span>    umap_arguments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>        <span class="co"># the following parameters have been modified</span></span></span>
+<span class="r-in"><span>        <span class="co"># from the default values to ensure that</span></span></span>
+<span class="r-in"><span>        <span class="co"># the function will run under 5 seconds</span></span></span>
+<span class="r-in"><span>        n_neighbors <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>        approx_pow <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>        n_epochs <span class="op">=</span> <span class="fl">0</span>,</span></span>
+<span class="r-in"><span>        init <span class="op">=</span> <span class="st">"random"</span>,</span></span>
+<span class="r-in"><span>        min_dist <span class="op">=</span> <span class="fl">0.3</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span>,</span></span>
+<span class="r-in"><span>    n_top_configs <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>    algorithms_clustering_assessment <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>    save_temp <span class="op">=</span> <span class="cn">FALSE</span>,</span></span>
+<span class="r-in"><span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># the object can be further used to plot the assessment results</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="plot_feature_overall_stability_boxplot.html">plot_feature_overall_stability_boxplot</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">feature_stability</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">set1</span><span class="op">$</span><span class="st">"5"</span><span class="op">$</span><span class="va">nn_stability</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="plot_k_n_partitions.html">plot_k_n_partitions</a></span><span class="op">(</span><span class="va">autom_object</span><span class="op">$</span><span class="va">set1</span><span class="op">$</span><span class="st">"5"</span><span class="op">$</span><span class="va">clustering_stability</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

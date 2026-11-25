@@ -123,8 +123,10 @@ edges with weight under the pruning value will be removed. If the value is
 
 <dt id="arg-clustering-algorithm">clustering_algorithm<a class="anchor" aria-label="anchor" href="#arg-clustering-algorithm"></a></dt>
 <dd><p>An index indicating which community detection algorithm will
-be used: Louvain (1), Louvain refined (2), SLM (3) or Leiden (4). More
-details can be found in the Seurat's <code>FindClusters</code> function.</p></dd>
+be used: Louvain (1), Louvain refined (2), SLM (3), Leiden with the <code>leiden</code>
+package (4, or 5 for a dense matrix) or Leiden with the <code>leidenbase</code>
+package (6). More details can be found in the Seurat's <code>FindClusters</code>
+function.</p></dd>
 
 
 <dt id="arg-clustering-arguments">clustering_arguments<a class="anchor" aria-label="anchor" href="#arg-clustering-arguments"></a></dt>
@@ -169,20 +171,22 @@ only when <code>return_partition_seeds = TRUE</code></p></li>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span>
-<span><span class="co"># create an artificial PCA embedding</span></span>
-<span><span class="va">pca_emb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fl">30</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_emb</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pca_emb</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"PC_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">nn_stability_obj</span> <span class="op">&lt;-</span> <span class="fu">assess_nn_stability</span><span class="op">(</span></span>
-<span>    embedding <span class="op">=</span> <span class="va">pca_emb</span>,</span>
-<span>    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span><span class="op">)</span>,</span>
-<span>    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>    graph_reduction_type <span class="op">=</span> <span class="st">"PCA"</span>,</span>
-<span>    clustering_algorithm <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">nn_stability_obj</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2024</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># create an artificial PCA embedding</span></span></span>
+<span class="r-in"><span><span class="va">pca_emb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fl">30</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">100</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">pca_emb</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">100</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">pca_emb</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"PC_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">nn_stability_obj</span> <span class="op">&lt;-</span> <span class="fu">assess_nn_stability</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    embedding <span class="op">=</span> <span class="va">pca_emb</span>,</span></span>
+<span class="r-in"><span>    n_neigh_sequence <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">15</span>, <span class="fl">20</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    n_repetitions <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>    graph_reduction_type <span class="op">=</span> <span class="st">"PCA"</span>,</span></span>
+<span class="r-in"><span>    clustering_algorithm <span class="op">=</span> <span class="fl">1</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="plot_n_neigh_ecs.html">plot_n_neigh_ecs</a></span><span class="op">(</span><span class="va">nn_stability_obj</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="assess_nn_stability-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
