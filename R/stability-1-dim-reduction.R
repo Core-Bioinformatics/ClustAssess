@@ -293,16 +293,17 @@ assess_feature_stability <- function(data_matrix,
             "ncells"
         )
 
+        use_shared_obj <- ncores > 1 && is_package_installed("SharedObject")
         if (graph_reduction_type == "PCA") {
             needed_vars <- c(needed_vars, "shared_neigh_matrix")
-            if (ncores > 1 && is_package_installed("SharedObject")) {
+            if (use_shared_obj) {
                 shared_neigh_matrix <- SharedObject::share(neigh_matrix)
             } else {
                 shared_neigh_matrix <- neigh_matrix
             }
         } else {
             needed_vars <- c(needed_vars, "shared_embedding")
-            if (ncores > 1 && is_package_installed("SharedObject")) {
+            if (use_shared_obj) {
                 shared_embedding <- SharedObject::share(embedding)
             } else {
                 shared_embedding <- embedding
@@ -319,13 +320,14 @@ assess_feature_stability <- function(data_matrix,
 
         # send the name of the umap arguments
         # The results come in seed order, whatever order the workers finish in.
-        partitions_list[[step]] <- foreach::foreach(
-            seed = seed_sequence,
-            .inorder = TRUE,
-            .noexport = all_vars[!(all_vars %in% needed_vars)],
-            .export = c("run_optional_gc", "getNNmatrix", "get_highest_prune_param", "highest_prune_param_cpp"),
-            .packages = package_needed
-        ) %dopar% {
+        partitions_list[[step]] <- tryCatch(
+            foreach::foreach(
+                seed = seed_sequence,
+                .inorder = TRUE,
+                .noexport = all_vars[!(all_vars %in% needed_vars)],
+                .export = c("run_optional_gc", "getNNmatrix", "get_highest_prune_param", "highest_prune_param_cpp"),
+                .packages = package_needed
+            ) %dopar% {
             if (graph_reduction_type == "UMAP") {
                 row_names <- rownames(shared_embedding)
                 # calculate the umap embedding from the seed of the
@@ -420,15 +422,16 @@ assess_feature_stability <- function(data_matrix,
 
             names(cluster_results) <- as.character(resolution)
             cluster_results
-        }
-
-        if (ncores > 1 && is_package_installed("SharedObject")) {
-            if (graph_reduction_type == "PCA") {
-                shared_neigh_matrix <- SharedObject::unshare(shared_neigh_matrix)
-            } else {
-                shared_embedding <- SharedObject::unshare(shared_embedding)
+        },
+        finally = {
+            if (use_shared_obj) {
+                if (graph_reduction_type == "PCA" && exists("shared_neigh_matrix", inherits = FALSE)) {
+                    shared_neigh_matrix <- SharedObject::unshare(shared_neigh_matrix)
+                } else if (graph_reduction_type != "PCA" && exists("shared_embedding", inherits = FALSE)) {
+                    shared_embedding <- SharedObject::unshare(shared_embedding)
+                }
             }
-        }
+        })
 
         if (compute_umap_embeddings) {
             set.seed(42) # to match Seurat's default

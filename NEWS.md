@@ -90,10 +90,9 @@ robustness" and these implementation effects:
   matrices do not trigger chunk-dimension warnings.
 - Fixed `SharedObject::unshare()` cleanup calls across feature, graph, and
   clustering stability so the shared object (rather than the unshared input) is
-  unshared, and registered `assess_clustering_stability()` cleanup immediately
-  after `SharedObject::share()`.
-- Fixed four leaked `new[]` heap buffers in `src/wilcox.cpp::wilcox_test()` by
-  using `std::vector`.
+  unshared, including on worker error paths via `on.exit()` / `tryCatch(..., finally = ...)`.
+- Fixed four leaked `new[]` heap buffers and a 32-bit integer overflow in
+  `src/wilcox.cpp::wilcox_test()` (`n1 * (n1 + 1)` overflowed for `n1 >= 46,341`).
 - Fixed `automatic_stability_assessment()` so `save_temp = FALSE` is also
   respected during the connected-components and NN-stability stages when
   `temp_file` is supplied.

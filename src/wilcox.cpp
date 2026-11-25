@@ -12,11 +12,18 @@ using namespace std::chrono;
 
 // [[Rcpp::export]]
 NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
+    if (n1 < 0 || n1 > rank_values.ncol()) {
+        stop("n1 must be between 0 and ncol(rank_values).");
+    }
+    if (max_rank < 0) {
+        stop("max_rank must be non-negative.");
+    }
     double n = rank_values.ncol(), m = rank_values.nrow();
-    double n2 = n - n1;
+    double n1_d = static_cast<double>(n1);
+    double n2 = n - n1_d;
     long long value, n_unique;
-    double mu = (n1 * n2) / 2, sigma2 = (n1 * n2 * (n+1)) / 12;
-    double U = n1 * n2 + n1 * (n1 + 1) / 2 - mu, factor_n = n * (n+1) * (n-1);
+    double mu = (n1_d * n2) / 2.0, sigma2 = (n1_d * n2 * (n + 1.0)) / 12.0;
+    double U = n1_d * n2 + n1_d * (n1_d + 1.0) / 2.0 - mu, factor_n = n * (n + 1.0) * (n - 1.0);
     double freq_val, sum_r1, adjustment;
     double calculated_rank, start, less_val, temp;
 
@@ -32,6 +39,9 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
         std::fill(freq.begin(), freq.end(), 0);
         for (int i = 0; i < n; i++) {
             value = rank_values(j, i);
+            if (value == NA_INTEGER || value < 0 || value > max_rank) {
+                stop("rank_values entries must be integers in [0, max_rank].");
+            }
             freq[value]++;
 
             if (freq[value] == 1) {
@@ -80,7 +90,7 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
         zuppertail(j) = (U - sum_r1 - 0.5) / sqrt(sigma2); 
 
         if (n_unique != n) {
-            sigma2 = (double) (n1 * n2 * (n+1)) / 12;
+            sigma2 = (n1_d * n2 * (n + 1.0)) / 12.0;
         }
 
     }

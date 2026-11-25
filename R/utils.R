@@ -198,7 +198,13 @@ choose_stable_clusters <- function(clusters_list,
 }
 
 is_package_installed <- function(package_name) {
-    length(find.package(package_name, quiet = TRUE)) > 0L
+    if (length(package_name) == 0L) {
+        return(logical(0))
+    }
+    vapply(package_name, function(pkg) {
+        is.character(pkg) && !is.na(pkg) && nzchar(pkg) &&
+            length(find.package(pkg, lib.loc = .libPaths(), quiet = TRUE)) > 0L
+    }, logical(1), USE.NAMES = FALSE)
 }
 
 worker_packages_if_installed <- function(package_name) {
@@ -335,11 +341,10 @@ with_nn2_idx_cache <- function(expr) {
 }
 
 parallel_nn2_idx <- function(embedding, k) {
-    k_int <- as.integer(k)
     if (isTRUE(.nn2_idx_cache$active)) {
         entries <- .nn2_idx_cache$entries
         for (idx in seq_along(entries)) {
-            if (identical(entries[[idx]]$k, k_int) &&
+            if (identical(entries[[idx]]$k, k) &&
                 identical(entries[[idx]]$embedding, embedding)) {
                 return(entries[[idx]]$nn_idx)
             }
@@ -353,7 +358,7 @@ parallel_nn2_idx <- function(embedding, k) {
         if (isTRUE(.nn2_idx_cache$active)) {
             .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
                 embedding = embedding,
-                k = k_int,
+                k = k,
                 nn_idx = nn_result
             )
         }
@@ -369,6 +374,11 @@ parallel_nn2_idx <- function(embedding, k) {
 
     use_shared <- is_package_installed("SharedObject")
     shared_emb <- if (use_shared) SharedObject::share(embedding) else embedding
+    on.exit({
+        if (use_shared && exists("shared_emb", inherits = FALSE)) {
+            shared_emb <- SharedObject::unshare(shared_emb)
+        }
+    }, add = TRUE)
     i <- NULL
 
     # HACK check if there is another way to not get the `already exported variable` warning
@@ -388,12 +398,13 @@ parallel_nn2_idx <- function(embedding, k) {
 
     if (use_shared) {
         shared_emb <- SharedObject::unshare(shared_emb)
+        rm(shared_emb)
     }
 
     if (isTRUE(.nn2_idx_cache$active)) {
         .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
             embedding = embedding,
-            k = k_int,
+            k = k,
             nn_idx = nn_result
         )
     }

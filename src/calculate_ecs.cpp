@@ -147,7 +147,7 @@ bool encode_flat_membership_cpp(SEXP mb,
         const void* vmax = vmaxget();
         for (int i = 0; i < n; ++i) {
             SEXP s = STRING_ELT(mb, i);
-            if (s == NA_STRING) {
+            if (s == NA_STRING || Rf_getCharCE(s) == CE_BYTES) {
                 vmaxset(vmax);
                 return false;
             }

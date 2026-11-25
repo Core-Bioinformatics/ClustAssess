@@ -73,6 +73,9 @@ int run_prune_binary_search(int n_neigh,
             stop_n = middle;
             if (start_n == stop_n) {
                 start_n = middle - 1;
+                if (start_n < 1) {
+                    stop("No valid pruning threshold preserves the graph's connected components.");
+                }
             }
         } else {
             start_n = middle + 1;
@@ -183,8 +186,8 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
     if (n != nn_matrix.cols()) {
         stop("nn_matrix must be square.");
     }
-    if (n_neigh < 1) {
-        stop("n_neigh must be at least 1.");
+    if (n_neigh < 1 || n_neigh > INT_MAX / 2) {
+        stop("n_neigh must be an integer between 1 and INT_MAX / 2.");
     }
 
     const int* c_outer = nn_matrix.outerIndexPtr();
@@ -294,7 +297,7 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
             }
         );
 
-        const double prune_val = static_cast<double>(best_c) / (2 * n_neigh - best_c);
+        const double prune_val = static_cast<double>(best_c) / (2.0 * static_cast<double>(n_neigh) - static_cast<double>(best_c));
         if (!return_matrix) {
             return List::create(Named("prune_value") = prune_val);
         }
@@ -337,7 +340,7 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
             // c / (k + (k - c)).
             std::vector<double> w_table(n_neigh + 1, 0.0);
             for (int c = 1; c <= n_neigh; ++c) {
-                w_table[c] = static_cast<double>(c) / (n_neigh + (n_neigh - c));
+                w_table[c] = static_cast<double>(c) / (static_cast<double>(n_neigh) + static_cast<double>(n_neigh - c));
             }
 
             for (int i = 0; i < n; ++i) {
@@ -431,7 +434,7 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
         n_neigh,
         target_n_conn_comps,
         [&](int c_thresh) -> int {
-            const double thr = static_cast<double>(c_thresh) / (2 * n_neigh - c_thresh);
+            const double thr = static_cast<double>(c_thresh) / (2.0 * static_cast<double>(n_neigh) - static_cast<double>(c_thresh));
             uf_cur.reset(n);
             for (int col = 0; col < SNN.outerSize(); ++col) {
                 for (Eigen::SparseMatrix<double>::InnerIterator it(SNN, col); it; ++it) {
@@ -444,7 +447,7 @@ List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix,
         }
     );
 
-    const double prune_val = static_cast<double>(best_c) / (2 * n_neigh - best_c);
+    const double prune_val = static_cast<double>(best_c) / (2.0 * static_cast<double>(n_neigh) - static_cast<double>(best_c));
     if (!return_matrix) {
         return List::create(Named("prune_value") = prune_val);
     }
@@ -501,16 +504,19 @@ NumericVector nn_conn_comps_from_idx_cpp(SEXP nn_idx, IntegerVector n_neigh_sequ
             const size_t col_off = static_cast<size_t>(col) * static_cast<size_t>(n);
             if (iptr != nullptr) {
                 for (int row = 0; row < n; ++row) {
-                    const int nbr = iptr[col_off + row] - 1;
-                    if (nbr >= 0 && nbr < n) {
-                        uf.unite(row, nbr);
+                    const int raw = iptr[col_off + row];
+                    if (raw != NA_INTEGER && raw >= 1 && raw <= n) {
+                        uf.unite(row, raw - 1);
                     }
                 }
             } else {
                 for (int row = 0; row < n; ++row) {
-                    const int nbr = static_cast<int>(dptr[col_off + row]) - 1;
-                    if (nbr >= 0 && nbr < n) {
-                        uf.unite(row, nbr);
+                    const double raw = dptr[col_off + row];
+                    if (R_FINITE(raw) && raw >= 1.0 && raw <= static_cast<double>(n)) {
+                        const int nbr = static_cast<int>(raw) - 1;
+                        if (nbr >= 0 && nbr < n) {
+                            uf.unite(row, nbr);
+                        }
                     }
                 }
             }

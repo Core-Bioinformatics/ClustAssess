@@ -1615,12 +1615,19 @@ weighted_element_consistency <- function(clustering_list,
 
     # Fast native path preserving exact 1.2.0 IEEE-754 arithmetic, summation
     # order, element names, and .Random.seed behavior for clean flat partitions.
-    native_kind <- classify_flat_disjoint_list_for_native(clustering_list, weights)
+    is_plain_flag <- is.logical(calculate_sim_matrix) &&
+        length(calculate_sim_matrix) == 1L &&
+        !is.na(calculate_sim_matrix)
+    native_kind <- if (is_plain_flag) {
+        classify_flat_disjoint_list_for_native(clustering_list, weights)
+    } else {
+        NULL
+    }
     if (!is.null(native_kind)) {
         native_result <- if (native_kind == "char") {
-            weighted_ecc_flat_char_cpp(clustering_list, as.numeric(weights), isTRUE(calculate_sim_matrix))
+            weighted_ecc_flat_char_cpp(clustering_list, as.numeric(weights), calculate_sim_matrix)
         } else {
-            weighted_ecc_flat_cpp(clustering_list, as.numeric(weights), isTRUE(calculate_sim_matrix))
+            weighted_ecc_flat_cpp(clustering_list, as.numeric(weights), calculate_sim_matrix)
         }
         if (!is.null(native_result)) {
             first_names <- names(clustering_list[[1]])
