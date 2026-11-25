@@ -37,7 +37,9 @@ clusterings. The weights are used to give more importance to some clusterings
 over others.
 }
 \note{
-The weighted ECC will be calculated as \eqn{\displaystyle \frac{\sum_{i} \sum_{j} w_i w_j ECS(i, j)}{\sum_{i} w_i}}
+Let \eqn{W = \sum_{i} w_i}. The weighted ECC averages over unordered
+pairs of replicated partitions:
+\eqn{\displaystyle \frac{\sum_{i} w_i (w_i - 1) / 2 + \sum_{i < j} w_i w_j \, \mathrm{ECS}(i, j)}{W (W - 1) / 2}}.
 }
 \section{Missing labels}{
 

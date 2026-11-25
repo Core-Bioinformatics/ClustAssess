@@ -1,12 +1,12 @@
 #!/usr/bin/env Rscript
 
-app_dir <- Sys.getenv("CA_CANARD_APP_DIR", unset = "")
+app_dir <- Sys.getenv("CA_APP_APP_DIR", unset = "")
 if (!nzchar(app_dir)) {
-    stop("Set CA_CANARD_APP_DIR to an app directory containing expression.h5.")
+    stop("Set CA_APP_APP_DIR to an app directory containing expression.h5.")
 }
 expr_h5 <- file.path(app_dir, "expression.h5")
 if (!file.exists(expr_h5)) {
-    stop("Missing expression.h5 in CA_CANARD_APP_DIR: ", app_dir)
+    stop("Missing expression.h5 in CA_APP_APP_DIR: ", app_dir)
 }
 
 args <- commandArgs(trailingOnly = FALSE)
@@ -100,19 +100,19 @@ run_case <- function(label, expr, profile_dir, profile_interval = 0.01) {
 }
 
 profile_dir <- Sys.getenv(
-    "CA_CANARD_PROFILE_DIR",
-    file.path(repo_root, "analysis", "bench", "profiles", "canard_fixture")
+    "CA_APP_PROFILE_DIR",
+    file.path(repo_root, "analysis", "bench", "profiles", "app_fixture")
 )
-profile_interval <- as.numeric(Sys.getenv("CA_CANARD_PROFILE_INTERVAL", "0.01"))
+profile_interval <- as.numeric(Sys.getenv("CA_APP_PROFILE_INTERVAL", "0.01"))
 
-n_genes <- env_int("CA_CANARD_GENES", 1500)
-n_cells <- env_int("CA_CANARD_CELLS", 600)
-n_pcs <- env_int("CA_CANARD_NPCS", 30)
-n_repetitions <- env_int("CA_CANARD_REPETITIONS", 3)
-n_epochs <- env_int("CA_CANARD_UMAP_EPOCHS", 40)
-steps <- as.integer(strsplit(Sys.getenv("CA_CANARD_STEPS", "500,1000,1500"), ",")[[1]])
-n_neigh_sequence <- as.integer(strsplit(Sys.getenv("CA_CANARD_N_NEIGH", "5,15,25"), ",")[[1]])
-resolution_sequence <- as.numeric(strsplit(Sys.getenv("CA_CANARD_RESOLUTION", "0.5,1.5,2.5"), ",")[[1]])
+n_genes <- env_int("CA_APP_GENES", 1500)
+n_cells <- env_int("CA_APP_CELLS", 600)
+n_pcs <- env_int("CA_APP_NPCS", 30)
+n_repetitions <- env_int("CA_APP_REPETITIONS", 3)
+n_epochs <- env_int("CA_APP_UMAP_EPOCHS", 40)
+steps <- as.integer(strsplit(Sys.getenv("CA_APP_STEPS", "500,1000,1500"), ",")[[1]])
+n_neigh_sequence <- as.integer(strsplit(Sys.getenv("CA_APP_N_NEIGH", "5,15,25"), ",")[[1]])
+resolution_sequence <- as.numeric(strsplit(Sys.getenv("CA_APP_RESOLUTION", "0.5,1.5,2.5"), ",")[[1]])
 
 genes <- rhdf5::h5read(expr_h5, "genes")
 cells <- rhdf5::h5read(expr_h5, "cells")
@@ -132,7 +132,7 @@ colnames(expression_matrix) <- cells[selected_cell_idx]
 
 valid_steps <- steps[steps >= 2 & steps <= nrow(expression_matrix)]
 if (length(valid_steps) == 0) {
-    stop("No requested CA_CANARD_STEPS fit within the selected gene count.")
+    stop("No requested CA_APP_STEPS fit within the selected gene count.")
 }
 
 most_abundant <- rownames(expression_matrix)
@@ -168,22 +168,22 @@ common_arguments <- list(
 )
 
 cases <- list()
-if (env_flag("CA_CANARD_INCLUDE_EXACT", TRUE)) {
+if (env_flag("CA_APP_INCLUDE_EXACT", TRUE)) {
     exact_processor <- make_pca_matrix_processing(actual_npcs = n_pcs, method = "exact")
-    cases[["canard_fixture_exact_no_umap"]] <- list(
+    cases[["app_fixture_exact_no_umap"]] <- list(
         matrix_processing = exact_processor,
         compute_umap_embeddings = FALSE
     )
 }
 
-if (env_flag("CA_CANARD_INCLUDE_IRLBA", TRUE)) {
+if (env_flag("CA_APP_INCLUDE_IRLBA", TRUE)) {
     irlba_processor <- make_pca_matrix_processing(actual_npcs = n_pcs, method = "irlba")
-    cases[["canard_fixture_irlba_no_umap"]] <- list(
+    cases[["app_fixture_irlba_no_umap"]] <- list(
         matrix_processing = irlba_processor,
         compute_umap_embeddings = FALSE
     )
-    if (env_flag("CA_CANARD_INCLUDE_UMAP", TRUE)) {
-        cases[["canard_fixture_irlba_with_umap"]] <- list(
+    if (env_flag("CA_APP_INCLUDE_UMAP", TRUE)) {
+        cases[["app_fixture_irlba_with_umap"]] <- list(
             matrix_processing = irlba_processor,
             compute_umap_embeddings = TRUE
         )
@@ -211,7 +211,7 @@ cat(
     sep = ""
 )
 
-output <- Sys.getenv("CA_CANARD_OUTPUT", "")
+output <- Sys.getenv("CA_APP_OUTPUT", "")
 if (nzchar(output)) {
     utils::write.csv(results, output, row.names = FALSE)
 }

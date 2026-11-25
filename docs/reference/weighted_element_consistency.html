@@ -98,7 +98,9 @@ will be returned as well.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>The weighted ECC will be calculated as \(\displaystyle \frac{\sum_{i} \sum_{j} w_i w_j ECS(i, j)}{\sum_{i} w_i}\)</p>
+    <p>Let \(W = \sum_{i} w_i\). The weighted ECC averages over unordered
+pairs of replicated partitions:
+\(\displaystyle \frac{\sum_{i} w_i (w_i - 1) / 2 + \sum_{i &lt; j} w_i w_j \, \mathrm{ECS}(i, j)}{W (W - 1) / 2}\).</p>
     </div>
     <div class="section level2">
     <h2 id="missing-labels">Missing labels<a class="anchor" aria-label="anchor" href="#missing-labels"></a></h2>
@@ -118,21 +120,21 @@ details and exceptions). Empty strings are valid labels.</p>
 <span class="r-in"><span><span class="va">weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="fl">20</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">weighted_element_consistency</span><span class="op">(</span><span class="va">clustering_list</span>, weights <span class="op">=</span> <span class="va">weights</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           Mazda RX4       Mazda RX4 Wag          Datsun 710      Hornet 4 Drive </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6522730           0.6522730           0.8311082           0.5681972 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6765268           0.6765268           0.8375944           0.5524710 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Hornet Sportabout             Valiant          Duster 360           Merc 240D </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7734140           0.5523473           0.7734140           0.8311082 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7434039           0.5028654           0.7434039           0.8375944 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            Merc 230            Merc 280           Merc 280C          Merc 450SE </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8311082           0.6522730           0.6522730           0.6752417 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8375944           0.6765268           0.6765268           0.6733720 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          Merc 450SL         Merc 450SLC  Cadillac Fleetwood Lincoln Continental </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6752417           0.6752417           0.7172568           0.7172568 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6733720           0.6733720           0.6733573           0.6733573 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Chrysler Imperial            Fiat 128         Honda Civic      Toyota Corolla </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7172568           0.8311082           0.8311082           0.8311082 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6733573           0.8375944           0.8375944           0.8375944 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       Toyota Corona    Dodge Challenger         AMC Javelin          Camaro Z28 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8311082           0.6752417           0.6752417           0.7734140 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.8375944           0.6733720           0.6733720           0.7434039 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    Pontiac Firebird           Fiat X1-9       Porsche 914-2        Lotus Europa </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7172568           0.8311082           0.8311082           0.8311082 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.6733573           0.8375944           0.8375944           0.8375944 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      Ford Pantera L        Ferrari Dino       Maserati Bora          Volvo 142E </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7734140           0.6522730           0.7734140           0.8311082 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           0.7434039           0.6765268           0.7434039           0.8375944 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

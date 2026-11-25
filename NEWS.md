@@ -1,4 +1,4 @@
-# ClustAssess 1.3.0 (unreleased)
+# ClustAssess 1.3.0
 
 ## Algorithm and performance
 

@@ -49,27 +49,27 @@ and retained NN indices to focus on stability assessment and matrix processing.
 
 ## App-data automatic-pipeline benchmark
 
-`benchmark_canard_fixture.R` accepts any compatible ClustAssess app fixture and
-uses `CA_CANARD_*` options. There is no default dataset location: an unset or
-empty `CA_CANARD_APP_DIR` is an error.
+`benchmark_app_fixture.R` accepts any compatible ClustAssess app fixture and
+uses `CA_APP_*` options. There is no default dataset location: an unset or
+empty `CA_APP_APP_DIR` is an error.
 
 ```sh
-CA_CANARD_APP_DIR="path/to/app" \
-  Rscript analysis/bench/benchmark_canard_fixture.R
+CA_APP_APP_DIR="path/to/app" \
+  Rscript analysis/bench/benchmark_app_fixture.R
 ```
 
 This reads a bounded slice of `expression.h5`, derives abundance- and
 variance-ranked feature sets, and profiles reduced automatic assessments.
 Defaults are:
 
-- `CA_CANARD_GENES=1500`, `CA_CANARD_CELLS=600`, `CA_CANARD_NPCS=30`
-- `CA_CANARD_STEPS=500,1000,1500`, `CA_CANARD_REPETITIONS=3`
-- `CA_CANARD_N_NEIGH=5,15,25`, `CA_CANARD_RESOLUTION=0.5,1.5,2.5`
-- `CA_CANARD_UMAP_EPOCHS=40`
-- `CA_CANARD_INCLUDE_EXACT=true`, `CA_CANARD_INCLUDE_IRLBA=true`,
-  `CA_CANARD_INCLUDE_UMAP=true`
+- `CA_APP_GENES=1500`, `CA_APP_CELLS=600`, `CA_APP_NPCS=30`
+- `CA_APP_STEPS=500,1000,1500`, `CA_APP_REPETITIONS=3`
+- `CA_APP_N_NEIGH=5,15,25`, `CA_APP_RESOLUTION=0.5,1.5,2.5`
+- `CA_APP_UMAP_EPOCHS=40`
+- `CA_APP_INCLUDE_EXACT=true`, `CA_APP_INCLUDE_IRLBA=true`,
+  `CA_APP_INCLUDE_UMAP=true`
 
-`CA_CANARD_PROFILE_DIR` selects the profile directory; `CA_CANARD_OUTPUT` can
+`CA_APP_PROFILE_DIR` selects the profile directory; `CA_APP_OUTPUT` can
 save the timing table. Choose a runtime and memory budget before increasing
 fixture dimensions or repetition counts.
 

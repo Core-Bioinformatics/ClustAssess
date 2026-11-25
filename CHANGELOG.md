@@ -1,6 +1,6 @@
 # Changelog
 
-All release notes, including **1.3.0 (unreleased)** and earlier releases, are
+All release notes, including **1.3.0** and earlier releases, are
 maintained in [NEWS.md](NEWS.md). This is the single release-note source used by
 R and the pkgdown website.
 

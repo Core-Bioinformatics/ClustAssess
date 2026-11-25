@@ -4,8 +4,8 @@
 [![rstudio mirror downloads](https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess)](https://github.com/r-hub/cranlogs.app)
 [![](https://img.shields.io/github/languages/code-size/Core-Bioinformatics/ClustAssess.svg)](https://github.com/Core-Bioinformatics/ClustAssess)
 [![CRAN status](https://www.r-pkg.org/badges/version/ClustAssess?color=orange)](https://CRAN.R-project.org/package=ClustAssess)
-[![](https://img.shields.io/github/r-package/v/Core-Bioinformatics/ClustAssess%2Frelease-1.2.0?label=devel%20version&color=green)](https://github.com/Core-Bioinformatics/ClustAssess/tree/release-1.2.0)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/Core-Bioinformatics/ClustAssess/release-1.2.0?style=flat&color=white)
+[![](https://img.shields.io/github/r-package/v/Core-Bioinformatics/ClustAssess%2Frelease-1.3.0?label=devel%20version&color=green)](https://github.com/Core-Bioinformatics/ClustAssess/tree/release-1.3.0)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/Core-Bioinformatics/ClustAssess/release-1.3.0?style=flat&color=white)
 
 This repo contains the ClustAssess R package, which provides a set of tools
 for evaluating clustering robustness.
@@ -49,7 +49,7 @@ To compare two clusterings with ECS, we use the `element_sim_elscore` function:
 where `1-alpha` is the restart probability of the random walk. We can
 subsequently visualize the ECS on a PCA of the data:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
+<img src=https://core-bioinformatics.github.io/ClustAssess/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png width=80%/>
 
 In addition to flat disjoint clusterings (like the result of k-means for
 example), ClustAssess can also compare overlapping clusterings and hierarchical
@@ -71,7 +71,7 @@ results may lead to two different sets of markers for the cells. The
 output can be either as the number of common marker genes per cell, or as
 Jaccard similarity (size of intersect divided by size of union) per cell.
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
+<img src=https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/jsi-1.png width=80%/>
 
 
 ## Stability-Based Parameter Assessment
@@ -84,7 +84,7 @@ choices that influence the final clustering, for example to evaluate feature
 sets, we use `get_feature_stability_object`, and plot the results with
 `plot_feature_stability_boxplot`:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-pipeline-description_files/figure-html/stab_boxplot-1.png width=80%/>
+<img src=https://core-bioinformatics.github.io/ClustAssess/articles/stability-pipeline-description_files/figure-html/stab_boxplot-1.png width=80%/>
 
 where the higher element-centric consistency (ECC) indicates more stable
 clustering results across random seeds. For more details, please see [this
@@ -139,7 +139,7 @@ It is important that the PAC has converged before using it to assess your data;
 the `pac_convergence` function can be used to visualize the PAC curves across
 iterations:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
+<img src=https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/pac-1.png width=80%/>
 
 As the curves have evened out, we surmize that PAC has converged in this case.
 If the PAC has not converged, increase the `n_reps` value.
@@ -150,7 +150,7 @@ sketch [3] of your data of size <1000, and running PAC on that sketch.
 A local minimum in the PAC landscape, as visualized below using the
 `pac_landscape` function, can be interpreted as an optimal *k* for the dataset:
 
-<img src=https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-2.png width=80%/>
+<img src=https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/pac-2.png width=80%/>
 
 ## Handling Large Datasets
 If your dataset is large, the runtime for the tools described above may be

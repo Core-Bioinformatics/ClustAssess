@@ -67,7 +67,7 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="clustassess-tools-for-assessing-clustering">ClustAssess: Tools for Assessing Clustering<a class="anchor" aria-label="anchor" href="#clustassess-tools-for-assessing-clustering"></a>
 </h1></div>
-<p><a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/ClustAssess" alt="rstudio mirror downloads"></a> <a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess" alt="rstudio mirror downloads"></a> <a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link"><img src="https://img.shields.io/github/languages/code-size/Core-Bioinformatics/ClustAssess.svg"></a> <a href="https://CRAN.R-project.org/package=ClustAssess" class="external-link"><img src="https://www.r-pkg.org/badges/version/ClustAssess?color=orange" alt="CRAN status"></a> <a href="https://github.com/Core-Bioinformatics/ClustAssess/tree/release-1.2.0" class="external-link"><img src="https://img.shields.io/github/r-package/v/Core-Bioinformatics/ClustAssess%2Frelease-1.2.0?label=devel%20version&amp;color=green"></a> <img src="https://img.shields.io/github/last-commit/Core-Bioinformatics/ClustAssess/release-1.2.0?style=flat&amp;color=white" alt="GitHub last commit (branch)"></p>
+<p><a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/ClustAssess" alt="rstudio mirror downloads"></a> <a href="https://github.com/r-hub/cranlogs.app" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ClustAssess" alt="rstudio mirror downloads"></a> <a href="https://github.com/Core-Bioinformatics/ClustAssess" class="external-link"><img src="https://img.shields.io/github/languages/code-size/Core-Bioinformatics/ClustAssess.svg"></a> <a href="https://CRAN.R-project.org/package=ClustAssess" class="external-link"><img src="https://www.r-pkg.org/badges/version/ClustAssess?color=orange" alt="CRAN status"></a> <a href="https://github.com/Core-Bioinformatics/ClustAssess/tree/release-1.3.0" class="external-link"><img src="https://img.shields.io/github/r-package/v/Core-Bioinformatics/ClustAssess%2Frelease-1.3.0?label=devel%20version&amp;color=green"></a> <img src="https://img.shields.io/github/last-commit/Core-Bioinformatics/ClustAssess/release-1.3.0?style=flat&amp;color=white" alt="GitHub last commit (branch)"></p>
 <p>This repo contains the ClustAssess R package, which provides a set of tools for evaluating clustering robustness.</p>
 <p>Please check the <a href="https://github.com/Core-Bioinformatics/ClustAssessPy" class="external-link">ClustAssessPy</a> module for a Python implementation of the ClustAssess package.</p>
 <ul>
@@ -99,7 +99,7 @@
 <p>To compare two clusterings with ECS, we use the <code>element_sim_elscore</code> function:</p>
 <p><code>ecs = element_sim_elscore(clustering_result1, clustering_result2, alpha=0.9)</code></p>
 <p>where <code>1-alpha</code> is the restart probability of the random walk. We can subsequently visualize the ECS on a PCA of the data:</p>
-<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="80%/"></p>
+<p><img src="https://core-bioinformatics.github.io/ClustAssess/articles/comparing-soft-and-hierarchical_files/figure-html/ecs-2.png" width="80%/"></p>
 <p>In addition to flat disjoint clusterings (like the result of k-means for example), ClustAssess can also compare overlapping clusterings and hierarchical clusterings; refer to the <code>comparing-soft-and-hierarchical</code> vignette for more detail.</p>
 <p>Besides comparing two clusterings with <code>element_sim_elscore</code>, ClustAssess also enables computing the per-element consistency (aka frustration) between a set of clusterings with the <code>element_consistency</code> function, and comparing a set of clusterings with a ground truth partitioning of elements with the <code>element_agreement</code> function.</p>
 </div>
@@ -107,13 +107,13 @@
 <h2 id="marker-gene-overlap">Marker Gene Overlap<a class="anchor" aria-label="anchor" href="#marker-gene-overlap"></a>
 </h2>
 <p>In the analysis of single-cell RNA-seq data, cluster marker genes are typically used to infer the cell type of clusters. However, two different clustering results may lead to two different sets of markers for the cells. The <code>marker_overlap</code> function allows the comparison of two sets of markers. The output can be either as the number of common marker genes per cell, or as Jaccard similarity (size of intersect divided by size of union) per cell.</p>
-<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
+<p><img src="https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/jsi-1.png" width="80%/"></p>
 </div>
 <div class="section level2">
 <h2 id="stability-based-parameter-assessment">Stability-Based Parameter Assessment<a class="anchor" aria-label="anchor" href="#stability-based-parameter-assessment"></a>
 </h2>
 <p>The most common clustering pipeline for single-cell data consists of constructing a nearest-neighbor graph of the cells, followed by community detection to obtain the clustering. This pipeline is available in multiple single-cell toolkits, including Seurat, Monocle v3, and SCANPY. ClustAssess provides several methods to assess the stability of parameter choices that influence the final clustering, for example to evaluate feature sets, we use <code>get_feature_stability_object</code>, and plot the results with <code>plot_feature_stability_boxplot</code>:</p>
-<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/stability-pipeline-description_files/figure-html/stab_boxplot-1.png" width="80%/"></p>
+<p><img src="https://core-bioinformatics.github.io/ClustAssess/articles/stability-pipeline-description_files/figure-html/stab_boxplot-1.png" width="80%/"></p>
 <p>where the higher element-centric consistency (ECC) indicates more stable clustering results across random seeds. For more details, please see <a href="https://core-bioinformatics.github.io/ClustAssess/articles/stability-pipeline-description.html">this vignette</a>.</p>
 </div>
 <div class="section level2">
@@ -134,11 +134,11 @@ Other information
 <p>ClustAssess uses a heirarchical clustering as base for the consensus clustering, and an optimized Rcpp [2] implementation to compute the PAC values. To calculate PAC, we write:</p>
 <p><code>cc_res = consensus_cluster(your_data, n_reps=50, k_max=20, p_sample=0.8, p_feature=0.8)</code></p>
 <p>It is important that the PAC has converged before using it to assess your data; the <code>pac_convergence</code> function can be used to visualize the PAC curves across iterations:</p>
-<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-1.png" width="80%/"></p>
+<p><img src="https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/pac-1.png" width="80%/"></p>
 <p>As the curves have evened out, we surmize that PAC has converged in this case. If the PAC has not converged, increase the <code>n_reps</code> value.</p>
 <p>If the dataset contains &gt;1000 elements, we recommend calculating a geometric sketch [3] of your data of size &lt;1000, and running PAC on that sketch.</p>
 <p>A local minimum in the PAC landscape, as visualized below using the <code>pac_landscape</code> function, can be interpreted as an optimal <em>k</em> for the dataset:</p>
-<p><img src="https://raw.githubusercontent.com/Core-Bioinformatics/ClustAssess/main/docs/articles/ClustAssess_files/figure-html/pac-2.png" width="80%/"></p>
+<p><img src="https://core-bioinformatics.github.io/ClustAssess/articles/ClustAssess_files/figure-html/pac-2.png" width="80%/"></p>
 </div>
 <div class="section level2">
 <h2 id="handling-large-datasets">Handling Large Datasets<a class="anchor" aria-label="anchor" href="#handling-large-datasets"></a>
