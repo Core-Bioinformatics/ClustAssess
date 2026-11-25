@@ -22,40 +22,25 @@ NumericVector wilcox_test(IntegerMatrix rank_values, int n1, int max_rank) {
 
     NumericVector zuppertail(m), zlowertail(m); 
 
-    int* unique_rankings = new int[(int) n+1];
-    for (int i = 0; i < n+1; i++) {
-        unique_rankings[i] = 0;
-    }
-    double* new_ranks = new double[(int) n+1];
-    for (int i = 0; i < n+1; i++) {
-        new_ranks[i] = 0;
-    }
-    int* mappings = new int[max_rank+1];
-    for (int i = 0; i < max_rank+1; i++) {
-        mappings[i] = 0;
-    }
-
-    int* freq = new int[max_rank+1];
-
+    std::vector<int> unique_rankings(static_cast<size_t>(n) + 1, 0);
+    std::vector<double> new_ranks(static_cast<size_t>(n) + 1, 0.0);
+    std::vector<int> mappings(static_cast<size_t>(max_rank) + 1, 0);
+    std::vector<int> freq(static_cast<size_t>(max_rank) + 1, 0);
 
     for (int j = 0; j < m; j++) {
-        int max = 0;
-
         n_unique = 0;
-        for (int i = 0; i < max_rank+1; i++) {
-            freq[i] = 0;
-        }
-        for(int i = 0; i < n; i++) {
+        std::fill(freq.begin(), freq.end(), 0);
+        for (int i = 0; i < n; i++) {
             value = rank_values(j, i);
             freq[value]++;
-            
+
             if (freq[value] == 1) {
                 unique_rankings[n_unique] = value;
                 n_unique++;
             }
         }
 
-        std::sort(unique_rankings, unique_rankings+n_unique);
+        std::sort(unique_rankings.begin(), unique_rankings.begin() + n_unique);
 
         start = 1;
         for (int i = 0; i < n_unique; i++) {

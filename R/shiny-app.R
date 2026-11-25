@@ -432,7 +432,7 @@ write_objects <- function(clustassess_object,
         level = compression_level,
         dims = c(nrow(expression_matrix), ncol(expression_matrix)),
         storage.mode = "integer",
-        chunk = c(chunk_size, ncol(expression_matrix))
+        chunk = c(min(chunk_size, nrow(expression_matrix)), ncol(expression_matrix))
     )
 
     rhdf5::h5createDataset(expr_file_name, "expression_matrix",
@@ -451,39 +451,26 @@ write_objects <- function(clustassess_object,
 
     print(glue::glue("[{Sys.time()}] Writing the rank matrix"))
     nchunks <- ceiling(nrow(expression_matrix) / chunk_size)
-    for (i in seq_len(nchunks - 1)) {
-        index_list <- seq(from = chunk_size * (i - 1) + 1, by = 1, length.out = chunk_size)
-        rhdf5::h5write(
+    for (i in seq_len(nchunks)) {
+        start_row <- chunk_size * (i - 1) + 1
+        end_row <- min(chunk_size * i, nrow(expression_matrix))
+        index_list <- seq(from = start_row, to = end_row, by = 1)
+        rank_chunk <- if (length(index_list) == 1L) {
+            matrix(
+                rank(expression_matrix[index_list, ], ties.method = "min"),
+                nrow = 1L
+            )
+        } else {
             t(apply(
-                expression_matrix[index_list, ],
+                expression_matrix[index_list, , drop = FALSE],
                 1,
                 function(x) {
                     rank(x, ties.method = "min")
                 }
-            )),
-            expr_file_name,
-            "rank_matrix",
-            index = list(index_list, NULL)
-        )
-    }
-
-    index_list <- seq(from = chunk_size * (nchunks - 1) + 1, by = 1, to = nrow(expression_matrix))
-    if (length(index_list) == 1) {
+            ))
+        }
         rhdf5::h5write(
-            rank(expression_matrix[index_list, ], ties.method = "min"),
-            expr_file_name,
-            "rank_matrix",
-            index = list(index_list, NULL)
-        )
-    } else {
-        rhdf5::h5write(
-            t(apply(
-                expression_matrix[index_list, ],
-                1,
-                function(x) {
-                    rank(x, ties.method = "min")
-                }
-            )),
+            rank_chunk,
             expr_file_name,
             "rank_matrix",
             index = list(index_list, NULL)

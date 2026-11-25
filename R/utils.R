@@ -198,7 +198,7 @@ choose_stable_clusters <- function(clusters_list,
 }
 
 is_package_installed <- function(package_name) {
-    return(package_name %in% rownames(utils::installed.packages()))
+    length(find.package(package_name, quiet = TRUE)) > 0L
 }
 
 worker_packages_if_installed <- function(package_name) {
@@ -320,11 +320,44 @@ normalize_feature_steps <- function(steps, n_features) {
     sort(unique(steps))
 }
 
+.nn2_idx_cache <- new.env(parent = emptyenv())
+
+with_nn2_idx_cache <- function(expr) {
+    prev_active <- isTRUE(.nn2_idx_cache$active)
+    prev_entries <- .nn2_idx_cache$entries
+    .nn2_idx_cache$active <- TRUE
+    .nn2_idx_cache$entries <- list()
+    on.exit({
+        .nn2_idx_cache$active <- prev_active
+        .nn2_idx_cache$entries <- prev_entries
+    }, add = TRUE)
+    force(expr)
+}
+
 parallel_nn2_idx <- function(embedding, k) {
+    k_int <- as.integer(k)
+    if (isTRUE(.nn2_idx_cache$active)) {
+        entries <- .nn2_idx_cache$entries
+        for (idx in seq_along(entries)) {
+            if (identical(entries[[idx]]$k, k_int) &&
+                identical(entries[[idx]]$embedding, embedding)) {
+                return(entries[[idx]]$nn_idx)
+            }
+        }
+    }
+
     ncores <- foreach::getDoParWorkers()
 
     if (ncores == 1) {
-        return(RANN::nn2(embedding, k = k)$nn.idx)
+        nn_result <- RANN::nn2(embedding, k = k)$nn.idx
+        if (isTRUE(.nn2_idx_cache$active)) {
+            .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
+                embedding = embedding,
+                k = k_int,
+                nn_idx = nn_result
+            )
+        }
+        return(nn_result)
     }
 
     chunk_size <- nrow(embedding) %/% ncores
@@ -355,6 +388,14 @@ parallel_nn2_idx <- function(embedding, k) {
 
     if (use_shared) {
         shared_emb <- SharedObject::unshare(shared_emb)
+    }
+
+    if (isTRUE(.nn2_idx_cache$active)) {
+        .nn2_idx_cache$entries[[length(.nn2_idx_cache$entries) + 1L]] <- list(
+            embedding = embedding,
+            k = k_int,
+            nn_idx = nn_result
+        )
     }
 
     nn_result

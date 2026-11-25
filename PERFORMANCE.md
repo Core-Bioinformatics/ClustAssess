@@ -20,23 +20,33 @@ changes.
   numbers and of factor levels, so sums over clusters run in the order of
   1.2.0. Ordinary pairwise calls incur some validation/encoding cost; this
   correction is not itself a speedup claim.
-- `merge_partitions()` computes the ECS matrix and average agreement only when
-  needed. Frequency ordering no longer attaches the undocumented
-  `avg_agreement` field unless needed for ordering/ties or available from an
-  explicitly requested ECS matrix. Nested calls forward the same options.
-- ECS and ECC values use the arithmetic of 1.2.0 and add their terms in its
-  order. The stability workflows compare these values strictly, so a
-  difference in their last bits can change a selected configuration or the
-  order of partitions. Weighted ECC therefore compares the partitions one pair
-  at a time. Per-element ECS with character labels, and `element_agreement()`,
-  use the arithmetic of 1.2.0's R code for all elements at once rather than
-  element by element.
+- `merge_partitions()` skips ECS matrix construction for unordered (`"none"`)
+  merges unless `return_ecs_matrix = TRUE`; frequency- and agreement-ordered
+  results retain `avg_agreement` for 1.2.0 parity. Nested calls forward the
+  same options.
+- ECS and ECC values preserve the exact IEEE-754 arithmetic and summation order
+  of 1.2.0 so strict comparisons in stability workflows cannot drift in their
+  last bits. For clean flat disjoint partitions, native C++ batch paths encode
+  each partition once (`O(U * n)`) and accumulate pairs in exact 1.2.0 order
+  (using exact two-pass `long double` compensated means matching R's
+  `mean.default()` and an `O(n)` sparse fallback for singleton-heavy pairs).
+  Unsupported, mixed-type, or missing-label inputs retain the R pairwise path.
+- Automatic SNN pruning (`get_highest_prune_param()`,
+  `get_highest_prune_param_embedding()`) and kNN connected-component evolution
+  (`get_nn_conn_comps()`) run native C++ disjoint-set searches directly on
+  sparse CSC / kNN-index arrays, avoiding full unpruned SNN and `igraph`
+  allocations while returning bit-identical thresholds and matrices.
+- `automatic_stability_assessment()` reuses each selected configuration's PCA
+  kNN index across connected-component and NN-stability stages via a scoped
+  cache cleared unconditionally on exit.
 - PCA graph stability constructs one neighborhood's graph matrices at a time.
   SNN-only workers do not retain an unused NN matrix. Shared graph construction
   is checked against the original primitives, including automatic pruning.
-- Final clustering distributes resolution/seed jobs within each algorithm and
-  explicitly restores their original positions when collecting results. The
-  single-cluster-count summary reuses the exact ECC already computed by merging.
+- Final clustering (`assess_clustering_stability()`) groups resolution/seed
+  jobs into strided worker chunks (and PCA NN stability groups seed jobs into
+  contiguous chunks when `ncores > 1`), amortizing PSOCK IPC overhead while
+  restoring exact nested positions and seed order. The single-cluster-count
+  summary reuses the exact ECC already computed by merging.
 - Forced garbage collection is opt-in through
   `options(ClustAssess.force_gc = TRUE)`; normal R garbage collection remains active.
 

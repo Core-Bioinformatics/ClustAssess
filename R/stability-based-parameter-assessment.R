@@ -595,109 +595,113 @@ automatic_stability_assessment <- function(expression_matrix,
     rm(feature_stability_object)
     run_optional_gc()
 
-    # GRAPH CONSTRUCTION: CONNECTED COMPS
-    if (verbose) {
-        print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
-        pb <- progress::progress_bar$new(
-            format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-            total = total_nconfigs,
-            show_after = 0,
-            clear = FALSE,
-            width = 80
-        )
-    }
-
-    for (set_name in feature_set_names) {
-        n_names <- length(feature_configs[[set_name]])
-        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-            if (verbose) {
-                pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
-            }
-
-            feature_configs[[set_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
-                embedding = feature_configs[[set_name]][[n_steps]]$pca,
-                n_neigh_sequence = n_neigh_sequence,
-                n_repetitions = n_repetitions,
-                seed_sequence = seed_sequence,
-                include_umap = include_umap_nn_assessment,
-                umap_arguments = umap_arguments
+    # Reuse each selected configuration's exact PCA kNN index between
+    # connected-component assessment and NN-stability assessment.
+    with_nn2_idx_cache({
+        # GRAPH CONSTRUCTION: CONNECTED COMPS
+        if (verbose) {
+            print(glue::glue("[{Sys.time()}] Assessing the stability of the connected components"))
+            pb <- progress::progress_bar$new(
+                format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+                total = total_nconfigs,
+                show_after = 0,
+                clear = FALSE,
+                width = 80
             )
-            if (verbose) {
-                pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
-            }
-
-            if (!file_already_exists) {
-                saveRDS(feature_configs, temp_file)
-            }
         }
-    }
 
-    # GRAPH CONSTRUCTION: NN STABILITY
-    if (verbose) {
-        print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
-        pb <- progress::progress_bar$new(
-            format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
-            total = total_nconfigs,
-            show_after = 0,
-            clear = FALSE,
-            width = 80
-        )
-    }
+        for (set_name in feature_set_names) {
+            n_names <- length(feature_configs[[set_name]])
+            for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+                if (verbose) {
+                    pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+                }
 
-    for (set_name in feature_set_names) {
-        n_names <- length(feature_configs[[set_name]])
-        for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
-            if (verbose) {
-                pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
-            }
-
-            feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- assess_nn_stability(
-                embedding = feature_configs[[set_name]][[n_steps]]$pca,
-                n_neigh_sequence = n_neigh_sequence,
-                n_repetitions = n_repetitions,
-                seed_sequence = seed_sequence,
-                graph_reduction_type = "PCA",
-                ecs_thresh = ecs_threshold,
-                prune_value = prune_value,
-                clustering_algorithm = algorithm_graph_construct,
-                clustering_arguments = clustering_arguments
-            )
-
-            if (include_umap_nn_assessment) {
-                umap_stability <- assess_nn_stability(
+                feature_configs[[set_name]][[n_steps]][["nn_conn_comps"]] <- get_nn_conn_comps(
                     embedding = feature_configs[[set_name]][[n_steps]]$pca,
                     n_neigh_sequence = n_neigh_sequence,
                     n_repetitions = n_repetitions,
                     seed_sequence = seed_sequence,
-                    graph_reduction_type = "UMAP",
+                    include_umap = include_umap_nn_assessment,
+                    umap_arguments = umap_arguments
+                )
+                if (verbose) {
+                    pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+                }
+
+                if (!file_already_exists && save_temp) {
+                    saveRDS(feature_configs, temp_file)
+                }
+            }
+        }
+
+        # GRAPH CONSTRUCTION: NN STABILITY
+        if (verbose) {
+            print(glue::glue("[{Sys.time()}] Assessing the stability of the graph construction parameters"))
+            pb <- progress::progress_bar$new(
+                format = ":featurename - :featuresize [:bar] eta: :eta  total elapsed: :elapsed",
+                total = total_nconfigs,
+                show_after = 0,
+                clear = FALSE,
+                width = 80
+            )
+        }
+
+        for (set_name in feature_set_names) {
+            n_names <- length(feature_configs[[set_name]])
+            for (n_steps in names(feature_configs[[set_name]])[seq_len(n_names - 1)]) {
+                if (verbose) {
+                    pb$tick(0, tokens = list(featurename = set_name, featuresize = n_steps))
+                }
+
+                feature_configs[[set_name]][[n_steps]][["nn_stability"]] <- assess_nn_stability(
+                    embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                    n_neigh_sequence = n_neigh_sequence,
+                    n_repetitions = n_repetitions,
+                    seed_sequence = seed_sequence,
+                    graph_reduction_type = "PCA",
                     ecs_thresh = ecs_threshold,
                     prune_value = prune_value,
                     clustering_algorithm = algorithm_graph_construct,
-                    clustering_arguments = clustering_arguments,
-                    umap_arguments = umap_arguments,
-                    return_partition_seeds = TRUE
+                    clustering_arguments = clustering_arguments
                 )
-                # Only these summaries share ownership across representations.
-                # PCA's nn_idx remains a matrix until the winning graph is known.
-                for (field in c("n_neigh_k_corresp", "n_neigh_ec_consistency", "n_different_partitions")) {
-                    feature_configs[[set_name]][[n_steps]]$nn_stability[[field]] <- c(
-                        feature_configs[[set_name]][[n_steps]]$nn_stability[[field]],
-                        umap_stability[[field]]
+
+                if (include_umap_nn_assessment) {
+                    umap_stability <- assess_nn_stability(
+                        embedding = feature_configs[[set_name]][[n_steps]]$pca,
+                        n_neigh_sequence = n_neigh_sequence,
+                        n_repetitions = n_repetitions,
+                        seed_sequence = seed_sequence,
+                        graph_reduction_type = "UMAP",
+                        ecs_thresh = ecs_threshold,
+                        prune_value = prune_value,
+                        clustering_algorithm = algorithm_graph_construct,
+                        clustering_arguments = clustering_arguments,
+                        umap_arguments = umap_arguments,
+                        return_partition_seeds = TRUE
                     )
+                    # Only these summaries share ownership across representations.
+                    # PCA's nn_idx remains a matrix until the winning graph is known.
+                    for (field in c("n_neigh_k_corresp", "n_neigh_ec_consistency", "n_different_partitions")) {
+                        feature_configs[[set_name]][[n_steps]]$nn_stability[[field]] <- c(
+                            feature_configs[[set_name]][[n_steps]]$nn_stability[[field]],
+                            umap_stability[[field]]
+                        )
+                    }
+                    feature_configs[[set_name]][[n_steps]]$nn_stability$partition_seeds <- umap_stability$partition_seeds
+                    feature_configs[[set_name]][[n_steps]]$nn_stability$partition_rng_kinds <- umap_stability$partition_rng_kinds
                 }
-                feature_configs[[set_name]][[n_steps]]$nn_stability$partition_seeds <- umap_stability$partition_seeds
-                feature_configs[[set_name]][[n_steps]]$nn_stability$partition_rng_kinds <- umap_stability$partition_rng_kinds
-            }
 
-            if (verbose) {
-                pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
-            }
+                if (verbose) {
+                    pb$tick(tokens = list(featurename = set_name, featuresize = n_steps))
+                }
 
-            if (!file_already_exists) {
-                saveRDS(feature_configs, temp_file)
+                if (!file_already_exists && save_temp) {
+                    saveRDS(feature_configs, temp_file)
+                }
             }
         }
-    }
+    })
 
     # choose best graph construction parameters for each config
     for (set_name in feature_set_names) {

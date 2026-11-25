@@ -323,7 +323,7 @@ assess_feature_stability <- function(data_matrix,
             seed = seed_sequence,
             .inorder = TRUE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
-            .export = "run_optional_gc",
+            .export = c("run_optional_gc", "getNNmatrix", "get_highest_prune_param", "highest_prune_param_cpp"),
             .packages = package_needed
         ) %dopar% {
             if (graph_reduction_type == "UMAP") {
@@ -422,11 +422,11 @@ assess_feature_stability <- function(data_matrix,
             cluster_results
         }
 
-        if (is_package_installed("SharedObject")) {
+        if (ncores > 1 && is_package_installed("SharedObject")) {
             if (graph_reduction_type == "PCA") {
-                shared_neigh_matrix <- SharedObject::unshare(neigh_matrix)
+                shared_neigh_matrix <- SharedObject::unshare(shared_neigh_matrix)
             } else {
-                shared_embedding <- SharedObject::unshare(embedding)
+                shared_embedding <- SharedObject::unshare(shared_embedding)
             }
         }
 

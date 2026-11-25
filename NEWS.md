@@ -18,16 +18,31 @@ tradeoffs and measurement requirements.
   weighted consistency result.
 - Avoided hidden PSOCK dispatch for non-identity ECS-threshold partition
   merging; that internal path runs serially.
-- Computed the per-element ECS of character labels, and `element_agreement()`,
-  for all elements at once with the arithmetic of 1.2.0, rather than element
-  by element.
+- Added native C++ batch paths for `weighted_element_consistency()`, serial
+  `element_sim_matrix()`, and `corrected_l1_mb_at_once()` that encode each
+  partition once and execute the exact IEEE-754 arithmetic, pair summation
+  order, compensated mean, element names, and `.Random.seed` semantics of 1.2.0
+  (with automatic sparse handling for singleton-heavy partitions and exact R
+  fallback for mixed/missing-label cases).
+- Replaced `igraph`-based binary search and union loops in
+  `get_highest_prune_param()`, `get_highest_prune_param_embedding()`, and
+  `get_nn_conn_comps()` with native C++ disjoint-set operations directly on
+  sparse CSC / kNN-index arrays, avoiding unpruned SNN and `igraph` allocations
+  while returning bit-identical thresholds and adjacency matrices.
+- Reused each selected configuration's exact PCA kNN index across
+  `get_nn_conn_comps()` and `assess_nn_stability()` inside
+  `automatic_stability_assessment()` via a scoped cache cleared on exit.
 - Centralized NN/SNN graph construction from precomputed neighbor indices. PCA
   graph stability now builds one neighborhood's graph matrices at a time in the
   main process rather than building all neighborhoods in parallel on workers.
-- Changed final clustering-stability scheduling to distribute resolution/seed
-  tasks across workers within each algorithm, preserving nested results and
-  seed inputs. All memberships for that algorithm are retained before
-  summarization; progress advances after those jobs finish.
+- Changed final clustering-stability and PCA NN-stability scheduling to group
+  jobs into balanced worker chunks (strided across resolutions/seeds in
+  `assess_clustering_stability()` and contiguous seed chunks in
+  `assess_nn_stability()`), cutting PSOCK IPC overhead while preserving exact
+  nested results and seed order. All memberships for an algorithm are retained
+  before summarization; progress advances after those jobs finish.
+- Replaced repeated full-library `utils::installed.packages()` scans in
+  `is_package_installed()` with `find.package(..., quiet = TRUE)`.
 - Made forced garbage collection in stability workflows opt-in via
   `options(ClustAssess.force_gc = TRUE)`. Avoiding forced pauses can also delay
   memory reclamation; normal R garbage collection remains active.
@@ -69,10 +84,19 @@ robustness" and these implementation effects:
 ## Correctness and robustness
 
 - Fixed the writing of the app's expression file (`write_objects()`, used by
-  `write_shiny_app()`) for an expression matrix with one gene more than a
-  multiple of `chunk_size` (100 by default): the last block of one gene lost
-  its matrix shape, and the function stopped. Such a block is now read as a
-  matrix of one row.
+  `write_shiny_app()`) for one-gene chunks (both a last block of one gene and
+  `chunk_size = 1` when writing `rank_matrix`) and clamped HDF5 `rank_matrix`
+  chunk height to `min(chunk_size, nrow(expression_matrix))` so small filtered
+  matrices do not trigger chunk-dimension warnings.
+- Fixed `SharedObject::unshare()` cleanup calls across feature, graph, and
+  clustering stability so the shared object (rather than the unshared input) is
+  unshared, and registered `assess_clustering_stability()` cleanup immediately
+  after `SharedObject::share()`.
+- Fixed four leaked `new[]` heap buffers in `src/wilcox.cpp::wilcox_test()` by
+  using `std::vector`.
+- Fixed `automatic_stability_assessment()` so `save_temp = FALSE` is also
+  respected during the connected-components and NN-stability stages when
+  `temp_file` is supplied.
 - Fixed integer overflow in `element_sim()` when the cell count times a cluster
   size exceeds the integer range, which could produce negative, infinite, or
   inflated similarity values. The optimized similarity-matrix and threshold

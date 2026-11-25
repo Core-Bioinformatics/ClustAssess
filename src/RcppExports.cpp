@@ -11,6 +11,63 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// weighted_ecc_flat_cpp
+SEXP weighted_ecc_flat_cpp(List mb_list, NumericVector weights, bool calculate_sim_matrix);
+RcppExport SEXP _ClustAssess_weighted_ecc_flat_cpp(SEXP mb_listSEXP, SEXP weightsSEXP, SEXP calculate_sim_matrixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type mb_list(mb_listSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type calculate_sim_matrix(calculate_sim_matrixSEXP);
+    rcpp_result_gen = Rcpp::wrap(weighted_ecc_flat_cpp(mb_list, weights, calculate_sim_matrix));
+    return rcpp_result_gen;
+END_RCPP
+}
+// weighted_ecc_flat_char_cpp
+SEXP weighted_ecc_flat_char_cpp(List mb_list, NumericVector weights, bool calculate_sim_matrix);
+RcppExport SEXP _ClustAssess_weighted_ecc_flat_char_cpp(SEXP mb_listSEXP, SEXP weightsSEXP, SEXP calculate_sim_matrixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< List >::type mb_list(mb_listSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< bool >::type calculate_sim_matrix(calculate_sim_matrixSEXP);
+    rcpp_result_gen = Rcpp::wrap(weighted_ecc_flat_char_cpp(mb_list, weights, calculate_sim_matrix));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sim_matrix_flat_cpp
+SEXP sim_matrix_flat_cpp(List mb_list);
+RcppExport SEXP _ClustAssess_sim_matrix_flat_cpp(SEXP mb_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type mb_list(mb_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_matrix_flat_cpp(mb_list));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sim_matrix_flat_char_cpp
+SEXP sim_matrix_flat_char_cpp(List mb_list);
+RcppExport SEXP _ClustAssess_sim_matrix_flat_char_cpp(SEXP mb_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< List >::type mb_list(mb_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_matrix_flat_char_cpp(mb_list));
+    return rcpp_result_gen;
+END_RCPP
+}
+// corrected_l1_mb_cpp
+SEXP corrected_l1_mb_cpp(SEXP mb1, SEXP mb2);
+RcppExport SEXP _ClustAssess_corrected_l1_mb_cpp(SEXP mb1SEXP, SEXP mb2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type mb1(mb1SEXP);
+    Rcpp::traits::input_parameter< SEXP >::type mb2(mb2SEXP);
+    rcpp_result_gen = Rcpp::wrap(corrected_l1_mb_cpp(mb1, mb2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // myContTable
 IntegerMatrix myContTable(IntegerVector& a, IntegerVector& b, int minim_mb1, int minim_mb2);
 RcppExport SEXP _ClustAssess_myContTable(SEXP aSEXP, SEXP bSEXP, SEXP minim_mb1SEXP, SEXP minim_mb2SEXP) {
@@ -99,6 +156,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// highest_prune_param_cpp
+List highest_prune_param_cpp(const Eigen::MappedSparseMatrix<double> nn_matrix, int n_neigh, bool return_matrix, bool use_nn_target_comps);
+RcppExport SEXP _ClustAssess_highest_prune_param_cpp(SEXP nn_matrixSEXP, SEXP n_neighSEXP, SEXP return_matrixSEXP, SEXP use_nn_target_compsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< const Eigen::MappedSparseMatrix<double> >::type nn_matrix(nn_matrixSEXP);
+    Rcpp::traits::input_parameter< int >::type n_neigh(n_neighSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_matrix(return_matrixSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_nn_target_comps(use_nn_target_compsSEXP);
+    rcpp_result_gen = Rcpp::wrap(highest_prune_param_cpp(nn_matrix, n_neigh, return_matrix, use_nn_target_comps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// nn_conn_comps_from_idx_cpp
+NumericVector nn_conn_comps_from_idx_cpp(SEXP nn_idx, IntegerVector n_neigh_sequence);
+RcppExport SEXP _ClustAssess_nn_conn_comps_from_idx_cpp(SEXP nn_idxSEXP, SEXP n_neigh_sequenceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< SEXP >::type nn_idx(nn_idxSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type n_neigh_sequence(n_neigh_sequenceSEXP);
+    rcpp_result_gen = Rcpp::wrap(nn_conn_comps_from_idx_cpp(nn_idx, n_neigh_sequence));
+    return rcpp_result_gen;
+END_RCPP
+}
 // update_connectivity_cpp
 NumericMatrix update_connectivity_cpp(NumericMatrix connectivity, IntegerVector sampling_indices, IntegerVector cluster_assignments);
 RcppExport SEXP _ClustAssess_update_connectivity_cpp(SEXP connectivitySEXP, SEXP sampling_indicesSEXP, SEXP cluster_assignmentsSEXP) {
@@ -127,6 +208,11 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_ClustAssess_weighted_ecc_flat_cpp", (DL_FUNC) &_ClustAssess_weighted_ecc_flat_cpp, 3},
+    {"_ClustAssess_weighted_ecc_flat_char_cpp", (DL_FUNC) &_ClustAssess_weighted_ecc_flat_char_cpp, 3},
+    {"_ClustAssess_sim_matrix_flat_cpp", (DL_FUNC) &_ClustAssess_sim_matrix_flat_cpp, 1},
+    {"_ClustAssess_sim_matrix_flat_char_cpp", (DL_FUNC) &_ClustAssess_sim_matrix_flat_char_cpp, 1},
+    {"_ClustAssess_corrected_l1_mb_cpp", (DL_FUNC) &_ClustAssess_corrected_l1_mb_cpp, 2},
     {"_ClustAssess_myContTable", (DL_FUNC) &_ClustAssess_myContTable, 4},
     {"_ClustAssess_disjointECS", (DL_FUNC) &_ClustAssess_disjointECS, 2},
     {"_ClustAssess_disjointECSaverage", (DL_FUNC) &_ClustAssess_disjointECSaverage, 2},
@@ -134,6 +220,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ClustAssess_pruneSNN", (DL_FUNC) &_ClustAssess_pruneSNN, 2},
     {"_ClustAssess_computeSNN", (DL_FUNC) &_ClustAssess_computeSNN, 3},
     {"_ClustAssess_getNNmatrix", (DL_FUNC) &_ClustAssess_getNNmatrix, 4},
+    {"_ClustAssess_highest_prune_param_cpp", (DL_FUNC) &_ClustAssess_highest_prune_param_cpp, 4},
+    {"_ClustAssess_nn_conn_comps_from_idx_cpp", (DL_FUNC) &_ClustAssess_nn_conn_comps_from_idx_cpp, 2},
     {"_ClustAssess_update_connectivity_cpp", (DL_FUNC) &_ClustAssess_update_connectivity_cpp, 3},
     {"_ClustAssess_wilcox_test", (DL_FUNC) &_ClustAssess_wilcox_test, 3},
     {NULL, NULL, 0}

@@ -16,24 +16,11 @@ get_nn_conn_comps_umap <- function(embedding,
         shared_embedding <- embedding
     }
 
-    if (length(n_neigh_sequence) > 1) {
-        n_neighs <- c(n_neigh_sequence[1], sapply(2:length(n_neigh_sequence), function(i) {
-            n_neigh_sequence[i] - n_neigh_sequence[i - 1]
-        }))
-        start_k <- n_neigh_sequence - n_neighs
-    } else {
-        start_k <- 0
-        n_neighs <- n_neigh_sequence
-    }
-
     all_vars <- ls()
     # the variables needed in each PSOCK process
     needed_vars <- c(
         "shared_embedding",
         "n_neigh_sequence",
-        "graph_reduction_type",
-        "start_k",
-        "n_neighs",
         "umap_arguments"
     )
     seed <- NA
@@ -44,7 +31,7 @@ get_nn_conn_comps_umap <- function(embedding,
         seed = seed_sequence,
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
+        .export = c("nn_conn_comps_from_idx_cpp"),
         .packages = worker_packages_if_installed("ClustAssess")
     ) %dopar% {
         # perform the UMAP dimensionality reduction
@@ -58,30 +45,12 @@ get_nn_conn_comps_umap <- function(embedding,
             k = max(n_neigh_sequence)
         )$nn.idx
 
-        # for each neighbour, return the number of connected components
-        # of the generated graph
-        # TODO maybe add the evolution of the conn comps by varying the pruning param
-        g <- NULL
-        n_comps <- rep(0, length(n_neigh_sequence))
-        for (neigh_index in seq_along(n_neigh_sequence)) {
-            current_g <- igraph::graph_from_adjacency_matrix(
-                getNNmatrix(nn2_res, n_neighs[neigh_index], start_k[neigh_index], -1)$nn
-            )
-
-            if (neigh_index == 1) {
-                g <- current_g
-            } else {
-                g <- igraph::union(g, current_g)
-            }
-
-            n_comps[neigh_index] <- igraph::components(g)$no
-        }
-
-        n_comps
+        # Count weak connected components incrementally as k increases.
+        nn_conn_comps_from_idx_cpp(nn2_res, as.integer(n_neigh_sequence))
     }
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_embedding <- SharedObject::unshare(embedding)
+        shared_embedding <- SharedObject::unshare(shared_embedding)
     }
 
     # store the results obtained for each number of neighbours in different lists
@@ -100,61 +69,11 @@ get_nn_conn_comps_umap <- function(embedding,
 
 get_nn_conn_comps_pca <- function(embedding,
                                   n_neigh_sequence) {
-    ncores <- foreach::getDoParWorkers()
-    nn_conn_comps_list <- list()
-
-
     nn2_res <- parallel_nn2_idx(embedding, max(n_neigh_sequence))
-
-    if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_nn2_res <- SharedObject::share(nn2_res)
-    } else {
-        shared_nn2_res <- nn2_res
-    }
-
-    if (length(n_neigh_sequence) > 1) {
-        n_neighs <- c(n_neigh_sequence[1], sapply(2:length(n_neigh_sequence), function(i) {
-            n_neigh_sequence[i] - n_neigh_sequence[i - 1]
-        }))
-        start_k <- n_neigh_sequence - n_neighs
-    } else {
-        start_k <- 0
-        n_neighs <- n_neigh_sequence
-    }
-
-    all_vars <- ls()
-    # the variables needed in each PSOCK process
-    needed_vars <- c("shared_nn2_res", "start_k", "n_neighs")
-
-    # send the name of the dim reduction arguments
-    g_list <- foreach::foreach(
-        i = seq_along(n_neigh_sequence),
-        .inorder = TRUE,
-        .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
-        .packages = worker_packages_if_installed("ClustAssess")
-    ) %dopar% {
-        # for each neighbour, return the number of connected components
-        # of the generated graph
-        igraph::graph_from_adjacency_matrix(
-            getNNmatrix(shared_nn2_res, n_neighs[i], start_k[i], -1)$nn
-        )
-    }
-
-    if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_nn2_res <- SharedObject::unshare(nn2_res)
-    }
-
-    g <- NULL
-    # store obtained results for each number of neighbours in different lists
+    comp_counts <- nn_conn_comps_from_idx_cpp(nn2_res, as.integer(n_neigh_sequence))
+    nn_conn_comps_list <- list()
     for (i in seq_along(n_neigh_sequence)) {
-        n_neigh <- n_neigh_sequence[i]
-        if (is.null(g)) {
-            g <- g_list[[i]]
-        } else {
-            g <- igraph::union(g, g_list[[i]])
-        }
-        nn_conn_comps_list[[as.character(n_neigh)]] <- igraph::components(g)$no
+        nn_conn_comps_list[[as.character(n_neigh_sequence[i])]] <- comp_counts[[i]]
     }
 
     nn_conn_comps_list <- list(nn_conn_comps_list)
@@ -408,44 +327,12 @@ get_highest_prune_param_embedding <- function(embedding,
         k = n_neigh
     )$nn.idx, n_neigh, 0, -1)$nn
 
-    g <- igraph::graph_from_adjacency_matrix(
-        nn_matrix,
-        mode = "directed"
-    )
-
-    target_n_conn_comps <- igraph::components(g)$no
-
-    possible_values <- sapply(0:n_neigh, function(i) {
-        i / (2 * n_neigh - i)
-    })
-
-    start_n <- 1
-    stop_n <- length(possible_values)
-
-    while (start_n <= stop_n) {
-        middle <- as.integer((stop_n + start_n) / 2)
-        current_n_conn_comps <- get_n_strong_components(
-            nn_matrix,
-            n_neigh,
-            possible_values[middle]
-        )
-
-        if (current_n_conn_comps > target_n_conn_comps) {
-            stop_n <- middle
-
-            if (start_n == stop_n) {
-                start_n <- middle - 1
-            }
-        } else {
-            start_n <- middle + 1
-
-            if (start_n == stop_n) {
-                break
-            }
-        }
-    }
-
-    return(possible_values[middle])
+    highest_prune_param_cpp(
+        nn_matrix = nn_matrix,
+        n_neigh = as.integer(n_neigh),
+        return_matrix = FALSE,
+        use_nn_target_comps = TRUE
+    )$prune_value
 }
 
 #' Calculate the highest pruning parameter for the SNN graph given NN matrix
@@ -486,51 +373,18 @@ get_highest_prune_param_embedding <- function(embedding,
 #' get_highest_prune_param(nn_matrix, 5)$prune_value
 get_highest_prune_param <- function(nn_matrix,
                                     n_neigh) {
-# TODO emphasize that nn_matrix should be a binary matrix, the NN matrix, not SNN
-    nn_matrix <- computeSNN(nn_matrix, n_neigh, 0)
-    g <- igraph::graph_from_adjacency_matrix(
-        nn_matrix,
-        mode = "undirected",
-        weighted = TRUE
-    )
-
-    target_n_conn_comps <- igraph::components(g)$no
-
-    possible_values <- sapply(0:n_neigh, function(i) {
-        i / (2 * n_neigh - i)
-    })
-
-    start_n <- 1
-    stop_n <- length(possible_values)
-    prev_g <- g
-
-    while (start_n <= stop_n) {
-        middle <- as.integer((stop_n + start_n) / 2)
-        current_g <- igraph::delete_edges(prev_g, which(igraph::E(prev_g)$weight <= possible_values[middle]))
-        run_optional_gc()
-
-        current_n_conn_comps <- igraph::components(current_g)$no
-
-        if (current_n_conn_comps > target_n_conn_comps) {
-            stop_n <- middle
-
-            if (start_n == stop_n) {
-                start_n <- middle - 1
-            }
-        } else {
-            start_n <- middle + 1
-            prev_g <- current_g
-
-            if (start_n == stop_n) {
-                break
-            }
-        }
+    # TODO emphasize that nn_matrix should be a binary matrix, the NN matrix, not SNN
+    if (!inherits(nn_matrix, "dgCMatrix")) {
+        nn_matrix <- methods::as(nn_matrix, "dgCMatrix")
     }
-
-    return(list(
-        prune_value = possible_values[middle],
-        adj_matrix = pruneSNN(nn_matrix, possible_values[middle])
-    ))
+    res <- highest_prune_param_cpp(
+        nn_matrix = nn_matrix,
+        n_neigh = as.integer(n_neigh),
+        return_matrix = TRUE,
+        use_nn_target_comps = FALSE
+    )
+    run_optional_gc()
+    res
 }
 
 build_neigh_matrix <- function(nn_idx,
@@ -618,7 +472,15 @@ assess_nn_stability_pca <- function(embedding,
         }
         run_optional_gc()
         # the variables needed in the PSOCK processes
-        seed <- NA
+        seed_chunk <- NULL
+        seed_chunks <- if (ncores > 1L && length(seed_sequence) > ncores) {
+            unname(split(
+                seed_sequence,
+                cut(seq_along(seed_sequence), breaks = ncores, labels = FALSE)
+            ))
+        } else {
+            as.list(seed_sequence)
+        }
         clustering_functions <- prepare_clustering_functions_for_workers()
         needed_vars <- c(
             "graph_type",
@@ -630,20 +492,42 @@ assess_nn_stability_pca <- function(embedding,
         all_vars <- ls()
 
         # The results come in seed order, whatever order the workers finish in.
-        partitions_list_temp <- foreach::foreach(
-            seed = seed_sequence,
+        partitions_chunks_temp <- foreach::foreach(
+            seed_chunk = seed_chunks,
             .inorder = TRUE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
             .packages = package_needed
         ) %dopar% {
-            # apply the clustering method on the graph specified by the variable `graph_type`
-            if (graph_type != 1) {
-                cluster_results_nn <- list(
+            lapply(seed_chunk, function(seed) {
+                # apply the clustering method on the graph specified by the variable `graph_type`
+                if (graph_type != 1) {
+                    cluster_results_nn <- list(
+                        mb = do.call(
+                            clustering_functions,
+                            c(
+                                list(
+                                    object = shared_neigh_matrix$nn,
+                                    resolution = 0.8,
+                                    seed = seed
+                                ),
+                                clustering_arguments
+                            )
+                        ),
+                        freq = 1,
+                        seed = seed
+                    )
+
+                    if (graph_type == 0) {
+                        return(cluster_results_nn)
+                    }
+                }
+
+                cluster_results_snn <- list(
                     mb = do.call(
                         clustering_functions,
                         c(
                             list(
-                                object = shared_neigh_matrix$nn,
+                                object = shared_neigh_matrix$snn,
                                 resolution = 0.8,
                                 seed = seed
                             ),
@@ -654,33 +538,14 @@ assess_nn_stability_pca <- function(embedding,
                     seed = seed
                 )
 
-                if (graph_type == 0) {
-                    return(cluster_results_nn)
+                if (graph_type == 1) {
+                    return(cluster_results_snn)
                 }
-            }
 
-            cluster_results_snn <- list(
-                mb = do.call(
-                    clustering_functions,
-                    c(
-                        list(
-                            object = shared_neigh_matrix$snn,
-                            resolution = 0.8,
-                            seed = seed
-                        ),
-                        clustering_arguments
-                    )
-                ),
-                freq = 1,
-                seed = seed
-            )
-
-            if (graph_type == 1) {
-                return(cluster_results_snn)
-            }
-
-            return(list(cluster_results_snn, cluster_results_nn))
+                list(cluster_results_snn, cluster_results_nn)
+            })
         }
+        partitions_list_temp <- unlist(partitions_chunks_temp, recursive = FALSE)
 
         # merge the partitions that are considered similar by a given ecs threshold
         for (i in seq_along(partitions_list)) {
@@ -792,7 +657,7 @@ assess_nn_stability_umap <- function(embedding,
         seed = seed_sequence,
         .inorder = TRUE,
         .noexport = all_vars[!(all_vars %in% needed_vars)],
-        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param"),
+        .export = c("build_neigh_matrix", "getNNmatrix", "get_highest_prune_param", "highest_prune_param_cpp"),
         .packages = package_needed
     ) %dopar% {
         # perform the dimensionality reduction
@@ -864,7 +729,7 @@ assess_nn_stability_umap <- function(embedding,
     }
 
     if (ncores > 1 && is_package_installed("SharedObject")) {
-        shared_embedding <- SharedObject::unshare(embedding)
+        shared_embedding <- SharedObject::unshare(shared_embedding)
     }
 
     rm(shared_embedding)

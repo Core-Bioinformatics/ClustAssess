@@ -447,6 +447,16 @@ corrected_l1_mb_at_once <- function(mb1, mb2) {
     if (length(mb1) == 0) {
         return(numeric(0))
     }
+    if (inherits(mb1, c("numeric", "integer", "factor", "character")) &&
+        inherits(mb2, c("numeric", "integer", "factor", "character")) &&
+        (is.factor(mb1) || !is.object(mb1)) && !is.array(mb1) &&
+        (is.factor(mb2) || !is.object(mb2)) && !is.array(mb2) &&
+        length(mb1) == length(mb2) && !anyNA(mb1) && !anyNA(mb2)) {
+        native_scores <- corrected_l1_mb_cpp(mb1, mb2)
+        if (!is.null(native_scores)) {
+            return(native_scores)
+        }
+    }
     ids1 <- encode_flat_disjoint_membership(mb1)
     ids2 <- encode_flat_disjoint_membership(mb2)
     pair_ids <- (ids1 - 1) * as.numeric(max(ids2)) + ids2
@@ -904,6 +914,26 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
 
     # As in 1.2.0, the ecs of a pair is the mean of its per-element scores,
     # which compare missing labels as 1.2.0 compared them.
+    if (!isTRUE(use_parallel)) {
+        native_kind <- classify_flat_disjoint_list_for_native(mb_list, weights = NULL)
+        if (!is.null(native_kind)) {
+            sim_matrix <- if (native_kind == "char") {
+                sim_matrix_flat_char_cpp(mb_list)
+            } else {
+                sim_matrix_flat_cpp(mb_list)
+            }
+            if (!is.null(sim_matrix)) {
+                if (output_type == "data.frame") {
+                    sim_matrix <- data.frame(
+                        i.clustering = rep(1:n_clusterings, n_clusterings),
+                        j.clustering = rep(1:n_clusterings, each = n_clusterings),
+                        element_sim = c(sim_matrix)
+                    )
+                }
+                return(sim_matrix)
+            }
+        }
+    }
 
     first_index <- unlist(sapply(1:(n_clusterings - 1), function(i) {
         rep(i, n_clusterings - i)
@@ -929,7 +959,7 @@ element_sim_matrix_flat_disjoint <- function(mb_list,
         ecs_values <- foreach::foreach(
             i = seq_len(n_combinations),
             .packages = "ClustAssess",
-            .export = c("element_sim_elscore", "corrected_l1_mb_at_once",
+            .export = c("element_sim_elscore", "corrected_l1_mb_at_once", "corrected_l1_mb_cpp",
                         "encode_flat_disjoint_membership", "validate_flat_membership_labels",
                         "flat_labels_as_compared", "stop_for_missing_labels", "has_character_labels"),
             .noexport = c("my_cluster"),
@@ -1579,12 +1609,34 @@ weighted_element_consistency <- function(clustering_list,
         return(rep(0, length(clustering_list[[1]])))
     }
 
-    if (calculate_sim_matrix) {
-        ecs_sim_matrix <- matrix(0, nrow = n_clusterings, ncol = n_clusterings)
-    }
-
     if (is.null(weights)) {
         weights <- rep(1, n_clusterings)
+    }
+
+    # Fast native path preserving exact 1.2.0 IEEE-754 arithmetic, summation
+    # order, element names, and .Random.seed behavior for clean flat partitions.
+    native_kind <- classify_flat_disjoint_list_for_native(clustering_list, weights)
+    if (!is.null(native_kind)) {
+        native_result <- if (native_kind == "char") {
+            weighted_ecc_flat_char_cpp(clustering_list, as.numeric(weights), isTRUE(calculate_sim_matrix))
+        } else {
+            weighted_ecc_flat_cpp(clustering_list, as.numeric(weights), isTRUE(calculate_sim_matrix))
+        }
+        if (!is.null(native_result)) {
+            first_names <- names(clustering_list[[1]])
+            if (!is.null(first_names)) {
+                if (isTRUE(calculate_sim_matrix)) {
+                    names(native_result$ecc) <- first_names
+                } else {
+                    names(native_result) <- first_names
+                }
+            }
+            return(native_result)
+        }
+    }
+
+    if (calculate_sim_matrix) {
+        ecs_sim_matrix <- matrix(0, nrow = n_clusterings, ncol = n_clusterings)
     }
 
     # As in 1.2.0, compare the pairs one at a time and add their scores in this
@@ -1620,6 +1672,57 @@ weighted_element_consistency <- function(clustering_list,
     ecs_sim_matrix[n_clusterings, n_clusterings] <- 1
 
     return(list(ecc = consistency, ecs_matrix = ecs_sim_matrix))
+}
+
+# Determine whether a list of flat disjoint partitions can use the exact native
+# batch path without altering 1.2.0 arithmetic, names, missing-label handling,
+# or .Random.seed behavior. Returns "num", "char", or NULL (fallback to R).
+classify_flat_disjoint_list_for_native <- function(clustering_list, weights = NULL) {
+    n_clusterings <- length(clustering_list)
+    if (n_clusterings < 2L) {
+        return(NULL)
+    }
+    first <- clustering_list[[1]]
+    if (!inherits(first, c("numeric", "integer", "factor", "character")) ||
+        (!is.factor(first) && is.object(first)) || is.array(first)) {
+        return(NULL)
+    }
+    n <- length(first)
+    if (n == 0L) {
+        return(NULL)
+    }
+    if (!is.null(weights)) {
+        if (!is.numeric(weights) || length(weights) != n_clusterings || anyNA(weights)) {
+            return(NULL)
+        }
+        if (n == 1L && !is.null(names(weights))) {
+            return(NULL)
+        }
+        total_weights <- suppressWarnings(sum(weights))
+        if (is.na(total_weights) || !is.finite(total_weights)) {
+            return(NULL)
+        }
+        norm_factor <- total_weights * (total_weights - 1) / 2
+        if (is.na(norm_factor) || !is.finite(norm_factor) || norm_factor == 0) {
+            return(NULL)
+        }
+    }
+    first_is_char <- is.character(first)
+    first_names <- names(first)
+    for (i in seq_len(n_clusterings)) {
+        x <- clustering_list[[i]]
+        if (!inherits(x, c("numeric", "integer", "factor", "character")) ||
+            (!is.factor(x) && is.object(x)) || is.array(x)) {
+            return(NULL)
+        }
+        if (is.character(x) != first_is_char) {
+            return(NULL)
+        }
+        if (length(x) != n || !identical(names(x), first_names) || anyNA(x)) {
+            return(NULL)
+        }
+    }
+    if (first_is_char) "char" else "num"
 }
 
 # 1.2.0 compared a pair of membership vectors in R code when either had
@@ -1833,7 +1936,7 @@ element_agreement_flat_disjoint <- function(reference_clustering,
     # corrected_l1_mb() for every type of label
     avg_agreement <- foreach::foreach(
         obj = clustering_list,
-        .export = c("corrected_l1_mb_at_once", "encode_flat_disjoint_membership",
+        .export = c("corrected_l1_mb_at_once", "corrected_l1_mb_cpp", "encode_flat_disjoint_membership",
                     "validate_flat_membership_labels"),
         .combine = "+"
     ) %do% {

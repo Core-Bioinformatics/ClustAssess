@@ -20,7 +20,7 @@ method_shapes <- function(n_methods) {
 }
 
 seed <- NULL
-job_index <- NULL
+chunk_job_indices <- NULL
 
 #' Merge Partitions from different Resolutions
 #'
@@ -262,11 +262,25 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
     # additional arguments used by the clustering method
 
     # if (min(algorithm) < 4) {
-    if (ncores > 1 && is_package_installed("SharedObject")) {
+    use_shared_adj <- ncores > 1 && is_package_installed("SharedObject")
+    if (use_shared_adj) {
         graph_adjacency_matrix_shared <- SharedObject::share(graph_adjacency_matrix)
     } else {
         graph_adjacency_matrix_shared <- graph_adjacency_matrix
     }
+    on.exit(
+        {
+            if (use_shared_adj && exists("graph_adjacency_matrix_shared", inherits = FALSE)) {
+                graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix_shared)
+                rm(graph_adjacency_matrix_shared)
+            }
+            if (exists("graph_adjacency_matrix", inherits = FALSE)) {
+                rm(graph_adjacency_matrix)
+            }
+            run_optional_gc()
+        },
+        add = TRUE
+    )
     # }
 
     # the variables needed in the PSOCK processes
@@ -318,31 +332,43 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
             pb$tick(0)
         }
 
+        # Strided chunking amortizes PSOCK RPC overhead across workers while
+        # mixing resolutions evenly per chunk for balanced execution.
+        n_jobs <- nrow(clustering_jobs)
+        job_chunks <- if (ncores > 1L && n_jobs > 1L) {
+            n_chunks <- min(n_jobs, ncores * 2L)
+            unname(split(seq_len(n_jobs), ((seq_len(n_jobs) - 1L) %% n_chunks) + 1L))
+        } else {
+            as.list(seq_len(n_jobs))
+        }
+        all_vars <- ls()
+
         result_object[[alg_name]] <- list()
-        clustering_job_results <- foreach::foreach(
-            job_index = seq_len(nrow(clustering_jobs)),
+        clustering_job_chunks <- foreach::foreach(
+            chunk_job_indices = job_chunks,
             .inorder = FALSE,
             .noexport = all_vars[!(all_vars %in% needed_vars)],
             .packages = package_needed
         ) %dopar% {
-            job <- clustering_jobs[job_index, , drop = FALSE]
-            cl_result <- do.call(
-                clustering_functions,
-                c(
-                    list(
-                        object = graph_adjacency_matrix_shared,
-                        resolution = job$resolution[[1]],
-                        seed = job$seed[[1]]
-                    ),
-                    current_clustering_arguments
+            lapply(chunk_job_indices, function(job_index) {
+                cl_result <- do.call(
+                    clustering_functions,
+                    c(
+                        list(
+                            object = graph_adjacency_matrix_shared,
+                            resolution = clustering_jobs$resolution[[job_index]],
+                            seed = clustering_jobs$seed[[job_index]]
+                        ),
+                        current_clustering_arguments
+                    )
                 )
-            )
 
-            list(
-                res_index = job$res_index[[1]],
-                seed_index = job$seed_index[[1]],
-                mb = cl_result
-            )
+                list(
+                    res_index = clustering_jobs$res_index[[job_index]],
+                    seed_index = clustering_jobs$seed_index[[job_index]],
+                    mb = cl_result
+                )
+            })
         }
 
         partitions_by_resolution <- vector("list", length(resolution))
@@ -350,9 +376,11 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
             partitions_by_resolution[[i]] <- vector("list", length(seed_sequence))
         }
 
-        for (job_result in clustering_job_results) {
-            partitions_by_resolution[[job_result$res_index]][[job_result$seed_index]] <-
-                job_result$mb
+        for (chunk_results in clustering_job_chunks) {
+            for (job_result in chunk_results) {
+                partitions_by_resolution[[job_result$res_index]][[job_result$seed_index]] <-
+                    job_result$mb
+            }
         }
 
         for (res_index in seq_along(resolution)) {
@@ -374,17 +402,7 @@ assess_clustering_stability <- function(graph_adjacency_matrix,
         }
     }
 
-    on.exit(
-        {
-            if (ncores > 1 && is_package_installed("SharedObject")) {
-                graph_adjacency_matrix_shared <- SharedObject::unshare(graph_adjacency_matrix)
-                rm(graph_adjacency_matrix_shared)
-            }
-            rm(graph_adjacency_matrix)
-            run_optional_gc()
-        },
-        add = TRUE
-    )
+    # Cleanup of shared graph adjacency matrix is registered immediately after share().
 
     split_by_k <- lapply(algorithm_names[clustering_algorithm], function(alg_name) {
         merge_resolutions(result_object[[alg_name]])
